@@ -126,13 +126,13 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Live market context for Kenyan farmers: USD/KES exchange rate (frankfurter
- *.dev — free, no key) + days until month-end (useful for market timing).
+ * Live market context for Kenyan farmers: USD/KES exchange rate
+ * (open.er-api.com — free, no key) + month timing context.
  * Returns null gracefully when the API is unreachable.
  */
 async function fetchMarketRates() {
   try {
-    const res = await fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=KES", {
+    const res = await fetch("https://open.er-api.com/v6/latest/USD", {
       signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) return null;
@@ -143,7 +143,7 @@ async function fetchMarketRates() {
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     return {
       usdKes: Math.round(rate * 100) / 100,
-      asOf: data.date ?? new Date().toISOString().slice(0, 10),
+      asOf: data.time_last_update_utc?.slice(0, 16) ?? new Date().toISOString().slice(0, 10),
       dayOfMonth: now.getDate(),
       daysToMonthEnd: monthEnd - now.getDate(),
       note: "A stronger dollar usually lifts export crop prices (avocado, macadamia, tea) at the farm gate.",
