@@ -332,23 +332,21 @@ function DashboardContent() {
               </Button>
             </Link>
           )}
-          <Link href={fullyLocked ? "/subscription" : "/production"} aria-disabled={fullyLocked}>
+          <Link href={fullyLocked ? "/subscription" : "/production"}>
             <Button
               size="sm"
-              disabled={fullyLocked}
               title={fullyLocked ? "Subscribe to unlock" : undefined}
-              className={`bg-emerald-500 hover:bg-emerald-600 text-white font-bold gap-1.5 shadow cursor-pointer ${fullyLocked ? "opacity-60 cursor-not-allowed" : ""}`}
+              className={`bg-emerald-500 hover:bg-emerald-600 text-white font-bold gap-1.5 shadow cursor-pointer ${fullyLocked ? "opacity-60" : ""}`}
             >
               <Plus className="h-4 w-4" /> Record Today's Output
             </Button>
           </Link>
-          <Link href={fullyLocked ? "/subscription" : "/finances"} aria-disabled={fullyLocked}>
+          <Link href={fullyLocked ? "/subscription" : "/finances"}>
             <Button
               size="sm"
               variant="outline"
-              disabled={fullyLocked}
               title={fullyLocked ? "Subscribe to unlock" : undefined}
-              className={`bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5 cursor-pointer ${fullyLocked ? "opacity-60 cursor-not-allowed" : ""}`}
+              className={`bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5 cursor-pointer ${fullyLocked ? "opacity-60" : ""}`}
             >
               <DollarSign className="h-4 w-4" /> Add Expense
             </Button>
@@ -431,8 +429,7 @@ function DashboardContent() {
                   <Link
                     key={s.step}
                     href={fullyLocked ? "/subscription" : s.href}
-                    aria-disabled={fullyLocked}
-                    className={`flex items-center gap-3 p-4 rounded-xl bg-white border-2 border-emerald-100 transition-all shadow-sm ${fullyLocked ? "opacity-50 pointer-events-none" : "hover:border-emerald-400"}`}
+                    className={`flex items-center gap-3 p-4 rounded-xl bg-white border-2 border-emerald-100 transition-all shadow-sm ${fullyLocked ? "opacity-50" : "hover:border-emerald-400"}`}
                   >
                     <div className={`flex h-10 w-10 items-center justify-center rounded-full ${s.color} text-white shrink-0`}>{s.icon}</div>
                     <p className="text-sm font-semibold text-[#0F172A]">{s.text}</p>
