@@ -145,6 +145,7 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
 
     const subscription = activeSub
       ? {
+          status: "active",
           plan: activeSub.plan,
           planName: activeSub.planName,
           expiresAt: activeSub.expiresAt.toISOString(),

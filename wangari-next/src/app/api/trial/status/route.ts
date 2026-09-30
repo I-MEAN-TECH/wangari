@@ -145,6 +145,7 @@ export async function GET(req: Request) {
     // Subscription details
     const subscription = activeSub
       ? {
+          status: "active",
           plan: activeSub.plan,
           planName: activeSub.planName,
           expiresAt: activeSub.expiresAt.toISOString(),

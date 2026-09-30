@@ -92,8 +92,14 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
     return () => clearInterval(interval);
   }, [subscription?.expiresAt, subscription?.status, statusBump]);
 
+  // Some cached/older status payloads omit `status`; an expiresAt in the
+  // future with a daysLeft value means the subscription is active.
+  const subIsActive =
+    (subscription?.status === "active" || (!subscription?.status && subscription?.expiresAt)) &&
+    !subTimeLeft.isExpired;
+
   // ── Active Subscription ─────────────────────────────────
-  if (subscription?.status === "active" && !subTimeLeft.isExpired) {
+  if (subIsActive) {
     // Expiring soon (≤7 days): amber renewal banner with a live timer.
     if (subscription.daysLeft <= 7) {
       return (
