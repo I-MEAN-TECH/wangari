@@ -7,6 +7,7 @@ import { AnnouncementBanner } from "@/components/dashboard/AnnouncementBanner";
 import { usePathname } from "next/navigation";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { WorkerBlock } from "@/components/worker-block";
+import { AccessGate } from "@/components/access-gate";
 import { FloatingActionButton } from "@/components/dashboard/floating-action-button";
 import Link from "next/link";
 import {
@@ -112,6 +113,7 @@ export default function DashboardLayout({
 
   return (
     <WorkerBlock>
+      <AccessGate>
       <div className="min-h-screen bg-wangari-cream relative">
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -162,6 +164,7 @@ export default function DashboardLayout({
       {/* Floating Action Button */}
       <FloatingActionButton />
     </div>
+      </AccessGate>
     </WorkerBlock>
   );
 }
