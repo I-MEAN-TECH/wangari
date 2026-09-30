@@ -926,7 +926,7 @@ model NewsArticle {
   link       String
   region     String   @default("kenya") // kenya | world
   risk       String? // ALERT label when the headline matches a farmer-risk keyword
-  publishedAt DateTime?
+  publishedAt DateTime? @map("published_at")
   firstSentAt DateTime? @map("first_sent_at") // set once the article has appeared in any advisory email
   createdAt  DateTime @default(now()) @map("created_at")
 

@@ -151,8 +151,9 @@ export async function upsertNewsArticles(items: NewsItem[]): Promise<Map<string,
         update: {}, // first-seen facts are immutable
       });
       hashToId.set(hash, row.id);
-    } catch {
-      // upsert races are harmless — the unique index guarantees one row
+    } catch (e: any) {
+      // Log loudly — a silent upsert failure here silently disables dedupe.
+      console.error("newsArticle upsert failed:", e?.message || e);
     }
   }
   return hashToId;
