@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trackEvent } from "@/lib/posthog";
+import { setToken, setUser, type AuthUser } from "@/lib/auth-client";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -143,6 +144,14 @@ function VerifyEmailForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Verification failed");
+
+      // Verification completes the login: the server issues the session token
+      // on success, so store it and the user lands in the dashboard directly.
+      if (data.token && data.user) {
+        setToken(data.token);
+        setUser(data.user as AuthUser);
+        trackEvent("user_logged_in", { method: "email_verification", user_id: data.user.id });
+      }
       setVerified(true);
       trackEvent("email_verified", { email });
     } catch (err) {

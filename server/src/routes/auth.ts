@@ -19,6 +19,41 @@ function isAllowedEmail(email: string): boolean {
 
 const router = Router();
 
+// ─── Email verification enforcement ──────────────────────
+// Every manual (password) account must verify its email address before a
+// session token is issued — at registration AND at login for any legacy
+// account that never verified. Google accounts are exempt: Google has already
+// verified the email (we check email_verified on the ID token).
+async function issueVerificationCode(user: { id: number; email: string }): Promise<{ ok: boolean; devCode?: string }> {
+  const code = crypto.randomInt(100000, 999999).toString();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+  await prisma.verificationCode.deleteMany({
+    where: { userId: user.id, purpose: "email_verification" },
+  });
+  await prisma.verificationCode.create({
+    data: { userId: user.id, code, purpose: "email_verification", expiresAt },
+  });
+
+  const { sendEmail } = await import("../lib/email.js");
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f6f8f6;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"><div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;border:1px solid #e5e7eb;padding:28px;"><h2 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Your verification code</h2><p style="margin:0 0 24px;font-size:15px;color:#64748b;">Use the code below to verify your email and continue. It expires in <strong>15 minutes</strong>.</p><div style="background:#f0fdf4;border-radius:8px;padding:20px;text-align:center;margin-bottom:24px;"><span style="font-size:32px;font-weight:700;letter-spacing:6px;color:#166534;font-family:monospace;">${code}</span></div><p style="margin:0;font-size:13px;color:#64748b;">If you didn't request this, you can safely ignore this email.</p><hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" /><p style="margin:0;font-size:12px;color:#94a3b8;">📩 This email landed in Spam? Open it and tap <strong>“Not spam”</strong> — Gmail will then deliver our future emails to your inbox.</p></div></body></html>`;
+  const text = `Your Wangari verification code is ${code}. It expires in 15 minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\nTip: if this email landed in Spam, tap \"Not spam\" so Gmail delivers our future emails to your inbox.`;
+  const result = await sendEmail({
+    to: user.email,
+    subject: "Verify your email — Wangari",
+    html,
+    text,
+    template: "email_verification",
+    userId: user.id,
+  });
+
+  // Fallback: when delivery can't be trusted (SMTP down/unconfigured, or
+  // EMAIL_FALLBACK_SHOW_CODE=true), return the code so the UI can show it on
+  // screen instead of locking the farmer out.
+  const showCode = process.env.EMAIL_FALLBACK_SHOW_CODE === "true" || !result.ok;
+  return { ok: result.ok, ...(showCode ? { devCode: code } : {}) };
+}
+
 // POST /api/auth/register
 router.post("/register", async (req: Request, res: Response) => {
   try {
@@ -78,12 +113,17 @@ router.post("/register", async (req: Request, res: Response) => {
       },
     });
 
-    const token = await generateToken(user.id, farm.id);
+    // No session token yet — the farmer must verify their email first.
+    // The account + farm exist, so verifying (or logging in later) resumes here.
+    const mailResult = await issueVerificationCode(user).catch((err) => {
+      console.error("Register verification email failed:", err);
+      return { ok: false } as { ok: boolean; devCode?: string };
+    });
 
     res.status(201).json({
-      token,
-      user: { id: user.id, name: user.name, email: user.email },
-      farm: { id: farm.id, name: farm.name },
+      emailVerifyRequired: true,
+      email: user.email,
+      ...(mailResult.devCode ? { devCode: mailResult.devCode } : {}),
     });
   } catch (error) {
     console.error("Register error:", error);
@@ -123,6 +163,21 @@ router.post("/login", async (req: Request, res: Response) => {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Mandatory email verification — checked BEFORE the MFA challenge so an
+    // unverified farmer is never shown a 2FA prompt. Credentials are valid,
+    // so send a fresh code to the address they just authenticated with.
+    if (!user.emailVerified) {
+      const mailResult = await issueVerificationCode(user).catch((err) => {
+        console.error("Login verification email failed:", err);
+        return { ok: false } as { ok: boolean; devCode?: string };
+      });
+      return res.status(200).json({
+        emailVerifyRequired: true,
+        email: user.email,
+        ...(mailResult.devCode ? { devCode: mailResult.devCode } : {}),
+      });
     }
 
     // Two-factor (authenticator app) — if enabled, a valid TOTP or recovery
@@ -487,38 +542,13 @@ router.post("/send-verification", async (req: Request, res: Response) => {
       return res.json({ message: "Email is already verified." });
     }
 
-    const code = crypto.randomInt(100000, 999999).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const result = await issueVerificationCode(user);
 
-    await prisma.verificationCode.deleteMany({
-      where: { userId: user.id, purpose: "email_verification" },
-    });
-    await prisma.verificationCode.create({
-      data: { userId: user.id, code, purpose: "email_verification", expiresAt },
-    });
-
-    const { sendEmail } = await import("../lib/email.js");
-    const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f6f8f6;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"><div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;border:1px solid #e5e7eb;padding:28px;"><h2 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Your verification code</h2><p style="margin:0 0 24px;font-size:15px;color:#64748b;">Use the code below to complete your email verification. It expires in <strong>15 minutes</strong>.</p><div style="background:#f0fdf4;border-radius:8px;padding:20px;text-align:center;margin-bottom:24px;"><span style="font-size:32px;font-weight:700;letter-spacing:6px;color:#166534;font-family:monospace;">${code}</span></div><p style="margin:0;font-size:13px;color:#64748b;">If you didn't request this, you can safely ignore this email.</p><hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" /><p style="margin:0;font-size:12px;color:#94a3b8;">📩 This email landed in Spam? Open it and tap <strong>“Not spam”</strong> — Gmail will then deliver our future emails to your inbox.</p></div></body></html>`;
-    const text = `Your Wangari verification code is ${code}. It expires in 15 minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\nTip: if this email landed in Spam, tap \"Not spam\" so Gmail delivers our future emails to your inbox.`;
-    const result = await sendEmail({
-      to: user.email,
-      subject: "Verify your email — Wangari",
-      html,
-      text,
-      template: "email_verification",
-      userId: user.id,
-    });
-
-    // Fallback: when email delivery can't be trusted (SMTP down/unconfigured,
-    // or EMAIL_FALLBACK_SHOW_CODE=true because the provider silently junk mail),
-    // return the code so the UI can show it on screen instead of blocking signup.
-    const showCode =
-      process.env.EMAIL_FALLBACK_SHOW_CODE === "true" || !result.ok;
     res.json({
       message: result.ok
         ? "Verification code sent to your email."
         : "Email delivery failed — use the code shown below.",
-      ...(showCode ? { devCode: code } : {}),
+      ...(result.devCode ? { devCode: result.devCode } : {}),
     });
   } catch (error) {
     console.error("Send verification error:", error);
@@ -570,7 +600,18 @@ router.post("/verify-email", async (req: Request, res: Response) => {
       prisma.user.update({ where: { id: user.id }, data: { emailVerified: new Date() } }),
     ]);
 
-    res.json({ message: "Email verified successfully!" });
+    // Verification completes the login — issue the session immediately so the
+    // farmer doesn't have to re-enter credentials. Same shape as /login.
+    const member = await prisma.farmMember.findFirst({ where: { userId: user.id } });
+    const farmId = member?.farmId || null;
+    const token = await generateToken(user.id, farmId);
+
+    res.json({
+      message: "Email verified successfully!",
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      farmId,
+    });
   } catch (error) {
     console.error("Verify email error:", error);
     res.status(500).json({ error: "Something went wrong. Please try again." });

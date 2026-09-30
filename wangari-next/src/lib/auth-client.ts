@@ -110,6 +110,15 @@ export async function login(email: string, password: string, totpCode?: string):
     throw new Error(data.error || "Login failed");
   }
 
+  if (data?.emailVerifyRequired) {
+    // Mandatory email verification (manual accounts). No session token is
+    // issued — a fresh code was emailed to the address they logged in with.
+    // Do NOT store anything; the verify page completes the login.
+    const err = new Error("emailVerifyRequired") as any;
+    err.payload = { emailVerifyRequired: true, devCode: data.devCode };
+    throw err;
+  }
+
   setToken(data.token);
   setUser(data.user);
   track("user_logged_in", { method: "password", user_id: data.user?.id });
@@ -179,6 +188,13 @@ export async function register(
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Registration failed");
+
+  // Manual registration now requires email verification: the response has no
+  // token — the register page routes to /verify-email which completes login.
+  if (!data.token) {
+    track("user_signed_up", { method: "password" });
+    return data;
+  }
 
   setToken(data.token);
   setUser(data.user);
@@ -280,7 +296,10 @@ export async function sendVerificationCode(email: string): Promise<{ message: st
   return data;
 }
 
-export async function verifyEmail(email: string, code: string): Promise<{ message: string }> {
+export async function verifyEmail(
+  email: string,
+  code: string
+): Promise<{ message: string; token?: string; user?: AuthUser; farmId?: number | null }> {
   const res = await fetch("/api/auth/verify-email", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -290,6 +309,13 @@ export async function verifyEmail(email: string, code: string): Promise<{ messag
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Verification failed");
   track("email_verified", { email });
+
+  // Verified = logged in. The server issues the session token on success.
+  if (data.token && data.user) {
+    setToken(data.token);
+    setUser(data.user);
+    track("user_logged_in", { method: "email_verification", user_id: data.user.id });
+  }
   return data;
 }
 

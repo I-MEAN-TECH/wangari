@@ -108,14 +108,15 @@ function LoginForm() {
     try {
       const result = await login(email, password, mfaStep ? totpCode : undefined);
       setAvatarState("success");
-      if ((result as any).emailVerified === null) {
-        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
-      } else {
-        router.push(callbackUrl);
-      }
+      router.push(callbackUrl);
     } catch (err: any) {
       setAvatarState("error");
-      if (err?.payload?.mfaRequired) {
+      if (err?.payload?.emailVerifyRequired) {
+        // Mandatory verification: a fresh code was emailed to this address.
+        // The verify page completes login once the code is confirmed.
+        setError("");
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      } else if (err?.payload?.mfaRequired) {
         setMfaStep(true);
         setError("");
       } else {
