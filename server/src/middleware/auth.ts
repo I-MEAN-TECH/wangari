@@ -36,12 +36,56 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     if (decoded.role === "worker" || decoded.workerId) {
       const current = await prisma.worker.findUnique({
         where: { id: decoded.workerId! },
-        select: { tokenVersion: true, status: true },
+        select: { tokenVersion: true, status: true, farmId: true },
       });
       if (!current || current.status !== "active" || (current.tokenVersion || 0) !== (decoded.tv ?? 0)) {
         return res.status(401).json({ error: "Session expired. Please log in again." });
       }
       req.user = decoded;
+
+      // Workers inherit the farm owner's access: if the owner's trial expired
+      // and there is no active subscription, workers are locked out too. The
+      // owner's own token already passes through the trial/subscription check
+      // below; this mirrors it for every worker session on that farm.
+      const url = req.originalUrl || req.url || "";
+      const isExempt =
+        url.includes("/api/auth") ||
+        url.includes("/api/trial") ||
+        url.includes("/api/paystack") ||
+        url.includes("/api/subscriptions");
+      if (!isExempt) {
+        const farm = await prisma.farm.findUnique({
+          where: { id: current.farmId },
+          select: { ownerId: true },
+        });
+        if (farm) {
+          const owner = await prisma.user.findUnique({
+            where: { id: farm.ownerId },
+            select: { trialEndsAt: true, createdAt: true },
+          });
+          if (owner) {
+            const now = new Date();
+            let trialActive = false;
+            if (owner.trialEndsAt) {
+              trialActive = now < owner.trialEndsAt;
+            } else if (owner.createdAt) {
+              const fourteenDays = trialEndDate(owner.createdAt);
+              trialActive = now < fourteenDays;
+            }
+            if (!trialActive) {
+              const ownerSub = await prisma.subscription.findFirst({
+                where: { userId: farm.ownerId, status: "active", expiresAt: { gt: now } },
+              });
+              if (!ownerSub) {
+                return res.status(403).json({
+                  error: "Your farm's free trial has expired. Ask the farm owner to subscribe to continue.",
+                  trialExpired: true,
+                });
+              }
+            }
+          }
+        }
+      }
       return next();
     }
 
