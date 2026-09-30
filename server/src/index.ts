@@ -9,6 +9,7 @@ import { initSentry, flushTelemetry, captureError } from "./lib/sentry.js";
 import authRoutes from "./routes/auth.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import actionEngineRoutes from "./routes/action-engine.js";
+import cronWeeklyRoutes from "./routes/cron-weekly.js";
 import flocksRoutes from "./routes/flocks.js";
 import customersRoutes from "./routes/customers.js";
 import transactionsRoutes from "./routes/transactions.js";
@@ -22,6 +23,8 @@ import weatherRoutes from "./routes/weather.js";
 import aiRoutes from "./routes/ai.js";
 import breedingRoutes from "./routes/breeding.js";
 import cropsRoutes from "./routes/crops.js";
+import cropPlannerRoutes from "./routes/crop-planner.js";
+import profitabilityRoutes from "./routes/profitability.js";
 import invoicesRoutes from "./routes/invoices.js";
 import farmsRoutes from "./routes/farms.js";
 import auditRoutes from "./routes/audit.js";
@@ -164,6 +167,8 @@ app.use("/api/attendance", attendanceRoutes);
 app.use("/api/weather", weatherRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/breeding", breedingRoutes);
+app.use("/api/crops", idempotencyGuard, cropPlannerRoutes);
+app.use("/api/profitability", profitabilityRoutes); // /planner routes before the main crops router
 app.use("/api/crops", idempotencyGuard, cropsRoutes);
 app.use("/api/invoices", invoicesRoutes);
 app.use("/api/quotes", quotesRoutes);
@@ -187,6 +192,7 @@ app.use("/api/documents", documentsRoutes);
 app.use("/api/cron", cronRoutes);
 app.use("/api/cron", cronAdvisoryRoutes);
 app.use("/api/cron", cronLifecycleRoutes);
+app.use("/api/cron", cronWeeklyRoutes);
 
 // ─── Super-Admin API ──────────────────────────────────────
 // Stricter limiter: admin login is a high-value brute-force target.

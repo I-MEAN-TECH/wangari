@@ -18,6 +18,8 @@ import {
   Sparkles,
   MessageCircle,
   Truck,
+  CalendarRange,
+  Trophy,
   ChevronDown,
   LogOut,
   Syringe,
@@ -98,6 +100,8 @@ const navGroups: NavGroup[] = [
     title: "Tools",
     items: [
       { label: "Feed Helper", href: "/feed-calculator", icon: <Calculator className="h-5 w-5" /> },
+      { label: "Season Planner", href: "/planner", icon: <CalendarRange className="h-5 w-5" /> },
+      { label: "Profitability", href: "/profitability", icon: <Trophy className="h-5 w-5" /> },
       { label: "Weather", href: "/weather", icon: <CloudSun className="h-5 w-5" /> },
       { label: "Learn", href: "/library", icon: <GraduationCap className="h-5 w-5" /> },
       { label: "Reports", href: "/reports", icon: <BarChart3 className="h-5 w-5" /> },
