@@ -6,9 +6,10 @@ import { authMiddleware } from "../middleware/auth.js";
 const router = Router();
 
 const MODULE_HUB_MAP: Record<string, string> = {
-  livestock: "poultry",
-  production: "poultry",
-  vaccinations: "poultry",
+  livestock: "livestock",
+  production: "livestock",
+  vaccinations: "livestock",
+  flocks: "livestock",
   crops: "crops",
   finances: "_always", // money tracking is included in every plan
   sales: "sales",

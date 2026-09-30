@@ -11,11 +11,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Wangari — Smart Farm Management System Kenya | Poultry & Livestock App",
+    default: "Wangari — Smart Farm Management System Kenya | Livestock, Crops & Poultry App",
     template: "%s | Wangari — Smart Farm Management",
   },
   description:
-    "Stop guessing your farm profit. Track poultry, dairy, crops, feed inventory, sales & finances from your phone or offline. Built for farmers in Kenya & East Africa. Start free.",
+    "Stop guessing your farm profit. Track cattle, poultry, goats, fish, crops, feed inventory, sales & finances from your phone or offline. Built for farmers in Kenya & East Africa. Start free.",
   keywords: [
     "Wangari",
     "Wangari App",
@@ -23,12 +23,13 @@ export const metadata: Metadata = {
     "Wangari Kenya",
     "Wangari Farm Management",
     "Wangari App Kenya",
-    "Wangari Poultry",
+    "Wangari Livestock",
     "Wangari Smart Farm",
     "Wangari Maathai Farm Tech",
     "farm management software Kenya",
-    "poultry farm management software",
-    "Kenya poultry record keeping app",
+    "livestock farm management software",
+    "Kenya dairy farming record keeping app",
+    "cattle goat sheep pig fish farm app Kenya",
     "farm profit calculator KES",
     "offline farm management app",
     "livestock tracker Kenya",
@@ -69,7 +70,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Wangari — Smart Farm Management System",
     description:
-      "Wangari App: Know your real farm profit. Track poultry, crops, feed & sales offline. 14-day free trial available.",
+      "Wangari App: Know your real farm profit. Track cattle, poultry, goats, fish, crops, feed & sales offline. 14-day free trial available.",
   },
   icons: {
     icon: [
@@ -120,7 +121,7 @@ export default function RootLayout({
               alternateName: ["Wangari App", "Wangari Farm Management", "Wangari Kenya", "Wangari Farm Tracker"],
               applicationCategory: "BusinessApplication",
               operatingSystem: "Web, Android, iOS",
-              description: "Wangari is an offline-first farm management software and WhatsApp bot built for Kenyan farmers to track poultry, livestock, crops, feed inventory, and net KES profits.",
+              description: "Wangari is an offline-first farm management software and WhatsApp bot built for Kenyan farmers to track all livestock (cattle, poultry, goats, sheep, pigs, fish, bees), crops, feed inventory, and net KES profits.",
               url: "https://wangari.imeantech.com",
               offers: [
                 {

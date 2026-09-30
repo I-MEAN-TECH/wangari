@@ -152,11 +152,11 @@ export function FarmProfileEditor() {
             <div className="flex-1 space-y-3">
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[#64748B]">Business / Farm Name *</Label>
-                <Input placeholder="e.g. Green Valley Poultry Farm" value={profile.businessName} onChange={e => update("businessName", e.target.value)} className="h-11 rounded-xl" />
+                <Input placeholder="e.g. Green Valley Farm" value={profile.businessName} onChange={e => update("businessName", e.target.value)} className="h-11 rounded-xl" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[#64748B]">Slogan / Tagline</Label>
-                <Input placeholder="e.g. Fresh eggs from happy hens" value={profile.slogan} onChange={e => update("slogan", e.target.value)} className="h-10 rounded-xl" />
+                <Input placeholder="e.g. Fresh milk, eggs and produce from happy animals" value={profile.slogan} onChange={e => update("slogan", e.target.value)} className="h-10 rounded-xl" />
               </div>
             </div>
           </div>

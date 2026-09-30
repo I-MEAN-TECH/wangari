@@ -4,9 +4,10 @@ import { decodeToken } from "@/lib/jwt";
 
 // All available modules and which hub they belong to
 const MODULE_HUB_MAP: Record<string, string> = {
-  livestock: "poultry",
-  production: "poultry",
-  vaccinations: "poultry",
+  livestock: "livestock",
+  production: "livestock",
+  vaccinations: "livestock",
+  flocks: "livestock",
   crops: "crops",
   finances: "_always", // money tracking is included in every plan
   sales: "sales",

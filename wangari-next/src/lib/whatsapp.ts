@@ -131,10 +131,11 @@ export function parseMessage(text: string): ParsedCommand {
     return { action: "milk", value: parseInt(milkMatch[1]), raw: text };
   }
 
-  // Generic number — assume eggs if poultry farm
+  // Generic bare number — too ambiguous to guess (eggs? milk? birds?).
+  // Ask the farmer which animal the number belongs to instead of assuming eggs.
   const genericNum = lower.match(/^(\d+)$/);
   if (genericNum) {
-    return { action: "eggs", value: parseInt(genericNum[1]), raw: text };
+    return { action: "unknown", value: null, raw: text };
   }
 
   // Unknown
@@ -149,7 +150,8 @@ Here's what I can do:
 📝 *Record Production*
   • "eggs 50" — log 50 eggs
   • "milk 10" — log 10 litres milk
-  • "mortality 3" — record 3 bird deaths
+  • "mortality 3" — record 3 animal deaths
+  • "weight 250" — record average weight (kg)
 
 📊 *Check Status*
   • "stock" — inventory levels

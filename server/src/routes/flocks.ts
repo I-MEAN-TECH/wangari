@@ -6,6 +6,15 @@ import { requireOwner } from "../middleware/requireOwner.js";
 const router = Router();
 router.use(authMiddleware);
 
+// Species → category map so a flock's category always matches its species,
+// whatever the client sends (or doesn't send). Covers all 11 species.
+const SPECIES_CATEGORY: Record<string, string> = {
+  layers: "poultry", broilers: "poultry", kienyeji: "poultry",
+  cattle_dairy: "livestock", cattle_beef: "livestock",
+  goats: "livestock", sheep: "livestock", pigs: "livestock", rabbits: "livestock",
+  fish: "aquaculture", bees: "other",
+};
+
 // GET /api/flocks — list all flocks for the farm
 router.get("/", async (req: Request, res: Response) => {
   try {
@@ -66,7 +75,9 @@ router.post("/", requireOwner, async (req: Request, res: Response) => {
         name,
         breed: breed || null,
         type: type || "layers",
-        category: category || "poultry",
+        // Default category follows the species when the client sends one;
+        // "livestock" is a safer generic than assuming poultry.
+        category: category || (type && SPECIES_CATEGORY[type]) || "livestock",
         initialCount: count,
         currentCount: count,
         hatchDate: hatchDate ? new Date(hatchDate) : null,

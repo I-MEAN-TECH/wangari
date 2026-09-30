@@ -263,7 +263,7 @@ export function AnimatedAvatar({ state, className }: AnimatedAvatarProps) {
           <h3 className="font-extrabold text-sm tracking-tight text-white">An Honest Note from Wangari</h3>
         </div>
         <p className="text-xs text-white/80 leading-relaxed">
-          We built Wangari because farm record-keeping shouldn&apos;t require a university degree or an expensive consultant. Whether you have 20 chickens in your backyard or 10,000 birds in a commercial flock, keeping daily track of eggs, feed, vaccines, and money is the difference between profit and loss.
+          We built Wangari because farm record-keeping shouldn&apos;t require a university degree or an expensive consultant. Whether you keep 5 cows, 20 chickens, a fish pond or 10,000 birds, keeping daily track of milk, eggs, feed, vaccines, and money is the difference between profit and loss.
         </p>
         <div className="pt-1 border-t border-white/10 flex items-center justify-between text-[11px] font-bold text-[#4ADE80]">
           <span className="flex items-center gap-1.5"><WifiOff className="h-3.5 w-3.5" /> 100% Works Offline</span>

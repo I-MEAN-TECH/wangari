@@ -23,7 +23,7 @@ import {
 import api from "@/lib/api-client";
 
 const hubs = [
-  { id: "poultry", icon: Bird, name: "My Poultry", desc: "Track flocks, eggs, mortality, and feed", color: "from-emerald-500 to-green-600" },
+  { id: "livestock", icon: Bird, name: "My Animals", desc: "Cattle, poultry, goats, fish — track every animal", color: "from-emerald-500 to-green-600" },
   { id: "crops", icon: Package, name: "My Crops", desc: "Fields, planting, harvest, and costs", color: "from-amber-500 to-orange-600" },
   { id: "finance", icon: DollarSign, name: "My Money", desc: "Cashbook, expenses, and profit tracking", color: "from-violet-500 to-purple-600" },
   { id: "sales", icon: BarChart3, name: "My Sales", desc: "Customers, orders, and revenue", color: "from-pink-500 to-rose-600" },
@@ -151,7 +151,7 @@ export default function OnboardingPage() {
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
                     <input
                       type="text"
-                      placeholder="e.g. Green Valley Poultry"
+                      placeholder="e.g. Green Valley Farm"
                       value={farmName}
                       onChange={(e) => setFarmName(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"
@@ -217,7 +217,7 @@ export default function OnboardingPage() {
                   Enter your first data
                 </h1>
                 <p className="text-white/50 text-sm mt-2">
-                  {selectedHub === "poultry" && "How many birds do you currently have?"}
+                  {selectedHub === "livestock" && "How many animals do you currently have?"}
                   {selectedHub === "crops" && "What crops are you currently growing?"}
                   {selectedHub === "inventory" && "What&apos;s your main inventory item?"}
                   {selectedHub === "finance" && "What was last month&apos;s approximate revenue?"}
@@ -229,7 +229,7 @@ export default function OnboardingPage() {
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-8 space-y-5">
                 <div>
                   <label className="text-white/80 text-sm font-medium mb-1.5 block">
-                    {selectedHub === "poultry" && "Current bird count"}
+                    {selectedHub === "livestock" && "Current animal count"}
                     {selectedHub === "crops" && "Crop details"}
                     {selectedHub === "inventory" && "Main item and quantity"}
                     {selectedHub === "finance" && "Last month revenue (KES)"}
@@ -301,7 +301,7 @@ export default function OnboardingPage() {
                   <div className="flex items-start gap-3">
                     <Sparkles className="h-5 w-5 text-[#4ADE80] shrink-0 mt-0.5" />
                     <p className="text-white/80 text-sm leading-relaxed">
-                      {selectedHub === "poultry" && "Send a WhatsApp message anytime: \"eggs 40, mortality 1, feed 3 bags\" — it logs automatically!"}
+                      {selectedHub === "livestock" && "Send a WhatsApp message anytime: \"milk 20, eggs 40, mortality 1, feed 3 bags\" — it logs automatically!"}
                       {selectedHub === "crops" && "Log your daily activities: planting, watering, fertilizing. Wangari tracks costs per crop."}
                       {selectedHub === "inventory" && "Set reorder alerts so you never run out. Wangari warns you 3 days before stockout."}
                       {selectedHub === "finance" && "Log every income and expense. Wangari calculates your real profit automatically."}

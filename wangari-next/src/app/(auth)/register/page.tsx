@@ -106,7 +106,7 @@ export default function RegisterPage() {
   const fields = [
     { id: "name", label: "Full Name", type: "text", placeholder: "John Kamau", icon: User, key: "name" as const, avatarState: "typing-name" as const },
     { id: "email", label: "Email", type: "email", placeholder: "you@example.com", icon: Mail, key: "email" as const, avatarState: "typing-email" as const },
-    { id: "farmName", label: "Farm Name", type: "text", placeholder: "Kamau Poultry Farm", icon: Sprout, key: "farmName" as const, avatarState: "typing-farm" as const },
+    { id: "farmName", label: "Farm Name", type: "text", placeholder: "Kamau Farm", icon: Sprout, key: "farmName" as const, avatarState: "typing-farm" as const },
     { id: "password", label: "Password", type: "password", placeholder: "At least 6 characters", icon: Lock, key: "password" as const, avatarState: "typing-password" as const },
   ];
 

@@ -27,7 +27,7 @@ export default function AIFeaturePage() {
         { title: "Production Insights", desc: "Get AI-generated insights about your production trends. The assistant identifies patterns humans might miss — like correlating weather changes with production drops or identifying the most cost-effective feed brands." },
         { title: "Health Advisory", desc: "Describe symptoms you're observing and the AI will suggest possible causes and recommended actions. While it doesn't replace a vet, it helps you make faster decisions in critical situations." },
         { title: "Financial Planning", desc: "Ask the AI to forecast next month's revenue, calculate the ROI of expanding a flock, or compare the profitability of different breeds. Get numbers, not just opinions." },
-        { title: "Learning Library", desc: "The AI draws from a vast database of poultry farming knowledge, adapted for Kenyan conditions. Ask about best practices, new techniques, or regulatory changes — and get actionable answers." },
+        { title: "Learning Library", desc: "The AI draws from a vast database of livestock and crop farming knowledge — dairy, beef, poultry, goats, fish, bees — adapted for Kenyan conditions. Ask about best practices, new techniques, or regulatory changes — and get actionable answers." },
       ]}
       stats={[
         { value: "<2s", label: "Response Time" },

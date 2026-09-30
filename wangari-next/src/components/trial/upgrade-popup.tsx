@@ -69,7 +69,7 @@ export function UpgradePopup({ open, onClose, moduleName }: UpgradePopupProps) {
           </h2>
           <p className="text-white/80 text-xs sm:text-sm mt-2 max-w-sm mx-auto">
             {isExpired
-              ? "Subscribe to a plan to continue managing your farm, flocks, and finances."
+              ? "Subscribe to a plan to continue managing your farm, animals, crops, and finances."
               : "Choose a plan to unlock this module and enjoy full access to all features."}
           </p>
         </div>

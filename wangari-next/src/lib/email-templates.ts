@@ -166,7 +166,7 @@ export function welcomeEmail(userName: string, loginUrl: string): string {
   return wrap(`
     <h2 style="margin:0 0 8px;font-size:20px;color:${BRAND.textColor};">Welcome to ${BRAND.name}, ${userName}! 🎉</h2>
     <p style="margin:0 0 24px;font-size:15px;color:${BRAND.mutedColor};">
-      Your account is ready. ${BRAND.name} helps you manage your poultry farm — track flocks, monitor production, handle invoices, and more.
+      Your account is ready. ${BRAND.name} helps you run your whole farm — cattle, poultry, goats, fish, crops — track animals, monitor production, handle invoices, and more.
     </p>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       <tr>

@@ -18,12 +18,15 @@ const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, tra
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
 
 function getSpeciesInfo(type: string | null) {
-  if (!type) return { label: "birds", metric: "eggs", icon: Egg, unit: "eggs" };
+  if (!type) return { label: "animals", metric: "output", icon: Beef, unit: "units" };
   const t = speciesTemplates[type];
   if (!t) return { label: "animals", metric: "output", icon: Beef, unit: "units" };
-  if (t.category === "poultry") return { label: "birds", metric: "eggs", icon: Egg, unit: "eggs" };
+  // Per-species production metric: eggs for layers/kienyeji only — every
+  // other animal records its own natural output (milk, weight, honey…).
+  if (type === "layers" || type === "kienyeji") return { label: "birds", metric: "eggs", icon: Egg, unit: "eggs" };
+  if (type === "cattle_dairy" || (t.category === "livestock" && t.name.toLowerCase().includes("dairy"))) return { label: "cattle", metric: "milk", icon: Milk, unit: "litres" };
   if (t.category === "aquaculture") return { label: "fish", metric: "weight", icon: Beef, unit: "kg" };
-  if (t.name.toLowerCase().includes("dairy")) return { label: "cattle", metric: "milk", icon: Milk, unit: "litres" };
+  if (type === "bees") return { label: "hives", metric: "weight", icon: Beef, unit: "kg" };
   return { label: "animals", metric: "weight", icon: Beef, unit: "kg" };
 }
 
