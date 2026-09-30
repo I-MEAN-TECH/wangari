@@ -18,9 +18,13 @@ const iconMap: Record<string, any> = { bird: Bird, beef: Beef, droplets: Droplet
 interface CreateFlockFormProps {
   onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
+  /** Existing group names on this farm — offered as dropdown suggestions
+   *  so farmers pick an existing group instead of retyping (avoids duplicate
+   *  or misspelled group names). Free text still allowed for a new group. */
+  existingNames?: string[];
 }
 
-export function CreateFlockForm({ onSubmit, onCancel }: CreateFlockFormProps) {
+export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: CreateFlockFormProps) {
   const [step, setStep] = React.useState(0); // 0=category, 1=species, 2=basics, 3=review
   const [selectedCategory, setSelectedCategory] = React.useState("poultry");
   const [selectedSpecies, setSelectedSpecies] = React.useState<SpeciesTemplate | null>(null);
@@ -146,7 +150,20 @@ export function CreateFlockForm({ onSubmit, onCancel }: CreateFlockFormProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-gray-500">🏷️ Group Name *</Label>
-                <Input placeholder="e.g. Layer Block A" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-11 rounded-xl" autoFocus />
+                <Input
+                  list="existing-flock-names"
+                  placeholder="e.g. Layer Block A"
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  className="h-11 rounded-xl"
+                  autoFocus
+                />
+                <datalist id="existing-flock-names">
+                  {existingNames.map(n => <option key={n} value={n} />)}
+                </datalist>
+                {existingNames.includes(form.name.trim()) && (
+                  <p className="text-[11px] text-amber-600">A group with this name already exists — consider adding to it from My Animals instead.</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-gray-500">🔢 Number of Animals *</Label>

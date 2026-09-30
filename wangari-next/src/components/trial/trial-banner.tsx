@@ -48,7 +48,11 @@ function LiveCountdown({ t }: { t: TimeLeft }) {
 export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: TrialBannerProps) {
   const [timeLeft, setTimeLeft] = React.useState<TimeLeft>(() => ({ ...computeLeft(endsAt), isExpired: false }));
   const [subTimeLeft, setSubTimeLeft] = React.useState<TimeLeft>(() => computeLeft(subscription?.expiresAt));
+  // Fresh server copy fetched after a promo redemption / payment event —
+  // takes precedence over the (possibly stale) prop from the parent.
+  const [liveSub, setLiveSub] = React.useState<any>(null);
   const [statusBump, setStatusBump] = React.useState(0);
+  const effectiveSub = liveSub || subscription;
 
   // A redeemed promo/sponsor code or completed payment instantly re-fetches the
   // fresh status from the server so the timer reflects it without a reload.
@@ -59,8 +63,10 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
         const { default: api } = await import("@/lib/api-client");
         const d = await api.get("/api/trial/status");
         if (cancelled) return;
-        setSubTimeLeft(computeLeft(d?.subscription?.expiresAt));
+        if (d?.subscription) setLiveSub(d.subscription);
+        setSubTimeLeft(computeLeft(d?.effectiveSub?.expiresAt));
         if (d?.trial?.endsAt) setTimeLeft(computeLeft(d.trial.endsAt));
+        setStatusBump(b => b + 1);
       } catch {}
     };
     window.addEventListener("wangari:subscription_updated", refetch);
@@ -85,17 +91,17 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
   // Subscription live countdown (paid OR sponsored/promo time). Starts as soon
   // as an active subscription exists, ticking every second.
   React.useEffect(() => {
-    if (subscription?.status !== "active" || !subscription?.expiresAt) return;
+    if (effectiveSub?.status !== "active" || !effectiveSub?.expiresAt) return;
     const update = () => setSubTimeLeft(computeLeft(subscription.expiresAt));
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [subscription?.expiresAt, subscription?.status, statusBump]);
+  }, [effectiveSub?.expiresAt, effectiveSub?.status, statusBump]);
 
   // Some cached/older status payloads omit `status`; an expiresAt in the
   // future with a daysLeft value means the subscription is active.
   const subIsActive =
-    (subscription?.status === "active" || (!subscription?.status && subscription?.expiresAt)) &&
+    (effectiveSub?.status === "active" || (!effectiveSub?.status && effectiveSub?.expiresAt)) &&
     !subTimeLeft.isExpired;
 
   // ── Active Subscription ─────────────────────────────────

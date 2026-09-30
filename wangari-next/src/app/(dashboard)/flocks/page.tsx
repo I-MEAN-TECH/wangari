@@ -1090,7 +1090,7 @@ export default function FlocksPage() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
-            <CreateFlockForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
+            <CreateFlockForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} existingNames={flocks.map((f: any) => f.name)} />
           </div>
         </div>
       )}

@@ -24,6 +24,12 @@ router.get("/", async (req: Request, res: Response) => {
 // POST /api/production
 router.post("/", async (req: Request, res: Response) => {
   try {
+    // Defaults: date = today (the client may omit it); weight fields persisted
+    // on both create and update paths.
+    const date = req.body.date ? new Date(req.body.date) : new Date();
+    if (isNaN(date.getTime())) {
+      return res.status(400).json({ error: "Invalid date" });
+    }
     const result = await prisma.dailyProduction.upsert({
       where: {
         flockId_date: {
@@ -34,6 +40,8 @@ router.post("/", async (req: Request, res: Response) => {
       update: {
         eggsCollected: Number(req.body.eggsCollected || 0),
         milkCollected: Number(req.body.milkCollected || 0),
+        avgWeight: req.body.avgWeight != null ? Number(req.body.avgWeight) : undefined,
+        weightGain: req.body.weightGain != null ? Number(req.body.weightGain) : undefined,
         mortality: Number(req.body.mortality || 0),
         feedUsed: Number(req.body.feedUsed || 0),
         notes: req.body.notes || null,
@@ -41,9 +49,11 @@ router.post("/", async (req: Request, res: Response) => {
       create: {
         flockId: Number(req.body.flockId),
         farmId: req.user!.farmId!,
-        date: new Date(req.body.date),
+        date,
         eggsCollected: Number(req.body.eggsCollected || 0),
         milkCollected: Number(req.body.milkCollected || 0),
+        avgWeight: req.body.avgWeight != null ? Number(req.body.avgWeight) : null,
+        weightGain: req.body.weightGain != null ? Number(req.body.weightGain) : null,
         mortality: Number(req.body.mortality || 0),
         feedUsed: Number(req.body.feedUsed || 0),
         notes: req.body.notes || null,

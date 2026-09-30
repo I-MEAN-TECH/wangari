@@ -24,11 +24,14 @@ export default function WorkerLayout({ children }: { children: React.ReactNode }
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!isWorkerSession()) {
-      // Not a worker token: owners go to their dashboard, guests to login
-      router.replace(getUser() ? "/dashboard" : "/login");
+    if (!isWorkerSession() && !getUser()) {
+      // Not authenticated at all: go to login.
+      router.replace("/login");
       return;
     }
+    // Owner tokens are allowed to stay: "Worker View" in the owner sidebar
+    // links here as a preview of the worker portal (previously owners were
+    // bounced straight back to /dashboard, so the link appeared dead).
     setChecked(true);
   }, [router]);
 

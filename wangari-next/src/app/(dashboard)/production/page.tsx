@@ -65,6 +65,7 @@ export default function ProductionPage() {
   const handleSubmit = async () => {
     const payload: any = {
       flockId: Number(form.flockId) || null,
+      date: new Date().toISOString().split("T")[0], // upsert key — server rejects records without it
       eggsCollected: info.metric === "eggs" ? Number(form.eggsCollected || 0) : 0,
       milkCollected: info.metric === "milk" ? Number(form.milkCollected || 0) : 0,
       avgWeight: info.metric === "weight" && form.avgWeight ? Number(form.avgWeight) : null,
@@ -73,10 +74,15 @@ export default function ProductionPage() {
       mortality: Number(form.mortality || 0),
       notes: form.notes,
     };
-    await api.post("/api/production", payload);
-    resetForm();
-    showToast("Production recorded!");
-    load();
+    try {
+      await api.post("/api/production", payload);
+      resetForm();
+      showToast("Production recorded!");
+      load();
+    } catch (err: any) {
+      console.error("Save record failed:", err);
+      showToast(err?.message || "Could not save the record — please try again");
+    }
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" /></div>;
