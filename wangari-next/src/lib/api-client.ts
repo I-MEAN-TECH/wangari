@@ -78,6 +78,12 @@ async function request<T = any>(path: string, options: RequestOptions = {}): Pro
     throw err;
   }
 
+  // A successful promo redemption / subscription change is broadcast so the
+  // sidebar padlocks and the trial timer update live, without a page reload.
+  if (typeof window !== "undefined" && data && typeof data === "object" && (data as any).ok === true && (data as any).expiresAt) {
+    window.dispatchEvent(new CustomEvent("wangari:subscription_updated", { detail: data }));
+  }
+
   return data as T;
 }
 

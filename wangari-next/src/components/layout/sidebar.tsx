@@ -116,25 +116,40 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const [moduleAccess, setModuleAccess] = React.useState<Record<string, boolean>>({});
   const [lockedModule, setLockedModule] = React.useState<string>("");
   const [trialInfo, setTrialInfo] = React.useState<any>(null);
+  const [fullyLocked, setFullyLocked] = React.useState(false);
+
+  const applyStatus = React.useCallback((d: any) => {
+    setModuleAccess(d.modules || {});
+    setTrialInfo(d);
+    // Hard lock: trial expired AND no active subscription → every module locked.
+    setFullyLocked(d.locked === true || (!!d.trial && d.trial.status === "expired" && !d.subscription));
+    if (d.locked === true || (!!d.trial && d.trial.status === "expired" && !d.subscription)) {
+      setLockedModule("Free Trial Expired");
+    }
+  }, []);
+
+  const refreshStatus = React.useCallback(() => {
+    api.get("/api/trial/status").then(applyStatus).catch(() => {});
+  }, [applyStatus]);
 
   React.useEffect(() => {
     api.get("/api/settings").then((d: any) => setModuleSettings(d.settings || {})).catch(() => {});
-    // Fetch trial/subscription status
-    api.get("/api/trial/status").then((d: any) => {
-      setModuleAccess(d.modules || {});
-      setTrialInfo(d);
-      if (d.trial?.status === "expired" && !d.subscription) {
-        setLockedModule("Free Trial Expired");
-      }
-    }).catch(() => {});
+    refreshStatus();
 
-    const handleTrialExpired = (e: any) => {
-      setLockedModule("Free Trial Expired");
+    // Live updates: redeeming a promo code or completing a payment elsewhere in
+    // the app instantly re-evaluates access (padlocks unlock, timer refreshes).
+    window.addEventListener("wangari:subscription_updated", refreshStatus);
+    window.addEventListener("wangari:trial_expired", refreshStatus);
+    return () => {
+      window.removeEventListener("wangari:subscription_updated", refreshStatus);
+      window.removeEventListener("wangari:trial_expired", refreshStatus);
     };
+  }, [refreshStatus]);
 
-    window.addEventListener("wangari:trial_expired", handleTrialExpired);
-    return () => window.removeEventListener("wangari:trial_expired", handleTrialExpired);
-  }, []);
+  // When fully locked, show the paywall popup right away (don't wait for a click).
+  React.useEffect(() => {
+    if (fullyLocked) setLockedModule("Free Trial Expired");
+  }, [fullyLocked]);
 
   const isModuleEnabled = (key: string) => moduleSettings[key] !== "false";
   const isModuleLocked = (label: string) => {
@@ -213,7 +228,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                     item.href === "/dashboard"
                       ? pathname === "/dashboard"
                       : pathname.startsWith(item.href);
-                  const locked = isModuleLocked(item.label);
+                  const locked = fullyLocked || isModuleLocked(item.label);
                   return (
                     <Link
                       key={item.href}
@@ -235,7 +250,14 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                           {item.badge}
                         </span>
                       )}
-                      {locked && <Lock className="h-3.5 w-3.5 text-wangari-subtle" />}
+                      {locked && (
+                        <Lock
+                          className={cn(
+                            "h-3.5 w-3.5 shrink-0",
+                            fullyLocked ? "text-red-400 animate-pulse" : "text-wangari-subtle"
+                          )}
+                        />
+                      )}
                     </Link>
                   );
                 })}

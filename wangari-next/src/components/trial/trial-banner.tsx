@@ -11,42 +11,91 @@ interface TrialBannerProps {
   subscription?: any;
 }
 
-export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: TrialBannerProps) {
-  const [timeLeft, setTimeLeft] = React.useState({ days: daysLeft, hours: 0, minutes: 0, seconds: 0, isExpired: false });
+interface TimeLeft {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  isExpired: boolean;
+}
 
+const ZERO: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
+
+function computeLeft(target: string | null | undefined): TimeLeft {
+  if (!target) return ZERO;
+  const diff = new Date(target).getTime() - Date.now();
+  if (diff <= 0) return ZERO;
+  return {
+    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+    minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+    seconds: Math.floor((diff % (1000 * 60)) / 1000),
+    isExpired: false,
+  };
+}
+
+function LiveCountdown({ t }: { t: TimeLeft }) {
+  return (
+    <div className="flex items-center gap-1 text-xs font-mono font-bold bg-black/25 px-2.5 py-0.5 rounded-lg text-white border border-white/20">
+      <span>{t.days}d</span>:
+      <span>{String(t.hours).padStart(2, "0")}h</span>:
+      <span>{String(t.minutes).padStart(2, "0")}m</span>:
+      <span>{String(t.seconds).padStart(2, "0")}s</span>
+    </div>
+  );
+}
+
+export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: TrialBannerProps) {
+  const [timeLeft, setTimeLeft] = React.useState<TimeLeft>(() => ({ ...computeLeft(endsAt), isExpired: false }));
+  const [subTimeLeft, setSubTimeLeft] = React.useState<TimeLeft>(() => computeLeft(subscription?.expiresAt));
+  const [statusBump, setStatusBump] = React.useState(0);
+
+  // A redeemed promo/sponsor code or completed payment instantly re-fetches the
+  // fresh status from the server so the timer reflects it without a reload.
+  React.useEffect(() => {
+    let cancelled = false;
+    const refetch = async () => {
+      try {
+        const { default: api } = await import("@/lib/api-client");
+        const d = await api.get("/api/trial/status");
+        if (cancelled) return;
+        setSubTimeLeft(computeLeft(d?.subscription?.expiresAt));
+        if (d?.trial?.endsAt) setTimeLeft(computeLeft(d.trial.endsAt));
+      } catch {}
+    };
+    window.addEventListener("wangari:subscription_updated", refetch);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("wangari:subscription_updated", refetch);
+    };
+  }, []);
+
+  // Free-trial live countdown (ticks every second).
   React.useEffect(() => {
     if (!endsAt) {
       setTimeLeft({ days: daysLeft, hours: 0, minutes: 0, seconds: 0, isExpired: trialStatus === "expired" });
       return;
     }
-
-    const updateTimer = () => {
-      const target = new Date(endsAt).getTime();
-      const now = Date.now();
-      const diff = target - now;
-
-      if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true });
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setTimeLeft({ days, hours, minutes, seconds, isExpired: false });
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
+    const update = () => setTimeLeft(computeLeft(endsAt));
+    update();
+    const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [endsAt, daysLeft, trialStatus]);
 
-  // Active Subscription
-  if (subscription?.status === "active") {
-    const isExpiringSoon = subscription.daysLeft <= 7;
-    if (isExpiringSoon) {
+  // Subscription live countdown (paid OR sponsored/promo time). Starts as soon
+  // as an active subscription exists, ticking every second.
+  React.useEffect(() => {
+    if (subscription?.status !== "active" || !subscription?.expiresAt) return;
+    const update = () => setSubTimeLeft(computeLeft(subscription.expiresAt));
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [subscription?.expiresAt, subscription?.status, statusBump]);
+
+  // ── Active Subscription ─────────────────────────────────
+  if (subscription?.status === "active" && !subTimeLeft.isExpired) {
+    // Expiring soon (≤7 days): amber renewal banner with a live timer.
+    if (subscription.daysLeft <= 7) {
       return (
         <div className="rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -57,7 +106,12 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
               <p className="text-sm sm:text-base font-bold">
                 Your {subscription.planName || "Active"} plan expires in {subscription.daysLeft} day{subscription.daysLeft !== 1 ? "s" : ""}
               </p>
-              <p className="text-xs text-amber-100 mt-0.5">Renew today to maintain uninterrupted access to all modules and automated features.</p>
+              <p className="text-xs text-amber-100 mt-0.5">
+                <span className="font-mono font-bold bg-black/20 px-1.5 py-0.5 rounded">
+                  {subTimeLeft.days}d {String(subTimeLeft.hours).padStart(2, "0")}h {String(subTimeLeft.minutes).padStart(2, "0")}m {String(subTimeLeft.seconds).padStart(2, "0")}s
+                </span>{" "}
+                left — renew today to maintain uninterrupted access to all modules and automated features.
+              </p>
             </div>
           </div>
           <Link
@@ -70,10 +124,38 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
         </div>
       );
     }
-    return null;
+    // Plenty of time left: green confirmation banner with a live countdown —
+    // this is what a user sees immediately after redeeming a sponsor code.
+    return (
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white p-4 sm:p-5 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="h-11 w-11 rounded-2xl bg-emerald-600/50 text-emerald-200 flex items-center justify-center shrink-0">
+            <Sparkles className="h-6 w-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-white/20 text-white">
+                {subscription.planName || "Subscription"} Active
+              </span>
+              <LiveCountdown t={subTimeLeft} />
+            </div>
+            <p className="text-sm sm:text-base font-bold mt-1">
+              All modules unlocked — {subTimeLeft.days} day{subTimeLeft.days !== 1 ? "s" : ""} {subTimeLeft.hours}h {subTimeLeft.minutes}m remaining.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/subscription"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-[#166534] text-xs sm:text-sm font-extrabold hover:bg-emerald-50 transition-all shadow-md shrink-0 cursor-pointer"
+        >
+          <CreditCard className="h-4 w-4 text-emerald-600" />
+          Manage Subscription
+        </Link>
+      </div>
+    );
   }
 
-  // Active Free Trial — Live Timer (Days, Hours, Minutes, Seconds)
+  // ── Active Free Trial — Live Timer ───────────────────────
   if (trialStatus === "active" && !timeLeft.isExpired) {
     const isUrgent = timeLeft.days <= 3;
 
@@ -95,12 +177,7 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
                 Free Trial Active
               </span>
               {/* Live Digital Countdown */}
-              <div className="flex items-center gap-1 text-xs font-mono font-bold bg-black/25 px-2.5 py-0.5 rounded-lg text-white border border-white/20">
-                <span>{timeLeft.days}d</span>:
-                <span>{String(timeLeft.hours).padStart(2, "0")}h</span>:
-                <span>{String(timeLeft.minutes).padStart(2, "0")}m</span>:
-                <span>{String(timeLeft.seconds).padStart(2, "0")}s</span>
-              </div>
+              <LiveCountdown t={timeLeft} />
             </div>
             <p className="text-sm sm:text-base font-bold mt-1">
               {isUrgent
@@ -124,7 +201,7 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
     );
   }
 
-  // Trial Expired — Paywall banner
+  // ── Trial Expired — Paywall banner ───────────────────────
   if (trialStatus === "expired" || timeLeft.isExpired) {
     return (
       <div className="rounded-2xl bg-gradient-to-r from-red-700 to-red-800 text-white p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

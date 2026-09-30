@@ -120,6 +120,12 @@ export async function GET(req: Request) {
 
     const moduleAccess: Record<string, boolean> = {};
     for (const [module, hub] of Object.entries(MODULE_HUB_MAP)) {
+      // Hard lock: no active subscription AND no trial time left = EVERY module
+      // is locked (padlock in the sidebar). Mirrors the Express route.
+      if (!hasAccess) {
+        moduleAccess[module] = false;
+        continue;
+      }
       if (module === "workers") {
         moduleAccess[module] = trialStatus === "active" || (activeSub != null && isGrowthOrEnterprise);
       } else if (hub === "_always" || (activeSub != null && isGrowthOrEnterprise)) {
@@ -161,6 +167,7 @@ export async function GET(req: Request) {
       },
       subscription,
       hasAccess,
+      locked: !hasAccess,
       accessReason,
       selectedHubs,
       modules: moduleAccess,

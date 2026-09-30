@@ -54,3 +54,4 @@ credentials.json
 media-master/www-master.mp4
 
 .env*
+.vercel

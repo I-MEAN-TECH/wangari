@@ -122,6 +122,13 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
 
     const moduleAccess: Record<string, boolean> = {};
     for (const [module, hub] of Object.entries(MODULE_HUB_MAP)) {
+      // Hard lock: no active subscription AND no trial time left = EVERY module
+      // is locked (padlock in the sidebar, server APIs already 403 via auth
+      // middleware). Nothing is exempt — not even "_always" modules.
+      if (!hasAccess) {
+        moduleAccess[module] = false;
+        continue;
+      }
       if (module === "workers") {
         moduleAccess[module] = trialStatus === "active" || (activeSub != null && isGrowthOrEnterprise);
       } else if (hub === "_always" || (activeSub != null && isGrowthOrEnterprise)) {
@@ -160,6 +167,7 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
       },
       subscription,
       hasAccess,
+      locked: !hasAccess,
       accessReason,
       selectedHubs,
       modules: moduleAccess,

@@ -91,6 +91,9 @@ function DashboardContent() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [profileDismissed, setProfileDismissed] = React.useState(false);
   const [trialData, setTrialData] = React.useState<any>(null);
+  // Hard lock: trial expired + no active subscription → every dashboard action
+  // (Record Output, Add Expense, onboarding steps, tasks) is disabled.
+  const fullyLocked = !!trialData && trialData.hasAccess === false;
   const [needsFarm, setNeedsFarm] = React.useState(false);
   const [farmName, setFarmName] = React.useState("");
   const [creatingFarm, setCreatingFarm] = React.useState(false);
@@ -165,6 +168,10 @@ function DashboardContent() {
       }
       if (trialResult.status === "fulfilled") {
         setTrialData(trialResult.value);
+        // Lock the UI the moment the API reports the trial expired mid-session.
+        if (trialResult.value?.hasAccess === false) {
+          window.dispatchEvent(new CustomEvent("wangari:trial_expired", { detail: "locked" }));
+        }
       }
     } catch (err) {
       console.error("Dashboard error:", err);
@@ -325,13 +332,24 @@ function DashboardContent() {
               </Button>
             </Link>
           )}
-          <Link href="/production">
-            <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold gap-1.5 shadow cursor-pointer">
+          <Link href={fullyLocked ? "/subscription" : "/production"} aria-disabled={fullyLocked}>
+            <Button
+              size="sm"
+              disabled={fullyLocked}
+              title={fullyLocked ? "Subscribe to unlock" : undefined}
+              className={`bg-emerald-500 hover:bg-emerald-600 text-white font-bold gap-1.5 shadow cursor-pointer ${fullyLocked ? "opacity-60 cursor-not-allowed" : ""}`}
+            >
               <Plus className="h-4 w-4" /> Record Today's Output
             </Button>
           </Link>
-          <Link href="/finances">
-            <Button size="sm" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5 cursor-pointer">
+          <Link href={fullyLocked ? "/subscription" : "/finances"} aria-disabled={fullyLocked}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={fullyLocked}
+              title={fullyLocked ? "Subscribe to unlock" : undefined}
+              className={`bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5 cursor-pointer ${fullyLocked ? "opacity-60 cursor-not-allowed" : ""}`}
+            >
               <DollarSign className="h-4 w-4" /> Add Expense
             </Button>
           </Link>
@@ -410,7 +428,12 @@ function DashboardContent() {
                   { step: "2", icon: <ClipboardList className="h-5 w-5" />, text: "Record today's output", href: "/production", color: "bg-emerald-600" },
                   { step: "3", icon: <DollarSign className="h-5 w-5" />, text: "Record money in or out", href: "/finances", color: "bg-amber-600" },
                 ].map(s => (
-                  <Link key={s.step} href={s.href} className="flex items-center gap-3 p-4 rounded-xl bg-white border-2 border-emerald-100 hover:border-emerald-400 transition-all shadow-sm">
+                  <Link
+                    key={s.step}
+                    href={fullyLocked ? "/subscription" : s.href}
+                    aria-disabled={fullyLocked}
+                    className={`flex items-center gap-3 p-4 rounded-xl bg-white border-2 border-emerald-100 transition-all shadow-sm ${fullyLocked ? "opacity-50 pointer-events-none" : "hover:border-emerald-400"}`}
+                  >
                     <div className={`flex h-10 w-10 items-center justify-center rounded-full ${s.color} text-white shrink-0`}>{s.icon}</div>
                     <p className="text-sm font-semibold text-[#0F172A]">{s.text}</p>
                   </Link>

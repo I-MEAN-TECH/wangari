@@ -39,6 +39,7 @@ function SubscriptionContent() {
   const [purchasing, setPurchasing] = React.useState<string | null>(null);
   const [promoCode, setPromoCode] = React.useState("");
   const [promoNote, setPromoNote] = React.useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [subError, setSubError] = React.useState("");
 
   const searchParams = useSearchParams();
   const paymentParam = searchParams.get("payment");
@@ -100,8 +101,14 @@ function SubscriptionContent() {
         text: `🎉 ${res.months} month${res.months === 1 ? "" : "s"} of free access activated${res.sponsor ? ` (sponsor: ${res.sponsor})` : ""} — valid until ${new Date(res.expiresAt).toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" })}. A confirmation email is on its way.`,
       });
       setPromoCode("");
-      // Reload so the new expiry shows immediately.
-      window.location.reload();
+      // Refresh status everywhere live — no jarring full-page reload. The
+      // wangari:subscription_updated event (emitted by api-client) makes the
+      // banner timer and sidebar padlocks update instantly.
+      try {
+        const d = await api.get("/api/trial/status");
+        setSub(d.subscription);
+        setTrial(d.trial);
+      } catch {}
     } catch (err: any) {
       setPromoNote({ kind: "err", text: err?.message || "Could not redeem the code" });
     } finally {
@@ -123,13 +130,20 @@ function SubscriptionContent() {
           trackEvent("checkout_started", { plan: planKey, has_promo: !!promoCode.trim() })
         );
         window.location.href = res.authorization_url;
+        return;
       }
+      // No redirect URL returned — tell the user instead of failing silently.
+      setSubError("Could not start checkout. Please try again in a moment.");
     } catch (err: any) {
-      // Promo problems surface here as a clean message from the API.
-      if (err?.message && /promo/i.test(err.message)) {
-        setPromoNote({ kind: "err", text: err.message });
+      // All checkout problems surface as a visible message (promo issues,
+      // Paystack errors, network failures, rate limits). Never fail silently.
+      const msg = err?.message || "Could not start checkout — please try again.";
+      if (/promo/i.test(msg)) {
+        setPromoNote({ kind: "err", text: msg });
+      } else {
+        setSubError(msg);
       }
-      console.error(err);
+      console.error("Checkout error:", err);
     } finally {
       setPurchasing(null);
     }
@@ -162,7 +176,7 @@ function SubscriptionContent() {
               <div>
                 <p className="text-sm font-bold text-[#0F172A]">Current Plan</p>
                 <p className="text-xs text-[#64748B]">
-                  {isActive ? sub.plan_name || "Active plan" : isPending ? "Pending — starts after trial" : isTrial ? "Free trial" : "No active plan"}
+                  {isActive ? sub.planName || sub.plan_name || "Active plan" : isPending ? "Pending — starts after trial" : isTrial ? "Free trial" : "No active plan"}
                 </p>
               </div>
             </div>
@@ -171,7 +185,7 @@ function SubscriptionContent() {
               <div className="rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-[#64748B]">Plan</span>
-                  <span className="font-bold text-[#0F172A]">{sub.plan_name}</span>
+                  <span className="font-bold text-[#0F172A]">{sub.planName || sub.plan_name || "Active plan"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-[#64748B]">Status</span>
@@ -179,7 +193,7 @@ function SubscriptionContent() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-[#64748B]">Valid until</span>
-                  <span className="font-bold text-[#0F172A]">{new Date(sub.expires_at).toLocaleDateString()}</span>
+                  <span className="font-bold text-[#0F172A]">{new Date(sub.expiresAt || sub.expires_at).toLocaleDateString()}</span>
                 </div>
               </div>
             )}
@@ -188,7 +202,7 @@ function SubscriptionContent() {
               <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <Clock className="h-4 w-4 text-amber-600" />
-                  <p className="text-sm font-bold text-amber-800">{sub.plan_name} — Pending</p>
+                  <p className="text-sm font-bold text-amber-800">{sub.planName || sub.plan_name} — Pending</p>
                 </div>
                 <p className="text-xs text-amber-600">Your subscription will start when your free trial ends on {trial?.endsAt ? new Date(trial.endsAt).toLocaleDateString() : "—"}</p>
               </div>
@@ -256,6 +270,12 @@ function SubscriptionContent() {
             {promoNote.text}
           </div>
         )}
+        {subError && (
+          <div className="mb-3 rounded-lg px-3 py-2 text-xs bg-red-50 text-red-700 border border-red-200 flex items-center justify-between gap-2">
+            <span>{subError}</span>
+            <button onClick={() => setSubError("")} className="font-bold hover:underline shrink-0">Dismiss</button>
+          </div>
+        )}
         {!promoCode && (
           <p className="mb-3 text-[11px] text-[#94A3B8]">Have a promo or sponsor code? Discount codes apply to your payment. Sponsorship/partner codes — tap <span className="font-semibold">Redeem</span> for free months, no payment needed.</p>
         )}
@@ -270,8 +290,7 @@ function SubscriptionContent() {
                     {plan.description && <p className="text-xs text-[#64748B] mt-0.5">{plan.description}</p>}
                   </div>
                   <Button
-                    onClick={() => handleSubscribe(plan.id)}
-                    disabled={purchasing === plan.id || (isActive && sub?.plan_name === plan.name)}
+                    onClick={() => handleSubscribe(plan.id)}                     disabled={purchasing === plan.id || (isActive && (sub?.planName || sub?.plan_name) === plan.name)}
                     className="bg-[#166534] hover:bg-[#14532D] cursor-pointer shrink-0"
                     size="sm"
                   >
@@ -302,7 +321,7 @@ function SubscriptionContent() {
           type={modalState.type}
           reference={modalState.reference}
           amount={sub?.amount || null}
-          planName={sub?.plan_name || "Starter Plan"}
+          planName={sub?.planName || sub?.plan_name || "Starter Plan"}
           userEmail={userEmail}
           reason={modalState.reason}
           onClose={() => setModalState(null)}
