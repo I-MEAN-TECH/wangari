@@ -149,30 +149,49 @@ export function TemplateGallery({ profile, currentSelection, onSelect }: { profi
             {d.label}
           </button>
         ))}
-        <span className="ml-auto self-center text-[11px] text-[#94A3B8]">Shown with your branding — click any design to open it full-size</span>
+        <span className="ml-auto self-center text-[11px] text-[#94A3B8]">Shown with your branding — one design per row, click any preview to open it full-size</span>
       </div>
 
-      {/* Gallery grid */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {INVOICE_TEMPLATES.map((t, i) => (
-          <motion.div key={t.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-            <div className="relative">
-              <MiniPreview html={htmlCache[t.id] || ""} onClick={() => openFull(t)} />
-              <div className="mt-2 flex items-center justify-between gap-1">
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-bold text-[#0F172A]">{t.name}</p>
-                  <p className="truncate text-[10px] text-[#94A3B8]">{t.description}</p>
+      {/* Gallery — one large template per row: big preview left, details column right */}
+      <div className="flex flex-col gap-4">
+        {INVOICE_TEMPLATES.map((t, i) => {
+          const inUse = currentSelection?.[docType] === t.id;
+          return (
+            <motion.div key={t.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+              <div
+                className={`flex flex-col gap-5 rounded-2xl border bg-white p-4 transition sm:p-5 md:flex-row md:items-center ${inUse ? "border-[#166534] ring-1 ring-[#166534]/25" : "border-[#E5E7EB] hover:border-[#BBF7D0] hover:shadow-md"}`}
+              >
+                {/* Large preview — scales itself to the column width */}
+                <div className="mx-auto w-full max-w-[340px] shrink-0 md:w-[300px]">
+                  <MiniPreview html={htmlCache[t.id] || ""} onClick={() => openFull(t)} />
                 </div>
-                {currentSelection?.[docType] === t.id ? (
-                  <span className="shrink-0 rounded-full bg-[#F0FDF4] px-2 py-0.5 text-[9px] font-bold uppercase text-[#166534]">In use</span>
-                ) : onSelect ? (
-                  <button onClick={(e) => { e.stopPropagation(); onSelect(docType, t.id); }}
-                    className="shrink-0 rounded-full bg-[#F1F5E8] px-2 py-0.5 text-[9px] font-bold uppercase text-[#166534] hover:bg-[#166534] hover:text-white transition">Use</button>
-                ) : null}
+
+                {/* Details column */}
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-base font-bold text-[#0F172A]">{t.name}</p>
+                    {inUse && (
+                      <span className="rounded-full bg-[#F0FDF4] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#166534]">In use</span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-sm leading-relaxed text-[#64748B]">{t.description}</p>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => openFull(t)}
+                      className="gap-1.5 rounded-lg border-[#E5E7EB] text-xs font-semibold text-[#334155] hover:border-[#166534] hover:text-[#166534]">
+                      <Eye className="h-3.5 w-3.5" /> Preview full-size
+                    </Button>
+                    {onSelect && !inUse && (
+                      <Button size="sm" onClick={() => onSelect(docType, t.id)}
+                        className="gap-1.5 rounded-lg bg-[#166534] text-xs font-semibold text-white hover:bg-[#14532d]">
+                        <Check className="h-3.5 w-3.5" /> Use this design
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Full-size preview modal */}
@@ -182,7 +201,7 @@ export function TemplateGallery({ profile, currentSelection, onSelect }: { profi
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-6"
             onClick={() => setFullPreview(null)}>
             <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }}
-              className="flex max-h-[95vh] w-full max-w-3xl flex-col rounded-2xl bg-white"
+              className="flex max-h-[95vh] w-full max-w-4xl flex-col rounded-2xl bg-white"
               onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between border-b border-[#E5E7EB] px-5 py-3">
                 <div>
