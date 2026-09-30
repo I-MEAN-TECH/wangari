@@ -8,6 +8,118 @@ router.use(authMiddleware, requireOwner);
 
 const COMMODITIES = ["milk", "coffee_cherry", "maize", "other"];
 
+/**
+ * Species → delivery commodity mapping. Each entry knows:
+ *  - the delivery commodity value it maps to
+ *  - the natural selling unit for that product
+ *  - an optional tray conversion for eggs (30 eggs = 1 tray in Kenya)
+ *  - an icon id the frontend renders
+ */
+const SPECIES_COMMODITY: Record<string, { commodity: string; unit: string; icon: string; productLabel: string }> = {
+  layers:      { commodity: "eggs", unit: "trays", icon: "egg", productLabel: "Eggs" },
+  kienyeji:    { commodity: "eggs", unit: "trays", icon: "egg", productLabel: "Eggs" },
+  broilers:    { commodity: "live_birds", unit: "birds", icon: "bird", productLabel: "Live birds" },
+  cattle_dairy:{ commodity: "milk", unit: "litres", icon: "milk", productLabel: "Milk" },
+  cattle_beef: { commodity: "beef", unit: "kg", icon: "beef", productLabel: "Beef (dressed)" },
+  goats:       { commodity: "goat_meat", unit: "kg", icon: "beef", productLabel: "Goat meat (dressed)" },
+  sheep:       { commodity: "mutton", unit: "kg", icon: "beef", productLabel: "Mutton (dressed)" },
+  pigs:        { commodity: "pork", unit: "kg", icon: "beef", productLabel: "Pork (dressed)" },
+  rabbits:     { commodity: "rabbit_meat", unit: "kg", icon: "beef", productLabel: "Rabbit meat" },
+  fish:        { commodity: "fish", unit: "kg", icon: "droplets", productLabel: "Fish" },
+  bees:        { commodity: "honey", unit: "kg", icon: "flower", productLabel: "Honey" },
+};
+
+// Crops → delivery commodity by cropType keyword (substring match on lowercase).
+const CROP_COMMODITY: { match: string[]; commodity: string; unit: string; icon: string; productLabel: string }[] = [
+  { match: ["maize"], commodity: "maize", unit: "kg", icon: "wheat", productLabel: "Maize" },
+  { match: ["coffee"], commodity: "coffee_cherry", unit: "kg", icon: "leaf", productLabel: "Coffee cherry" },
+  { match: ["bean"], commodity: "beans", unit: "kg", icon: "leaf", productLabel: "Beans" },
+  { match: ["tomato"], commodity: "tomatoes", unit: "kg", icon: "leaf", productLabel: "Tomatoes" },
+  { match: ["kale", "sukuma"], commodity: "kale", unit: "kg", icon: "leaf", productLabel: "Sukuma wiki" },
+  { match: ["onion"], commodity: "onions", unit: "kg", icon: "leaf", productLabel: "Onions" },
+  { match: ["potato", "irish"], commodity: "potatoes", unit: "kg", icon: "leaf", productLabel: "Irish potatoes" },
+  { match: ["cabbage"], commodity: "cabbage", unit: "heads", icon: "leaf", productLabel: "Cabbage" },
+  { match: ["watermelon", "melon"], commodity: "watermelon", unit: "kg", icon: "leaf", productLabel: "Watermelon" },
+  { match: ["avocado"], commodity: "avocado", unit: "kg", icon: "leaf", productLabel: "Avocado" },
+  { match: ["mango"], commodity: "mango", unit: "kg", icon: "leaf", productLabel: "Mango" },
+];
+
+export const EGGS_PER_TRAY = 30;
+
+// Canonical unit per commodity — used to default the unit when the client
+// doesn't send one, so "eggs" always lands as trays and milk as litres.
+const UNIT_BY_COMMODITY: Record<string, string> = {
+  milk: "litres",
+  eggs: "trays",
+  live_birds: "birds",
+  beef: "kg",
+  goat_meat: "kg",
+  mutton: "kg",
+  pork: "kg",
+  rabbit_meat: "kg",
+  fish: "kg",
+  honey: "kg",
+  maize: "kg",
+  coffee_cherry: "kg",
+  beans: "kg",
+  tomatoes: "kg",
+  kale: "kg",
+  onions: "kg",
+  potatoes: "kg",
+  cabbage: "heads",
+  watermelon: "kg",
+  avocado: "kg",
+  mango: "kg",
+  other: "kg",
+};
+
+// GET /api/deliveries/suggestions — what THIS farm actually produces, ranked
+// animals first then crops, each with the right selling unit. The form uses
+// this instead of the hard-coded 4-commodity list.
+router.get("/suggestions", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const [flocks, crops] = await Promise.all([
+      prisma.flock.findMany({ where: { farmId, status: "active" }, select: { name: true, type: true, category: true, currentCount: true } }),
+      prisma.crop.findMany({ where: { farmId, status: "active" }, select: { name: true, cropType: true } }),
+    ]);
+
+    const seen = new Set<string>();
+    const suggestions: { commodity: string; label: string; unit: string; icon: string; source: string }[] = [];
+
+    // Animals first
+    for (const f of flocks) {
+      const map = SPECIES_COMMODITY[f.type || ""];
+      if (!map || seen.has(map.commodity)) continue;
+      seen.add(map.commodity);
+      suggestions.push({ commodity: map.commodity, label: map.productLabel, unit: map.unit, icon: map.icon, source: f.name });
+    }
+    // Then crops
+    for (const c of crops) {
+      const ct = (c.cropType || "").toLowerCase();
+      const map = CROP_COMMODITY.find((m) => m.match.some((k) => ct.includes(k)));
+      if (!map || seen.has(map.commodity)) continue;
+      seen.add(map.commodity);
+      suggestions.push({ commodity: map.commodity, label: map.productLabel, unit: map.unit, icon: map.icon, source: c.name });
+    }
+    // Always allow custom/free-text + the classics as fallback
+    const fallbacks = [
+      { commodity: "milk", label: "Milk", unit: "litres", icon: "milk", source: null },
+      { commodity: "eggs", label: "Eggs", unit: "trays", icon: "egg", source: null },
+      { commodity: "maize", label: "Maize", unit: "kg", icon: "wheat", source: null },
+      { commodity: "other", label: "Other produce", unit: "kg", icon: "truck", source: null },
+    ];
+    for (const fb of fallbacks) {
+      if (!suggestions.some((s) => s.commodity === fb.commodity)) suggestions.push(fb as any);
+    }
+
+    res.json({ suggestions, eggsPerTray: EGGS_PER_TRAY });
+  } catch (error) {
+    console.error("Delivery suggestions error:", error);
+    res.status(500).json({ error: "Failed to load suggestions" });
+  }
+});
+
 // GET /api/deliveries?commodity=milk — recent deliveries
 router.get("/", async (req: Request, res: Response) => {
   try {
@@ -28,8 +140,11 @@ router.get("/", async (req: Request, res: Response) => {
 router.post("/", async (req: Request, res: Response) => {
   try {
     const { date, commodity, quantity, unit, buyer, receiptRef, unitPrice, notes, deductions } = req.body;
-    if (!quantity || !buyer || !COMMODITIES.includes(commodity)) {
-      return res.status(400).json({ error: "quantity, buyer and a valid commodity are required" });
+    // Accept any commodity — the list is now dynamic (driven by the farm's
+    // real flocks/crops via /suggestions). Validate shape instead of a
+    // hard-coded list, and default the unit by commodity family.
+    if (!quantity || !buyer || typeof commodity !== "string" || !commodity.trim()) {
+      return res.status(400).json({ error: "quantity, buyer and a commodity are required" });
     }
     const qty = Number(quantity);
     const price = unitPrice != null ? Number(unitPrice) : null;
@@ -45,7 +160,7 @@ router.post("/", async (req: Request, res: Response) => {
         date: date ? new Date(date) : new Date(),
         commodity,
         quantity: qty,
-        unit: unit || (commodity === "milk" ? "litres" : "kg"),
+        unit: unit || (UNIT_BY_COMMODITY[commodity] ?? "kg"),
         buyer,
         receiptRef: receiptRef || null,
         unitPrice: price,

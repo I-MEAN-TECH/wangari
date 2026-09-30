@@ -11,11 +11,54 @@ const fadeUp = { hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, tra
 
 interface Row {
   id: string; kind: "flock" | "crop" | "general"; name: string; sub: string;
+  species?: string | null; category?: string | null; cropType?: string | null;
   revenue: number; costs: number; feedCost: number; profit: number;
   margin: number | null; feedEfficiency: number | null; outputKg: number;
 }
 
-const KIND_ICON: Record<string, string> = { flock: "🐔", crop: "🌾", general: "🏡" };
+// Icon per REAL animal/plant type — not a generic hen for everything.
+// Flocks carry their species (layers, cattle_dairy, goats…), crops their type.
+const SPECIES_ICON: Record<string, string> = {
+  layers: "🐔",
+  broilers: "🍗",
+  kienyeji: "🐔",
+  poultry: "🐔",
+  cattle_dairy: "🐄",
+  cattle_beef: "🐮",
+  cattle: "🐄",
+  livestock: "🐄",
+  goats: "🐐",
+  sheep: "🐏",
+  pigs: "🐖",
+  rabbits: "🐇",
+  fish: "🐟",
+  aquaculture: "🐟",
+  bees: "🐝",
+  other: "🐾",
+};
+const CROP_ICON: Record<string, string> = {
+  maize: "🌽",
+  beans: "🫘",
+  tomatoes: "🍅",
+  kale: "🥬",
+  cabbage: "🥬",
+  onions: "🧅",
+  potatoes: "🥔",
+  watermelon: "🍉",
+  avocado: "🥑",
+  mango: "🥭",
+  coffee: "☕",
+};
+
+function rowIcon(r: Row): string {
+  if (r.kind === "flock") return SPECIES_ICON[r.species || ""] || SPECIES_ICON[r.category || ""] || "🐾";
+  if (r.kind === "crop") {
+    const ct = (r.cropType || "").toLowerCase();
+    const key = Object.keys(CROP_ICON).find((k) => ct.includes(k));
+    return key ? CROP_ICON[key] : "🌾";
+  }
+  return "🏡";
+}
 const KES = (n: number) => "KES " + n.toLocaleString();
 
 export default function ProfitabilityPage() {
@@ -125,7 +168,7 @@ export default function ProfitabilityPage() {
                       <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black ${i === 0 ? "bg-amber-100 text-amber-700" : i === enterprises.length - 1 && !profitPositive ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-500"}`}>
                         {i + 1}
                       </div>
-                      <div className="hidden sm:block text-xl">{KIND_ICON[r.kind]}</div>
+                      <div className="hidden sm:block text-xl" title={r.species || r.cropType || r.kind}>{rowIcon(r)}</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-extrabold text-gray-900 truncate">{r.name}</p>
                         <p className="text-[11px] text-gray-400 capitalize">

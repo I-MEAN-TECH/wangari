@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Milk, Wheat, Leaf, Truck, Plus, X, Trash2, ReceiptText, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Milk, Wheat, Leaf, Truck, Plus, X, Trash2, ReceiptText, AlertTriangle, CheckCircle2, Egg, Drumstick, Bird, Droplets, Flower2, HelpCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +14,28 @@ import api from "@/lib/api-client";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
 
-const COMMODITIES = [
-  { value: "milk", label: "Milk", unit: "litres", icon: Milk },
-  { value: "coffee_cherry", label: "Coffee cherry", unit: "kg", icon: Leaf },
-  { value: "maize", label: "Maize", unit: "kg", icon: Wheat },
-  { value: "other", label: "Other produce", unit: "kg", icon: Truck },
-];
+const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  milk: Milk,
+  egg: Egg,
+  bird: Bird,
+  beef: Drumstick,
+  droplets: Droplets,
+  flower: Flower2,
+  wheat: Wheat,
+  leaf: Leaf,
+  truck: Truck,
+};
+
+interface Suggestion {
+  commodity: string;
+  label: string;
+  unit: string;
+  icon: string;
+  source: string | null;
+}
+
+// Egg tray conversion (Kenya standard: 30 eggs per tray)
+const EGGS_PER_TRAY = 30;
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
   pending: { label: "Awaiting payment", cls: "bg-amber-50 text-amber-700 border-amber-200" },
@@ -38,6 +54,7 @@ export default function DeliveriesPage() {
   const [statement, setStatement] = React.useState<Statement | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [showForm, setShowForm] = React.useState(false);
+  const [suggestions, setSuggestions] = React.useState<Suggestion[]>([]);
   const { showToast, ToastComponent } = useToast();
 
   const [form, setForm] = React.useState({
@@ -54,8 +71,17 @@ export default function DeliveriesPage() {
   const month = new Date().toISOString().slice(0, 7);
 
   const load = () => {
-    Promise.all([api.get("/api/deliveries"), api.get(`/api/deliveries/statement?month=${month}`)])
-      .then(([d, s]) => { setDeliveries(Array.isArray(d) ? d : []); setStatement(s); setLoading(false); })
+    Promise.all([
+      api.get("/api/deliveries"),
+      api.get(`/api/deliveries/statement?month=${month}`),
+      api.get("/api/deliveries/suggestions").catch(() => ({ suggestions: [] })),
+    ])
+      .then(([d, s, sug]: any) => {
+        setDeliveries(Array.isArray(d) ? d : []);
+        setStatement(s);
+        setSuggestions(sug?.suggestions ?? []);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   };
   React.useEffect(load, []);
@@ -92,14 +118,21 @@ export default function DeliveriesPage() {
   };
 
   const money = (n: number) => `KES ${Number(n).toLocaleString()}`;
-  const commodityInfo = COMMODITIES.find((c) => c.value === form.commodity)!;
+  const current = suggestions.find((c) => c.commodity === form.commodity)
+    ?? { commodity: form.commodity, label: form.commodity, unit: "kg", icon: "truck", source: null };
+  const CurrentIcon = ICONS[current.icon] ?? Truck;
+
+  // Egg helper text: show how many trays the entered egg count fills
+  const eggTrayHint = current.commodity === "eggs" && form.quantity && Number(form.quantity) > 0
+    ? (Number(form.quantity) / EGGS_PER_TRAY).toFixed(1)
+    : null;
 
   return (
     <div className="space-y-6 p-4 md:p-6">
       {ToastComponent}
       <PageHeader
         title="Deliveries"
-        description="Every litre and kilo you deliver — recorded, with what you're owed"
+        description="Every litre, kilo and tray you deliver — recorded, with what you're owed"
         action={<Button onClick={() => setShowForm(!showForm)}>{showForm ? <><X className="h-4 w-4 mr-2" />Close</> : <><Plus className="h-4 w-4 mr-2" />Record delivery</>}</Button>}
       />
 
@@ -144,21 +177,57 @@ export default function DeliveriesPage() {
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
           <Card>
             <CardContent className="pt-6 space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {COMMODITIES.map((c) => (
-                  <button key={c.value} type="button" onClick={() => setForm({ ...form, commodity: c.value })}
-                    className={`rounded-xl border p-3 text-left transition ${form.commodity === c.value ? "border-green-500 bg-green-50" : "border-border hover:border-green-300"}`}>
-                    <c.icon className={`h-5 w-5 mb-1 ${form.commodity === c.value ? "text-green-600" : "text-muted-foreground"}`} />
-                    <span className="text-sm font-medium">{c.label}</span>
+              <div>
+                <Label className="mb-2 block">What are you delivering?</Label>
+                <p className="text-[11px] text-muted-foreground mb-2">
+                  {suggestions.some(s => s.source)
+                    ? "Based on the animals and crops on your farm"
+                    : "Add flocks or crops and they'll be suggested here automatically"}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                  {suggestions.map((c) => {
+                    const Icon = ICONS[c.icon] ?? Truck;
+                    const active = form.commodity === c.commodity;
+                    return (
+                      <button key={c.commodity} type="button" onClick={() => setForm({ ...form, commodity: c.commodity })}
+                        title={c.source ? `From your ${c.source}` : undefined}
+                        className={`rounded-xl border p-3 text-left transition ${active ? "border-green-500 bg-green-50" : "border-border hover:border-green-300"}`}>
+                        <Icon className={`h-5 w-5 mb-1 ${active ? "text-green-600" : "text-muted-foreground"}`} />
+                        <span className="block text-sm font-medium leading-tight">{c.label}</span>
+                        <span className="block text-[10px] text-muted-foreground">per {c.unit}</span>
+                        {c.source && <span className="mt-0.5 block text-[9px] text-green-700/70 truncate">↳ {c.source}</span>}
+                      </button>
+                    );
+                  })}
+                  {/* Custom entry */}
+                  <button type="button"
+                    onClick={() => {
+                      const name = window.prompt("Name the produce you're delivering (e.g. Passion fruit):");
+                      if (name && name.trim()) {
+                        const value = "custom_" + name.trim().toLowerCase().replace(/\s+/g, "_").slice(0, 40);
+                        setSuggestions([...suggestions, { commodity: value, label: name.trim(), unit: "kg", icon: "truck", source: null }]);
+                        setForm({ ...form, commodity: value });
+                      }
+                    }}
+                    className={`rounded-xl border border-dashed p-3 text-left transition ${form.commodity.startsWith("custom_") ? "border-green-500 bg-green-50" : "border-border hover:border-green-300"}`}>
+                    <HelpCircle className={`h-5 w-5 mb-1 ${form.commodity.startsWith("custom_") ? "text-green-600" : "text-muted-foreground"}`} />
+                    <span className="block text-sm font-medium leading-tight">Other…</span>
+                    <span className="block text-[10px] text-muted-foreground">anything else</span>
                   </button>
-                ))}
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div><Label>Date</Label><Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></div>
-                <div><Label>Quantity ({commodityInfo.unit})</Label><Input type="number" step="0.5" placeholder="e.g. 12" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></div>
+                <div>
+                  <Label>Quantity ({current.unit})</Label>
+                  <Input type="number" step="0.5" placeholder={current.commodity === "eggs" ? `e.g. ${EGGS_PER_TRAY * 2} (= 2 trays)` : current.commodity === "milk" ? "e.g. 12" : "e.g. 50"} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
+                  {eggTrayHint && (
+                    <p className="mt-1 text-[11px] text-green-700">≈ {eggTrayHint} tray{Number(eggTrayHint) === 1 ? "" : "s"} ({EGGS_PER_TRAY} eggs per tray)</p>
+                  )}
+                </div>
                 <div><Label>Delivered to (buyer)</Label><Input placeholder="e.g. Brookside, factory name, broker" value={form.buyer} onChange={(e) => setForm({ ...form, buyer: e.target.value })} /></div>
                 <div><Label>Receipt / slip no. (optional)</Label><Input placeholder="from the delivery book" value={form.receiptRef} onChange={(e) => setForm({ ...form, receiptRef: e.target.value })} /></div>
-                <div><Label>Price per {commodityInfo.unit} (optional)</Label><Input type="number" step="0.5" placeholder="KES" value={form.unitPrice} onChange={(e) => setForm({ ...form, unitPrice: e.target.value })} /></div>
+                <div><Label>Price per {current.unit} (optional)</Label><Input type="number" step="0.5" placeholder="KES" value={form.unitPrice} onChange={(e) => setForm({ ...form, unitPrice: e.target.value })} /></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:col-span-2">
                 <div><Label>Deduction label (optional)</Label><Input placeholder="e.g. AI service, agrovet" value={form.deductionLabel} onChange={(e) => setForm({ ...form, deductionLabel: e.target.value })} /></div>
@@ -185,13 +254,16 @@ export default function DeliveriesPage() {
               {deliveries.map((d) => {
                 const ded = (d.deductions ?? []).reduce((s: number, x: any) => s + Number(x.amount), 0);
                 const net = (d.expectedPay ?? 0) - ded;
-                const Icon = COMMODITIES.find((c) => c.value === d.commodity)?.icon ?? Truck;
+                const sug = suggestions.find((c) => c.commodity === d.commodity);
+                const Icon = ICONS[sug?.icon ?? ""] ?? Truck;
                 const sb = statusBadge[d.status] ?? statusBadge.pending;
                 return (
                   <div key={d.id} className="flex items-center gap-3 py-3">
                     <div className="h-9 w-9 rounded-full bg-green-50 flex items-center justify-center shrink-0"><Icon className="h-4 w-4 text-green-600" /></div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{Number(d.quantity).toLocaleString()} {d.unit} → {d.buyer}</p>
+                      <p className="text-sm font-medium truncate">
+                        {sug?.label ?? d.commodity.replace(/_/g, " ")}: {Number(d.quantity).toLocaleString()} {d.unit} → {d.buyer}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(d.date).toLocaleDateString()}
                         {d.receiptRef ? ` · Slip #${d.receiptRef}` : ""}

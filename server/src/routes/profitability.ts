@@ -28,7 +28,7 @@ router.get("/", async (req: Request, res: Response) => {
     const since = new Date(Date.now() - periodDays * 86400000);
 
     const [flocks, crops, incomeTx, expenseTx, prodRows] = await Promise.all([
-      prisma.flock.findMany({ where: { farmId }, select: { id: true, name: true, type: true, currentCount: true, status: true } }),
+      prisma.flock.findMany({ where: { farmId }, select: { id: true, name: true, type: true, category: true, currentCount: true, status: true } }),
       prisma.crop.findMany({ where: { farmId }, select: { id: true, name: true, cropType: true, areaAcres: true, status: true } }),
       prisma.transaction.findMany({ where: { farmId, type: "income", date: { gte: since } }, select: { amount: true, category: true, description: true } }),
       prisma.transaction.findMany({ where: { farmId, type: "expense", date: { gte: since } }, select: { amount: true, category: true, description: true } }),
@@ -42,6 +42,7 @@ router.get("/", async (req: Request, res: Response) => {
 
     type Ent = {
       id: string; kind: "flock" | "crop" | "general"; name: string; sub: string;
+      species?: string | null; category?: string | null; cropType?: string | null;
       revenue: number; costs: number; feedCost: number; outputKg: number;
     };
     const ent = new Map<string, Ent>();
@@ -97,6 +98,9 @@ router.get("/", async (req: Request, res: Response) => {
         const feedEfficiency = e.feedCost > 0 ? Number((e.revenue / e.feedCost).toFixed(2)) : null;
         return {
           id: e.id, kind: e.kind, name: e.name, sub: e.sub,
+          species: flocks.find(f => `flock-${f.id}` === e.id)?.type ?? null,
+          category: flocks.find(f => `flock-${f.id}` === e.id)?.category ?? null,
+          cropType: crops.find(c => `crop-${c.id}` === e.id)?.cropType ?? null,
           revenue: Math.round(e.revenue), costs: Math.round(e.costs),
           feedCost: Math.round(e.feedCost), profit: Math.round(profit),
           margin, feedEfficiency, outputKg: Math.round(e.outputKg),

@@ -40,7 +40,7 @@ router.get("/actions", async (req: Request, res: Response) => {
       flocks, crops, recentProd, lowStock, overdueCredits, unpaidInvoices,
       openTasks, pendingBreedings, recentApplications, todayProd,
     ] = await Promise.all([
-      prisma.flock.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, currentCount: true, type: true, createdAt: true } }),
+      prisma.flock.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, currentCount: true, type: true, category: true, createdAt: true } }),
       prisma.crop.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, cropType: true, plantingDate: true, expectedHarvest: true } }),
       prisma.dailyProduction.findMany({ where: { farmId, date: { gte: weekAgo } }, orderBy: { date: "asc" } }),
       prisma.inventory.findMany({ where: { farmId }, select: { id: true, itemName: true, quantity: true, unit: true, reorderLevel: true, category: true } }),
@@ -90,10 +90,24 @@ router.get("/actions", async (req: Request, res: Response) => {
     const priorWeek = new Date(today.getTime() - 14 * 86400000);
     const byFlock = new Map<number, { thisWeek: number; lastWeek: number; lastDate: Date }>();
     for (const f of flocks) byFlock.set(f.id, { thisWeek: 0, lastWeek: 0, lastDate: new Date(0) });
+    // "Output" is species-aware: eggs for poultry, litres for dairy, kg of
+    // weight gain for meat animals. Mixing eggs+milk on one number made the
+    // drop detector meaningless for cattle-only or mixed farms.
+    const METRIC_BY_SPECIES: Record<string, "eggs" | "milk" | "weight"> = {
+      layers: "eggs", kienyeji: "eggs", broilers: "weight",
+      cattle_dairy: "milk", cattle_beef: "weight",
+      goats: "weight", sheep: "weight", pigs: "weight", rabbits: "weight",
+      fish: "weight", bees: "weight",
+    };
+    const metricOf = (flockType?: string | null): "eggs" | "milk" | "weight" =>
+      METRIC_BY_SPECIES[flockType || ""] ?? (flocks.find(f => f.type === flockType)?.category === "poultry" ? "eggs" : "weight");
+    const outputOf = (p: { eggsCollected?: any; milkCollected?: any; weightGain?: any }, m: "eggs" | "milk" | "weight"): number =>
+      m === "eggs" ? Number(p.eggsCollected || 0) : m === "milk" ? Number(p.milkCollected || 0) : Number(p.weightGain || 0);
     for (const p of recentProd) {
       const e = byFlock.get(p.flockId);
       if (!e) continue;
-      if (p.date >= weekAgo) e.thisWeek += Number(p.eggsCollected || 0) + Number(p.milkCollected || 0);
+      const f = flocks.find(x => x.id === p.flockId);
+      if (p.date >= weekAgo) e.thisWeek += outputOf(p, metricOf(f?.type));
       e.lastDate = p.date > e.lastDate ? p.date : e.lastDate;
     }
     for (const f of flocks) {
