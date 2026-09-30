@@ -190,6 +190,7 @@ model Farm {
   soilTests        SoilTest[]
   invoices         Invoice[]
   quotes           Quote[]
+  newsSends        NewsArticleSend[]
 
   @@map("farms")
 }
@@ -915,6 +916,41 @@ model EmailLog {
 
   @@index([status])
   @@map("email_logs")
+}
+
+model NewsArticle {
+  id         Int      @id @default(autoincrement())
+  linkHash   String   @unique @map("link_hash") // sha1 of the canonical article URL — the dedupe key
+  source     String // "Kilimo News" | "FarmBiz Africa" | "allAfrica Agriculture" | "Google News — World Farming"
+  title      String
+  link       String
+  region     String   @default("kenya") // kenya | world
+  risk       String? // ALERT label when the headline matches a farmer-risk keyword
+  publishedAt DateTime?
+  firstSentAt DateTime? @map("first_sent_at") // set once the article has appeared in any advisory email
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  sends      NewsArticleSend[]
+
+  @@index([region, firstSentAt])
+  @@map("news_articles")
+}
+
+// Per-farm record that a farmer has already received this story. Advisory
+// emails only include rows where no send exists for that farm — a farmer who
+// has been told a story never gets it again, even months later.
+model NewsArticleSend {
+  id           Int      @id @default(autoincrement())
+  articleId    Int      @map("article_id")
+  farmId       Int      @map("farm_id")
+  sentAt       DateTime @default(now()) @map("sent_at")
+
+  article NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  farm    Farm        @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, farmId])
+  @@index([farmId, sentAt])
+  @@map("news_article_sends")
 }
 
 model SyncedWrite {

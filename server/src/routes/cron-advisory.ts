@@ -18,9 +18,14 @@ import { sendEmail } from "../lib/email.js";
 
 const router = Router();
 
-const NEWS_FEEDS = [
-  { name: "Kilimo News", url: "https://kilimonews.co.ke/feed/" },
-  { name: "FarmBiz Africa", url: "https://www.farmbizafrica.com/feed" },
+const NEWS_FEEDS: { name: string; url: string; region: "kenya" | "world" }[] = [
+  // Kenya (local agri press). allAfrica is the reliable primary — verified
+  // reachable from the VPS; Kilimo/FarmBiz sometimes block datacenter IPs.
+  { name: "allAfrica Agriculture", url: "https://allafrica.com/tools/headlines/rdf/agriculture/headlines.rdf", region: "kenya" },
+  { name: "Kilimo News", url: "https://kilimonews.co.ke/feed/", region: "kenya" },
+  { name: "FarmBiz Africa", url: "https://www.farmbizafrica.com/feed", region: "kenya" },
+  // World (free, no API key): Google News RSS, global agriculture + food security.
+  { name: "Google News — World Farming", url: "https://news.google.com/rss/search?q=global+agriculture+OR+farming+OR+%22food+security%22+when:3d&hl=en-US&gl=US&ceid=US:en", region: "world" },
 ];
 
 interface NewsItem {
@@ -28,6 +33,7 @@ interface NewsItem {
   link: string;
   source: string;
   pubDate: Date | null;
+  region: "kenya" | "world";
   risk?: string;
 }
 
@@ -85,30 +91,103 @@ export async function fetchFarmNews(): Promise<NewsItem[]> {
         if (!res.ok) return;
         const xml = await res.text();
         const blocks = xml.split(/<item[\s>]/i).slice(1);
-        for (const b of blocks.slice(0, 10)) {
+        for (const b of blocks.slice(0, 12)) {
           const title = pick("title", b);
           const link = pick("link", b).split("?")[0];
           const pub = pick("pubDate", b);
           if (title && link) {
-            items.push({ title, link, source: feed.name, pubDate: pub ? new Date(pub) : null, risk: detectRisk(title) });
+            items.push({
+              title,
+              link,
+              source: feed.name,
+              region: feed.region,
+              pubDate: pub ? new Date(pub) : null,
+              risk: detectRisk(title),
+            });
           }
         }
       } catch {
-        // feed down — the other one still fills the section
+        // feed down — the others still fill the section
       }
     })
   );
-  // Freshest first, cross-source dedupe by title prefix, cap at 5
+  // Freshest first, cross-source dedupe by title prefix
   const seen = new Set<string>();
-  return items
-    .sort((a, b) => (b.pubDate?.getTime() || 0) - (a.pubDate?.getTime() || 0))
-    .filter((n) => {
-      const k = n.title.toLowerCase().slice(0, 40);
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    })
-    .slice(0, 5);
+  return items.sort((a, b) => (b.pubDate?.getTime() || 0) - (a.pubDate?.getTime() || 0)).filter((n) => {
+    const k = n.title.toLowerCase().slice(0, 40);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+// ─── Per-farm "already sent" memory ──────────────────────
+// Every fetched article is upserted into news_articles (keyed by the sha1 of
+// its canonical URL). For each farm we then select only stories with no
+// news_article_sends row — a farmer who has been told a story never gets it
+// again, no matter which feed it came from or how long ago.
+import { createHash } from "crypto";
+
+function linkHash(link: string): string {
+  return createHash("sha1").update(link.trim().toLowerCase()).digest("hex");
+}
+
+export async function upsertNewsArticles(items: NewsItem[]): Promise<Map<string, number>> {
+  const hashToId = new Map<string, number>();
+  for (const item of items.slice(0, 60)) {
+    const hash = linkHash(item.link);
+    try {
+      const row = await prisma.newsArticle.upsert({
+        where: { linkHash: hash },
+        create: {
+          linkHash: hash,
+          source: item.source,
+          title: item.title,
+          link: item.link,
+          region: item.region,
+          risk: item.risk || null,
+          publishedAt: item.pubDate && !isNaN(item.pubDate.getTime()) ? item.pubDate : null,
+        },
+        update: {}, // first-seen facts are immutable
+      });
+      hashToId.set(hash, row.id);
+    } catch {
+      // upsert races are harmless — the unique index guarantees one row
+    }
+  }
+  return hashToId;
+}
+
+// Filter a fetched news list down to the stories THIS farm has not received
+// before, in DB insertion order (freshest first).
+export async function filterUnsentForFarm(items: NewsItem[], farmId: number): Promise<NewsItem[]> {
+  if (!items.length) return [];
+  const hashes = items.slice(0, 60).map((n) => linkHash(n.link));
+  const already = await prisma.newsArticleSend.findMany({
+    where: { farmId, article: { linkHash: { in: hashes } } },
+    select: { article: { select: { linkHash: true } } },
+  });
+  const sentHashes = new Set(already.map((s) => s.article.linkHash));
+  return items.filter((n) => !sentHashes.has(linkHash(n.link)));
+}
+
+// Record that a farm received specific stories (idempotent via unique index).
+export async function recordNewsSends(items: NewsItem[], hashToId: Map<string, number>, farmId: number): Promise<void> {
+  const rows = items
+    .map((n) => hashToId.get(linkHash(n.link)))
+    .filter((id): id is number => !!id)
+    .map((articleId) => ({ articleId, farmId }));
+  if (!rows.length) return;
+  try {
+    await prisma.newsArticleSend.createMany({ data: rows, skipDuplicates: true });
+    const ids = [...new Set(rows.map((r) => r.articleId))];
+    await prisma.newsArticle.updateMany({
+      where: { id: { in: ids }, firstSentAt: null },
+      data: { firstSentAt: new Date() },
+    });
+  } catch {
+    // A missed write only means a story might repeat once — acceptable.
+  }
 }
 
 interface SeasonInfo {
@@ -220,23 +299,9 @@ export async function rainOutlook(location: string): Promise<{ summary: string; 
   }
 }
 
-function advisoryEmailHtml(
-  userName: string,
-  farmName: string,
-  season: SeasonInfo,
-  outlook: { summary: string; totalMm: number } | null,
-  news: NewsItem[],
-  now: Date
-): string {
-  const dateStr = now.toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const chips = season.plant
-    .map((p) => `<tr><td style="padding:6px 14px;font-size:13px;color:#166534;font-weight:600;">🌱 ${p}</td></tr>`)
-    .join("");
-  const prep = season.prepare
-    .map((p) => `<tr><td style="padding:6px 14px;font-size:13px;color:#334155;">✅ ${p}</td></tr>`)
-    .join("");
-  const newsRows = news.length
-    ? news
+function newsSection(label: string, items: NewsItem[]): string {
+  const rows = items.length
+    ? items
         .map(
           (n) => `
         <tr><td style="padding:9px 14px;background-color:${n.risk ? "#fef2f2;border-left:3px solid #dc2626" : "#f8fafc"};border-radius:8px;">
@@ -249,7 +314,28 @@ function advisoryEmailHtml(
         <tr><td style="height:6px;font-size:0;line-height:0;">&nbsp;</td></tr>`
         )
         .join("")
-    : `<tr><td style="padding:10px 14px;font-size:13px;color:#64748b;">No fresh headlines this morning — check back tomorrow.</td></tr>`;
+    : `<tr><td style="padding:10px 14px;font-size:13px;color:#64748b;">Nothing new — you're all caught up. ✅</td></tr>`;
+  return `
+          <p style="margin:14px 0 4px;font-size:12px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">${label}</p>
+          <table width="100%" cellpadding="0" cellspacing="0">${rows}</table>`;
+}
+
+function advisoryEmailHtml(
+  userName: string,
+  farmName: string,
+  season: SeasonInfo,
+  outlook: { summary: string; totalMm: number } | null,
+  kenyaNews: NewsItem[],
+  worldNews: NewsItem[],
+  now: Date
+): string {
+  const dateStr = now.toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const chips = season.plant
+    .map((p) => `<tr><td style="padding:6px 14px;font-size:13px;color:#166534;font-weight:600;">🌱 ${p}</td></tr>`)
+    .join("");
+  const prep = season.prepare
+    .map((p) => `<tr><td style="padding:6px 14px;font-size:13px;color:#334155;">✅ ${p}</td></tr>`)
+    .join("");
 
   return `<!DOCTYPE html>
 <html>
@@ -286,9 +372,9 @@ function advisoryEmailHtml(
               : ""
           }
 
-          <p style="margin:20px 0 4px;font-size:12px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">📰 Farming news this morning</p>
-          <table width="100%" cellpadding="0" cellspacing="0">${newsRows}</table>
-          <p style="margin:14px 0 0;font-size:11px;color:#94a3b8;text-align:center;">News from Kilimo News &amp; FarmBiz Africa · tap a headline to read the full story</p>
+          ${newsSection("📰 Kenya farming news", kenyaNews)}
+          ${newsSection("🌍 World farming news", worldNews)}
+          <p style="margin:14px 0 0;font-size:11px;color:#94a3b8;text-align:center;">News from Kenyan agri press &amp; global sources · only stories you haven't seen before · tap a headline to read more</p>
 
           <div style="text-align:center;margin-top:24px;">
             <a href="${process.env.FRONTEND_URL || "https://wangari.imeantech.com"}/dashboard" style="display:inline-block;background-color:#166534;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 28px;border-radius:8px;">Open Wangari →</a>
@@ -316,7 +402,7 @@ router.get("/farm-advisory", async (req: Request, res: Response) => {
   const season = seasonalAdvisory(now);
 
   try {
-    const [news, farms] = await Promise.all([
+    const [allNews, farms] = await Promise.all([
       fetchFarmNews(),
       prisma.farm.findMany({
         where: { owner: { emailVerified: { not: null } } },
@@ -331,20 +417,44 @@ router.get("/farm-advisory", async (req: Request, res: Response) => {
       }),
     ]);
 
+    // Store everything fetched once; the per-farm send ledger decides repeats.
+    const hashToId = await upsertNewsArticles(allNews);
+    const kenyaAll = allNews.filter((n) => n.region === "kenya");
+    const worldAll = allNews.filter((n) => n.region === "world");
+
     let sent = 0;
+    let skippedNoNews = 0;
     const errors: string[] = [];
     for (const farm of farms) {
       const ownerEmail = farm.owner?.email;
       if (!ownerEmail) continue;
       try {
+        // Only stories this specific farm has never been sent before.
+        const [kenyaNews, worldNews] = await Promise.all([
+          filterUnsentForFarm(kenyaAll, farm.id),
+          filterUnsentForFarm(worldAll, farm.id),
+        ]);
+        kenyaNews.splice(4);
+        worldNews.splice(3);
+
+        // Nothing new at all? Don't email just to say "no news".
+        if (!kenyaNews.length && !worldNews.length) {
+          skippedNoNews++;
+          continue;
+        }
+
         const outlook = farm.location ? await rainOutlook(farm.location) : null;
         await sendEmail({
           to: ownerEmail,
           subject: `🌾 Today's farm advisory — ${season.name} · ${now.toLocaleDateString("en-KE", { day: "numeric", month: "short" })}`,
-          html: advisoryEmailHtml(farm.owner?.name || "Farmer", farm.name, season, outlook, news, now),
+          html: advisoryEmailHtml(farm.owner?.name || "Farmer", farm.name, season, outlook, kenyaNews, worldNews, now),
           template: "oneoff",
         });
         sent++;
+
+        // Mark these exact stories as delivered to THIS farm — they will never
+        // be included in a future advisory for the same farm again.
+        await recordNewsSends([...kenyaNews, ...worldNews], hashToId, farm.id);
 
         // In-app notification — one per farm per day (deduped by date marker).
         const marker = `[advisory ${now.toISOString().slice(0, 10)}]`;
@@ -356,7 +466,7 @@ router.get("/farm-advisory", async (req: Request, res: Response) => {
             data: {
               farmId: farm.id,
               active: true,
-              message: `${season.emoji} ${marker} Today's farm advisory: ${season.name} tips, rain outlook${news.length ? ` and ${news.length} farming news stories` : ""}.`,
+              message: `${season.emoji} ${marker} Today's farm advisory: ${season.name} tips, rain outlook${kenyaNews.length + worldNews.length ? ` and ${kenyaNews.length + worldNews.length} new farming news stories` : ""}.`,
               link: "/weather",
             },
           });
@@ -371,7 +481,9 @@ router.get("/farm-advisory", async (req: Request, res: Response) => {
       season: season.name,
       farmsTargeted: farms.length,
       emailsSent: sent,
-      newsItems: news.length,
+      skippedNoNews,
+      kenyaItems: kenyaAll.length,
+      worldItems: worldAll.length,
       errors: errors.slice(0, 10),
     });
   } catch (error: any) {
