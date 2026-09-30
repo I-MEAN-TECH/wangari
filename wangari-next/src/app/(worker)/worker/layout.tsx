@@ -6,6 +6,7 @@ import { RefreshCw, LogOut, HardHat, UserCog, ChevronDown } from "lucide-react";
 import { isWorkerSession, getUser, logout } from "@/lib/auth-client";
 import { Avatar } from "@/components/ui/avatar";
 import { WorkerProfileModal, WorkerProfile } from "@/components/worker/WorkerProfileModal";
+import { WorkerLockout } from "@/components/worker/worker-lockout";
 import api from "@/lib/api-client";
 
 /**
@@ -62,6 +63,9 @@ export default function WorkerLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="min-h-screen bg-wangari-cream">
+      {/* Farm locked (owner's trial/subscription expired): full-screen notice
+          overlaying the portal. Any 403 trialExpired API response flips it on. */}
+      <WorkerLockout />
       {/* Minimal worker topbar — no farm switcher, no owner nav, no finance links.
           Visual language matches the owner Topbar (glass blur, avatar, role line). */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-wangari-border px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
