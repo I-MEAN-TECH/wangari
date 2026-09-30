@@ -8,6 +8,7 @@ import { initSentry, flushTelemetry, captureError } from "./lib/sentry.js";
 // Routes
 import authRoutes from "./routes/auth.js";
 import dashboardRoutes from "./routes/dashboard.js";
+import actionEngineRoutes from "./routes/action-engine.js";
 import flocksRoutes from "./routes/flocks.js";
 import customersRoutes from "./routes/customers.js";
 import transactionsRoutes from "./routes/transactions.js";
@@ -147,6 +148,7 @@ app.get("/health", (_req, res) => {
 
 // ─── API Routes ───────────────────────────────────────────
 app.use("/api/auth", authRoutes);
+app.use("/api/dashboard", actionEngineRoutes); // /actions first, then falls through to the main dashboard router
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/flocks", flocksRoutes);
 app.use("/api/flocks", flocksUploadRoutes);

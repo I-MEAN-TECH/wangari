@@ -30,6 +30,7 @@ import Link from "next/link";
 import api from "@/lib/api-client";
 import { useAuth } from "@/hooks/useAuth";
 import { TrialBanner } from "@/components/trial/trial-banner";
+import { ActionCenter } from "@/components/dashboard/action-center";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PaymentResultModal } from "@/components/subscription/PaymentResultModal";
 
@@ -387,6 +388,9 @@ function DashboardContent() {
           subscription={trialData.subscription}
         />
       )}
+
+      {/* Action Center — what the farm data says to do next */}
+      {trialData?.hasAccess !== false && <ActionCenter />}
 
       {/* Profile completion reminder */}
       {user && !user.profileComplete && !profileDismissed && (
