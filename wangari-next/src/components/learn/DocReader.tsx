@@ -132,8 +132,10 @@ export function DocReader({
       </div>
 
       <div className="mx-auto flex max-w-6xl gap-8 px-4 pb-24 pt-8 md:px-8">
-        {/* ── Chapter sidebar (desktop) — sticky + scroll-spy active state ── */}
-        <aside className="sticky top-24 hidden h-fit w-56 shrink-0 lg:block">
+        {/* ── Chapter sidebar (desktop) — pinned while the document scrolls.
+            sticky keeps it fixed in view; the internal max-height + overflow-y
+            lets very long TOCs scroll within the rail instead of running off-screen. ── */}
+        <aside className="sticky top-24 hidden max-h-[calc(100vh-7rem)] w-56 shrink-0 flex-col overflow-y-auto lg:flex">
           <p className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-stone-400">
             <List className="h-3.5 w-3.5" /> In this document
           </p>

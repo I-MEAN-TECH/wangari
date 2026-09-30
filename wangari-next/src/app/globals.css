@@ -41,12 +41,15 @@
 }
 
 html {
-  overflow-x: hidden;
+  /* clip (not hidden): hidden turns the root into a scroll container, which
+     silently breaks position: sticky for every descendant (e.g. the Learn
+     doc TOC sidebar). clip clips overflow WITHOUT creating a scroll box. */
+  overflow-x: clip;
   scroll-behavior: smooth;
 }
 
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
   font-family: var(--font-sans);
   color: var(--color-wangari-text);
   background: var(--color-wangari-cream);
