@@ -56,6 +56,14 @@ export async function POST(req: NextRequest) {
       const amountKes = amount / 100;
       const durationDays = PLAN_DURATIONS[planKey] || 30;
 
+      // Reject plans that don't exist in the plans table (or are disabled) —
+      // activating a subscription on a ghost plan silently breaks gating.
+      const planRow = await prisma.plan.findUnique({ where: { id: planKey } });
+      if (!planRow || !planRow.active) {
+        console.error(`Webhook: refusing to activate subscription on invalid/disabled plan "${planKey}" (${reference})`);
+        return NextResponse.json({ received: true });
+      }
+
       // Find user by email
       const email = customer?.email;
       if (!email) {

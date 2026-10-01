@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
-import { getPlan } from "../lib/plans.js";
+import { requireActivePlan, sponsoredName, type PlanInfo } from "../lib/plan-tier.js";
 import { sendEmail } from "../lib/email.js";
 
 /**
@@ -50,9 +50,15 @@ router.post("/redeem", async (req: Request, res: Response) => {
     }
 
     // Plan-restricted codes grant time on THEIR plan, not a hard-coded one.
+    // Validated against the live plans table — a promo pointing at a deleted
+    // or disabled plan cannot grant access (no silent fallback).
     const targetPlanId = promo.planId || "growth_monthly";
-    const plan = (await getPlan(targetPlanId)) || (await getPlan("growth_monthly")) || (await getPlan("starter_monthly"));
-    if (!plan) return res.status(500).json({ error: "Plans not configured" });
+    let plan: PlanInfo;
+    try {
+      plan = await requireActivePlan(targetPlanId);
+    } catch (e: any) {
+      return res.status(400).json({ error: `This code is misconfigured (${e.message}). Contact support.` });
+    }
 
     // One redemption of this code per user.
     const already = await prisma.promoRedemption.findFirst({
@@ -75,7 +81,7 @@ router.post("/redeem", async (req: Request, res: Response) => {
       data: {
         userId,
         plan: plan.id,
-        planName: `${plan.name} (sponsored)`,
+        planName: sponsoredName(plan),
         amount: 0,
         status: "active",
         reference: `PROMO-${promo.code}-${userId}-${Date.now()}`,

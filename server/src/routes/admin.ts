@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { prisma } from "../db.js";
 import { adminLogin, requireAdmin, auditAdminAction, AdminRole, signAdminToken } from "../lib/admin-auth.js";
 import { generateSecret, otpauthUri, verifyTotp, generateRecoveryCodes, hashCode } from "../lib/totp.js";
+import { requireActivePlan, findPlan, type PlanInfo } from "../lib/plan-tier.js";
 
 /**
  * Super-admin API (Phase 1 of docs/ADMIN-BLUEPRINT.md).
@@ -507,6 +508,20 @@ router.patch("/plans/:id", requireAdmin(["billing"]), async (req: Request, res: 
     const planId = String(req.params.id);
     const before = await prisma.plan.findUnique({ where: { id: planId } });
     if (!before) return res.status(404).json({ error: "Plan not found" });
+    // The plan id is the tier key the whole gating system runs on — renaming
+    // it would orphan every subscription pointing at it.
+    if (req.body?.id !== undefined && String(req.body.id).trim().toLowerCase() !== planId) {
+      return res.status(400).json({ error: "Plan id cannot be renamed (active subscriptions reference it)" });
+    }
+    // Disabling a plan that promos or the default grant still reference would
+    // break redemption — surface which promos are affected so the admin can
+    // fix them first.
+    if (req.body?.active === false) {
+      const linked = await prisma.promoCode.count({ where: { planId: planId, active: true } });
+      if (linked > 0) {
+        return res.status(400).json({ error: `${linked} active promo code(s) are restricted to this plan — reassign or remove them before disabling the plan` });
+      }
+    }
     const { name, description, amount, days, active, sortOrder } = req.body || {};
     const amt = numOrUndef(amount);
     const d = numOrUndef(days);
@@ -592,13 +607,21 @@ router.post("/billing/override", requireAdmin(["billing"]), async (req: Request,
     if (!userId || !plan || !days) {
       return res.status(400).json({ error: "userId, plan and days are required" });
     }
+    // Plan must exist in the plans table — no free-text plan ids that silently
+    // break module gating.
+    let planRow: PlanInfo;
+    try {
+      planRow = await requireActivePlan(String(plan));
+    } catch (e: any) {
+      return res.status(400).json({ error: e.message });
+    }
     const startsAt = new Date();
     const expiresAt = new Date(startsAt.getTime() + Number(days) * 24 * 60 * 60 * 1000);
     const sub = await prisma.subscription.create({
       data: {
         userId: Number(userId),
-        plan: String(plan),
-        planName: String(planName || plan),
+        plan: planRow.id,
+        planName: String(planName || planRow.name),
         amount: amount !== undefined ? Number(amount) : 0,
         status: "active",
         reference: `admin_override_${Date.now()}`,

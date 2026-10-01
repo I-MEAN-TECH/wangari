@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { requireAdmin, auditAdminAction } from "../lib/admin-auth.js";
 import { sendEmail, emailTemplates } from "../lib/email.js";
+import { findPlan, requireActivePlan } from "../lib/plan-tier.js";
 
 /**
  * Admin modules — farms/users management, promo codes, tickets, announcements.
@@ -190,6 +191,15 @@ router.post("/farms/:id/extend", requireAdmin(["support", "billing"]), async (re
             expiresAt,
           },
         });
+    // Guard: the hardcoded starter_monthly above must exist in the plans table.
+    // If a future admin ever deletes/renames it, fail loudly instead of
+    // creating a subscription on a ghost plan.
+    const usedPlan = await findPlan(sub.plan);
+    if (!usedPlan) {
+      console.error(`admin farm extend produced subscription on unknown plan "${sub.plan}" — cancelling`);
+      await prisma.subscription.update({ where: { id: sub.id }, data: { status: "cancelled" } });
+      return res.status(500).json({ error: "Plan configuration error — extension not applied" });
+    }
 
     auditAdminAction((req as any).admin, "admin.farm.extend", "farm", farm.name ? Number(req.params.id) : null, {
       farm: farm.name, days, newExpiresAt: expiresAt,
@@ -383,10 +393,15 @@ router.post("/promos", requireAdmin(["billing"]), async (req: Request, res: Resp
       return res.status(400).json({ error: "type must be discount, partnership, credit or sponsorship" });
     }
     // Optional plan restriction: a promo tied to a plan only works on that plan.
+    // Validated against the live plans table (must exist AND be active) so a
+    // typo'd or disabled plan can never be attached to a code.
     const planId = req.body?.planId ? String(req.body.planId) : null;
     if (planId) {
-      const plan = await prisma.plan.findUnique({ where: { id: planId } });
-      if (!plan) return res.status(400).json({ error: "Unknown plan" });
+      try {
+        await requireActivePlan(planId);
+      } catch (e: any) {
+        return res.status(400).json({ error: e.message });
+      }
     }
     // Sponsorship codes grant free months instead of a payment discount.
     const freeMonths = req.body?.freeMonths ? Number(req.body.freeMonths) : null;
@@ -444,6 +459,15 @@ router.post("/promos/batch", requireAdmin(["billing"]), async (req: Request, res
     if (!["sponsorship", "partnership"].includes(type) && (!Number.isFinite(val) || val <= 0)) {
       return res.status(400).json({ error: "value must be a positive number" });
     }
+    // Optional plan restriction on the whole batch — validated like single codes.
+    const batchPlanId = req.body?.planId ? String(req.body.planId) : null;
+    if (batchPlanId) {
+      try {
+        await requireActivePlan(batchPlanId);
+      } catch (e: any) {
+        return res.status(400).json({ error: e.message });
+      }
+    }
 
     // Human-friendly unique codes: PREFIX-XXXX-XXXX (unambiguous alphabet).
     const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -467,6 +491,7 @@ router.post("/promos/batch", requireAdmin(["billing"]), async (req: Request, res
               freeMonths: ["sponsorship", "partnership"].includes(type) ? Math.round(fm!) : null,
               maxRedemptions: 1, // batch codes are single-use by design
               partnerName: partnerName || null,
+              planId: batchPlanId,
               expiresAt: expiresAt ? new Date(expiresAt) : null,
               createdBy: (req as any).admin?.adminId,
             },
@@ -548,8 +573,11 @@ router.patch("/promos/:id", requireAdmin(["billing"]), async (req: Request, res:
       if (planId === null || planId === "") {
         data.planId = null;
       } else {
-        const plan = await prisma.plan.findUnique({ where: { id: String(planId) } });
-        if (!plan) return res.status(400).json({ error: "Unknown plan" });
+        try {
+          await requireActivePlan(String(planId));
+        } catch (e: any) {
+          return res.status(400).json({ error: e.message });
+        }
         data.planId = String(planId);
       }
     }

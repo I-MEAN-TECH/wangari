@@ -4,6 +4,7 @@ import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { auditMoneyMutation } from "../lib/audit.js";
 import { getPlan } from "../lib/plans.js";
+import { requireActivePlan, findPlan } from "../lib/plan-tier.js";
 import { sendEmail, emailTemplates } from "../lib/email.js";
 
 const router = Router();
@@ -32,6 +33,12 @@ router.post("/", authMiddleware, async (req: Request, res: Response) => {
     if (!planConfig) {
       return res.status(400).json({ error: "Invalid plan" });
     }
+    // Hard-validate the purchased plan against the plans table (active only).
+    try {
+      await requireActivePlan(plan);
+    } catch (e: any) {
+      return res.status(400).json({ error: e.message });
+    }
 
     // Optional promo code: validate now so the user sees errors early; the
     // actual redemption + attribution happens in the webhook on payment.
@@ -44,6 +51,7 @@ router.post("/", authMiddleware, async (req: Request, res: Response) => {
       if (promo.maxRedemptions && promo.timesRedeemed >= promo.maxRedemptions) {
         return res.status(400).json({ error: "This promo code has been fully redeemed" });
       }
+      // Plan-locked promos only apply to their plan (exact id match).
       if (promo.planId && promo.planId !== plan) {
         return res.status(400).json({ error: "This promo code only applies to a different plan" });
       }
@@ -127,6 +135,13 @@ router.post("/webhook", async (req: Request, res: Response) => {
         const user = email ? await prisma.user.findUnique({ where: { email } }) : null;
         if (user) {
           const planConfig = plan ? await getPlan(plan) : null;
+          if (plan) {
+            const pRow = await findPlan(plan);
+            if (!pRow || !pRow.active) {
+              console.error(`Paystack webhook: refusing to activate subscription on invalid/disabled plan "${plan}" (${reference})`);
+              return res.status(400).json({ error: "Invalid plan in payment metadata" });
+            }
+          }
           // Activate now (Express flow has no trial-start deferral)
           const startsAt = new Date();
           const expiresAt = new Date(startsAt.getTime() + (planConfig?.days || 30) * 24 * 60 * 60 * 1000);
@@ -156,6 +171,13 @@ router.post("/webhook", async (req: Request, res: Response) => {
       const planConfig = await getPlan(plan);
       if (!planConfig) {
         return res.json({ received: true });
+      }
+      // Webhook must not activate a subscription on a stale/unknown plan —
+      // reject and log loudly instead of silently granting wrong-tier access.
+      const planRow = await findPlan(plan);
+      if (!planRow || !planRow.active) {
+        console.error(`Paystack webhook: refusing to activate subscription on invalid/disabled plan "${plan}" (${reference})`);
+        return res.status(400).json({ error: "Invalid plan in payment metadata" });
       }
 
       const amountKes = paidAmount / 100;
