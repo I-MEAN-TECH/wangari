@@ -50,6 +50,7 @@ import adminModulesRoutes from "./routes/admin-modules.js";
 import supportRoutes from "./routes/support.js";
 import promoRedeemRoutes from "./routes/promo-redeem.js";
 import { idempotencyGuard } from "./middleware/idempotency.js";
+import { planGate } from "./middleware/plan-gate.js";
 import adminCrmRoutes from "./routes/admin-crm.js";
 import contactRoutes from "./routes/contact.js";
 import siteContentRoutes from "./routes/site-content.js";
@@ -150,6 +151,10 @@ app.get("/health", (_req, res) => {
 });
 
 // ─── API Routes ───────────────────────────────────────────
+// Plan-tier gate: enforces Starter vs Growth module limits on the server
+// (the sidebar padlocks from /api/trial/status are only cosmetic). Mounted
+// before every module router; skips routes it doesn't gate.
+app.use("/api", planGate);
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", actionEngineRoutes); // /actions first, then falls through to the main dashboard router
 app.use("/api/dashboard", dashboardRoutes);
