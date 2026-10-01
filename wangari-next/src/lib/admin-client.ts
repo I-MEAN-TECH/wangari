@@ -81,4 +81,5 @@ export const adminApi = {
   post: <T = any>(path: string, json?: unknown) => request<T>(path, { method: "POST", json }),
   patch: <T = any>(path: string, json?: unknown) => request<T>(path, { method: "PATCH", json }),
   put: <T = any>(path: string, json?: unknown) => request<T>(path, { method: "PUT", json }),
+  delete: <T = any>(path: string) => request<T>(path, { method: "DELETE" }),
 };

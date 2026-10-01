@@ -73,6 +73,8 @@ model Plan {
   active      Boolean @default(true)
   sortOrder   Int     @default(0)
 
+  promoCodes PromoCode[]
+
   @@map("plans")
 }
 
@@ -830,11 +832,15 @@ model PromoCode {
   maxRedemptions Int?      @map("max_redemptions")
   timesRedeemed  Int       @default(0) @map("times_redeemed")
   partnerName    String?   @map("partner_name")
+  // Null = usable on any plan. Set = restricted to exactly this plan
+  // (sponsored time is granted on that plan; checkout rejects other plans).
+  planId         String?   @map("plan_id")
   expiresAt      DateTime? @map("expires_at")
   active         Boolean   @default(true)
   createdBy      Int?      @map("created_by")
   createdAt      DateTime  @default(now()) @map("created_at")
 
+  plan        Plan? @relation(fields: [planId], references: [id])
   redemptions PromoRedemption[]
 
   @@map("promo_codes")

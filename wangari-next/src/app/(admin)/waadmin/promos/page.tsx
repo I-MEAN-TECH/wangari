@@ -3,7 +3,7 @@
 import * as React from "react";
 import {
   TicketPercent, Plus, Power, X, Share2, Layers, Download, Check,
-  Ticket as TicketIcon, Zap, Handshake, ReceiptText,
+  Ticket as TicketIcon, Zap, Handshake, ReceiptText, Pencil, Trash2, Users,
 } from "lucide-react";
 import { adminApi } from "@/lib/admin-client";
 import {
@@ -19,6 +19,11 @@ interface Redemption {
   createdAt: string;
 }
 
+interface PlanOption {
+  id: string;
+  name: string;
+}
+
 interface PromoRow {
   id: string;
   code: string;
@@ -29,6 +34,8 @@ interface PromoRow {
   maxRedemptions: number | null;
   timesRedeemed: number;
   partnerName: string | null;
+  planId?: string | null;
+  plan?: { id: string; name: string } | null;
   expiresAt: string | null;
   active: boolean;
   createdAt: string;
@@ -43,9 +50,20 @@ interface PromoRow {
   };
 }
 
+interface RedeemerRow {
+  id: number;
+  userId: number;
+  userName: string | null;
+  userEmail: string | null;
+  reference: string | null;
+  discountKes: any;
+  createdAt: string;
+  subscription: { id: number; plan: string; planName: string; expiresAt: string } | null;
+}
+
 interface PromoListRes extends Array<PromoRow> {}
 
-const EMPTY = { code: "", type: "discount", discountType: "percent", value: "", freeMonths: "", maxRedemptions: "", partnerName: "", expiresAt: "" };
+const EMPTY = { code: "", type: "discount", discountType: "percent", value: "", freeMonths: "", maxRedemptions: "", partnerName: "", expiresAt: "", planId: "" };
 
 function promoState(p: PromoRow): "active" | "expired" | "disabled" {
   if (!p.active) return "disabled";
@@ -53,8 +71,13 @@ function promoState(p: PromoRow): "active" | "expired" | "disabled" {
   return "active";
 }
 
+function isFreeType(t: string) {
+  return t === "sponsorship" || t === "partnership";
+}
+
 export default function AdminPromosPage() {
   const [rows, setRows] = React.useState<PromoRow[] | null>(null);
+  const [plans, setPlans] = React.useState<PlanOption[]>([]);
   const [error, setError] = React.useState("");
   const [flash, setFlash] = React.useState("");
   const [form, setForm] = React.useState({ ...EMPTY });
@@ -67,6 +90,11 @@ export default function AdminPromosPage() {
   }, []);
   React.useEffect(load, [load]);
 
+  React.useEffect(() => {
+    adminApi.get<any[]>("/plans").then((ps) => setPlans(ps.map((p) => ({ id: p.id, name: p.name })))).catch(() => {});
+  }, []);
+
+  const planName = (id?: string | null) => plans.find((p) => p.id === id)?.name || null;
   const summary = rows?.[0]?.summary ?? null;
 
   async function create(e: React.FormEvent) {
@@ -78,11 +106,12 @@ export default function AdminPromosPage() {
         code: form.code,
         type: form.type,
         discountType: form.discountType,
-        value: form.type === "sponsorship" || form.type === "partnership" ? 0 : Number(form.value),
-        freeMonths: form.type === "sponsorship" || form.type === "partnership" ? Number(form.freeMonths) : null,
+        value: isFreeType(form.type) ? 0 : Number(form.value),
+        freeMonths: isFreeType(form.type) ? Number(form.freeMonths) : null,
         maxRedemptions: form.maxRedemptions ? Number(form.maxRedemptions) : null,
         partnerName: form.partnerName || null,
         expiresAt: form.expiresAt || null,
+        planId: form.planId || null,
       });
       setForm({ ...EMPTY });
       setShowCreate(false);
@@ -106,13 +135,96 @@ export default function AdminPromosPage() {
     }
   }
 
+  // ── Edit existing promo (no delete/recreate needed) ──
+  const [edit, setEdit] = React.useState<PromoRow | null>(null);
+  const [editForm, setEditForm] = React.useState({ ...EMPTY });
+  const [editBusy, setEditBusy] = React.useState(false);
+
+  function openEdit(p: PromoRow) {
+    setEdit(p);
+    setEditForm({
+      code: p.code,
+      type: p.type,
+      discountType: p.discountType || "percent",
+      value: p.value != null ? String(p.value) : "",
+      freeMonths: p.freeMonths != null ? String(p.freeMonths) : "",
+      maxRedemptions: p.maxRedemptions != null ? String(p.maxRedemptions) : "",
+      partnerName: p.partnerName || "",
+      expiresAt: p.expiresAt ? p.expiresAt.slice(0, 10) : "",
+      planId: p.planId || "",
+    });
+  }
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!edit) return;
+    setEditBusy(true);
+    setError("");
+    try {
+      await adminApi.patch(`/promos/${edit.id}`, {
+        code: editForm.code,
+        type: editForm.type,
+        discountType: isFreeType(editForm.type) ? null : editForm.discountType,
+        value: isFreeType(editForm.type) ? null : Number(editForm.value),
+        freeMonths: isFreeType(editForm.type) ? Number(editForm.freeMonths) : null,
+        maxRedemptions: editForm.maxRedemptions ? Number(editForm.maxRedemptions) : null,
+        partnerName: editForm.partnerName || null,
+        expiresAt: editForm.expiresAt || null,
+        planId: editForm.planId || null,
+      });
+      setEdit(null);
+      setFlash("Promo code updated.");
+      setTimeout(() => setFlash(""), 4000);
+      load();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setEditBusy(false);
+    }
+  }
+
+  // ── Redeemers manager ──
+  const [redeemers, setRedeemers] = React.useState<RedeemerRow[] | null>(null);
+  const [redeemersFor, setRedeemersFor] = React.useState<PromoRow | null>(null);
+  const [redeemersBusy, setRedeemersBusy] = React.useState(false);
+
+  async function openRedeemers(p: PromoRow) {
+    setRedeemersFor(p);
+    setRedeemers(null);
+    try {
+      setRedeemers(await adminApi.get<RedeemerRow[]>(`/promos/${p.id}/redemptions`));
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  async function revokeRedemption(r: RedeemerRow) {
+    if (!redeemersFor) return;
+    if (!window.confirm(`Remove ${r.userEmail || `user #${r.userId}`} from ${redeemersFor.code}?${r.subscription ? "\\n\\nTheir sponsored subscription will be cancelled." : ""}`)) return;
+    setRedeemersBusy(true);
+    try {
+      await adminApi.delete(`/promos/${redeemersFor.id}/redemptions/${r.id}`);
+      setFlash("Redemption removed.");
+      setTimeout(() => setFlash(""), 4000);
+      await openRedeemers(redeemersFor);
+      load();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setRedeemersBusy(false);
+    }
+  }
+
   // ── WhatsApp share message ──
   const [sharedCode, setSharedCode] = React.useState<string | null>(null);
   function shareMessage(p: PromoRow): string {
-    const isFree = p.type === "sponsorship" || p.type === "partnership";
+    const isFree = isFreeType(p.type);
     const benefit = isFree
       ? `🎁 ${p.freeMonths || "?"} months of Wangari — completely FREE`
       : p.discountType === "percent" ? `🎁 ${p.value}% off your subscription` : `🎁 KES ${p.value?.toLocaleString()} off your subscription`;
+    const planLine = p.planId
+      ? `\\nValid on the *${planName(p.planId) || p.plan?.name || p.planId}* plan only.`
+      : "";
     return [
       `🌿 *Wangari Farm OS* — ${benefit}`,
       p.partnerName ? `Powered by ${p.partnerName}` : "",
@@ -121,9 +233,10 @@ export default function AdminPromosPage() {
       isFree
         ? `How to use: open ${"https://wangari.imeantech.com/subscription"} → enter the code → tap *Redeem*. Free access starts instantly — no payment needed.`
         : `How to use: open ${"https://wangari.imeantech.com/subscription"} → pick a plan → enter the code at checkout.`,
+      planLine,
       "",
       "Track animals, crops, sales & workers — even offline. 🐔🌾",
-    ].filter(Boolean).join("\n");
+    ].filter(Boolean).join("\\n");
   }
   async function copyShare(p: PromoRow) {
     try {
@@ -138,7 +251,7 @@ export default function AdminPromosPage() {
 
   // ── Batch generation ──
   const [showBatch, setShowBatch] = React.useState(false);
-  const [batchForm, setBatchForm] = React.useState({ prefix: "WANGARI", count: "50", type: "sponsorship", freeMonths: "12", discountType: "percent", value: "", partnerName: "", expiresAt: "" });
+  const [batchForm, setBatchForm] = React.useState({ prefix: "WANGARI", count: "50", type: "sponsorship", freeMonths: "12", discountType: "percent", value: "", partnerName: "", expiresAt: "", planId: "" });
   const [batchBusy, setBatchBusy] = React.useState(false);
   const [batchCodes, setBatchCodes] = React.useState<string[] | null>(null);
   const [batchError, setBatchError] = React.useState("");
@@ -147,7 +260,7 @@ export default function AdminPromosPage() {
     setBatchBusy(true);
     setBatchError("");
     try {
-      const isFree = batchForm.type === "sponsorship" || batchForm.type === "partnership";
+      const isFree = isFreeType(batchForm.type);
       const res = await adminApi.post<{ ok: boolean; created: string[] }>("/promos/batch", {
         prefix: batchForm.prefix,
         count: Number(batchForm.count),
@@ -155,6 +268,7 @@ export default function AdminPromosPage() {
         ...(isFree ? { freeMonths: Number(batchForm.freeMonths) } : { discountType: batchForm.discountType, value: Number(batchForm.value) }),
         partnerName: batchForm.partnerName || null,
         expiresAt: batchForm.expiresAt || null,
+        planId: batchForm.planId || null,
       });
       setBatchCodes(res.created);
       load();
@@ -167,14 +281,14 @@ export default function AdminPromosPage() {
 
   function exportCsv() {
     if (!batchCodes) return;
-    const isFree = batchForm.type === "sponsorship" || batchForm.type === "partnership";
+    const isFree = isFreeType(batchForm.type);
     const rows = [
-      "code,type,benefit,partner,expires",
+      "code,type,benefit,partner,plan,expires",
       ...batchCodes.map((c) =>
-        [c, batchForm.type, isFree ? `${batchForm.freeMonths} months free` : `${batchForm.discountType === "percent" ? batchForm.value + "%" : "KES " + batchForm.value} off`, batchForm.partnerName, batchForm.expiresAt || "never"]
+        [c, batchForm.type, isFree ? `${batchForm.freeMonths} months free` : `${batchForm.discountType === "percent" ? batchForm.value + "%" : "KES " + batchForm.value} off`, batchForm.partnerName, batchForm.planId ? planName(batchForm.planId) || batchForm.planId : "any", batchForm.expiresAt || "never"]
           .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
       ),
-    ].join("\n");
+    ].join("\\n");
     const url = URL.createObjectURL(new Blob([rows], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
@@ -221,11 +335,12 @@ export default function AdminPromosPage() {
         ) : rows.length === 0 ? (
           <EmptyState title="No promo codes yet" hint="Create the first one with the New code button." icon={<TicketPercent className="h-5 w-5" />} />
         ) : (
-          <TableShell minWidth={820}>
+          <TableShell minWidth={880}>
             <thead>
               <tr>
                 <Th>Code</Th>
                 <Th>Discount</Th>
+                <Th>Plan</Th>
                 <Th>Redeemed</Th>
                 <Th>Partner</Th>
                 <Th>Expires</Th>
@@ -247,7 +362,16 @@ export default function AdminPromosPage() {
                       <div className="mt-0.5 text-[11px] capitalize text-wangari-subtle">{p.type}</div>
                     </Td>
                     <Td className="text-wangari-text">
-                      {p.discountType === "percent" ? `${p.value}%` : `KES ${p.value?.toLocaleString()}`}
+                      {isFreeType(p.type)
+                        ? `${p.freeMonths || "?"} mo free`
+                        : p.discountType === "percent" ? `${p.value}%` : `KES ${p.value?.toLocaleString()}`}
+                    </Td>
+                    <Td className="text-wangari-text">
+                      {p.planId ? (
+                        <Badge variant="info">{planName(p.planId) || p.plan?.name || p.planId}</Badge>
+                      ) : (
+                        <span className="text-wangari-muted">any</span>
+                      )}
                     </Td>
                     <Td className="text-wangari-text">
                       <span className="font-medium text-wangari-heading">{p.timesRedeemed}</span>
@@ -269,16 +393,16 @@ export default function AdminPromosPage() {
                     <Td className="text-right">
                       <div className="flex justify-end gap-1">
                         <GhostButton
-                          onClick={(e) => { e.stopPropagation(); openWhatsApp(p); }}
+                          onClick={(e) => { e.stopPropagation(); openEdit(p); }}
                           className="h-7 px-2 text-xs"
                         >
-                          <Share2 className="h-3 w-3" />
+                          <Pencil className="h-3 w-3" />
                         </GhostButton>
                         <GhostButton
-                          onClick={(e) => { e.stopPropagation(); copyShare(p); }}
+                          onClick={(e) => { e.stopPropagation(); openRedeemers(p); }}
                           className="h-7 px-2 text-xs"
                         >
-                          {sharedCode === p.id ? <Check className="h-3 w-3 text-wangari-green-700" /> : <Download className="h-3 w-3" />}
+                          <Users className="h-3 w-3" />
                         </GhostButton>
                         <GhostButton
                           onClick={(e) => { e.stopPropagation(); toggle(p); }}
@@ -311,7 +435,7 @@ export default function AdminPromosPage() {
                 <option value="credit">Credit</option>
               </select>
             </Field>
-            {form.type === "sponsorship" || form.type === "partnership" ? (
+            {isFreeType(form.type) ? (
               <Field label="Free months" hint="Granted on redemption, no payment needed">
                 <input required type="number" min="1" max="36" value={form.freeMonths} onChange={(e) => setForm({ ...form, freeMonths: e.target.value })} placeholder="12" className={inputClass} />
               </Field>
@@ -334,6 +458,12 @@ export default function AdminPromosPage() {
             <Field label="Expires" hint="Empty = never">
               <input type="date" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} className={inputClass} />
             </Field>
+            <Field label="Plan" hint="Empty = usable on any plan">
+              <select value={form.planId} onChange={(e) => setForm({ ...form, planId: e.target.value })} className={inputClass}>
+                <option value="">Any plan</option>
+                {plans.map((pl) => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
+              </select>
+            </Field>
           </div>
           <Field label={form.type === "sponsorship" ? "Sponsor name" : "Partner name"} hint="Optional — shown to the farmer when they redeem">
             <input value={form.partnerName} onChange={(e) => setForm({ ...form, partnerName: e.target.value })} className={inputClass} />
@@ -345,6 +475,97 @@ export default function AdminPromosPage() {
             </PrimaryButton>
           </div>
         </form>
+      </Modal>
+
+      {/* Edit modal */}
+      <Modal title={`Edit ${edit?.code || ""}`} onClose={() => setEdit(null)} open={!!edit} width="max-w-lg">
+        <form onSubmit={saveEdit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Code" hint="Uppercase, unique">
+              <input required value={editForm.code} onChange={(e) => setEditForm({ ...editForm, code: e.target.value.toUpperCase() })} className={inputClass} />
+            </Field>
+            <Field label="Type">
+              <select value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })} className={inputClass}>
+                <option value="discount">Discount</option>
+                <option value="partnership">Partnership (free months)</option>
+                <option value="sponsorship">Sponsorship (free months)</option>
+                <option value="credit">Credit</option>
+              </select>
+            </Field>
+            {isFreeType(editForm.type) ? (
+              <Field label="Free months" hint="Granted on redemption">
+                <input required type="number" min="1" max="36" value={editForm.freeMonths} onChange={(e) => setEditForm({ ...editForm, freeMonths: e.target.value })} className={inputClass} />
+              </Field>
+            ) : (
+              <>
+                <Field label="Discount type">
+                  <select value={editForm.discountType} onChange={(e) => setEditForm({ ...editForm, discountType: e.target.value })} className={inputClass}>
+                    <option value="percent">% off</option>
+                    <option value="fixed">KES off</option>
+                  </select>
+                </Field>
+                <Field label="Value" hint={editForm.discountType === "percent" ? "1-100" : "KES amount"}>
+                  <input required type="number" min="1" value={editForm.value} onChange={(e) => setEditForm({ ...editForm, value: e.target.value })} className={inputClass} />
+                </Field>
+              </>
+            )}
+            <Field label="Max uses" hint="Empty = unlimited">
+              <input type="number" min="1" value={editForm.maxRedemptions} onChange={(e) => setEditForm({ ...editForm, maxRedemptions: e.target.value })} className={inputClass} />
+            </Field>
+            <Field label="Expires" hint="Empty = never">
+              <input type="date" value={editForm.expiresAt} onChange={(e) => setEditForm({ ...editForm, expiresAt: e.target.value })} className={inputClass} />
+            </Field>
+            <Field label="Plan" hint="Empty = usable on any plan">
+              <select value={editForm.planId} onChange={(e) => setEditForm({ ...editForm, planId: e.target.value })} className={inputClass}>
+                <option value="">Any plan</option>
+                {plans.map((pl) => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
+              </select>
+            </Field>
+          </div>
+          <Field label={editForm.type === "sponsorship" ? "Sponsor name" : "Partner name"} hint="Optional">
+            <input value={editForm.partnerName} onChange={(e) => setEditForm({ ...editForm, partnerName: e.target.value })} className={inputClass} />
+          </Field>
+          <div className="flex justify-end gap-2 pt-1">
+            <GhostButton onClick={() => setEdit(null)}>Cancel</GhostButton>
+            <PrimaryButton type="submit" disabled={editBusy}>
+              {editBusy ? "Saving…" : "Save changes"}
+            </PrimaryButton>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Redeemers modal */}
+      <Modal title={`Redeemers — ${redeemersFor?.code || ""}`} onClose={() => setRedeemersFor(null)} open={!!redeemersFor} width="max-w-xl">
+        {!redeemers ? (
+          <Loading label="Loading redeemers…" />
+        ) : redeemers.length === 0 ? (
+          <EmptyState title="No one has used this code yet" hint="Redemptions appear here as farmers redeem it." icon={<Users className="h-5 w-5" />} />
+        ) : (
+          <div className="space-y-2">
+            {redeemers.map((r) => (
+              <div key={r.id} className="flex items-center justify-between gap-3 rounded-xl border border-wangari-border px-3.5 py-2.5">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-wangari-heading">{r.userName || "Unknown farmer"}</div>
+                  <div className="truncate text-xs text-wangari-muted">{r.userEmail || `user #${r.userId}`}</div>
+                  <div className="mt-0.5 text-[11px] text-wangari-subtle">
+                    {new Date(r.createdAt).toLocaleString()}
+                    {r.subscription ? ` · ${r.subscription.planName || r.subscription.plan} until ${new Date(r.subscription.expiresAt).toLocaleDateString()}` : ""}
+                  </div>
+                </div>
+                <GhostButton
+                  onClick={() => revokeRedemption(r)}
+                  disabled={redeemersBusy}
+                  className="h-8 shrink-0 px-2 text-xs text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Remove
+                </GhostButton>
+              </div>
+            ))}
+            <p className="pt-1 text-[11px] text-wangari-subtle">
+              Removing a redeemer frees up a use of the code. If the code granted sponsored time, that subscription is cancelled too — payment-based discounts are never touched.
+            </p>
+          </div>
+        )}
       </Modal>
 
       {/* Batch generation modal */}
@@ -380,7 +601,7 @@ export default function AdminPromosPage() {
                   <option value="discount">Discount</option>
                 </select>
               </Field>
-              {batchForm.type === "sponsorship" || batchForm.type === "partnership" ? (
+              {isFreeType(batchForm.type) ? (
                 <Field label="Free months" hint="1–36">
                   <input required type="number" min="1" max="36" value={batchForm.freeMonths} onChange={(e) => setBatchForm({ ...batchForm, freeMonths: e.target.value })} className={inputClass} />
                 </Field>
@@ -399,6 +620,12 @@ export default function AdminPromosPage() {
               )}
               <Field label="Expires" hint="Empty = never">
                 <input type="date" value={batchForm.expiresAt} onChange={(e) => setBatchForm({ ...batchForm, expiresAt: e.target.value })} className={inputClass} />
+              </Field>
+              <Field label="Plan" hint="Empty = any plan">
+                <select value={batchForm.planId} onChange={(e) => setBatchForm({ ...batchForm, planId: e.target.value })} className={inputClass}>
+                  <option value="">Any plan</option>
+                  {plans.map((pl) => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
+                </select>
               </Field>
             </div>
             <Field label={batchForm.type === "sponsorship" ? "Sponsor name" : "Partner name"} hint="Optional — appears in the WhatsApp message">
@@ -429,6 +656,7 @@ export default function AdminPromosPage() {
                   <div className="mt-1.5 flex gap-1.5">
                     <Badge variant="info">{detail.type}</Badge>
                     {promoState(detail) === "active" ? <Badge variant="success">active</Badge> : promoState(detail) === "expired" ? <Badge variant="warning">expired</Badge> : <Badge variant="outline">disabled</Badge>}
+                    {detail.planId && <Badge variant="info">{planName(detail.planId) || detail.plan?.name || detail.planId}</Badge>}
                   </div>
                 </div>
                 <button onClick={() => setDetail(null)} className="rounded-lg p-1 text-wangari-muted hover:bg-wangari-cream hover:text-wangari-heading">
@@ -440,7 +668,9 @@ export default function AdminPromosPage() {
                 <div className="rounded-2xl border border-wangari-border p-3.5">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Discount</div>
                   <div className="mt-1 text-xl font-bold text-wangari-heading">
-                    {detail.discountType === "percent" ? `${detail.value}%` : `KES ${detail.value?.toLocaleString()}`}
+                    {isFreeType(detail.type)
+                      ? `${detail.freeMonths || "?"} mo free`
+                      : detail.discountType === "percent" ? `${detail.value}%` : `KES ${detail.value?.toLocaleString()}`}
                   </div>
                 </div>
                 <div className="rounded-2xl border border-wangari-border p-3.5">
@@ -450,8 +680,8 @@ export default function AdminPromosPage() {
                   </div>
                 </div>
                 <div className="rounded-2xl border border-wangari-border p-3.5">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Partner</div>
-                  <div className="mt-1 font-medium text-wangari-heading">{detail.partnerName || "—"}</div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Plan</div>
+                  <div className="mt-1 font-medium text-wangari-heading">{detail.planId ? planName(detail.planId) || detail.plan?.name || detail.planId : "Any plan"}</div>
                 </div>
                 <div className="rounded-2xl border border-wangari-border p-3.5">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Expires</div>
@@ -462,8 +692,9 @@ export default function AdminPromosPage() {
               </div>
 
               <div>
-                <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-wangari-subtle">
-                  <ReceiptText className="h-3.5 w-3.5" /> Recent redemptions
+                <div className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-wangari-subtle">
+                  <span className="flex items-center gap-1.5"><ReceiptText className="h-3.5 w-3.5" /> Recent redemptions</span>
+                  <button onClick={() => openRedeemers(detail)} className="text-wangari-green-700 hover:underline">Manage all</button>
                 </div>
                 {detail.recentRedemptions.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-wangari-border px-3 py-4 text-center text-xs text-wangari-subtle">
@@ -500,10 +731,16 @@ export default function AdminPromosPage() {
                 </div>
               </div>
 
-              <div className="flex gap-2 border-t border-wangari-border pt-4">
-                <PrimaryButton onClick={() => toggle(detail)}>
-                  <Power className="h-4 w-4" /> {detail.active ? "Disable code" : "Enable code"}
+              <div className="flex flex-wrap gap-2 border-t border-wangari-border pt-4">
+                <PrimaryButton onClick={() => openEdit(detail)}>
+                  <Pencil className="h-4 w-4" /> Edit code
                 </PrimaryButton>
+                <PrimaryButton onClick={() => openRedeemers(detail)}>
+                  <Users className="h-4 w-4" /> Redeemers
+                </PrimaryButton>
+                <GhostButton onClick={() => toggle(detail)}>
+                  <Power className="h-4 w-4" /> {detail.active ? "Disable" : "Enable"}
+                </GhostButton>
                 <GhostButton onClick={() => setDetail(null)}>Close</GhostButton>
               </div>
             </div>

@@ -49,6 +49,11 @@ router.post("/redeem", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "This code applies at checkout — enter it during payment instead" });
     }
 
+    // Plan-restricted codes grant time on THEIR plan, not a hard-coded one.
+    const targetPlanId = promo.planId || "growth_monthly";
+    const plan = (await getPlan(targetPlanId)) || (await getPlan("growth_monthly")) || (await getPlan("starter_monthly"));
+    if (!plan) return res.status(500).json({ error: "Plans not configured" });
+
     // One redemption of this code per user.
     const already = await prisma.promoRedemption.findFirst({
       where: { promoCodeId: promo.id, userId },
@@ -56,9 +61,6 @@ router.post("/redeem", async (req: Request, res: Response) => {
     if (already) {
       return res.status(400).json({ error: "You have already used this code" });
     }
-
-    const plan = (await getPlan("growth_monthly")) || (await getPlan("starter_monthly"));
-    if (!plan) return res.status(500).json({ error: "Plans not configured" });
 
     const now = new Date();
     // Extend from an existing active subscription if there is one.

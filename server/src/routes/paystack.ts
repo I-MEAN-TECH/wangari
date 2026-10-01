@@ -44,6 +44,9 @@ router.post("/", authMiddleware, async (req: Request, res: Response) => {
       if (promo.maxRedemptions && promo.timesRedeemed >= promo.maxRedemptions) {
         return res.status(400).json({ error: "This promo code has been fully redeemed" });
       }
+      if (promo.planId && promo.planId !== plan) {
+        return res.status(400).json({ error: "This promo code only applies to a different plan" });
+      }
     }
 
     const payload: any = {

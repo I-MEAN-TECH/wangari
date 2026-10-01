@@ -335,6 +335,7 @@ router.get("/promos", requireAdmin(["billing", "support", "support_read"]), asyn
     const now = new Date();
     const rows = await prisma.promoCode.findMany({
       include: {
+        plan: { select: { id: true, name: true } },
         _count: { select: { redemptions: true } },
         redemptions: {
           orderBy: { id: "desc" },
@@ -381,6 +382,12 @@ router.post("/promos", requireAdmin(["billing"]), async (req: Request, res: Resp
     if (!["discount", "partnership", "credit", "sponsorship"].includes(type)) {
       return res.status(400).json({ error: "type must be discount, partnership, credit or sponsorship" });
     }
+    // Optional plan restriction: a promo tied to a plan only works on that plan.
+    const planId = req.body?.planId ? String(req.body.planId) : null;
+    if (planId) {
+      const plan = await prisma.plan.findUnique({ where: { id: planId } });
+      if (!plan) return res.status(400).json({ error: "Unknown plan" });
+    }
     // Sponsorship codes grant free months instead of a payment discount.
     const freeMonths = req.body?.freeMonths ? Number(req.body.freeMonths) : null;
     if (type === "sponsorship") {
@@ -404,6 +411,7 @@ router.post("/promos", requireAdmin(["billing"]), async (req: Request, res: Resp
         freeMonths: type === "sponsorship" ? Math.round(freeMonths!) : null,
         maxRedemptions: maxRedemptions ? Number(maxRedemptions) : null,
         partnerName: partnerName || null,
+        planId,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         createdBy: (req as any).admin?.adminId,
       },
@@ -481,20 +489,168 @@ router.post("/promos/batch", requireAdmin(["billing"]), async (req: Request, res
 
 router.patch("/promos/:id", requireAdmin(["billing"]), async (req: Request, res: Response) => {
   try {
-    const { active, maxRedemptions, expiresAt } = req.body || {};
-    const promo = await prisma.promoCode.update({
-      where: { id: String(req.params.id) },
-      data: {
-        ...(active !== undefined ? { active: Boolean(active) } : {}),
-        ...(maxRedemptions !== undefined ? { maxRedemptions: maxRedemptions ? Number(maxRedemptions) : null } : {}),
-        ...(expiresAt !== undefined ? { expiresAt: expiresAt ? new Date(expiresAt) : null } : {}),
-      },
-    });
-    auditAdminAction((req as any).admin, "admin.promo.update", "promo", promo.id, { active: promo.active, maxRedemptions: promo.maxRedemptions });
+    const {
+      code, type, discountType, value, freeMonths, maxRedemptions,
+      partnerName, planId, expiresAt, active,
+    } = req.body || {};
+
+    const data: any = {};
+
+    // Code rename (validated + uniqueness handled by Prisma P2002 below).
+    if (code !== undefined) {
+      const clean = String(code || "").trim().toUpperCase();
+      if (!clean || !/^[A-Z0-9_-]{3,24}$/.test(clean)) {
+        return res.status(400).json({ error: "Code must be 3-24 chars (A-Z, 0-9, dash, underscore)" });
+      }
+      data.code = clean;
+    }
+    if (type !== undefined) {
+      if (!["discount", "partnership", "credit", "sponsorship"].includes(type)) {
+        return res.status(400).json({ error: "type must be discount, partnership, credit or sponsorship" });
+      }
+      data.type = type;
+    }
+    if (discountType !== undefined) {
+      if (discountType !== null && !["percent", "fixed"].includes(discountType)) {
+        return res.status(400).json({ error: "discountType must be percent or fixed" });
+      }
+      data.discountType = discountType;
+    }
+    if (value !== undefined) {
+      if (value === null) {
+        data.value = null;
+      } else {
+        const val = Number(value);
+        if (!Number.isFinite(val) || val <= 0) return res.status(400).json({ error: "value must be a positive number" });
+        if ((data.discountType ?? discountType) === "percent" && val > 100) {
+          return res.status(400).json({ error: "percent discount cannot exceed 100" });
+        }
+        data.value = Math.round(val);
+      }
+    }
+    if (freeMonths !== undefined) {
+      if (freeMonths === null) {
+        data.freeMonths = null;
+      } else {
+        const fm = Number(freeMonths);
+        if (!Number.isFinite(fm) || fm < 1 || fm > 36) return res.status(400).json({ error: "freeMonths must be 1-36" });
+        data.freeMonths = Math.round(fm);
+      }
+    }
+    if (maxRedemptions !== undefined) data.maxRedemptions = maxRedemptions ? Number(maxRedemptions) : null;
+    if (partnerName !== undefined) data.partnerName = partnerName ? String(partnerName).trim() : null;
+    if (active !== undefined) data.active = Boolean(active);
+    if (expiresAt !== undefined) data.expiresAt = expiresAt ? new Date(expiresAt) : null;
+
+    // Plan restriction: null clears it (usable on any plan), a valid plan id
+    // locks the promo to that plan.
+    if (planId !== undefined) {
+      if (planId === null || planId === "") {
+        data.planId = null;
+      } else {
+        const plan = await prisma.plan.findUnique({ where: { id: String(planId) } });
+        if (!plan) return res.status(400).json({ error: "Unknown plan" });
+        data.planId = String(planId);
+      }
+    }
+
+    const promo = await prisma.promoCode.update({ where: { id: String(req.params.id) }, data });
+    auditAdminAction((req as any).admin, "admin.promo.update", "promo", promo.id, data);
     res.json(promo);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "P2002") return res.status(409).json({ error: "That code already exists" });
     console.error("Admin promo update error:", error);
     res.status(500).json({ error: "Failed to update promo code" });
+  }
+});
+
+// GET /api/admin/promos/:id/redemptions — full redeemer list for one code
+// (the list endpoint only embeds the 5 most recent; this returns everything,
+// with the user attached so support can see WHO used the code).
+router.get("/promos/:id/redemptions", requireAdmin(["billing", "support", "support_read"]), async (req: Request, res: Response) => {
+  try {
+    const rows = await prisma.promoRedemption.findMany({
+      where: { promoCodeId: String(req.params.id) },
+      orderBy: { id: "desc" },
+      include: {
+        // user relation isn't declared on PromoRedemption (userId is a plain
+        // int column), so resolve users separately.
+      },
+    });
+    const userIds = [...new Set(rows.map((r) => r.userId))];
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
+    const activeSubs = await prisma.subscription.findMany({
+      where: { userId: { in: userIds }, status: "active", expiresAt: { gt: new Date() } },
+      orderBy: { expiresAt: "desc" },
+    });
+    const subMap = new Map<string, any>();
+    for (const s of activeSubs) if (!subMap.has(`${s.userId}`)) subMap.set(`${s.userId}`, s);
+
+    res.json(rows.map((r) => {
+      const u = userMap.get(r.userId);
+      const sub = subMap.get(`${r.userId}`);
+      return {
+        id: r.id,
+        userId: r.userId,
+        userName: u?.name || null,
+        userEmail: u?.email || null,
+        reference: r.reference,
+        discountKes: r.discountKes,
+        createdAt: r.createdAt,
+        subscription: sub ? { id: sub.id, plan: sub.plan, planName: sub.planName, expiresAt: sub.expiresAt } : null,
+      };
+    }));
+  } catch (error) {
+    console.error("Admin promo redemptions error:", error);
+    res.status(500).json({ error: "Failed to load redemptions" });
+  }
+});
+
+// DELETE /api/admin/promos/:id/redemptions/:redemptionId — revoke one user's
+// redemption. Also cancels the subscription the redemption created (PROMO-
+// references) so the code slot frees up and the sponsored access actually
+// ends. Payments made through Paystack are never touched.
+router.delete("/promos/:id/redemptions/:redemptionId", requireAdmin(["billing"]), async (req: Request, res: Response) => {
+  try {
+    const redemptionId = Number(req.params.redemptionId);
+    const promoCodeId = String(req.params.id);
+    const redemption = await prisma.promoRedemption.findFirst({
+      where: { id: redemptionId, promoCodeId },
+    });
+    if (!redemption) return res.status(404).json({ error: "Redemption not found" });
+
+    await prisma.$transaction([
+      prisma.promoRedemption.delete({ where: { id: redemptionId } }),
+      prisma.promoCode.update({
+        where: { id: promoCodeId },
+        data: { timesRedeemed: { decrement: 1 } },
+      }),
+    ]);
+
+    // If this redemption granted sponsored time, end that subscription.
+    let cancelledSub = false;
+    if (String(redemption.reference || "").startsWith("PROMO-")) {
+      const sub = await prisma.subscription.findFirst({
+        where: { userId: redemption.userId, reference: { startsWith: "PROMO-" } },
+        orderBy: { id: "desc" },
+      });
+      if (sub) {
+        await prisma.subscription.update({ where: { id: sub.id }, data: { status: "cancelled" } });
+        cancelledSub = true;
+      }
+    }
+
+    auditAdminAction((req as any).admin, "admin.promo.revoke-redemption", "promo", promoCodeId, {
+      redemptionId, userId: redemption.userId, cancelledSub,
+    });
+    res.json({ ok: true, cancelledSub });
+  } catch (error) {
+    console.error("Admin promo revoke error:", error);
+    res.status(500).json({ error: "Failed to revoke redemption" });
   }
 });
 
