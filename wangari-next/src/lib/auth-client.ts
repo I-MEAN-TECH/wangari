@@ -226,6 +226,21 @@ export async function resetPassword(token: string, password: string): Promise<{ 
   return data;
 }
 
+/**
+ * Raised when Google says who you are, but no Wangari account has ever been
+ * created for that identity. The server deliberately refuses to auto-provision
+ * (see routes/auth.ts) so a shared-handset tap cannot mint a farm; the caller
+ * sends the farmer to full registration instead.
+ */
+export class AccountNotProvisionedError extends Error {
+  email?: string;
+  constructor(message: string, email?: string) {
+    super(message);
+    this.name = "AccountNotProvisionedError";
+    this.email = email;
+  }
+}
+
 export async function googleLogin(credential: string): Promise<AuthResponse> {
   const res = await fetch("/api/auth/google", {
     method: "POST",
@@ -234,11 +249,19 @@ export async function googleLogin(credential: string): Promise<AuthResponse> {
   });
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Google login failed");
+  if (!res.ok) {
+    if (res.status === 409 && data?.code === "ACCOUNT_NOT_PROVISIONED") {
+      throw new AccountNotProvisionedError(
+        "No Wangari account uses this Google account yet.",
+        data.email
+      );
+    }
+    throw new Error(data.error || "Google login failed");
+  }
 
   setToken(data.token);
   setUser(data.user);
-  track("user_logged_in", { method: "google", user_id: data.user?.id, new_user: !!data.user?.googleId });
+  track("user_logged_in", { method: "google", user_id: data.user?.id, new_user: false });
   return data;
 }
 

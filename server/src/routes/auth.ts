@@ -1,5 +1,6 @@
 import { TRIAL_DAYS, trialEndDate } from "../lib/config.js";
 import { Router, Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -386,37 +387,21 @@ router.post("/google", async (req: Request, res: Response) => {
         user = await prisma.user.update({ where: { id: user.id }, data: updateData });
       }
     } else {
-      // New user — create account
-      const now = new Date();
-      const trialEndsAt = trialEndDate(now);
-
-      user = await prisma.user.create({
-        data: {
-          name: googleUser.name || normalizedGoogleEmail.split("@")[0],
-          email: normalizedGoogleEmail,
-          googleId: googleUser.sub,
-          avatar: googleUser.picture || null,
-          trialStartsAt: now,
-          trialEndsAt,
-          // No password for Google users
-        },
-      });
-
-      // Create a farm for the new user
-      const farm = await prisma.farm.create({
-        data: {
-          name: `${googleUser.name || "My"} Farm`,
-          ownerId: user.id,
-          code: await createUniqueFarmCode(),
-        },
-      });
-
-      await prisma.farmMember.create({
-        data: {
-          userId: user.id,
-          farmId: farm.id,
-          role: "farm_owner",
-        },
+      // No matching account — DO NOT auto-create.
+      //
+      // This used to silently mint a user plus a placeholder "Jane Doe Farm"
+      // and sign them straight in, which (a) let anyone who tapped Google on a
+      // shared handset walk into a fresh farm, and (b) skipped onboarding
+      // entirely, so the account had no real farm behind it.
+      //
+      // Now a genuinely new Google identity is sent to full registration, where
+      // the farmer states their farm and claims it. Identity is proven by
+      // Google; ownership of a farm is proven by saying what you farm.
+      return res.status(409).json({
+        error: "No Wangari account uses this Google account yet.",
+        code: "ACCOUNT_NOT_PROVISIONED",
+        email: normalizedGoogleEmail,
+        googleSub: googleUser.sub,
       });
     }
 
@@ -486,6 +471,118 @@ router.post("/link-google", async (req: Request, res: Response) => {
 });
 
 // PUT /api/auth/profile — update user profile
+// ─────────────────────────────────────────────────────────────────────────────
+// ONBOARDING — "has this account ever really been used?"
+//
+// There was a 337-line /onboarding wizard that POSTed to /api/user-preferences,
+// a route that did not exist; the 404 was swallowed by an empty catch. So the
+// farm name, location and farm type a farmer entered were discarded and they
+// landed on the dashboard believing it had saved. Nothing ever checked whether
+// the account had been used, so an unused account (or a Google sign-in that
+// auto-created a placeholder farm) walked straight in.
+//
+// These two endpoints fix the data half of that: one persists what the farmer
+// actually said, one reports whether the account has ever recorded anything.
+// The gate itself lives in the client (lib/onboarding.ts, tested) with the
+// server as the source of truth for "has real activity".
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/auth/onboarding — the state the gate needs.
+router.get("/onboarding", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const farmId = req.user!.farmId;
+    if (!userId || !farmId) {
+      return res.status(403).json({ error: "No farm scope on this session" });
+    }
+
+    const [user, farm, earliest] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { profileComplete: true, name: true, phone: true } }),
+      prisma.farm.findUnique({ where: { id: farmId }, select: { id: true, name: true, location: true, county: true, farmType: true, code: true } }),
+      // Real activity = any production, harvest, money or delivery record.
+      prisma.$queryRaw<Array<{ first: Date | null }>>(Prisma.sql`
+        SELECT MIN(d) AS first FROM (
+          SELECT MIN(date) AS d FROM daily_production WHERE farm_id = ${farmId}
+          UNION ALL SELECT MIN(date) FROM crop_harvests WHERE farm_id = ${farmId}
+          UNION ALL SELECT MIN(date) FROM transactions WHERE farm_id = ${farmId}
+          UNION ALL SELECT MIN(date) FROM deliveries WHERE farm_id = ${farmId}
+        ) t
+      `).catch(() => [{ first: null }]),
+    ]);
+
+    const firstRecordAt = earliest?.[0]?.first ? new Date(earliest[0].first).toISOString() : null;
+
+    res.json({
+      profileComplete: Boolean(user?.profileComplete),
+      firstRecordAt,
+      everLoggedIn: true,
+      // Mirrors lib/onboarding.ts: gate only on real activity, so an existing
+      // farmer with records is NEVER locked out of their own records.
+      onboardingRequired: !firstRecordAt,
+      farm: farm ?? null,
+    });
+  } catch (error) {
+    console.error("Onboarding status error:", error);
+    res.status(500).json({ error: "Failed to read onboarding state" });
+  }
+});
+
+// POST /api/auth/onboarding — persist what the farmer actually said.
+router.post("/onboarding", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const farmId = req.user!.farmId;
+    if (!userId || !farmId) {
+      return res.status(403).json({ error: "No farm scope on this session" });
+    }
+
+    const { name, phone, farmName, location, county, farmType } = req.body || {};
+
+    // Only these two are required to claim the farm. Keeping this SHORT is
+    // deliberate: research (TraceX, Mar 2026) is explicit that "a form
+    // requiring 14 fields before a harvest can be recorded will be abandoned
+    // or faked". Everything else is progressive — asked later, in context.
+    if (!farmName || !String(farmName).trim()) {
+      return res.status(400).json({ error: "farmName is required" });
+    }
+    if (!farmType) {
+      return res.status(400).json({ error: "farmType is required — tell us what you farm" });
+    }
+
+    await prisma.farm.update({
+      where: { id: farmId },
+      data: {
+        name: String(farmName).trim().slice(0, 120),
+        // A Google sign-in creates "Jane Doe Farm" as a placeholder; once the
+        // farmer states the real name this stops being a guess.
+        farmType: String(farmType).slice(0, 60),
+        location: location ? String(location).trim().slice(0, 120) : null,
+        county: county ? String(county).trim().slice(0, 80) : null,
+      },
+    });
+
+    // The user's own contact details are optional here (a farmer may not use
+    // email or may not want it typed), so profileComplete is NOT forced true —
+    // it stays the settings-page concern. Onboarding only claims the farm.
+    const userUpdate: any = {};
+    if (name) userUpdate.name = String(name).trim().slice(0, 120);
+    if (phone) userUpdate.phone = String(phone).trim().slice(0, 40);
+    if (Object.keys(userUpdate).length) {
+      await prisma.user.update({ where: { id: userId }, data: userUpdate });
+    }
+
+    const farm = await prisma.farm.findUnique({
+      where: { id: farmId },
+      select: { id: true, name: true, location: true, county: true, farmType: true, code: true },
+    });
+
+    res.json({ ok: true, farm });
+  } catch (error) {
+    console.error("Onboarding submit error:", error);
+    res.status(500).json({ error: "Failed to save farm details" });
+  }
+});
+
 router.put("/profile", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;

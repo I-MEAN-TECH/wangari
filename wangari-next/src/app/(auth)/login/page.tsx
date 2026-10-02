@@ -8,7 +8,7 @@ import { Eye, EyeOff, Loader2, ArrowRight, UserCheck, HardHat, KeyRound, Buildin
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login, googleLogin, setToken, setUser } from "@/lib/auth-client";
+import { login, googleLogin, setToken, setUser, AccountNotProvisionedError } from "@/lib/auth-client";
 import api from "@/lib/api-client";
 
 import { AuthAvatarContext } from "@/app/(auth)/layout";
@@ -69,6 +69,18 @@ function LoginForm() {
               router.push(callbackUrl);
             } catch (err) {
               setAvatarState("error");
+              // Google proved WHO you are, but this identity has never been
+              // used on Wangari. The server refuses to auto-create a farm — so
+              // send the farmer to registration instead of into a placeholder
+              // farm (see routes/auth.ts). Identity from Google; ownership of a
+              // farm comes from stating the farm.
+              if (err instanceof AccountNotProvisionedError) {
+                setError("");
+                router.push(
+                  `/register?googleEmail=${encodeURIComponent(err.email ?? "")}`
+                );
+                return;
+              }
               setError(err instanceof Error ? err.message : "Google sign-in failed");
             } finally {
               setLoading(false);
