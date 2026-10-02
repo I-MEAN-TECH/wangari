@@ -2,7 +2,7 @@
 
 > Written October 2026. This is a permanent reference, not a sprint plan. It is here so that whoever works on Wangari next — in three weeks or three years — understands what the product is *becoming* and why the order of the versions matters.
 
-**Companion documents:** [vision.md](vision.md) (the belief — start here) · [valuation-audit.md](valuation-audit.md) (honest current state and worth) · [founder-guide.md](founder-guide.md) (money, pitch, and doing the room) · [partnership-prospects.md](partnership-prospects.md) · [architecture.md](architecture.md) · [ops-runbook.md](ops-runbook.md)
+**Companion documents:** [vision.md](vision.md) (the belief — start here) · [valuation-audit.md](valuation-audit.md) (honest current state and worth) · [gap-analysis.md](gap-analysis.md) (what the industry needs that we have NOT built yet) · [founder-guide.md](founder-guide.md) (money, pitch, and doing the room) · [partnership-prospects.md](partnership-prospects.md) · [architecture.md](architecture.md) · [ops-runbook.md](ops-runbook.md)
 
 ---
 
