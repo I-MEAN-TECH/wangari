@@ -33,7 +33,7 @@ export interface BigKeypadProps {
   allowMinus?: boolean;
   /** Max characters. Defaults to 15 — the ANITRAC tag length. */
   maxLength?: number;
-  /** Swahili word for the confirm action, e.g. "Hifadhi" (save). */
+  /** Label for the confirm action, e.g. "Save". */
   confirmLabel?: string;
   disabled?: boolean;
   className?: string;
@@ -48,7 +48,7 @@ export function BigKeypad({
   label,
   allowMinus = false,
   maxLength = 15,
-  confirmLabel = "Hifadhi",
+  confirmLabel = "Save",
   disabled = false,
   className,
 }: BigKeypadProps) {

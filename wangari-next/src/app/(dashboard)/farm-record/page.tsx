@@ -11,7 +11,7 @@ import { LenderBrief } from "@/components/farm-record/LenderBrief";
 import api from "@/lib/api-client";
 
 /**
- * Onyesha rekodi yangu — the farm record.
+ * My farm record — the proof layer.
  *
  * The farmer button is ONE tap and one giant target, per §0: a farmer who
  * cannot read or type should be able to open this and get to a printable,
@@ -35,7 +35,7 @@ export default function FarmRecordPage() {
       const data = await api.get<FarmRecordResponse>("/api/farm-record");
       setRecord(data);
     } catch (e: any) {
-      setError("Rekodi haikuweza kupatikana. Jaribu tena.");
+      setError("Could not load your record. Try again.");
     } finally {
       setLoading(false);
     }
@@ -44,8 +44,8 @@ export default function FarmRecordPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Rekodi yangu"
-        description="Onyesha kazi uliyofanya — kwa benki, SACCO au wakala."
+        title="My farm record"
+        description="Show your work — to a bank, SACCO or field agent."
       />
 
       {/* THE button. Full width, tall, icon-first, Swahili. */}
@@ -62,10 +62,10 @@ export default function FarmRecordPage() {
                 </div>
               </div>
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-900">Onyesha rekodi yangu</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Show my farm record</h2>
                 <p className="mx-auto mt-2 max-w-sm text-gray-600">
-                  Rekodi hii inaonyesha kazi uliyofanya kila siku. Unaweza
-                  kuichapisha au kutuma mwenyewe.
+                  This record shows the work you have done, day by day. You can
+          print it or send it to anyone you choose.
                 </p>
               </div>
 
@@ -80,7 +80,7 @@ export default function FarmRecordPage() {
                 ) : (
                   <Eye className="h-7 w-7" aria-hidden />
                 )}
-                {loading ? "Inatafuta…" : "Onyesha rekodi yangu"}
+                {loading ? "Loading…" : "Show my farm record"}
               </Button>
 
               {error ? (
@@ -90,8 +90,8 @@ export default function FarmRecordPage() {
               <div className="flex items-start gap-2 rounded-2xl bg-white p-3 text-left">
                 <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-green-600" aria-hidden />
                 <p className="text-xs leading-relaxed text-gray-600">
-                  Rekodi hii haitumwi kwa mtu yeyote bila wewe. Unachagua
-                  nani aanze. Wangari hamuamuzi kukopesha.
+                  This record is never sent to anyone without your say-so. You choose
+          who sees it. Wangari hamuamuzi kukopesha.
                 </p>
               </div>
             </CardContent>
@@ -110,7 +110,7 @@ export default function FarmRecordPage() {
               onClick={() => setForLender((v) => !v)}
             >
               <Building2 className="h-4 w-4" aria-hidden />
-              {forLender ? "Onyesha kwa mkulima" : "Kwa mtaalamu"}
+              {forLender ? "Farmer view" : "For an agent"}
             </Button>
             <Button
               variant="ghost"
@@ -119,14 +119,14 @@ export default function FarmRecordPage() {
               disabled={loading}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-              Sasisha
+              Refresh
             </Button>
           </div>
 
           {forLender ? (
             <p className="text-center text-xs text-muted-foreground">
-              Mtaalamu anaweza kuona rekodi yako pekee. Hakuna kitu
-              kinachotuma kwa mtu yeyote bila wewe.
+              An agent only ever sees your record. Nothing is sent to anyone
+              without your say-so.
             </p>
           ) : null}
         </>

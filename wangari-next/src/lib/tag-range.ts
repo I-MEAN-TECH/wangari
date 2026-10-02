@@ -80,7 +80,7 @@ export function resolveTagRange(input: TagRangeInput): ResolvedTagRange {
       span: 0,
       expected,
       consistent: false,
-      note: "Weka namba ya kwanza na namba ya mwisho.",
+      note: "Enter the first and last number.",
       tags: [],
     };
   }
@@ -90,7 +90,7 @@ export function resolveTagRange(input: TagRangeInput): ResolvedTagRange {
       span: 0,
       expected,
       consistent: false,
-      note: `Namba ni tarakimu ${ANITRAC_MAX_DIGITS} tu.`,
+      note: `Tag number must be ${ANITRAC_MAX_DIGITS} digits only.`,
       tags: [],
     };
   }
@@ -102,7 +102,7 @@ export function resolveTagRange(input: TagRangeInput): ResolvedTagRange {
       span: 0,
       expected,
       consistent: false,
-      note: "Namba ya mwisho lazima iwe kubwa kuliko ya kwanza.",
+      note: "The last tag number must be greater than the first.",
       tags: [],
     };
   }
@@ -130,8 +130,8 @@ export function resolveTagRange(input: TagRangeInput): ResolvedTagRange {
     consistent = false;
     note =
       span > expected
-        ? `Alama ziko ${span}, lakini wanyama ni ${expected}.`
-        : `Wanyama ni ${expected}, alama ziko ${span}.`;
+        ? `Tags cover ${span}, but the animals number ${expected}.`
+        : `Animals are ${expected}, tags cover ${span}.`;
   }
 
   return { span, expected, consistent, note, tags };
@@ -146,8 +146,8 @@ export function describeTagRange(
   from: string | null | undefined,
   to: string | null | undefined
 ): string {
-  if (r.span === 0) return "Hakuna alama bado";
+  if (r.span === 0) return "No tags yet";
   const a = digits(from);
   const b = digits(to);
-  return `Alama ${r.span}: ${a} hadi ${b}`;
+  return `Tags ${r.span}: ${a} to ${b}`;
 }

@@ -315,10 +315,10 @@ router.get("/actions", async (req: Request, res: Response) => {
           id: "record-money",
           priority: "high",
           icon: "Banknote",
-          title: "Andika shughuli yako ya kila siku",
-          detail: "Kila kitu unachopata na unachotumia kimeandikwa hapa. Hii ndiyo nakala unayoitishia benki au SACCO ukihitaji pesa.",
+          title: "Start recording your daily work",
+          detail: "Everything you earn and spend gets written down here. That record is what you show a bank or SACCO when you need a loan.",
           href: "/farm-record",
-          cta: "Ona rekodi yangu",
+          cta: "View my record",
         });
       } else if (!graded) {
         const remaining = MIN_DAYS_TO_GRADE - recordSpanDays;
@@ -326,20 +326,20 @@ router.get("/actions", async (req: Request, res: Response) => {
           id: "record-start",
           priority: "medium",
           icon: "CalendarCheck",
-          title: `Andika kila siku — siku ${remaining} zaidi`,
-          detail: "Ukisharekodi kwa miezi mitatu, unapata alama ya rekodi yako. Hiyo ndiyo nakala inayokusaidia kupata mkopo.",
+          title: `Record every day — ${remaining} to go`,
+          detail: "Once you have three months of records you earn a record grade. That is the document that helps you get a loan.",
           href: "/farm-record",
-          cta: "Ona umbiko wangu",
+          cta: "View my record",
         });
       } else if (activityDays < Math.floor(WINDOW_DAYS * CONSISTENCY_TARGET)) {
         actions.push({
           id: "record-consistency",
           priority: "medium",
           icon: "CalendarCheck",
-          title: `Umeandika siku ${activityDays} kati ya ${WINDOW_DAYS}`,
-          detail: "Ukisharekodi zaidi ya asilimia 70 ya siku, rekodi yako inaimarika na mwenyewe anajionea. Kazi ya sekunde 30 kwa siku.",
+          title: `You recorded ${activityDays} of ${WINDOW_DAYS} days`,
+          detail: "Past 70% of days, your record starts proving itself on its own. It takes about 30 seconds a day.",
           href: "/farm-record",
-          cta: "Ona rekodi yangu",
+          cta: "View my record",
         });
       }
     }

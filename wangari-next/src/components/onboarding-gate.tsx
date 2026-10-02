@@ -61,8 +61,8 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   if (state === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#166534] border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-wangari-cream">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-wangari-green-800 border-t-transparent" />
       </div>
     );
   }

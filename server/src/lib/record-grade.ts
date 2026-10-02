@@ -116,7 +116,6 @@ function sanitize(raw: GradeInput): GradeInput {
 }
 
 const pct = (n: number) => `${Math.round(ratio(n, 1) * 100)}%`;
-const monthWord = (m: number) => (m === 1 ? "mwezi" : "miezi");
 
 /**
  * Clamp to 0..1, and NaN-safe in both arguments.
@@ -150,45 +149,45 @@ export function buildStars(raw: GradeInput): Star[] {
   return [
     {
       id: "consistency",
-      label: "Kazi kila siku",
+      label: "Daily work",
       detail: input.daysWithProduction > 0
-        ? `Umeandika siku ${input.daysWithProduction}. Lengo ni siku ${WINDOW_DAYS}.`
-        : `Bado hujauandika kitu chochote. Lengo ni siku ${WINDOW_DAYS}.`,
+        ? `You recorded ${input.daysWithProduction} days. The target is ${WINDOW_DAYS}.`
+        : `You have not recorded anything yet. The target is ${WINDOW_DAYS} days.`,
       earned: consistency >= CONSISTENCY_TARGET,
     },
     {
       id: "output",
-      label: "Mazaa",
+      label: "Output",
       detail: input.hasOutput
-        ? "Mazaa yako yameandikwa vizuri."
-        : "Bado hujauandika mazaa yako.",
+        ? "Your output has been recorded."
+        : "You have not recorded your output yet.",
       earned: input.hasOutput,
     },
     {
       id: "inputs",
-      label: "Ununuzi na gharama",
+      label: "Inputs and costs",
       detail: input.expenses > 0
-        ? `Gharama zako ni KES ${Math.round(input.expenses).toLocaleString("en-KE")}.`
-        : "Bado hujauandika gharama zako.",
+        ? `Your costs are KES ${Math.round(input.expenses).toLocaleString("en-KE")}.`
+        : "You have not recorded your costs yet.",
       earned: input.expenses > 0,
     },
     {
       id: "market",
-      label: "Unauzaji",
+      label: "Sales",
       detail: input.salesOrDeliveries > 0
-        ? `Umeauza kwa watu ${input.salesOrDeliveries} mara. Mapato KES ${Math.round(input.income).toLocaleString("en-KE")}.`
-        : "Bado hujauandika unauzaji wako.",
+        ? `You sold ${input.salesOrDeliveries} time(s). Income KES ${Math.round(input.income).toLocaleString("en-KE")}.`
+        : "You have not recorded any sales yet.",
       earned: input.salesOrDeliveries > 0,
     },
     {
       id: "duration",
-      label: "Muda",
+      label: "Time",
       // Reported by months-with-records, never by elapsed calendar time: telling
       // a farmer they have "16 months of records" when they have 2 days in them
       // would be the exact overstatement this report exists to avoid.
       detail: input.monthsWithRecords >= MIN_MONTHS
-        ? `Umeandika miezi ${input.monthsWithRecords}.`
-        : `Umeandika miezi ${input.monthsWithRecords}. Lengo ni miezi ${MIN_MONTHS}.`,
+        ? `You have recorded ${input.monthsWithRecords} months.`
+        : `You have recorded ${input.monthsWithRecords} months. The target is ${MIN_MONTHS}.`,
       earned: input.monthsWithRecords >= MIN_MONTHS,
     },
   ];
@@ -231,13 +230,13 @@ export function computeRecordGrade(raw: GradeInput): RecordGrade {
       maxStars: 5,
       tone: "neutral",
       summary:
-        `Bado umeandika siku ${input.recordSpanDays}. ` +
-        `Andika kila siku kwa siku ${remaining} zaidi ili tupatie alama yako.`,
+        `You have recorded ${input.recordSpanDays} days. ` +
+        `Record every day for ${remaining} more days to earn your grade.`,
       criteria,
       progress,
       nextStep: {
         id: "consistency",
-        label: `Andika kila siku (bado siku ${remaining})`,
+        label: `Record every day (${remaining} to go)`,
       },
     };
   }
@@ -247,11 +246,11 @@ export function computeRecordGrade(raw: GradeInput): RecordGrade {
 
   const summary =
     stars === 5
-      ? `Rekodi yako imekamilika. Umeandika siku ${input.daysWithProduction} na kila kitu kimekosekana.`
+      ? `Your record is complete. You recorded ${input.daysWithProduction} days and nothing is missing.`
       : stars === 0
-        ? "Bado kuna kazi. Anza kwa kitu kimoja kila siku."
-        : `Umekata alama ${stars} kati ya 5. ` +
-          `Kuna ${missing.length} kitu ${missing.length === 1 ? "kinachobaki" : "zinabaki"} kukamilisha.`;
+        ? "There is work to do. Start with one thing, every day."
+        : `You earned ${stars} of 5. ` +
+          `${missing.length} ${missing.length === 1 ? "item is" : "items are"} still outstanding.`;
 
   return {
     graded: true,
@@ -265,9 +264,4 @@ export function computeRecordGrade(raw: GradeInput): RecordGrade {
   };
 }
 
-/** Convenience for the UI: the Swahili word for a star count, for the speech layer later. */
-export function starsAsWords(stars: number): string {
-  return [ "", "nyuma", "mbili", "tatu", "nne", "tano" ][Math.max(0, Math.min(5, Math.round(stars)))] || "";
-}
-
-export { pct, monthWord, ratio };
+export { pct, ratio };

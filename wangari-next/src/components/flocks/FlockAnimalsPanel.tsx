@@ -36,7 +36,7 @@ interface Animal {
 }
 
 const STATUS_SW: Record<string, string> = {
-  active: "Shamba",
+  active: "Farm",
   sold: "Imezuzwa",
   moved: "Imehamishwa",
   died: "Imekufa",
@@ -70,7 +70,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
       );
       setAnimals(res.animals || []);
     } catch {
-      setError("Imeshindikana kupakia alama. Jaribu tena.");
+      setError("Could not load tags. Try again.");
     } finally {
       setLoading(false);
     }
@@ -94,15 +94,15 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
       );
       setNotice(
         tag.mode === "range"
-          ? `Mimezo ${res.created} imewekwa alama`
-          : "Alama imehifadhiwa"
+          ? `${res.created} tags created`
+          : "Tags saved"
       );
       setTag({ tagNumber: "141", mode: "exact" });
       setAdding(false);
       await load();
       setTimeout(() => setNotice(null), 4000);
     } catch (e: any) {
-      setError(e?.message || "Alama haijaweka. Jaribu tena.");
+      setError(e?.message || "Tags were not saved. Try again.");
     } finally {
       setSaving(false);
     }
@@ -147,7 +147,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `wangari-anitrac-${res.farm?.code || "shamba"}.csv`;
+      a.download = `wangari-anitrac-${res.farm?.code || "farm"}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -162,11 +162,11 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
           <div className="flex items-center gap-2">
             <Tag className="h-5 w-5 text-wangari-green-800" aria-hidden />
             <h3 className="font-bold text-wangari-green-900">
-              Alama za ANITRAC
+              ANITRAC tags
             </h3>
             <StatusChip
               tone={animals.length ? "good" : "neutral"}
-              label={animals.length ? `${animals.length}` : "Hakuna"}
+              label={animals.length ? `${animals.length}` : "None"}
             />
           </div>
 
@@ -180,7 +180,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
             {!adding ? (
               <Button size="sm" onClick={() => setAdding(true)}>
                 <Plus className="h-4 w-4" aria-hidden />
-                Weka alama
+                  Add tags
               </Button>
             ) : null}
           </div>
@@ -188,7 +188,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
 
         {/* One calm line explaining why this is not extra daily work. */}
         <p className="text-sm text-wangari-muted">
-          Weka alama mara moja. Kisha unaendelea kurekodi kundi la wanyama kama
+          Enter a tag once. Then you keep recording the herd as a count,
           kawaida.
         </p>
 
@@ -216,7 +216,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
                 onClick={save}
                 disabled={saving}
               >
-                {saving ? "Inaweka..." : "Hifadhi alama"}
+                {saving ? "Saving..." : "Save tags"}
               </Button>
               <Button variant="ghost" onClick={() => setAdding(false)}>
                 <X className="h-5 w-5" aria-hidden />
@@ -227,16 +227,16 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
 
         {loading ? (
           <p className="py-6 text-center text-sm text-wangari-muted">
-            Inapakia alama...
+                      Loading tags...
           </p>
         ) : animals.length === 0 ? (
           <EmptyState
-            title="Hakuna alama bado"
-            description="Weka alama za ANITRAC za wanyama wako ili upate orodha ya uzienji."
+            title="No tags yet"
+            description="Add your animals' ANITRAC tags to get a traceability list."
             action={
               <Button onClick={() => setAdding(true)}>
                 <Tag className="h-4 w-4" aria-hidden />
-                Weka alama ya kwanza
+                First tag number
               </Button>
             }
           />
@@ -268,7 +268,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
 
         {animals.length > 0 ? (
           <p className="text-center text-xs text-wangari-muted">
-            Bofya orodha kupata kumbukumbo ya alama za wote — mtumie mnunuzi
+            Tap the list to download a record of every tag — use it with your buyer
             au afisa wa wilaya.
           </p>
         ) : null}

@@ -96,15 +96,15 @@ export function StatementCard({
 
   const shareStatement = async () => {
     const text = [
-      `${statement.farm?.name || "Shamba"} — Hoja ya mapato`,
-      `Mwezi: ${monthLabel}`,
+      `${statement.farm?.name || "Farm"} — Delivery & Payment Statement`,
+      `Period: ${monthLabel}`,
       ``,
       `Jumla ya kuchukuliwa: ${money(statement.gross)}`,
-      `Punguzo: ${money(statement.deductions)}`,
-      `Imelipwa: ${money(statement.paid)}`,
-      `Bado inadaiwa: ${money(statement.outstanding)}`,
+      `Deductions: ${money(statement.deductions)}`,
+      `Paid: ${money(statement.paid)}`,
+      `Outstanding: ${money(statement.outstanding)}`,
       ``,
-      `Inadaiwa kwa jumla (kote): ${money(owed)}`,
+      `Total outstanding: ${money(owed)}`,
       ...Object.entries(buyers).map(
         ([buyer, c]) => `- ${buyer}: ${money(c.outstanding)} (${c.deliveries} deliveries)`
       ),
@@ -148,7 +148,7 @@ export function StatementCard({
               <AlertTriangle className="h-6 w-6 text-amber-600" aria-hidden />
             )}
             <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">
-              {settled ? "Wote walolipwa" : "Inadaiwa kwako"}
+              {settled ? "All payments received" : "Owed to you"}
             </span>
           </div>
           <p
@@ -161,7 +161,7 @@ export function StatementCard({
           </p>
           {!settled ? (
             <p className="mt-1 text-sm font-medium text-gray-600">
-              Kwa {statement.unpaidDeliveries} ushiriki haujalipwa
+              {statement.unpaidDeliveries} deliveries unpaid
             </p>
           ) : null}
         </div>
@@ -169,15 +169,15 @@ export function StatementCard({
         {/* This month's movement, kept visually secondary to the balance. */}
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="rounded-2xl bg-gray-50 p-3">
-            <p className="text-xs font-semibold uppercase text-gray-500">Imechukuliwa</p>
+            <p className="text-xs font-semibold uppercase text-gray-500">Delivered</p>
             <p className="text-lg font-bold text-green-700">{money(statement.gross)}</p>
           </div>
           <div className="rounded-2xl bg-gray-50 p-3">
-            <p className="text-xs font-semibold uppercase text-gray-500">Punguzo</p>
+            <p className="text-xs font-semibold uppercase text-gray-500">Deductions</p>
             <p className="text-lg font-bold text-amber-600">−{money(statement.deductions)}</p>
           </div>
           <div className="rounded-2xl bg-gray-50 p-3">
-            <p className="text-xs font-semibold uppercase text-gray-500">Imelipwa</p>
+            <p className="text-xs font-semibold uppercase text-gray-500">Paid</p>
             <p className="text-lg font-bold text-green-700">{money(statement.paid)}</p>
           </div>
         </div>
@@ -187,7 +187,7 @@ export function StatementCard({
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
               <Building2 className="h-4 w-4" aria-hidden />
-              Kwa mnunuzi kila moja
+              Per buyer
             </div>
             <ul className="space-y-1.5">
               {Object.entries(buyers).map(([buyer, c]) => (
@@ -198,7 +198,7 @@ export function StatementCard({
                   <div className="min-w-0">
                     <p className="truncate font-bold text-gray-900">{buyer}</p>
                     <p className="text-xs text-gray-500">
-                      {c.deliveries} ushiriki
+                      {c.deliveries} deliveries
                     </p>
                   </div>
                   <StatusChip
@@ -220,7 +220,7 @@ export function StatementCard({
             onClick={shareStatement}
           >
             <Share2 className="h-4 w-4" aria-hidden />
-            Tuma
+            Share
           </Button>
           <Button
             className="flex-1"
@@ -228,13 +228,13 @@ export function StatementCard({
             disabled={printing}
           >
             <Printer className="h-4 w-4" aria-hidden />
-            Chapisha hoja
+            Print statement
           </Button>
         </div>
 
         <p className="text-center text-xs leading-relaxed text-muted-foreground">
           <Wallet className="mr-1 inline h-3 w-3" aria-hidden />
-          Hii hoja inatoka kwenye rekodi zako. Mtumie kwa mnunuzi au
+          This statement comes from your own records. Show it to your buyer or
           ushirika wa kijiji.
         </p>
 

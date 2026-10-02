@@ -17,7 +17,6 @@ import {
   computeRecordGrade,
   buildStars,
   toneForStars,
-  starsAsWords,
   MIN_DAYS_TO_GRADE,
   WINDOW_DAYS,
   CONSISTENCY_TARGET,
@@ -130,7 +129,7 @@ describe("rule 2 — only farmer-controlled things count", () => {
       full({ daysWithProduction: 2, recordSpanDays: 479, recordMonths: 16, monthsWithRecords: 2 })
     );
     const duration = g.criteria.find((c) => c.id === "duration")!;
-    const claimed = Number(duration.detail.match(/miezi (\d+)/)![1]);
+    const claimed = Number(duration.detail.match(/recorded (\d+) months/)![1]);
     expect(claimed).toBe(2);
   });
 
@@ -233,7 +232,7 @@ describe("explainability", () => {
 
   it("an unearned criterion says what to do, not just that it is missing", () => {
     const g = buildStars(full({ hasOutput: false })).find((c) => c.id === "output")!;
-    expect(g.detail).toMatch(/Bado/);
+    expect(g.detail).toMatch(/not recorded your output yet/i);
   });
 
   it("names the number of things still missing", () => {
@@ -242,16 +241,6 @@ describe("explainability", () => {
   });
 
   it("a perfect record does not tell the farmer to do more", () => {
-    expect(computeRecordGrade(full()).summary).not.toMatch(/kuna/i);
-  });
-});
-
-describe("starsAsWords — for the deferred Swahili voice layer", () => {
-  it("covers 0..5 and clamps out-of-range input", () => {
-    expect(starsAsWords(0)).toBe("");
-    expect(starsAsWords(1)).toBe("nyuma");
-    expect(starsAsWords(5)).toBe("tano");
-    expect(starsAsWords(99)).toBe("tano");
-    expect(starsAsWords(-3)).toBe("");
+    expect(computeRecordGrade(full()).summary).not.toMatch(/outstanding/i);
   });
 });

@@ -142,19 +142,19 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
 
   const shareRecord = async () => {
     const lines = [
-      `${farm.name} — Rekodi ya shamba`,
+      `${farm.name} — Farm Record`,
       farm.county ? ` county: ${farm.county}` : "",
-      farm.code ? ` Namba: ${farm.code}` : "",
+      farm.code ? ` Code: ${farm.code}` : "",
       ``,
-      `Muda wa rekodi: miezi ${period.monthsWithRecords} (siku ${period.recordSpanDays})`,
-      `Siku zilizoandikwa: ${evidence.activity.daysRecorded} kati ya ${evidence.activity.windowDays}`,
+      `Record period: ${period.monthsWithRecords} months (${period.recordSpanDays} days)`,
+      `Days recorded: ${evidence.activity.daysRecorded} of ${evidence.activity.windowDays}`,
       `Gharama: ${money(evidence.inputs.totalExpense)}`,
       `Mapato: ${money(evidence.market.totalIncome)}`,
-      evidence.market.deliveryOwed > 0 ? `Bado inadaiwa: ${money(evidence.market.deliveryOwed)}` : ``,
+      evidence.market.deliveryOwed > 0 ? `Outstanding: ${money(evidence.market.deliveryOwed)}` : ``,
       ``,
       grade.graded
-        ? `Alama ya rekodi: ${grade.stars} kati ya 5 — ${grade.summary}`
-        : `Bado sija maliza: ${grade.summary}`,
+        ? `Record grade: ${grade.stars} of 5 — ${grade.summary}`
+        : `Not graded yet: ${grade.summary}`,
       ``,
       record.disclosure,
       `— ${printedOn}`,
@@ -165,7 +165,7 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Rekodi ya shamba", text: lines });
+        await navigator.share({ title: "Farm record", text: lines });
       } else {
         await navigator.clipboard.writeText(lines);
       }
@@ -181,14 +181,14 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
         <div className="text-center">
           <div className="mb-1 flex items-center justify-center gap-2 text-green-700">
             <Sprout className="h-6 w-6" aria-hidden />
-            <span className="text-xs font-bold uppercase tracking-widest">Rekodi ya shamba</span>
+            <span className="text-xs font-bold uppercase tracking-widest">Farm record</span>
           </div>
           <h1 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">{farm.name}</h1>
           <p className="mt-1 text-sm text-gray-600">
             {[farm.owner, farm.county, farm.location].filter(Boolean).join(" · ")}
           </p>
           {farm.code ? (
-            <p className="mt-1 font-mono text-xs text-gray-500">Namba ya shamba: {farm.code}</p>
+            <p className="mt-1 font-mono text-xs text-gray-500">Farm code: {farm.code}</p>
           ) : null}
         </div>
 
@@ -196,10 +196,10 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
         <div className="rounded-3xl bg-gray-50 p-4 text-center">
           <div className="flex items-center justify-center gap-2 text-gray-600">
             <CalendarDays className="h-5 w-5" aria-hidden />
-            <span className="text-sm font-semibold uppercase tracking-wide">Muda wa rekodi</span>
+            <span className="text-sm font-semibold uppercase tracking-wide">Record period</span>
           </div>
           <p className="mt-1 text-3xl font-bold tabular-nums text-gray-900">
-            Miezi {period.monthsWithRecords}
+            Months {period.monthsWithRecords}
           </p>
           <p className="mt-1 text-sm font-medium text-gray-600">{period.seasonsNote}</p>
         </div>
@@ -218,13 +218,13 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
           )}
         >
           <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
-            {grade.graded ? "Alama ya rekodi" : "Rekodi inaingia"}
+            {grade.graded ? "Record grade" : "Record starting"}
           </p>
 
           {grade.graded ? (
             <>
               <div className="mt-2 flex items-center justify-center gap-1" role="img"
-                aria-label={`Alama ${grade.stars} kati ya 5`}>
+                aria-label={`Grade ${grade.stars} of 5`}>
                 {Array.from({ length: grade.maxStars }).map((_, i) => (
                   <Star
                     key={i}
@@ -343,7 +343,7 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
                 tone="warn"
                 emoji="⏳"
                 className="mt-2"
-                label={`Bado inadaiwa ${money(evidence.market.deliveryOwed)}`}
+                label={`${money(evidence.market.deliveryOwed)} outstanding`}
               />
             ) : null}
           </div>
@@ -358,8 +358,8 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
             />
             <p className="text-sm font-medium text-gray-700">
               {trend.recordingImproving
-                ? "Rekodi yako inaendelea kuwa kubwa kila mwezi."
-                : "Endelea kuandika kila siku ili rekodi yako ikae."}
+                ? "Your record is getting bigger every month."
+                : "Keep recording every day so your record keeps growing."}
             </p>
           </div>
           {trend.recentMonths.length > 0 ? (
@@ -391,11 +391,11 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" onClick={shareRecord}>
             <Share2 className="h-4 w-4" aria-hidden />
-            Tuma
+            Share
           </Button>
           <Button className="flex-1" onClick={printRecord} disabled={printing}>
             <Printer className="h-4 w-4" aria-hidden />
-            Chapisha
+            Print
           </Button>
         </div>
 

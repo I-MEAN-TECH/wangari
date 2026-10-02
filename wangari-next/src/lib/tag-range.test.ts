@@ -60,7 +60,7 @@ describe("Tier 1 — a tag range covers the whole herd", () => {
   });
 });
 
-describe("catching farmer mistakes (in Swahili, not jargon)", () => {
+describe("catching farmer mistakes (in plain language, not jargon)", () => {
   it("flags a range that does not match the head count", () => {
     const r = resolveTagRange({
       tagFrom: "1410001",
@@ -68,8 +68,8 @@ describe("catching farmer mistakes (in Swahili, not jargon)", () => {
       count: 12,
     });
     expect(r.consistent).toBe(false);
-    expect(r.note).toContain("alama ziko 10");
-    expect(r.note).toContain("Wanyama ni 12");
+    expect(r.note).toContain("tags cover 10");
+    expect(r.note).toContain("Animals are 12");
   });
 
   it("flags the reverse mismatch too", () => {
@@ -79,19 +79,19 @@ describe("catching farmer mistakes (in Swahili, not jargon)", () => {
       count: 40,
     });
     expect(r.consistent).toBe(false);
-    expect(r.note).toContain("Wanyama ni 40");
+    expect(r.note).toContain("Animals are 40");
   });
 
   it("asks for both ends when only one is given", () => {
     const r = resolveTagRange({ tagFrom: "1410001", tagTo: null, count: 10 });
     expect(r.span).toBe(0);
-    expect(r.note).toContain("kwanza");
+    expect(r.note).toContain("first and last");
   });
 
   it("explains when the end is before the start", () => {
     const r = resolveTagRange({ tagFrom: "1410010", tagTo: "1410001" });
     expect(r.span).toBe(0);
-    expect(r.note).toContain("kubwa");
+    expect(r.note).toContain("greater");
   });
 
   it("refuses an over-long number", () => {
@@ -114,13 +114,13 @@ describe("describeTagRange", () => {
   it("reads out the block for a printed list", () => {
     const r = resolveTagRange({ tagFrom: "1410001", tagTo: "1410050" });
     expect(describeTagRange(r, "1410001", "1410050")).toBe(
-      "Alama 50: 1410001 hadi 1410050"
+      "Tags 50: 1410001 to 1410050"
     );
   });
 
   it("says so plainly when there are none", () => {
     const r = resolveTagRange({ tagFrom: null, tagTo: null });
-    expect(describeTagRange(r, null, null)).toBe("Hakuna alama bado");
+    expect(describeTagRange(r, null, null)).toBe("No tags yet");
   });
 });
 

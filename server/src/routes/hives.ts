@@ -58,11 +58,11 @@ router.post("/", async (req: Request, res: Response) => {
     const { name, hiveType, status, queenYear, queenStatus, frames, location, establishedOn, notes } =
       req.body || {};
     if (!name || !String(name).trim())
-      return res.status(400).json({ error: "Weka jina la kizima" });
+      return res.status(400).json({ error: "Enter a hive name" });
     if (hiveType && !HIVE_TYPES.has(hiveType))
-      return res.status(400).json({ error: "Aina ya kizima haijulikani" });
+      return res.status(400).json({ error: "Unknown hive type" });
     if (status && !HIVE_STATUS.has(status))
-      return res.status(400).json({ error: "Hali ya kizima haijulikani" });
+      return res.status(400).json({ error: "Unknown hive status" });
 
     const dupe = await prisma.hive.findFirst({
       where: { farmId: req.user!.farmId!, name: String(name).trim() },
@@ -98,7 +98,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
     const farmId = req.user!.farmId!;
     const { status, queenYear, queenStatus, frames, location, notes } = req.body || {};
     if (status && !HIVE_STATUS.has(status))
-      return res.status(400).json({ error: "Hali ya kizima haijulikani" });
+      return res.status(400).json({ error: "Unknown hive status" });
 
     const existing = await prisma.hive.findFirst({
       where: { id: Number(req.params.id), farmId },

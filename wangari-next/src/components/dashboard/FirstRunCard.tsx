@@ -47,21 +47,19 @@ const CHOICES = [
     id: "livestock",
     icon: Milk,
     emoji: "🥛",
-    title: "Ninauza maziwa",
-    subtitle: "Maziwa, mayai, au nyama",
+    title: "I sell milk or eggs",
+    subtitle: "Milk, eggs or meat",
     href: "/deliveries",
-    cta: "Andika kilichouza",
-    tint: "border-[#166534] bg-[#166534]",
+    cta: "Record a sale",
   },
   {
     id: "crops",
     icon: Wheat,
     emoji: "🌾",
-    title: "Ninalima bustani",
-    subtitle: "Maua, mahindi, mboga",
+    title: "I grow crops",
+    subtitle: "Maize, vegetables, fruit",
     href: "/crops",
-    cta: "Andika mazaa",
-    tint: "border-[#B45309] bg-[#B45309]",
+    cta: "Record a harvest",
   },
 ] as const;
 
@@ -78,65 +76,71 @@ export function FirstRunCard({ firstRecordAt, locked }: FirstRunCardProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
     >
-      <div className="rounded-3xl border-2 border-[#166534] bg-gradient-to-b from-[#F0FDF4] to-white p-5 sm:p-7">
-        <div className="mb-1 flex items-center justify-center gap-2 text-[#166534]">
-          <Sparkles className="h-5 w-5" aria-hidden />
-          <span className="text-xs font-bold uppercase tracking-widest">Mwanzo</span>
-        </div>
+      <div className="relative overflow-hidden rounded-xl border border-wangari-green-200 bg-wangari-card p-5 shadow-sm sm:p-8">
+        {/* ONE accent. A second accent colour reads as a copy-paste accident,
+            so both choices share the brand green and differ only by icon. */}
+        <div
+          className="pointer-events-none absolute inset-x-0 -top-24 h-48 bg-wangari-green-50"
+          aria-hidden
+        />
 
-        <h1 className="text-center text-2xl font-bold leading-tight text-[#0F172A] sm:text-3xl">
-          Onyesha ulichouza leo
-        </h1>
-        <p className="mx-auto mt-2 max-w-md text-center text-[#475569]">
-          Chagua kile unachofanya. Tutakuonyesha kiasi ulizopata mara moja.
-        </p>
+        <div className="relative">
+          <div className="mb-1 flex items-center gap-2 text-wangari-green-800">
+            <Sparkles className="h-4 w-4" aria-hidden />
+            <span className="text-xs font-semibold uppercase tracking-widest">Start here</span>
+          </div>
 
-        {/* Two enormous targets. The farmer taps a picture, not a menu. */}
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          {CHOICES.map((c) => {
-            const Icon = c.icon;
-            return (
-              <Link
-                key={c.id}
-                href={locked ? "/subscription" : c.href}
-                className={cn(
-                  "group flex min-h-[150px] flex-col items-center justify-center gap-2 rounded-3xl border-2 bg-white p-5 text-center transition-all",
-                  locked
-                    ? "border-gray-200 opacity-60"
-                    : "border-[#DCFCE7] hover:-translate-y-0.5 hover:border-[#166534] hover:shadow-lg active:scale-[0.99]"
-                )}
-              >
-                <span className="text-5xl" aria-hidden>{c.emoji}</span>
-                <span className="flex items-center gap-1.5 text-lg font-bold text-[#0F172A]">
-                  <Icon className="h-5 w-5 text-[#166534]" aria-hidden />
-                  {c.title}
-                </span>
-                <span className="text-sm text-[#64748B]">{c.subtitle}</span>
-                <span className={cn(
-                  "mt-1 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold text-white",
-                  c.tint
-                )}>
-                  {c.cta}
-                  <ArrowRight className="h-3 w-3" aria-hidden />
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+          <h1 className="text-balance text-2xl font-bold leading-tight tracking-tight text-wangari-heading sm:text-3xl">
+            Show me what you sold today
+          </h1>
+          <p className="mt-2 max-w-md text-pretty text-wangari-muted">
+            Pick the one that is you. You will see the money straight away.
+          </p>
 
-        {/* The promise, stated plainly — and honestly. */}
-        <div className="mt-5 flex items-start gap-2 rounded-2xl bg-white/80 p-3">
-          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#166534]" aria-hidden />
-          <p className="text-xs leading-relaxed text-[#475569]">
-            Utaona kiasi ulichopata na kuna bado inadaiwa kwako. Hii ndiyo
-            hoja yako — itumie kwa mnunuzi wakati wowote.
+          {/* Two enormous targets. The farmer taps a picture, not a menu. */}
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {CHOICES.map((c) => {
+              const Icon = c.icon;
+              return (
+                <Link
+                  key={c.id}
+                  href={locked ? "/subscription" : c.href}
+                  className={cn(
+                    "group flex min-h-[168px] flex-col items-center justify-center gap-2 rounded-xl border bg-wangari-card p-5 text-center transition-all",
+                    locked
+                      ? "border-wangari-border opacity-60"
+                      : "border-wangari-green-200 hover:-translate-y-0.5 hover:border-wangari-green-600 hover:shadow-md active:scale-[0.99]"
+                  )}
+                >
+                  <span className="text-5xl" aria-hidden>{c.emoji}</span>
+                  <span className="flex items-center gap-1.5 text-lg font-semibold text-wangari-heading">
+                    <Icon className="h-5 w-5 text-wangari-green-800" aria-hidden />
+                    {c.title}
+                  </span>
+                  <span className="text-sm text-wangari-muted">{c.subtitle}</span>
+                  <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-wangari-green-800 px-3 py-1 text-xs font-semibold text-white">
+                    {c.cta}
+                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* The promise, stated plainly — and honestly. */}
+          <div className="mt-5 flex items-start gap-2 rounded-xl border border-wangari-border bg-wangari-cream p-3">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-wangari-green-700" aria-hidden />
+            <p className="text-xs leading-relaxed text-wangari-muted">
+              You will see what you earned and what is still owed to you. That
+              is your statement — show it to your buyer whenever you need to.
+            </p>
+          </div>
+
+          <p className="mt-3 text-center text-xs text-wangari-subtle">
+            <Package className="mr-1 inline h-3 w-3" aria-hidden />
+            You do not have to type anything right now.
           </p>
         </div>
-
-        <p className="mt-3 text-center text-xs text-[#94A3B8]">
-          <Package className="mr-1 inline h-3 w-3" aria-hidden />
-          Hutaki kuchapa chochote sasa hivi.
-        </p>
       </div>
     </motion.div>
   );

@@ -51,7 +51,7 @@ export function resolveTagRange(
       span: 0,
       expected,
       consistent: false,
-      note: `Namba ni tarakimu ${ANITRAC_MAX_DIGITS} tu.`,
+      note: `Tag number must be ${ANITRAC_MAX_DIGITS} digits only.`,
       tags: [],
     };
 
@@ -62,7 +62,7 @@ export function resolveTagRange(
       span: 0,
       expected,
       consistent: false,
-      note: "Namba ya mwisho lazima iwe kubwa kuliko ya kwanza.",
+      note: "The last tag number must be greater than the first.",
       tags: [],
     };
 
@@ -88,8 +88,8 @@ export function resolveTagRange(
     consistent = false;
     note =
       span > expected
-        ? `Alama ziko ${span}, lakini wanyama ni ${expected}.`
-        : `Wanyama ni ${expected}, alama ziko ${span}.`;
+        ? `Tags cover ${span}, but the animals number ${expected}.`
+        : `Animals are ${expected}, tags cover ${span}.`;
   }
 
   return { span, expected, consistent, note, tags };

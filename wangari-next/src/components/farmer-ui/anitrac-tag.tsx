@@ -44,18 +44,18 @@ export function validateTag(raw: string): {
   message: string;
 } {
   const t = raw.trim();
-  if (!t) return { ok: false, tone: "bad", message: "Weka namba ya alama" };
+  if (!t) return { ok: false, tone: "bad", message: "Enter a tag number" };
   if (!/^\d+$/.test(t))
     return {
       ok: false,
       tone: "bad",
-      message: "Namba ya alama lazima iwe tarakimu tu",
+      message: "The tag number must be digits only",
     };
   if (t.length > ANITRAC_MAX_DIGITS)
     return {
       ok: false,
       tone: "bad",
-      message: `Namba ni tarakimu ${ANITRAC_MAX_DIGITS} tu`,
+      message: `The number must be ${ANITRAC_MAX_DIGITS} digits only`,
     };
   if (t.length < ANITRAC_MAX_DIGITS)
     return {
@@ -67,9 +67,9 @@ export function validateTag(raw: string): {
     return {
       ok: true,
       tone: "warn",
-      message: "ANITRAC Kenya huanza na 141. Angalia alama yako.",
+      message: "Kenyan ANITRAC tags start with 141. Check your tag.",
     };
-  return { ok: true, tone: "good", message: "Namba ya ANITRAC ni sahihi" };
+  return { ok: true, tone: "good", message: "The ANITRAC number is correct" };
 }
 
 /**
@@ -92,7 +92,7 @@ export function expandTagRange(
   const cmp =
     a.length !== b.length ? a.length - b.length : a.localeCompare(b);
   if (cmp > 0)
-    return { tags: [], error: "Namba ya mwisho lazima iwe kubwa kuliko ya kwanza" };
+    return { tags: [], error: "The last number must be greater than the first" };
   const startN = BigInt(a);
   const endN = BigInt(b);
   const count = Number(endN - startN) + 1;
@@ -147,7 +147,7 @@ export function AnitracTagInput({
       <div className="flex items-center gap-2 rounded-2xl bg-wangari-green-50 px-4 py-3">
         <Tag className="h-6 w-6 text-wangari-green-800" aria-hidden />
         <p className="text-sm font-semibold text-wangari-green-900">
-          Namba ya alama ya ANITRAC
+          ANITRAC tag number
         </p>
       </div>
 
@@ -157,7 +157,7 @@ export function AnitracTagInput({
         onConfirm={ready ? onConfirm : undefined}
         label={`Mwanzo ${ANITRAC_PREFIX} kimewekwa`}
         maxLength={ANITRAC_MAX_DIGITS}
-        confirmLabel="Hifadhi alama"
+        confirmLabel="Save tag"
       />
 
       {/* Status is colour + icon first, so it reads without reading. */}
@@ -195,22 +195,22 @@ export function AnitracTagInput({
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gray-50 py-3 text-sm font-bold text-wangari-green-800"
           >
             <ScanLine className="h-5 w-5" aria-hidden />
-            {advanced ? "Alama moja" : "Nyingi zaidi (mwezi wa alama)"}
+            {advanced ? "Single tag" : "More (tag range)"}
           </button>
 
           {advanced ? (
             <div className="mt-3 flex flex-col gap-3">
               <p className="text-center text-xs text-wangari-muted">
-                Weka namba ya kwanza na namba ya mwisho — mfano 1410001 hadi
+                Enter the first and last number — for example 1410001 to
                 1410040
               </p>
               <BigKeypad
                 value={value.rangeEnd || ""}
                 onChange={(v) => setDigits(v, "rangeEnd")}
                 onConfirm={ready ? onConfirm : undefined}
-                label="Namba ya mwisho"
+                label="Last number"
                 maxLength={ANITRAC_MAX_DIGITS}
-                confirmLabel="Hifadhi zote"
+                confirmLabel="Save all"
               />
               {value.rangeEnd ? (
                 <p
@@ -229,8 +229,8 @@ export function AnitracTagInput({
 
       {/* Why this is simple enough to actually be used. */}
       <p className="px-1 text-center text-xs leading-relaxed text-wangari-muted">
-        Unapaswa kuingiza alama mara moja tu. Kisha unarekodi kundi la
-        wanyama wote kwa kuhesabu tu — kama ulivyofanya kwa kundi.
+        You only enter a tag once. After that you keep recording the herd as
+        a count — the way you already count the group.
       </p>
     </div>
   );

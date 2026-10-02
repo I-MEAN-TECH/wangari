@@ -104,7 +104,7 @@ export default function DeliveriesPage() {
   React.useEffect(load, []);
 
   const submit = async () => {
-    if (!form.quantity || !form.buyer) { showToast("Andika kiasi na mnunuzi", "error"); return; }
+    if (!form.quantity || !form.buyer) { showToast("Enter the quantity and buyer", "error"); return; }
     const deductions = form.deductionAmount && Number(form.deductionAmount) > 0
       ? [{ label: form.deductionLabel || "Deduction", amount: Number(form.deductionAmount) }] : [];
     try {
@@ -148,9 +148,9 @@ export default function DeliveriesPage() {
     <div className="space-y-6 p-4 md:p-6">
       {ToastComponent}
       <PageHeader
-        title="Umeuza nini"
-        description="Kila litre, kilo na trei uliyouza — na bado inadaiwa kwako"
-        action={<Button onClick={() => setShowForm(!showForm)}>{showForm ? <><X className="h-4 w-4 mr-2" />Funga</> : <><Plus className="h-4 w-4 mr-2" />Andika uuzaji</>}</Button>}
+        title="What you sold"
+        description="Every litre, kilo and tray you delivered — and what you are still owed"
+        action={<Button onClick={() => setShowForm(!showForm)}>{showForm ? <><X className="h-4 w-4 mr-2" />Close</> : <><Plus className="h-4 w-4 mr-2" />Record delivery</>}</Button>}
       />
 
       {/* The farmer's proof of what they are owed — per-buyer, all-time, and
@@ -174,11 +174,11 @@ export default function DeliveriesPage() {
           <Card>
             <CardContent className="pt-6 space-y-4">
               <div>
-                <Label className="mb-2 block">Unauza nini?</Label>
+                <Label className="mb-2 block">What are you delivering?</Label>
                 <p className="text-[11px] text-muted-foreground mb-2">
                   {suggestions.some(s => s.source)
-                    ? "Kutoka kwa wanyama na bustani ulizoweka"
-                    : "Ongeza wanyama au bustani na zitaonyeshwa hapa"}
+                    ? "Based on the animals and crops on your farm"
+                    : "Add flocks or crops and they'll be suggested here"}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                   {suggestions.map((c) => {

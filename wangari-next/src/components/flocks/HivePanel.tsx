@@ -128,7 +128,7 @@ export function HivePanel() {
         totalHoneyKg: Number(res.totalHoneyKg || 0),
       });
     } catch {
-      setError("Imeshindikana kupakia vizima.");
+      setError("Could not load hives.");
     } finally {
       setLoading(false);
     }
@@ -153,7 +153,7 @@ export function HivePanel() {
       setAdding(false);
       await load();
     } catch (e: any) {
-      setError(e?.message || "Kizima hakikijajazwa.");
+      setError(e?.message || "Hive was not saved.");
     } finally {
       setSaving(false);
     }
@@ -186,7 +186,7 @@ export function HivePanel() {
       await api.patch(`/hives/${id}`, { status });
       await load();
     } catch {
-      setError("Imeshindikana kubadilisha hali ya kizima.");
+      setError("Could not update hive status.");
     }
   };
 
@@ -196,7 +196,7 @@ export function HivePanel() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Hexagon className="h-5 w-5 text-amber-600" aria-hidden />
-            <h3 className="font-bold text-gray-900">Vizima</h3>
+            <h3 className="font-bold text-gray-900">Hives</h3>
             <StatusChip
               tone={totals.activeHives > 0 ? "good" : "neutral"}
               label={`${totals.activeHives}/${totals.totalHives}`}
@@ -206,14 +206,14 @@ export function HivePanel() {
           {!adding ? (
             <Button size="sm" onClick={() => setAdding(true)}>
               <Plus className="h-4 w-4" aria-hidden />
-              Ongeza kizima
+              Add hive
             </Button>
           ) : null}
         </div>
 
         {/* The colony is the unit. Say so plainly, it prevents the wrong mental model. */}
         <p className="text-sm text-gray-500">
-          Unarekodi kizima, si nyuki. Kila kizima hana namba yake
+          You record the hive, not the bee. Each hive has its own number
           kwenye sanduku.
         </p>
 
@@ -234,7 +234,7 @@ export function HivePanel() {
           <div className="rounded-3xl border border-amber-200 bg-amber-50/60 p-4 space-y-3">
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-gray-600">
-                🔢 Namba ya kizima *
+                🔢 Hive number *
               </Label>
               <Input
                 type="number"
@@ -281,7 +281,7 @@ export function HivePanel() {
             <div className="flex gap-2">
               <Button className="flex-1" onClick={addHive} disabled={saving || !form.name.trim()}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
-                Hifadhi kizima
+                  Save hive
               </Button>
               <Button variant="ghost" onClick={() => setAdding(false)}>
                 <X className="h-5 w-5" aria-hidden />
@@ -291,16 +291,16 @@ export function HivePanel() {
         ) : null}
 
         {loading ? (
-          <p className="py-6 text-center text-sm text-gray-500">Inapakia vizima...</p>
+          <p className="py-6 text-center text-sm text-gray-500">Loading hives...</p>
         ) : hives.length === 0 ? (
           <EmptyState
             icon={<Hexagon className="h-8 w-8" />}
-            title="Hakuna vizima bado"
-            description="Ongeza kizima la kwanza, kisha rekodi ukaguzi wake."
+            title="No hives yet"
+            description="Add your first hive, then record its inspections."
             action={
               <Button onClick={() => setAdding(true)}>
                 <Plus className="h-4 w-4" aria-hidden />
-                Ongeza kizima
+                Add hive
               </Button>
             }
           />
@@ -320,7 +320,7 @@ export function HivePanel() {
                       </span>
                       <div className="min-w-0">
                         <p className="truncate font-bold text-gray-900">
-                          Kizima {h.name}
+                          Hive {h.name}
                           {h.hiveType
                             ? ` · ${HIVE_TYPE_SW[h.hiveType] ?? h.hiveType}`
                             : ""}
@@ -330,7 +330,7 @@ export function HivePanel() {
                             ? `Ukaguzi: ${last.broodFrames ?? 0} brood · ${last.storesFrames ?? 0} stores${
                                 last.honeyKg ? ` · ${last.honeyKg} kg` : ""
                               }`
-                            : "Hakuna ukaguzi bado"}
+                            : "No inspections yet"}
                         </p>
                       </div>
                     </div>
@@ -422,7 +422,7 @@ export function HivePanel() {
                         onClick={() => saveInspection(h.id)}
                         disabled={saving}
                       >
-                        {saving ? "Inaweka..." : "Hifadhi ukaguzi"}
+                        {saving ? "Saving..." : "Save inspection"}
                       </Button>
                     </motion.div>
                   ) : null}
