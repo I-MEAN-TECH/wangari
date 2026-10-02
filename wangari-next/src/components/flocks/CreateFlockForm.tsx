@@ -2,7 +2,21 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Bird, Beef, Droplets, Flower, ChevronRight } from "lucide-react";
+import {
+  X,
+  Check,
+  Bird,
+  Beef,
+  Droplets,
+  Flower,
+  ChevronRight,
+  Tag,
+  Hash,
+  CalendarDays,
+  MapPin,
+  Sprout,
+  Banknote,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,7 +49,7 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
     name: "",
     initialCount: "",
     hatchDate: new Date().toISOString().split("T")[0],
-    breed: "",
+   breed: "",
     location: "",
     costPerAnimal: "",
     notes: "",
@@ -54,7 +68,7 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
     setSelectedSpecies(species);
     setForm(prev => ({
       ...prev,
-      breed: species.breeds[0] || "",
+     breed: species.breeds[0] || "",
       costPerAnimal: species.costPerAnimal.toString(),
     }));
     setStep(2);
@@ -68,7 +82,7 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
     try {
       await onSubmit({
         name: form.name,
-        breed: form.breed,
+       breed: form.breed,
         type: selectedSpecies.id,
         category: selectedSpecies.category,
         initialCount: Number(form.initialCount),
@@ -94,38 +108,38 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
   const stepLabels = ["Category", "Species", "Details", "Confirm"];
 
   return (
-    <Card className="border border-[#E5E7EB] shadow-lg">
+    <Card className="border border-wangari-border shadow-lg">
       <CardContent className="p-6">
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-6">
           {stepLabels.map((label, i) => (
             <React.Fragment key={label}>
-              <div className={`flex items-center gap-1.5 text-xs font-semibold ${i <= step ? "text-[#166534]" : "text-gray-300"}`}>
-                <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${i < step ? "bg-[#166534] text-white" : i === step ? "bg-[#166534] text-white" : "bg-gray-100 text-gray-400"}`}>
+              <div className={`flex items-center gap-1.5 text-xs font-semibold ${i <= step ? "text-wangari-green-800" : "text-wangari-subtle"}`}>
+                <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${i < step ? "bg-wangari-green-800 text-white" : i === step ? "bg-wangari-green-800 text-white" : "bg-wangari-cream text-wangari-subtle"}`}>
                   {i < step ? <Check className="h-3 w-3" /> : i + 1}
                 </div>
                 <span className="hidden sm:inline">{label}</span>
               </div>
-              {i < 3 && <div className={`flex-1 h-0.5 rounded ${i < step ? "bg-[#166534]" : "bg-gray-100"}`} />}
+              {i < 3 && <div className={`flex-1 h-0.5 rounded ${i < step ? "bg-wangari-green-800" : "bg-wangari-cream"}`} />}
             </React.Fragment>
           ))}
-          <button onClick={onCancel} className="ml-auto text-[#94A3B8] hover:text-[#64748B] cursor-pointer"><X className="h-4 w-4" /></button>
+          <button onClick={onCancel} className="ml-auto text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
         </div>
 
         {/* Step 0: Category */}
         {step === 0 && (
           <div>
-            <p className="text-sm font-bold text-gray-900 mb-3">What type of animal?</p>
+            <p className="text-sm font-bold text-wangari-heading mb-3">What type of animal?</p>
             <div className="grid grid-cols-2 gap-3">
               {categories.map(cat => {
                 const Icon = iconMap[cat.icon] || Bird;
                 return (
                   <button key={cat.id} onClick={() => { setSelectedCategory(cat.id); setStep(1); }}
-                    className="flex flex-col items-center gap-2 rounded-xl border-2 border-gray-200 p-6 hover:border-[#166534] hover:bg-[#F0FDF4] transition-all cursor-pointer">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                    className="flex flex-col items-center gap-2 rounded-xl border-2 border-wangari-border p-6 hover:border-wangari-green-600 hover:bg-wangari-green-50 transition-all cursor-pointer">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-wangari-green-50 text-wangari-green-700">
                       <Icon className="h-7 w-7" />
                     </div>
-                    <span className="text-sm font-bold text-gray-900">{cat.label}</span>
+                    <span className="text-sm font-bold text-wangari-heading">{cat.label}</span>
                   </button>
                 );
               })}
@@ -136,14 +150,14 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
         {/* Step 1: Species */}
         {step === 1 && (
           <div>
-            <p className="text-sm font-bold text-gray-900 mb-3">Which species?</p>
+            <p className="text-sm font-bold text-wangari-heading mb-3">Which species?</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-80 overflow-y-auto">
               {speciesList.map(sp => (
                 <button key={sp.id} onClick={() => handleSpeciesSelect(sp)}
-                  className="text-left rounded-xl border border-gray-200 px-4 py-3 hover:border-[#166534] hover:bg-[#F0FDF4] transition-all cursor-pointer">
-                  <p className="text-sm font-bold text-gray-900">{sp.name}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{sp.breeds.slice(0, 2).join(", ")}{sp.breeds.length > 2 ? "..." : ""}</p>
-                  <p className="text-[10px] text-emerald-600 mt-0.5">~KES {sp.costPerAnimal.toLocaleString()}/head</p>
+                  className="text-left rounded-xl border border-wangari-border px-4 py-3 hover:border-wangari-green-600 hover:bg-wangari-green-50 transition-all cursor-pointer">
+                  <p className="text-sm font-bold text-wangari-heading">{sp.name}</p>
+                  <p className="text-[10px] text-wangari-subtle mt-0.5">{sp.breeds.slice(0, 2).join(", ")}{sp.breeds.length > 2 ? "..." : ""}</p>
+                  <p className="text-[10px] text-wangari-green-700 mt-0.5">~KES {sp.costPerAnimal.toLocaleString()}/head</p>
                 </button>
               ))}
             </div>
@@ -154,13 +168,13 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
         {/* Step 2: Basics */}
         {step === 2 && selectedSpecies && (
           <div>
-            <p className="text-sm font-bold text-gray-900 mb-1">
-              Adding <span className="text-[#166534]">{selectedSpecies.name}</span>
+            <p className="text-sm font-bold text-wangari-heading mb-1">
+              Adding <span className="text-wangari-green-800">{selectedSpecies.name}</span>
             </p>
-            <p className="text-xs text-gray-400 mb-4">Fill in the basics — you can add more details later</p>
+            <p className="text-xs text-wangari-subtle mb-4">Fill in the basics — you can add more details later</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-gray-500">🏷️ Group Name *</Label>
+                <Label className="flex items-center gap-1.5 text-xs font-semibold text-wangari-muted"><Tag className="h-3.5 w-3.5" aria-hidden />Group name *</Label>
                 <Input
                   list="existing-flock-names"
                   placeholder="e.g. Layer Block A"
@@ -173,29 +187,29 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
                   {existingNames.map(n => <option key={n} value={n} />)}
                 </datalist>
                 {existingNames.includes(form.name.trim()) && (
-                  <p className="text-[11px] text-amber-600">A group with this name already exists — consider adding to it from My Animals instead.</p>
+                  <p className="text-[11px] text-tone-warn-text">A group with this name already exists — consider adding to it from My Animals instead.</p>
                 )}
               </div>
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-gray-500">🔢 Number of Animals *</Label>
+                <Label className="flex items-center gap-1.5 text-xs font-semibold text-wangari-muted"><Hash className="h-3.5 w-3.5" aria-hidden />Number of animals *</Label>
                 <Input type="number" placeholder="e.g. 500" value={form.initialCount} onChange={e => setForm({ ...form, initialCount: e.target.value })} className="h-11 rounded-xl" />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-gray-500">📅 Date Acquired</Label>
+                <Label className="flex items-center gap-1.5 text-xs font-semibold text-wangari-muted"><CalendarDays className="h-3.5 w-3.5" aria-hidden />Date acquired</Label>
                 <Input type="date" value={form.hatchDate} onChange={e => setForm({ ...form, hatchDate: e.target.value })} className="h-11 rounded-xl" />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-gray-500">📍 Location</Label>
+                <Label className="flex items-center gap-1.5 text-xs font-semibold text-wangari-muted"><MapPin className="h-3.5 w-3.5" aria-hidden />Location</Label>
                 <Input placeholder="e.g. Pen A" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} className="h-11 rounded-xl" />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-gray-500"> breed</Label>
-                <select value={form.breed} onChange={e => setForm({ ...form, breed: e.target.value })} className="w-full h-11 rounded-xl border border-gray-200 px-3 text-sm">
+                <Label className="flex items-center gap-1.5 text-xs font-semibold text-wangari-muted"><Sprout className="h-3.5 w-3.5" aria-hidden />Breed</Label>
+                <select value={form.breed} onChange={e => setForm({ ...form, breed: e.target.value })} className="w-full h-11 rounded-xl border border-wangari-border px-3 text-sm">
                   {selectedSpecies.breeds.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-gray-500">💰 Cost per Head (KES)</Label>
+                <Label className="flex items-center gap-1.5 text-xs font-semibold text-wangari-muted"><Banknote className="h-3.5 w-3.5" aria-hidden />Cost per head (KES)</Label>
                 <Input type="number" placeholder={String(selectedSpecies.costPerAnimal)} value={form.costPerAnimal} onChange={e => setForm({ ...form, costPerAnimal: e.target.value })} className="h-11 rounded-xl" />
               </div>
             </div>
@@ -206,14 +220,14 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
             />
 
             {Number(form.initialCount) > 0 && Number(form.costPerAnimal) > 0 && (
-              <div className="mt-3 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0] p-3 text-xs">
-                <span className="text-gray-500">Total investment:</span>{" "}
-                <span className="font-bold text-[#166534]">KES {totalInvestment.toLocaleString()}</span>
+              <div className="mt-3 rounded-lg bg-wangari-green-50 border border-tone-good-border p-3 text-xs">
+                <span className="text-wangari-muted">Total investment:</span>{" "}
+                <span className="font-bold text-wangari-green-800">KES {totalInvestment.toLocaleString()}</span>
                 {" "}({form.initialCount} × KES {Number(form.costPerAnimal).toLocaleString()})
               </div>
             )}
-            <div className="mt-4 flex gap-2">
-              <Button onClick={() => setStep(3)} disabled={!form.name || !form.initialCount} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer disabled:opacity-50">Review <ChevronRight className="h-4 w-4 ml-1" /></Button>
+            <div className="sticky bottom-0 -mx-6 mt-4 flex gap-2 border-t border-wangari-border bg-wangari-card px-6 py-4">
+              <Button onClick={() => setStep(3)} disabled={!form.name || !form.initialCount} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer disabled:opacity-50">Review <ChevronRight className="h-4 w-4 ml-1" /></Button>
               <Button variant="outline" onClick={() => setStep(1)} className="cursor-pointer">Back</Button>
             </div>
           </div>
@@ -222,27 +236,27 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
         {/* Step 3: Review */}
         {step === 3 && selectedSpecies && (
           <div>
-            <p className="text-sm font-bold text-gray-900 mb-4">Confirm your livestock</p>
-            <div className="rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] p-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-500">Species:</span><span className="font-bold">{selectedSpecies.name}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Group name:</span><span className="font-bold">{form.name}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Count:</span><span className="font-bold">{form.initialCount} head</span></div>
-              {form.breed && <div className="flex justify-between"><span className="text-gray-500">Breed:</span><span className="font-bold">{form.breed}</span></div>}
+            <p className="text-sm font-bold text-wangari-heading mb-4">Confirm your livestock</p>
+            <div className="rounded-xl bg-wangari-green-50 border border-tone-good-border p-4 space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-wangari-muted">Species:</span><span className="font-bold">{selectedSpecies.name}</span></div>
+              <div className="flex justify-between"><span className="text-wangari-muted">Group name:</span><span className="font-bold">{form.name}</span></div>
+              <div className="flex justify-between"><span className="text-wangari-muted">Count:</span><span className="font-bold">{form.initialCount} head</span></div>
+              {form.breed && <div className="flex justify-between"><span className="text-wangari-muted">Breed:</span><span className="font-bold">{form.breed}</span></div>}
               {tagRange.tagFrom && tagRange.tagTo && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500">ANITRAC tags:</span>
+                  <span className="text-wangari-muted">ANITRAC tags:</span>
                   <span className="font-mono text-xs font-bold">
                     {tagRange.tagFrom} – {tagRange.tagTo}
                   </span>
                 </div>
               )}
-              {form.location && <div className="flex justify-between"><span className="text-gray-500">Location:</span><span className="font-bold">{form.location}</span></div>}
-              {form.hatchDate && <div className="flex justify-between"><span className="text-gray-500">Date:</span><span className="font-bold">{new Date(form.hatchDate).toLocaleDateString()}</span></div>}
-              {totalInvestment > 0 && <div className="flex justify-between border-t border-[#BBF7D0] pt-1.5"><span className="font-bold">Investment:</span><span className="font-bold text-[#166534]">KES {totalInvestment.toLocaleString()}</span></div>}
+              {form.location && <div className="flex justify-between"><span className="text-wangari-muted">Location:</span><span className="font-bold">{form.location}</span></div>}
+              {form.hatchDate && <div className="flex justify-between"><span className="text-wangari-muted">Date:</span><span className="font-bold">{new Date(form.hatchDate).toLocaleDateString()}</span></div>}
+              {totalInvestment > 0 && <div className="flex justify-between border-t border-tone-good-border pt-1.5"><span className="font-bold">Investment:</span><span className="font-bold text-wangari-green-800">KES {totalInvestment.toLocaleString()}</span></div>}
             </div>
-            <div className="mt-4 flex gap-2">
-              <Button onClick={handleSubmit} disabled={loading} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer disabled:opacity-50">
-                {loading ? "Saving..." : "✓ Save Livestock"}
+            <div className="sticky bottom-0 -mx-6 mt-4 flex gap-2 border-t border-wangari-border bg-wangari-card px-6 py-4">
+              <Button onClick={handleSubmit} disabled={loading} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer disabled:opacity-50">
+                {loading ? "Saving..." : "Save livestock"}
               </Button>
               <Button variant="outline" onClick={() => setStep(2)} className="cursor-pointer">Edit</Button>
             </div>

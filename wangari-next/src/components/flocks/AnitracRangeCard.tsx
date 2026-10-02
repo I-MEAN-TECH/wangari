@@ -1,30 +1,40 @@
 "use client";
 
 import * as React from "react";
-import { Tag, CheckCircle2, AlertTriangle, ChevronDown } from "lucide-react";
+import { Tag, ChevronRight, ShieldCheck, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveTagRange } from "@/lib/tag-range";
-import { BigKeypad } from "@/components/farmer-ui/big-keypad";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { AnitracTagInput, type AnitracTagValue } from "@/components/farmer-ui/anitrac-tag";
 
 /**
  * AnitracRangeCard — record the tags for a WHOLE herd with three numbers.
  *
- * This is the answer to "what if I have 500 animals?". A farmer does not tap
- * 500 numbers. They tap the first tag, the last tag, and Wangari works out the
- * rest — storing three values on the flock and generating the individual
- * numbers only when a buyer or county officer asks for the list.
+ * ── Why the entry lives in a dialog ────────────────────────────────────────
+ * This started as an inline expanding panel. A 3x4 keypad is roughly 500px
+ * tall, and dropping that into a two-column form pushed the Review button off
+ * the bottom of a modal that was already scrolling — the farmer landed on a
+ * form with a number pad in the middle of it and a scrollbar they had to
+ * discover. Tag entry is a SEPARATE, FOCUSED TASK: three numbers, then done.
+ * It does not belong wedged between "cost per head" and "total investment".
  *
- * Deliberately OPTIONAL and COLLAPSED by default, because most farmers have no
- * tags at all and tagging must never slow down creating a flock. The common
- * path (count your animals, move on) stays exactly as fast as it was.
+ * So the card is now a single compact summary row, exactly the height of its
+ * neighbours, that opens a dialog for the keypad. The farmer sees a normal
+ * form; tags are one tap away and never deform the form.
  *
- * DESIGN (one accent only): the card is an optional aside, not a co-equal
- * step, so it stays quiet — dashed neutral rule, no filled background — until
- * the farmer opens it. Status is the only place colour appears, because colour
- * there carries meaning rather than decoration.
+ * ── Why it stays optional ───────────────────────────────────────────────────
+ * Tagging must never slow down creating a flock. Most Kenyan farmers have no
+ * tags at all, so the default state is one quiet row that says so plainly and
+ * costs one tap to skip. Nothing about the common path got slower.
  *
- * The mismatch warning is advisory, not a blocker: a farmer who mistypes a
- * count should be told plainly, not locked out of saving.
+ * The range warning is advisory, not a blocker: a farmer who mistypes a count
+ * should be told plainly, not locked out of saving.
  */
 
 export interface AnitracRangeValue {
@@ -36,18 +46,13 @@ export function AnitracRangeCard({
   value,
   onChange,
   headCount,
-  compact = false,
 }: {
   value: AnitracRangeValue;
   onChange: (v: AnitracRangeValue) => void;
   /** The flock's stated head count, used to catch a mistyped range. */
   headCount?: number | null;
-  compact?: boolean;
 }) {
-  const [open, setOpen] = React.useState(() =>
-    Boolean(value.tagFrom || value.tagTo)
-  );
-  const [which, setWhich] = React.useState<"tagFrom" | "tagTo">("tagFrom");
+  const [open, setOpen] = React.useState(false);
 
   // The client helper takes a single object (the server twin takes positional
   // args) — keep the shape straight or the two drift apart.
@@ -58,123 +63,127 @@ export function AnitracRangeCard({
   });
 
   const ready = range.span > 0 && range.consistent;
+  const hasTags = range.span > 0;
+
+  // The tag input owns its own value so the dialog can be dismissed without
+  // writing half-typed digits into the flock.
+  const [draft, setDraft] = React.useState<AnitracTagValue>({
+    tagNumber: value.tagFrom || "",
+    mode: value.tagTo ? "range" : "exact",
+    rangeEnd: value.tagTo || "",
+  });
+
+  const save = () => {
+    onChange({
+      tagFrom: draft.tagNumber,
+      tagTo: draft.mode === "range" ? draft.rangeEnd || "" : "",
+    });
+    setOpen(false);
+  };
+
+  const clear = () => {
+    onChange({ tagFrom: "", tagTo: "" });
+    setDraft({ tagNumber: "", mode: "exact", rangeEnd: "" });
+    setOpen(false);
+  };
 
   return (
-    <div className="rounded-2xl border border-dashed border-wangari-border">
+    <>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
+        onClick={() => setOpen(true)}
         className={cn(
-          "flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3",
-          "text-left transition-colors duration-200",
-          "hover:bg-wangari-cream active:bg-wangari-green-50"
+          "flex w-full items-center gap-3 rounded-xl border p-3 text-left",
+          "transition-colors duration-200",
+          hasTags
+            ? "border-tone-good-border bg-tone-good-bg"
+            : "border-wangari-border bg-wangari-card hover:border-wangari-green-300 hover:bg-wangari-cream"
         )}
       >
-        <span className="flex items-center gap-2 text-sm font-semibold text-wangari-heading">
-          <Tag className="h-4 w-4 text-wangari-muted" aria-hidden />
-          ANITRAC tags
-          {range.span > 0 ? (
-            <span className="rounded-full bg-wangari-green-100 px-2 py-0.5 text-xs font-medium tabular-nums text-wangari-green-800">
-              {range.span}
-            </span>
-          ) : null}
+        <Tag
+          className={cn(
+            "h-4 w-4 shrink-0",
+            hasTags ? "text-tone-good-text" : "text-wangari-muted"
+          )}
+          aria-hidden
+        />
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-wangari-heading">
+            ANITRAC tags
+            {hasTags ? (
+              <span className="ml-2 font-mono text-xs tabular-nums text-tone-good-text">
+                {range.span} tags
+              </span>
+            ) : null}
+          </span>
+          <span className="block text-xs text-wangari-muted">
+            {hasTags
+              ? `${value.tagFrom} to ${value.tagTo}`
+              : "Optional. Skip if your animals are not tagged."}
+          </span>
         </span>
-        <span className="flex items-center gap-1 text-xs font-medium text-wangari-muted">
-          {open ? "Hide" : "Add tags"}
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 transition-transform duration-200",
-              open && "rotate-180"
-            )}
-            aria-hidden
-          />
-        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-wangari-subtle" aria-hidden />
       </button>
 
-      {!open ? (
-        <p className="px-4 pb-3 text-xs leading-relaxed text-wangari-muted">
-          No tags? Skip this section. If your animals are tagged, enter only the
-          first and last number — you never tag each one.
-        </p>
-      ) : (
-        <div className="space-y-3 border-t border-wangari-border px-4 py-3">
-          <p className="text-xs leading-relaxed text-wangari-muted">
-            Enter the first and last tag number. Every tag between them belongs
-            to this group.
-            {headCount ? ` You said this group has ${headCount} animals.` : ""}
-          </p>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="flex max-h-[90vh] max-w-md flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
+            <DialogTitle>ANITRAC tags</DialogTitle>
+            <DialogDescription>
+              Enter the first and last tag number. Every tag between them belongs
+              to this group
+              {headCount ? ` (${headCount} animals)` : ""}
+              .
+            </DialogDescription>
+          </DialogHeader>
 
-          {/* Two big entry slots. The farmer taps a slot, then the digits. */}
-          <div className="grid grid-cols-2 gap-2">
-            {(["tagFrom", "tagTo"] as const).map((slot) => {
-              const active = which === slot;
-              return (
-                <button
-                  key={slot}
-                  type="button"
-                  onClick={() => setWhich(slot)}
-                  aria-pressed={active}
-                  className={cn(
-                    "rounded-xl border px-3 py-3 text-left",
-                    "transition-colors duration-200 active:scale-[0.99]",
-                    active
-                      ? "border-wangari-green-600 bg-wangari-green-50"
-                      : "border-wangari-border bg-wangari-card hover:border-wangari-green-300"
-                  )}
-                >
-                  <span className="block text-[11px] font-medium tracking-wide text-wangari-muted">
-                    {slot === "tagFrom" ? "First tag" : "Last tag"}
-                  </span>
-                  <span
-                    className={cn(
-                      "mt-0.5 block font-mono text-sm font-semibold tabular-nums",
-                      value[slot] ? "text-wangari-heading" : "text-wangari-subtle"
-                    )}
-                  >
-                    {value[slot] || "—"}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <AnitracTagInput
+            value={draft}
+            onChange={setDraft}
+            onConfirm={save}
+            allowRange
+            className="min-h-0 flex-1 overflow-y-auto pr-1"
+          />
 
-          {!compact && (
-            <BigKeypad
-              value={value[which]}
-              onChange={(v) => onChange({ ...value, [which]: v })}
-              label={which === "tagFrom" ? "First tag number" : "Last tag number"}
-              maxLength={15}
-            />
-          )}
-
-          {/* Status: colour + icon first, so it reads without reading. */}
-          {value.tagFrom || value.tagTo ? (
-            <div
-              className={cn(
-                "flex items-start gap-2 rounded-xl border px-3 py-2",
-                "text-xs font-medium",
-                ready
-                  ? "border-tone-good-border bg-tone-good-bg text-tone-good-text"
-                  : "border-tone-warn-border bg-tone-warn-bg text-tone-warn-text"
-              )}
-            >
-              {ready ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-              ) : (
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-              )}
+          {draft.tagNumber && draft.tagNumber !== draft.rangeEnd ? (
+            <p className="flex items-start gap-2 rounded-lg border border-tone-warn-border bg-tone-warn-bg px-3 py-2 text-xs text-tone-warn-text">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
               <span>
-                {range.span > 0
-                  ? `${range.span} tags in this range.`
-                  : "Enter both numbers."}
-                {range.note ? ` ${range.note}` : ""}
+                Check the numbers. The last tag should be the same as, or higher
+                than, the first.
               </span>
-            </div>
+            </p>
           ) : null}
-        </div>
-      )}
-    </div>
+
+          <div className="flex shrink-0 gap-2">
+            {hasTags ? (
+              <button
+                type="button"
+                onClick={clear}
+                className="rounded-full px-4 text-sm font-semibold text-wangari-muted transition-colors hover:text-tone-bad-text"
+              >
+                Remove tags
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="h-11 flex-1 rounded-full border border-wangari-border text-sm font-semibold text-wangari-text transition-colors hover:bg-wangari-cream"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={save}
+              disabled={!draft.tagNumber}
+              className="h-11 flex-1 rounded-full bg-wangari-green-800 text-sm font-semibold text-white transition-colors hover:bg-wangari-green-900 disabled:opacity-40"
+            >
+              Save tags
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

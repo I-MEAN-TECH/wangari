@@ -30,7 +30,15 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
         className="fixed inset-0 bg-black/40 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-50 w-full max-w-lg mx-4">{children}</div>
+      {/* The panel used to be a bare `w-full max-w-lg mx-4` with no height cap, so
+          a dialog taller than the viewport simply ran off-screen with no way to
+          reach the bottom — which is how a dialog's own Cancel/Save actions
+          ended up unreachable. It now caps to the viewport and scrolls the
+          content. `100dvh` rather than `vh` so mobile browser chrome cannot
+          push the footer off the bottom. */}
+      <div className="relative z-50 max-h-[calc(100dvh-2rem)] w-full max-w-lg">
+        {children}
+      </div>
     </div>
   );
 }
