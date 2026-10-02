@@ -161,10 +161,12 @@ app.use("/api/dashboard", actionEngineRoutes); // /actions first, then falls thr
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/flocks", flocksRoutes);
 app.use("/api/flocks", flocksUploadRoutes);
-// ANITRAC animal identity. Mounted under /api/flocks so the animal record
-// lives next to the flock it belongs to; the router also serves
-// /api/flocks/traceability/list for the buyer/county export.
-app.use("/api/flocks", animalsRoutes);
+// ANITRAC animal identity.
+//
+// Mounted on its OWN path, not under /api/flocks: flocksRoutes defines
+// GET /:id, so a nested mount would let "animals" be parsed as a flock id and
+// silently 404. /api/animals keeps the routes unambiguous.
+app.use("/api/animals", animalsRoutes);
 app.use("/api/customers", customersRoutes);
 app.use("/api/promos", promoRedeemRoutes);
 app.use("/api/transactions", idempotencyGuard, transactionsRoutes);
