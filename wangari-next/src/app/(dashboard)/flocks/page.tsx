@@ -46,6 +46,7 @@ import { ExportReport } from "@/components/flocks/ExportReport";
 import { GrowthChart } from "@/components/flocks/GrowthChart";
 import { VaccinationReminders } from "@/components/flocks/VaccinationReminders";
 import { FlockAnimalsPanel } from "@/components/flocks/FlockAnimalsPanel";
+import { HivePanel } from "@/components/flocks/HivePanel";
 import { BatchProduction } from "@/components/flocks/BatchProduction";
 import { BreedingRecords } from "@/components/flocks/BreedingRecords";
 import { PostCreateWizard } from "@/components/flocks/PostCreateWizard";
@@ -698,6 +699,13 @@ export default function FlocksPage() {
               <BreedingRecords flockId={flock.id} flockName={flock.name} flockType={flock.type} />
             </CardContent>
           </Card>
+        </motion.div>
+
+        {/* Beekeeping. Bees are never counted individually, so the hive is the
+            unit — exactly as a flock is the unit for poultry. Shown for every
+            farm because apiculture is a whole-farm activity alongside livestock. */}
+        <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+          <HivePanel />
         </motion.div>
 
         {/* Vaccination Reminders */}

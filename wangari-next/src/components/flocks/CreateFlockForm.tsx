@@ -12,6 +12,7 @@ import {
   getSpeciesCategories,
   type SpeciesTemplate,
 } from "@/lib/species-templates";
+import { AnitracRangeCard } from "@/components/flocks/AnitracRangeCard";
 
 const iconMap: Record<string, any> = { bird: Bird, beef: Beef, droplets: Droplets, flower: Flower };
 
@@ -39,6 +40,11 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
     costPerAnimal: "",
     notes: "",
   });
+
+  // ANITRAC tag range. Optional and collapsed by default: most farmers have no
+  // tags, and adding tagging must never slow down creating a flock. When they
+  // DO have tags, it is three numbers for the whole herd — never one per animal.
+  const [tagRange, setTagRange] = React.useState({ tagFrom: "", tagTo: "" });
 
   const categories = getSpeciesCategories();
   const speciesList = getSpeciesByCategory(selectedCategory);
@@ -73,6 +79,11 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
         notes: form.notes || null,
         purpose: selectedSpecies.defaultPurpose,
         gender: selectedSpecies.defaultGender,
+        // Only send when the farmer actually entered a full range; the server
+        // ignores a partial one.
+        ...(tagRange.tagFrom && tagRange.tagTo
+          ? { tagFrom: tagRange.tagFrom, tagTo: tagRange.tagTo }
+          : {}),
         vaccinationSchedule: selectedSpecies.vaccinationSchedule,
       });
     } finally {
@@ -188,6 +199,12 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
                 <Input type="number" placeholder={String(selectedSpecies.costPerAnimal)} value={form.costPerAnimal} onChange={e => setForm({ ...form, costPerAnimal: e.target.value })} className="h-11 rounded-xl" />
               </div>
             </div>
+            <AnitracRangeCard
+              value={tagRange}
+              onChange={setTagRange}
+              headCount={Number(form.initialCount) || null}
+            />
+
             {Number(form.initialCount) > 0 && Number(form.costPerAnimal) > 0 && (
               <div className="mt-3 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0] p-3 text-xs">
                 <span className="text-gray-500">Total investment:</span>{" "}
@@ -211,6 +228,14 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
               <div className="flex justify-between"><span className="text-gray-500">Group name:</span><span className="font-bold">{form.name}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Count:</span><span className="font-bold">{form.initialCount} head</span></div>
               {form.breed && <div className="flex justify-between"><span className="text-gray-500">Breed:</span><span className="font-bold">{form.breed}</span></div>}
+              {tagRange.tagFrom && tagRange.tagTo && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">ANITRAC tags:</span>
+                  <span className="font-mono text-xs font-bold">
+                    {tagRange.tagFrom} – {tagRange.tagTo}
+                  </span>
+                </div>
+              )}
               {form.location && <div className="flex justify-between"><span className="text-gray-500">Location:</span><span className="font-bold">{form.location}</span></div>}
               {form.hatchDate && <div className="flex justify-between"><span className="text-gray-500">Date:</span><span className="font-bold">{new Date(form.hatchDate).toLocaleDateString()}</span></div>}
               {totalInvestment > 0 && <div className="flex justify-between border-t border-[#BBF7D0] pt-1.5"><span className="font-bold">Investment:</span><span className="font-bold text-[#166534]">KES {totalInvestment.toLocaleString()}</span></div>}
