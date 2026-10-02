@@ -45,6 +45,7 @@ import { FlockComparison } from "@/components/flocks/FlockComparison";
 import { ExportReport } from "@/components/flocks/ExportReport";
 import { GrowthChart } from "@/components/flocks/GrowthChart";
 import { VaccinationReminders } from "@/components/flocks/VaccinationReminders";
+import { FlockAnimalsPanel } from "@/components/flocks/FlockAnimalsPanel";
 import { BatchProduction } from "@/components/flocks/BatchProduction";
 import { BreedingRecords } from "@/components/flocks/BreedingRecords";
 import { PostCreateWizard } from "@/components/flocks/PostCreateWizard";
@@ -624,6 +625,13 @@ export default function FlocksPage() {
               <GrowthChart production={production} expectedWeight={flock.expectedWeight || species?.breedDetails[flock.breed]?.matureWeight} />
             </CardContent>
           </Card>
+        </motion.div>
+
+        {/* ANITRAC ear-tag identity. Additive: flocks are still counted as a
+            group exactly as before, this only stores the tag the farmer
+            already holds and produces the traceability list. */}
+        <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+          <FlockAnimalsPanel flockId={flock.id} />
         </motion.div>
 
         {/* Vaccination Schedule */}
