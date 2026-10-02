@@ -123,7 +123,14 @@ export default function OnboardingPage() {
       });
       // Straight to the day-one money moment, which is the whole point:
       // the farmer should see a number, not a setup checklist.
-      router.push("/dashboard");
+      //
+      //  is REQUIRED, not cosmetic. The dashboard layout mounts
+      // OnboardingGate, which fetches /auth/onboarding on mount. Without this,
+      // Next reuses the cached router state and the gate can still be holding
+      // the pre-claim "gate" decision, which bounced the farmer straight back
+      // here — the loop we just fixed server-side would survive this one.
+      router.push("/dashboard", { scroll: false });
+      router.refresh();
     } catch (e: any) {
       // Never swallow this. The old page's empty catch is exactly why farm
       // details were being lost without anyone noticing.

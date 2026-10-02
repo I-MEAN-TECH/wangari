@@ -498,7 +498,7 @@ router.get("/onboarding", authMiddleware, async (req: Request, res: Response) =>
 
     const [user, farm, earliest] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId }, select: { profileComplete: true, name: true, phone: true } }),
-      prisma.farm.findUnique({ where: { id: farmId }, select: { id: true, name: true, location: true, county: true, farmType: true, code: true } }),
+      prisma.farm.findUnique({ where: { id: farmId }, select: { id: true, name: true, location: true, county: true, farmType: true, code: true, claimedAt: true } }),
       // Real activity = any production, harvest, money or delivery record.
       prisma.$queryRaw<Array<{ first: Date | null }>>(Prisma.sql`
         SELECT MIN(d) AS first FROM (
@@ -512,13 +512,19 @@ router.get("/onboarding", authMiddleware, async (req: Request, res: Response) =>
 
     const firstRecordAt = earliest?.[0]?.first ? new Date(earliest[0].first).toISOString() : null;
 
+    // A claimed farm means onboarding was COMPLETED. Activity alone was the
+    // wrong test: claiming a farm creates no records, so it re-gated farmers
+    // forever. Both signals now count as "past onboarding", and either one is
+    // enough — a working farmer is never locked out of their own records.
+    const claimedAt = farm?.claimedAt ? new Date(farm.claimedAt).toISOString() : null;
+
     res.json({
       profileComplete: Boolean(user?.profileComplete),
       firstRecordAt,
+      claimedAt,
       everLoggedIn: true,
-      // Mirrors lib/onboarding.ts: gate only on real activity, so an existing
-      // farmer with records is NEVER locked out of their own records.
-      onboardingRequired: !firstRecordAt,
+      // Mirrors lib/onboarding.ts.
+      onboardingRequired: !firstRecordAt && !claimedAt,
       farm: farm ?? null,
     });
   } catch (error) {
@@ -553,6 +559,11 @@ router.post("/onboarding", authMiddleware, async (req: Request, res: Response) =
       where: { id: farmId },
       data: {
         name: String(farmName).trim().slice(0, 120),
+        // Stamp the claim. Without this the gate could not tell "completed
+        // onboarding" from "has never opened the app", because completing
+        // onboarding creates no production/harvest/money/delivery row — so the
+        // farmer was re-gated back to this page immediately after submitting.
+        claimedAt: new Date(),
         // A Google sign-in creates "Jane Doe Farm" as a placeholder; once the
         // farmer states the real name this stops being a guess.
         farmType: String(farmType).slice(0, 60),
@@ -573,7 +584,7 @@ router.post("/onboarding", authMiddleware, async (req: Request, res: Response) =
 
     const farm = await prisma.farm.findUnique({
       where: { id: farmId },
-      select: { id: true, name: true, location: true, county: true, farmType: true, code: true },
+      select: { id: true, name: true, location: true, county: true, farmType: true, code: true, claimedAt: true },
     });
 
     res.json({ ok: true, farm });

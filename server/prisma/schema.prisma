@@ -161,6 +161,9 @@ model Farm {
   farmType  String?  @map("farm_type")
   ownerId   Int      @map("owner_id")
   createdAt DateTime @default(now()) @map("created_at")
+  // When the farmer stated what they farm and claimed this farm in onboarding.
+  // NOT back-filled for existing farms — see migrations/16_farm_claimed_at.
+  claimedAt DateTime? @map("claimed_at")
 
   owner            User              @relation(fields: [ownerId], references: [id])
   members          FarmMember[]

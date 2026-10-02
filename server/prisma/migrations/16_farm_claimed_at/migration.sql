@@ -1,0 +1,12 @@
+-- Record WHEN a farmer claimed their farm in onboarding.
+--
+-- Why: the onboarding gate decided "has this account been used?" purely from
+-- `firstRecordAt`. But completing onboarding does NOT create a production,
+-- harvest, money or delivery row — it only writes the farm name and type. So a
+-- farmer who completed onboarding was immediately re-gated back to /onboarding,
+-- forever. This column is the honest record that the claim happened.
+--
+-- NULL means "never claimed" (a legacy or auto-created farm). It is not
+-- back-filled: a farm that predates this migration must not be treated as
+-- having completed a flow it never saw.
+ALTER TABLE "farms" ADD COLUMN "claimed_at" TIMESTAMP(3);

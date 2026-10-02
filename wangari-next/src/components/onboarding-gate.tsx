@@ -20,10 +20,11 @@ import { onboardingRequired } from "@/lib/onboarding";
  * of the farm is proven by claiming it.
  *
  * ── The rule that must never break ─────────────────────────────────────────
- * Gate on REAL ACTIVITY (`firstRecordAt`), never on a form flag. An account
- * with production, harvest, money or delivery records is NEVER redirected,
- * however incomplete its profile. We will not lock a working farmer out of
- * their own records. That logic lives in lib/onboarding.ts and is tested.
+ * Two signals mean "past onboarding": the farmer CLAIMED their farm, or they
+ * have real activity. Either one clears the gate. Gating on activity alone was
+ * the original bug: claiming a farm creates no records, so every farmer who
+ * submitted the form was bounced straight back here, forever. That logic lives
+ * in lib/onboarding.ts and is tested.
  *
  * While the state is loading we render nothing rather than guessing — a flash
  * of the wrong decision would be worse than a blank frame.
@@ -38,10 +39,19 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        const d = await api.get<{ firstRecordAt: string | null }>("/api/auth/onboarding");
+        const d = await api.get<{
+          firstRecordAt: string | null;
+          claimedAt: string | null;
+        }>("/api/auth/onboarding");
         if (cancelled) return;
-        // `undefined` = not fetched yet; `null` = fetched, nothing recorded.
-        setState(onboardingRequired({ firstRecordAt: d?.firstRecordAt ?? null }) ? "gate" : "clear");
+        setState(
+          onboardingRequired({
+            firstRecordAt: d?.firstRecordAt ?? null,
+            claimedAt: d?.claimedAt ?? null,
+          })
+            ? "gate"
+            : "clear"
+        );
       } catch {
         // A network failure must NEVER gate a paying, working farmer out of
         // their own farm. Fail open — the server still enforces real access.
