@@ -1,0 +1,145 @@
+"use client";
+
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Milk, Wheat, Package, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { showFirstRunCard } from "@/lib/first-run";
+
+/**
+ * FirstRunCard — the farmer's first screen, and the reason they come back.
+ *
+ * ── Why this exists ────────────────────────────────────────────────────────
+ * The production audit (2 Oct 2026) found 8 farms, 7 distinct production days
+ * total, and 5 farms that had recorded nothing at all. Sign-up was NOT the
+ * problem — 9 people got past it. What they met instead was three English
+ * chores ("add your animals", "record output", "record money") followed by a
+ * dashboard of zeros and empty ratios. Nothing on that screen paid the farmer
+ * anything, so nothing was worth doing twice.
+ *
+ * So the first thing a new farmer sees is the MONEY MOMENT, and they choose
+ * which one is theirs:
+ *   🥛 "I sell milk / eggs" → the delivery log (already built, works today)
+ *   🌾 "I grow crops"       → today's harvest / output
+ *
+ * Both end in a number the same evening. That number is the first reward, and
+ * the reward is the whole point: the habit forms because it pays, not because
+ * we asked nicely.
+ *
+ * ── Design rules ───────────────────────────────────────────────────────────
+ *  - TWO giant targets, not a form. The farmer picks a picture, not a path.
+ *  - Swahili first. These are the first words they read.
+ *  - This card RETIRES the moment the farmer records anything (the parent gates
+ *    it on `firstRecordAt`), so it never nags a farmer who is already doing the
+ *    useful thing. The old banner used totalFlocks for that check, which meant
+ *    a dairy farmer logging milk nightly saw "Start here" forever.
+ */
+
+interface FirstRunCardProps {
+  /** Has the farmer recorded anything yet? Null while loading. */
+  firstRecordAt: string | null | undefined;
+  /** Set false when the farm has hit the plan gate. */
+  locked?: boolean;
+}
+
+const CHOICES = [
+  {
+    id: "livestock",
+    icon: Milk,
+    emoji: "🥛",
+    title: "Ninauza maziwa",
+    subtitle: "Maziwa, mayai, au nyama",
+    href: "/deliveries",
+    cta: "Andika kilichouza",
+    tint: "border-[#166534] bg-[#166534]",
+  },
+  {
+    id: "crops",
+    icon: Wheat,
+    emoji: "🌾",
+    title: "Ninalima bustani",
+    subtitle: "Maua, mahindi, mboga",
+    href: "/crops",
+    cta: "Andika mazaa",
+    tint: "border-[#B45309] bg-[#B45309]",
+  },
+] as const;
+
+export function FirstRunCard({ firstRecordAt, locked }: FirstRunCardProps) {
+  // The gating rule lives in lib/first-run.ts so it is pinned by tests rather
+  // than re-implemented here. Note `loading` is not passed by the caller yet:
+  // the dashboard passes `undefined` while loading, which the rule treats as
+  // "do not show" — so the card never flashes at a long-standing farmer.
+  if (!showFirstRunCard({ firstRecordAt })) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+    >
+      <div className="rounded-3xl border-2 border-[#166534] bg-gradient-to-b from-[#F0FDF4] to-white p-5 sm:p-7">
+        <div className="mb-1 flex items-center justify-center gap-2 text-[#166534]">
+          <Sparkles className="h-5 w-5" aria-hidden />
+          <span className="text-xs font-bold uppercase tracking-widest">Mwanzo</span>
+        </div>
+
+        <h1 className="text-center text-2xl font-bold leading-tight text-[#0F172A] sm:text-3xl">
+          Onyesha ulichouza leo
+        </h1>
+        <p className="mx-auto mt-2 max-w-md text-center text-[#475569]">
+          Chagua kile unachofanya. Tutakuonyesha kiasi ulizopata mara moja.
+        </p>
+
+        {/* Two enormous targets. The farmer taps a picture, not a menu. */}
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {CHOICES.map((c) => {
+            const Icon = c.icon;
+            return (
+              <Link
+                key={c.id}
+                href={locked ? "/subscription" : c.href}
+                className={cn(
+                  "group flex min-h-[150px] flex-col items-center justify-center gap-2 rounded-3xl border-2 bg-white p-5 text-center transition-all",
+                  locked
+                    ? "border-gray-200 opacity-60"
+                    : "border-[#DCFCE7] hover:-translate-y-0.5 hover:border-[#166534] hover:shadow-lg active:scale-[0.99]"
+                )}
+              >
+                <span className="text-5xl" aria-hidden>{c.emoji}</span>
+                <span className="flex items-center gap-1.5 text-lg font-bold text-[#0F172A]">
+                  <Icon className="h-5 w-5 text-[#166534]" aria-hidden />
+                  {c.title}
+                </span>
+                <span className="text-sm text-[#64748B]">{c.subtitle}</span>
+                <span className={cn(
+                  "mt-1 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold text-white",
+                  c.tint
+                )}>
+                  {c.cta}
+                  <ArrowRight className="h-3 w-3" aria-hidden />
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* The promise, stated plainly — and honestly. */}
+        <div className="mt-5 flex items-start gap-2 rounded-2xl bg-white/80 p-3">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#166534]" aria-hidden />
+          <p className="text-xs leading-relaxed text-[#475569]">
+            Utaona kiasi ulichopata na kuna bado inadaiwa kwako. Hii ndiyo
+            hoja yako — itumie kwa mnunuzi wakati wowote.
+          </p>
+        </div>
+
+        <p className="mt-3 text-center text-xs text-[#94A3B8]">
+          <Package className="mr-1 inline h-3 w-3" aria-hidden />
+          Hutaki kuchapa chochote sasa hivi.
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+export default FirstRunCard;

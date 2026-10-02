@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useToast } from "@/components/shared/toast";
 import api from "@/lib/api-client";
+import { openDeliveryFormByDefault } from "@/lib/first-run";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
 
@@ -87,9 +88,15 @@ export default function DeliveriesPage() {
       api.get("/api/deliveries/suggestions").catch(() => ({ suggestions: [] })),
     ])
       .then(([d, s, sug]: any) => {
-        setDeliveries(Array.isArray(d) ? d : []);
+        const list = Array.isArray(d) ? d : [];
+        setDeliveries(list);
         setStatement(s);
         setSuggestions(sug?.suggestions ?? []);
+        // A farmer arriving from the first-run card has come here to log
+        // something, not to browse a history they don't have yet. So open the
+        // form ready for them — one tap instead of two, and no hunting for a
+        // button on a page with nothing else on it.
+        if (openDeliveryFormByDefault(list.length)) setShowForm(true);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -97,7 +104,7 @@ export default function DeliveriesPage() {
   React.useEffect(load, []);
 
   const submit = async () => {
-    if (!form.quantity || !form.buyer) { showToast("Enter quantity and buyer", "error"); return; }
+    if (!form.quantity || !form.buyer) { showToast("Andika kiasi na mnunuzi", "error"); return; }
     const deductions = form.deductionAmount && Number(form.deductionAmount) > 0
       ? [{ label: form.deductionLabel || "Deduction", amount: Number(form.deductionAmount) }] : [];
     try {
@@ -141,9 +148,9 @@ export default function DeliveriesPage() {
     <div className="space-y-6 p-4 md:p-6">
       {ToastComponent}
       <PageHeader
-        title="Deliveries"
-        description="Every litre, kilo and tray you deliver — recorded, with what you're owed"
-        action={<Button onClick={() => setShowForm(!showForm)}>{showForm ? <><X className="h-4 w-4 mr-2" />Close</> : <><Plus className="h-4 w-4 mr-2" />Record delivery</>}</Button>}
+        title="Umeuza nini"
+        description="Kila litre, kilo na trei uliyouza — na bado inadaiwa kwako"
+        action={<Button onClick={() => setShowForm(!showForm)}>{showForm ? <><X className="h-4 w-4 mr-2" />Funga</> : <><Plus className="h-4 w-4 mr-2" />Andika uuzaji</>}</Button>}
       />
 
       {/* The farmer's proof of what they are owed — per-buyer, all-time, and
@@ -167,11 +174,11 @@ export default function DeliveriesPage() {
           <Card>
             <CardContent className="pt-6 space-y-4">
               <div>
-                <Label className="mb-2 block">What are you delivering?</Label>
+                <Label className="mb-2 block">Unauza nini?</Label>
                 <p className="text-[11px] text-muted-foreground mb-2">
                   {suggestions.some(s => s.source)
-                    ? "Based on the animals and crops on your farm"
-                    : "Add flocks or crops and they'll be suggested here automatically"}
+                    ? "Kutoka kwa wanyama na bustani ulizoweka"
+                    : "Ongeza wanyama au bustani na zitaonyeshwa hapa"}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                   {suggestions.map((c) => {

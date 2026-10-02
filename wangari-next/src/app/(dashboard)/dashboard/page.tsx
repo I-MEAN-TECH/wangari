@@ -18,13 +18,13 @@ import {
   Target,
   Heart,
   Leaf,
-  PawPrint,
-  ClipboardList,
   CreditCard,
-  Sparkles,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { FirstRunCard } from "@/components/dashboard/FirstRunCard";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { showKpiGrid } from "@/lib/first-run";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import api from "@/lib/api-client";
@@ -417,38 +417,27 @@ function DashboardContent() {
         </motion.div>
       )}
 
-      {/* Onboarding banner for new users */}
-      {!data?.totalFlocks && !data?.totalBirds && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="border-2 border-emerald-300 bg-emerald-50/60">
-            <CardContent className="p-5">
-              <h3 className="text-base font-bold text-[#0F172A] mb-1">Welcome to Wangari!</h3>
-              <p className="text-sm text-[#64748B] mb-4">Start here — follow these 3 easy steps:</p>
-              <div className="grid sm:grid-cols-3 gap-3">
-                {[
-                  { step: "1", icon: <PawPrint className="h-5 w-5" />, text: "Add your animals or crops", href: "/flocks", color: "bg-[#166534]" },
-                  { step: "2", icon: <ClipboardList className="h-5 w-5" />, text: "Record today's output", href: "/production", color: "bg-emerald-600" },
-                  { step: "3", icon: <DollarSign className="h-5 w-5" />, text: "Record money in or out", href: "/finances", color: "bg-amber-600" },
-                ].map(s => (
-                  <Link
-                    key={s.step}
-                    href={fullyLocked ? "/subscription" : s.href}
-                    className={`flex items-center gap-3 p-4 rounded-xl bg-white border-2 border-emerald-100 transition-all shadow-sm ${fullyLocked ? "opacity-50" : "hover:border-emerald-400"}`}
-                  >
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${s.color} text-white shrink-0`}>{s.icon}</div>
-                    <p className="text-sm font-semibold text-[#0F172A]">{s.text}</p>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
+      {/* ═══════════════════════════════════════════════════════════════
+          FIRST RUN — the money moment, in Swahili, two big choices.
+          Replaces the English 3-step chore list as the first thing a new
+          farmer sees. Retires itself once the farmer records anything
+          (firstRecordAt), so it never nags someone who is already working.
+          ═══════════════════════════════════════════════════════════════ */}
+      <FirstRunCard
+        firstRecordAt={loading ? undefined : data?.firstRecordAt ?? null}
+        locked={fullyLocked}
+      />
 
-      {/* ═══════════════════════════════════════════════════════
+{/* ═══════════════════════════════════════════════════════
           SECTION 1: Primary Key Indicators (Core Highlights)
+
+          Hidden until the farm has recorded something. For a farm with no
+          data this grid is a wall of zeros and empty ratios (Cost per Egg,
+          Feed Score, Animals Lost) — it tells a new farmer nothing and makes
+          the app feel broken. The FirstRunCard above is the screen for them;
+          this grid appears the moment there is something true to show.
           ═══════════════════════════════════════════════════════ */}
-      <div className="space-y-2">
+      <div className={cn("space-y-2", !showKpiGrid({ firstRecordAt: loading ? undefined : data?.firstRecordAt ?? null, loading }) && "hidden")}>
         <div className="flex items-center justify-between px-1">
           <h2 className="text-sm font-bold text-wangari-text">Today's Farm Summary</h2>
         </div>

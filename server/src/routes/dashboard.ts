@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -46,6 +47,7 @@ router.get("/", async (req: Request, res: Response) => {
       feedInventory,
       allInventory,
       upcomingVax,
+      earliestRecord,
     ] = await Promise.all([
       // Today's production per flock
       prisma.dailyProduction.findMany({
@@ -120,7 +122,27 @@ router.get("/", async (req: Request, res: Response) => {
         take: 5,
         include: { flock: { select: { name: true } } },
       }).catch(() => []),
+
+      // ── Has this farmer recorded ANYTHING yet? ──────────────────────────
+      // The onboarding gate and the zero-state dashboard both need an honest
+      // answer to "has this farm started?", and inferring it from
+      // totalFlocks was wrong: a dairy farmer logging milk nightly without ever
+      // adding a flock was stuck on "Welcome to Wangari! Start here" forever.
+      // This is the earliest record across every table that represents real
+      // farm activity — production, harvest, money, a delivery to a buyer.
+      prisma.$queryRaw<Array<{ first: Date | null }>>(Prisma.sql`
+        SELECT MIN(d) AS first FROM (
+          SELECT MIN(date) AS d FROM daily_production WHERE farm_id = ${farmId}
+          UNION ALL SELECT MIN(date) FROM crop_harvests WHERE farm_id = ${farmId}
+          UNION ALL SELECT MIN(date) FROM transactions WHERE farm_id = ${farmId}
+          UNION ALL SELECT MIN(date) FROM deliveries WHERE farm_id = ${farmId}
+        ) t
+      `).catch(() => [{ first: null }]),
     ]);
+
+    const firstRecordAt: string | null = earliestRecord?.[0]?.first
+      ? new Date(earliestRecord[0].first).toISOString()
+      : null;
 
     // ─── Calculate Total Birds ──────────────────────────────
     const totalBirds = flocks.reduce((s, f) => s + f.currentCount, 0);
@@ -246,6 +268,11 @@ router.get("/", async (req: Request, res: Response) => {
     res.json({
       // Farm info
       farmName: farm?.name || "Your Farm",
+
+      // Earliest real activity on this farm, or null if nothing is recorded
+      // yet. Drives the first-run experience — a farmer who has recorded one
+      // delivery is no longer a "new" farmer, even with no animals set up.
+      firstRecordAt,
 
       // Flock overview
       totalFlocks: flocks.length,
