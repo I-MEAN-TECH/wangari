@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Milk, Wheat, Leaf, Truck, Plus, X, Trash2, ReceiptText, AlertTriangle, CheckCircle2, Egg, Drumstick, Bird, Droplets, Flower2, HelpCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
+import { StatementCard } from "@/components/deliveries/StatementCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,10 +44,19 @@ const statusBadge: Record<string, { label: string; cls: string }> = {
   disputed: { label: "Disputed", cls: "bg-red-50 text-red-700 border-red-200" },
 };
 
+// Mirrors the server response. `byBuyer`, `allTimeOutstanding` and
+// `unpaidDeliveries` are the dispute-proof fields the StatementCard needs.
 interface Statement {
   month: string; deliveries: number; gross: number; deductions: number;
   inputExpenses: number; net: number; paid: number; outstanding: number;
   byCommodity: Record<string, { quantity: number; gross: number; deliveries: number }>;
+  byBuyer?: Record<string, {
+    deliveries: number; quantity: number; gross: number;
+    deductions: number; paid: number; outstanding: number;
+  }>;
+  allTimeOutstanding?: number;
+  unpaidDeliveries?: number;
+  farm?: { name: string; county: string | null; code: string | null; owner: { name: string } } | null;
 }
 
 export default function DeliveriesPage() {
@@ -136,39 +146,18 @@ export default function DeliveriesPage() {
         action={<Button onClick={() => setShowForm(!showForm)}>{showForm ? <><X className="h-4 w-4 mr-2" />Close</> : <><Plus className="h-4 w-4 mr-2" />Record delivery</>}</Button>}
       />
 
-      {/* Monthly statement — the dispute-proof summary */}
+      {/* The farmer's proof of what they are owed — per-buyer, all-time, and
+          printable. Replaces the old summary block, which was English-only and
+          gave a farmer nothing to hand to a co-op clerk. */}
       {statement && (
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border-green-100 bg-gradient-to-br from-green-50/60 to-white">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 mb-4">
-                <ReceiptText className="h-5 w-5 text-green-600" />
-                <h2 className="font-semibold text-lg">Statement — {new Date(statement.month + "-01").toLocaleString("en", { month: "long", year: "numeric" })}</h2>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Delivered (gross)</p>
-                  <p className="text-2xl font-bold text-green-700">{money(statement.gross)}</p>
-                  <p className="text-xs text-muted-foreground">{statement.deliveries} deliveries</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Deductions</p>
-                  <p className="text-2xl font-bold text-amber-600">−{money(statement.deductions)}</p>
-                  <p className="text-xs text-muted-foreground">AI, agrovet, transport…</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Farm input expenses</p>
-                  <p className="text-2xl font-bold text-red-500">−{money(statement.inputExpenses)}</p>
-                  <p className="text-xs text-muted-foreground">Feed, seed, fertilizer, labour</p>
-                </div>
-                <div className="border-l pl-4">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Net this month</p>
-                  <p className={`text-2xl font-bold ${statement.net >= 0 ? "text-green-700" : "text-red-600"}`}>{money(statement.net)}</p>
-                  <p className="text-xs text-muted-foreground">{money(statement.outstanding)} still outstanding</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <StatementCard
+            statement={statement}
+            monthLabel={new Date(statement.month + "-01").toLocaleString("en", {
+              month: "long",
+              year: "numeric",
+            })}
+          />
         </motion.div>
       )}
 

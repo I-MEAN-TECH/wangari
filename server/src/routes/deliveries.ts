@@ -256,6 +256,42 @@ router.get("/statement", async (req: Request, res: Response) => {
       c.deliveries += 1;
     }
 
+    // PER-BUYER: this is the number that actually settles a dispute. A co-op
+    // will argue about "you were delivered to", not about a total across three
+    // buyers. "Githunguri owes me KES 45,000" is one line and one question.
+    const byBuyer: Record<string, { deliveries: number; quantity: number; gross: number; deductions: number; paid: number; outstanding: number }> = {};
+    for (const d of deliveries) {
+      const key = d.buyer || "Haijulikani";
+      const c = (byBuyer[key] ??= { deliveries: 0, quantity: 0, gross: 0, deductions: 0, paid: 0, outstanding: 0 });
+      const ded = d.deductions.reduce((x, dd) => x + Number(dd.amount), 0);
+      c.deliveries += 1;
+      c.quantity += Number(d.quantity);
+      c.gross += Number(d.expectedPay ?? 0);
+      c.deductions += ded;
+      c.paid += Number(d.paidAmount ?? 0);
+      c.outstanding += Number(d.expectedPay ?? 0) - ded - Number(d.paidAmount ?? 0);
+    }
+
+    // ALL-TIME outstanding: a farmer owed over several months needs the running
+    // total, not a single month. This is the figure they take to the co-op.
+    const allTime = await prisma.delivery.findMany({
+      where: { farmId },
+      // Prisma allows EITHER include OR select, never both.
+      select: {
+        expectedPay: true,
+        paidAmount: true,
+        deductions: { select: { amount: true } },
+      },
+    });
+    const allTimeOutstanding = allTime.reduce((s, d) => {
+      const ded = d.deductions.reduce((x, dd) => x + Number(dd.amount), 0);
+      return s + Number(d.expectedPay ?? 0) - ded - Number(d.paidAmount ?? 0);
+    }, 0);
+    const unpaidDeliveries = allTime.filter((d) => {
+      const ded = d.deductions.reduce((x, dd) => x + Number(dd.amount), 0);
+      return Number(d.expectedPay ?? 0) - ded - Number(d.paidAmount ?? 0) > 0.01;
+    }).length;
+
     res.json({
       month,
       deliveries: deliveries.length,
@@ -266,6 +302,15 @@ router.get("/statement", async (req: Request, res: Response) => {
       paid,
       outstanding: gross - deductionTotal - paid,
       byCommodity,
+      // The dispute surface: who owes what, and the running total across all
+      // time. This is what the farmer shows the cooperative.
+      byBuyer,
+      allTimeOutstanding,
+      unpaidDeliveries,
+      farm: await prisma.farm.findUnique({
+        where: { id: farmId },
+        select: { name: true, county: true, code: true, owner: { select: { name: true } } },
+      }),
       deliveryList: deliveries.map((d) => ({
         id: d.id, date: d.date, commodity: d.commodity, quantity: Number(d.quantity),
         unit: d.unit, buyer: d.buyer, expectedPay: d.expectedPay ? Number(d.expectedPay) : null,
