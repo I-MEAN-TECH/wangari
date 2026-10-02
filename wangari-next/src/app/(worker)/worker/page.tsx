@@ -199,7 +199,7 @@ export default function WorkerDashboardPage() {
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-2 flex items-center gap-2">
-            Jambo, {user?.name?.split(" ")[0] || "Worker"}!
+            Hello, {user?.name?.split(" ")[0] || "Worker"}!
           </h1>
           <p className="text-xs text-emerald-100/80 font-medium mt-1">
             Tap any big card below to log output or mark tasks done.

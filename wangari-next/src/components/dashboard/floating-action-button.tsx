@@ -15,7 +15,7 @@ export function FloatingActionButton() {
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={() => setOpen(!open)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-white shadow-[0_8px_30px_rgba(16,185,129,0.4)] hover:bg-emerald-700 hover:scale-105 active:scale-95 transition-all cursor-pointer border-2 border-white"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-wangari-green-700 text-white shadow-lg hover:bg-wangari-green-800 hover:scale-105 active:scale-95 transition-all cursor-pointer border-2 border-white"
           aria-label="Quick Add"
         >
           {open ? <X className="h-7 w-7" /> : <Plus className="h-8 w-8" />}
@@ -29,21 +29,19 @@ export function FloatingActionButton() {
             className="fixed inset-0 bg-black/50 backdrop-blur-xs"
             onClick={() => setOpen(false)}
           />
-          <div className="relative z-50 w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border border-emerald-100 animate-in slide-in-from-bottom duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
+          <div className="relative z-50 w-full max-w-sm rounded-3xl bg-wangari-card p-6 shadow-2xl border border-wangari-border animate-in slide-in-from-bottom duration-200">
+            <div className="flex items-center justify-between pb-4 border-b border-wangari-border mb-4">
               <div>
-                <h3 className="text-base font-extrabold text-gray-900">
-                  {lang === "sw" ? "Njia Za Haraka 🚜" : "Quick Actions 🚜"}
+                <h3 className="text-base font-extrabold text-wangari-heading">
+                  "Quick Actions 🚜"
                 </h3>
-                <p className="text-xs text-gray-500">
-                  {lang === "sw"
-                    ? "Chagua kile unachotaka kuweka leo"
-                    : "Select what you want to record right now"}
+                <p className="text-xs text-wangari-muted">
+                  "Select what you want to record right now"
                 </p>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="text-wangari-subtle hover:text-wangari-text p-1"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -54,30 +52,30 @@ export function FloatingActionButton() {
                 {
                   href: "/production",
                   icon: Egg,
-                  color: "bg-emerald-50 text-emerald-700 border-emerald-200",
-                  title: lang === "sw" ? "Weka Mayai / Maziwa" : "Log Eggs & Milk",
-                  subtitle: lang === "sw" ? "Andika mavuno ya leo" : "Record today's yield",
+                  color: "bg-tone-good-bg text-tone-good-text border-tone-good-border",
+                  title: "Log Eggs & Milk",
+                  subtitle: "Record today's yield",
                 },
                 {
                   href: "/finances",
                   icon: DollarSign,
-                  color: "bg-amber-50 text-amber-700 border-amber-200",
-                  title: lang === "sw" ? "Weka Gharama / Pesa" : "Record Money Spent",
-                  subtitle: lang === "sw" ? "Nunuaji wa chakula au dawa" : "Feed, vet, or labor costs",
+                  color: "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border",
+                  title: "Record Money Spent",
+                  subtitle: "Feed, vet, or labor costs",
                 },
                 {
                   href: "/sales",
                   icon: ShoppingCart,
                   color: "bg-blue-50 text-blue-700 border-blue-200",
-                  title: lang === "sw" ? "Weka Mauzo Na Wateja" : "Record a Sale",
-                  subtitle: lang === "sw" ? "Uzo wa mayai au maziwa" : "Sell to buyers",
+                  title: "Record a Sale",
+                  subtitle: "Sell to buyers",
                 },
                 {
                   href: "/flocks",
                   icon: Bird,
                   color: "bg-purple-50 text-purple-700 border-purple-200",
-                  title: lang === "sw" ? "Ongeza Mifugo / Mazao" : "Add Animals / Crops",
-                  subtitle: lang === "sw" ? "Sajili kuku, ng'ombe au shamba" : "Register new stock",
+                  title: "Add Animals / Crops",
+                  subtitle: "Register new stock",
                 },
               ].map((item) => (
                 <Link
@@ -86,12 +84,12 @@ export function FloatingActionButton() {
                   onClick={() => setOpen(false)}
                   className={`flex items-center gap-4 p-4 rounded-2xl border ${item.color} hover:shadow-md transition-all active:scale-98`}
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm shrink-0">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-wangari-card shadow-sm shrink-0">
                     <item.icon className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-sm font-extrabold text-gray-900">{item.title}</p>
-                    <p className="text-xs text-gray-600 mt-0.5">{item.subtitle}</p>
+                    <p className="text-sm font-extrabold text-wangari-heading">{item.title}</p>
+                    <p className="text-xs text-wangari-muted mt-0.5">{item.subtitle}</p>
                   </div>
                 </Link>
               ))}
