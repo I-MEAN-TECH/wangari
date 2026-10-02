@@ -3,6 +3,8 @@
 **Stack:** Next.js (Vercel, `wangari-next/`) → Express API (VPS, `server/`) → MariaDB (same VPS), fronted by nginx with Let's Encrypt TLS.
 
 > **Operators & AI agents:** start with [ops-runbook.md](ops-runbook.md) — it has the golden rules, the deploy command, credentials locations, and the agreed roadmap. This file is the topology reference.
+>
+> **Why the product exists (read before changing what it is):** [vision.md](vision.md) is the brand constitution, and [roadmap.md](roadmap.md) is the long vision — V1 records, V2 AI/automation, V3 IoT + third-party connections.
 
 ```
                         ┌────────────────────────────┐
