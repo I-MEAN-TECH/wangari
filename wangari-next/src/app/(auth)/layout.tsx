@@ -25,11 +25,11 @@ export default function AuthLayout({
     <AuthAvatarContext.Provider value={{ avatarState, setAvatarState }}>
       <div className="min-h-screen flex">
         {/* Left — Brand panel & Interactive Avatar */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0B1220] via-[#14532D] to-[#166534] relative overflow-hidden flex-col justify-between p-10">
+        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-wangari-ink via-wangari-green-900 to-wangari-green-800 relative overflow-hidden flex-col justify-between p-10">
           {/* Decorative blobs */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-[#22C55E]/15 blur-[120px]" />
-            <div className="absolute -bottom-20 -right-20 h-[500px] w-[500px] rounded-full bg-[#4ADE80]/10 blur-[140px]" />
+            <div className="absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-wangari-green-500/15 blur-[120px]" />
+            <div className="absolute -bottom-20 -right-20 h-[500px] w-[500px] rounded-full bg-wangari-green-400/10 blur-[140px]" />
           </div>
 
           {/* Logo */}
@@ -57,7 +57,7 @@ export default function AuthLayout({
               { value: "0 Fees", label: "Free 14-Day Trial" },
             ].map((stat) => (
               <div key={stat.label}>
-                <p className="text-lg font-black text-[#4ADE80]">{stat.value}</p>
+                <p className="text-lg font-black text-wangari-green-400">{stat.value}</p>
                 <p className="text-[11px] text-white/70 font-semibold">{stat.label}</p>
               </div>
             ))}

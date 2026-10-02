@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, WifiOff, Sparkles } from "lucide-react";
+import { ShieldCheck, WifiOff, Users } from "lucide-react";
 
 export type AvatarState =
   | "idle"
@@ -71,7 +71,7 @@ export function AnimatedAvatar({ state, className }: AnimatedAvatarProps) {
       case "show-password":
         return "I saw that. Keeping it safe.";
       case "loading":
-        return "Checking credentials... Hang tight! ⏳";
+        return "Checking credentials. Hang tight.";
       case "error":
         return "Double check those details.";
       case "success":
@@ -93,7 +93,7 @@ export function AnimatedAvatar({ state, className }: AnimatedAvatarProps) {
       >
         <span>{getSpeechBubbleText()}</span>
         {/* Speech bubble tail */}
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white" />
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-wangari-card" />
       </motion.div>
 
       {/* SVG ANIMATED CARTOON EMOJI AVATAR */}
@@ -256,18 +256,35 @@ export function AnimatedAvatar({ state, className }: AnimatedAvatarProps) {
         </svg>
       </div>
 
-      {/* HONEST MARKETING NOTE FOR WANGARI */}
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 text-white text-left space-y-3 max-w-md shadow-xl">
+      {/* Honest note.
+
+          COLOUR: this card used `bg-white/10 text-white`, which only works when
+          something dark sits behind it. On the auth layout that dark panel is
+          `hidden lg:flex`, so below 1024px the avatar renders on the WHITE form
+          panel instead — and the whole card became white-on-white, measured at
+          1.00:1 contrast. The card now owns its own dark surface so it cannot
+          depend on an ancestor that may not be there. */}
+      <div className="max-w-md space-y-3 rounded-2xl border border-wangari-green-800 bg-wangari-ink p-5 text-left shadow-xl">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-wangari-green-400 shrink-0" />
-          <h3 className="font-extrabold text-sm tracking-tight text-white">An Honest Note from Wangari</h3>
+          <ShieldCheck className="h-4 w-4 shrink-0 text-wangari-green-400" aria-hidden />
+          <h3 className="text-sm font-semibold tracking-tight text-white">
+            An Honest Note from Wangari
+          </h3>
         </div>
-        <p className="text-xs text-white/80 leading-relaxed">
-          We built Wangari because farm record-keeping shouldn&apos;t require a university degree or an expensive consultant. Whether you keep 5 cows, 20 chickens, a fish pond or 10,000 birds, keeping daily track of milk, eggs, feed, vaccines, and money is the difference between profit and loss.
+        <p className="text-sm leading-relaxed text-wangari-green-100">
+          We built Wangari because farm record-keeping shouldn&apos;t require a
+          university degree or an expensive consultant. Whether you keep 5 cows,
+          20 chickens, a fish pond or 10,000 birds, keeping daily track of milk,
+          eggs, feed, vaccines, and money is the difference between profit and
+          loss.
         </p>
-        <div className="pt-1 border-t border-white/10 flex items-center justify-between text-[11px] font-bold text-wangari-green-400">
-          <span className="flex items-center gap-1.5"><WifiOff className="h-3.5 w-3.5" /> 100% Works Offline</span>
-          <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Built for Farmers</span>
+        <div className="flex items-center justify-between border-t border-wangari-green-800 pt-3 text-xs font-semibold text-wangari-green-400">
+          <span className="flex items-center gap-1.5">
+            <WifiOff className="h-3.5 w-3.5" aria-hidden /> 100% Works Offline
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5" aria-hidden /> Built for Farmers
+          </span>
         </div>
       </div>
     </div>

@@ -19,7 +19,13 @@
   --color-wangari-text: #334155;
   --color-wangari-heading: #0F172A;
   --color-wangari-muted: #64748B;
-  --color-wangari-subtle: #94A3B8;
+  /* Secondary text grey.
+     Was #94A3B8, which measured 2.56:1 on white — below the WCAG AA 4.5:1 floor
+     for body text, and this token is used for real copy in 150+ places, not
+     just decoration. Darkened to 5.18:1 so secondary text is readable in sun
+     on a cheap handset. It stays lighter than --color-wangari-muted (4.76:1)
+     so the hierarchy survives. */
+  --color-wangari-subtle: #5F6E85;
 
   /* Semantic status tones. The fixed colour+icon language a farmer learns
      once (see components/farmer-ui/status-chip.tsx). Defined here so no
@@ -74,8 +80,8 @@ body {
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+::-webkit-scrollbar-thumb { background: var(--color-wangari-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-wangari-subtle); }
 
 :focus-visible {
   outline: 2px solid var(--color-wangari-green-500);

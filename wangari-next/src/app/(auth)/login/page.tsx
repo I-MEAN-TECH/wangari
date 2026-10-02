@@ -438,7 +438,7 @@ function LoginForm() {
         <>
           <motion.div variants={fadeUp} className="flex items-center gap-4">
             <div className="flex-1 h-px bg-wangari-border" />
-            <span className="text-xs text-wangari-subtle font-medium">or</span>
+            <span className="text-xs font-medium text-wangari-muted">or</span>
             <div className="flex-1 h-px bg-wangari-border" />
           </motion.div>
 
