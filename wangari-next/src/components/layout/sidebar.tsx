@@ -101,6 +101,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Feed Helper", href: "/feed-calculator", icon: <Calculator className="h-5 w-5" /> },
       { label: "Season Planner", href: "/planner", icon: <CalendarRange className="h-5 w-5" /> },
+      { label: "My Farm Record", href: "/farm-record", icon: <FileText className="h-5 w-5" /> },
       { label: "Profitability", href: "/profitability", icon: <Trophy className="h-5 w-5" /> },
       { label: "Weather", href: "/weather", icon: <CloudSun className="h-5 w-5" /> },
       { label: "Learn", href: "/library", icon: <GraduationCap className="h-5 w-5" /> },

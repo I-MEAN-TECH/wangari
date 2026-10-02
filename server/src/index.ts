@@ -31,6 +31,7 @@ import invoicesRoutes from "./routes/invoices.js";
 import farmsRoutes from "./routes/farms.js";
 import auditRoutes from "./routes/audit.js";
 import exportRoutes from "./routes/export.js";
+import farmRecordRoutes from "./routes/farm-record.js";
 import importRoutes from "./routes/import.js";
 import settingsRoutes from "./routes/settings.js";
 import zktecoRoutes from "./routes/zkteco.js";
@@ -193,6 +194,8 @@ app.use("/api/quotes-public", quotesPublic);
 app.use("/api/track", trackRoutes);
 app.use("/api/farms", farmsRoutes);
 app.use("/api/audit", auditRoutes);
+// The bankable-farm proof layer: farmer-initiated, read-only, never auto-shared.
+app.use("/api/farm-record", farmRecordRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/api/import", importRoutes);
 app.use("/api/settings", settingsRoutes);

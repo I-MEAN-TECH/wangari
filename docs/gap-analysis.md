@@ -66,11 +66,11 @@ Wangari has already solved **the most fundamental problem** the industry has: *t
 | 5 | **Vet/animal health records** | 🟡 **PARTIAL** | `Vaccination` model (31 rows in prod) + flock vet fields. But health is **flock-level, not animal-level**; no disease/outbreak log. |
 | 6 | **Farm financial records (revenue, cost, profit)** | ✅ **SOLVED** | Sales, Transactions, Profitability, Invoices, Quotes, Deliveries. |
 | 7 | **Farmer owing/credit given BY the farm to customers** | ✅ **SOLVED** | `Credit` model (customer credit the *farm* extends) + action-engine overdue-credit alerts. *Note: this is the farm's credit to buyers — different from the farmer getting a loan.* |
-| 8 | 🔴 **Farmer getting a LOAN using their records (credit scoring)** | 🔴 **MISSING** | No `creditScore`/TARA-style scoring anywhere. Nothing turns a farmer's history into a bankable proof. **Biggest gap.** |
-| 9 | 🔴 **Records provable to a third party (signed export / attestation)** | 🔴 **MISSING** | `VerificationCode` is for *email login*, not a farm-record attestation. No "download my bank-ready statement" feature. |
-| 10 | 🔴 **Individual animal identity (ANITRAC ear-tag ready)** | 🔴 **MISSING** | Flock tracks `initialCount`/`currentCount` (aggregate). **No per-animal id/tag/animalId** anywhere. Not ANITRAC-ready. |
-| 11 | 🔴 **Cooperative / group serving (multi-farmer, member records)** | 🔴 **MISSING** | No cooperative/member/group/bulk-onboarding code. One user = one farm. A co-op cannot use Wangari. |
-| 12 | 🔴 **Milk delivery record for co-op disputes** | 🔴 **MISSING** | No "milk delivered to co-op" record or statement. *Directly related to the N-KCC payment crisis.* |
+| 8 | **Farmer getting a LOAN using their records (credit proof)** | ✅ **SOLVED** (Oct 2026) | `/api/farm-record` + **Onyesha rekodi yangu**. Assembles the four evidence categories a loan officer assesses (activity, inputs, yield, market linkage) with a 5-star explainable record grade. Farmer-initiated, never auto-shared. **Not** a credit *score* — deliberately the proof layer only. |
+| 9 | **Records provable to a third party (printable/shareable record)** | ✅ **SOLVED** (Oct 2026) | Two templates from the same data: the farmer's card (Swahili, stars, share + print) and a denser **LenderBrief** with scope/limits stated up front and a farmer attestation block. No forged signature, no self-hash — a hash we generate proves nothing to a bank. |
+| 10 | **Individual animal identity (ANITRAC ear-tag ready)** | ✅ **SOLVED** (Oct 2026) | `Animal` model + `Flock.tagFrom/tagTo` ranges. **15-digit tags prefixed `141`**; ranges are stored as 3 numbers and expanded lazily on demand, so a 500-head farm costs the farmer no extra daily work. Government registration is complemented, not duplicated. |
+| 11 | **Cooperative / group serving (multi-farmer, member records)** | 🔴 **MISSING** | No cooperative/member/group/bulk-onboarding code. One user = one farm. A co-op cannot use Wangari. |
+| 12 | **Milk delivery record for co-op disputes** | 🟢 **STRENGTHENED** (was mislabelled 🔴 MISSING) | `Delivery` + `DeliveryDeduction` already existed; `/api/deliveries/statement` already computed gross/deductions/net/paid/outstanding. The real gaps were **per-buyer**, **all-time** and **printable/Swahili** — all now shipped in `StatementCard.tsx`. |
 | 13 | 🔴 **Index-insurance linkage** | 🔴 **MISSING** | No insurance/payout product. `insurancePolicy` is a text field on the flock only. |
 | 14 | 🟡 **Market / commodity price board (selling above floor price)** | 🟡 **PARTIAL** | `deliveries.ts` has commodity→unit mapping; no **market price benchmark** to price sales against. |
 | 15 | 🟡 **Value-add / post-harvest / cold chain** | 🟡 **PARTIAL** | `PostHarvestBatch` model + crop health/soil exist; cold chain/logistics is thin. |
@@ -99,9 +99,10 @@ Ranked by **industry pain × how close you already are × simplicity**.
 **Why:** Your growth plan is partnerships with co-ops and national associations (see [partnership-prospects.md](partnership-prospects.md)). **A co-op cannot buy or use Wangari today, because it's strictly one-farmer-one-farm.** This blocks your single biggest distribution channel.
 **Simplest fix (MVP):** a **co-op/group concept** — an admin (chairperson) who can (a) see *aggregate* member records (how many members active, total production, health of the group), and (b) issue **bulk member invites / promo codes**. You already have batch promo-code generation and a farm-member model; a thin "Group" wrapper is days of work, not months. (Data privacy: the group sees *aggregate/anonymised* numbers, not a member's private finances — this also respects belief rule 8.)
 
-### 🟡 GAP 4 — Milk-delivery record (dairy co-op payment proof)
-**Why:** The N-KCC/co-op payment crisis is *headline news* right now. A farmer who logs each delivery + what they were paid has an independent record to settle disputes.
-**Simplest fix (MVP):** a simple **"deliveries to co-op/buyer" log** (date, litres, buyer, price, paid/unpaid) that produces a **statement the farmer can show the co-op.** This rides on data you already track (milk collected in DailyProduction; Sales).
+### ✅ GAP 4 — Milk-delivery record (dairy co-op payment proof) — *largely already solved*
+**Correction (Oct 2026):** this was filed as 🔴 MISSING. That was wrong. Direct inspection found the `Delivery` model (`buyer`, `receiptRef`, `unitPrice`, `expectedPay`, `status`, `paidAmount`) plus `DeliveryDeduction`, and `/api/deliveries/statement` already returning gross/deductions/net/paid/outstanding. The capability was ~80% present.
+**What was genuinely missing, and is now shipped:** a **per-buyer** breakdown (one line a co-op must answer to), an **all-time** outstanding figure, and a **printable Swahili statement** (`StatementCard.tsx`).
+**Why it still matters:** the N-KCC/co-op payment crisis is headline news, and the root problem is that a farmer cannot verify their own deliveries — so disputes are unresolvable. That part is unchanged.
 
 ### 🟡 GAP 5 — Market price board
 **Why:** Farmers routinely sell below market price because they don't know the going rate. An expo/investor immediately gets this.
@@ -142,15 +143,25 @@ So you know what NOT to rebuild. Wangari **already solves** the core records pro
 
 ## The honest priority order (if you do nothing else)
 
-1. 🔴 **G2 — ANITRAC tag on animals/flocks** (days; big moat; do it *before* 23 Oct).
-2. 🔴 **G1 — Farm Record Report** (bankable proof; one report generator; huge farmer value).
-3. 🔴 **G3 — Co-op/group mode** (unlocks your #1 distribution channel; reuses existing members + batch codes).
-4. 🟡 **G4 — Milk-delivery statement** (rides the co-op payment crisis).
+1. ✅ ~~**G2 — ANITRAC tag on animals/flocks**~~ — **built** (`/api/animals`, tag ranges, traceability export).
+2. ✅ ~~**G1 — Farm Record Report**~~ — **built** (`/api/farm-record`, 5-star explainable grade, farmer + lender templates).
+3. ✅ ~~**G4 — Milk-delivery statement**~~ — **built** (was already ~80% there; per-buyer, all-time, printable Swahili).
+4. 🔴 **G3 — Co-op/group mode** (unlocks your #1 distribution channel; reuses existing members + batch codes). **Next.**
 5. 🟡 **G5 — Market price board**, 🟡 **G6 — weather rules** (quick credibility wins at the expo).
-6. 🔴 **Gap 7 — tests**, in blocks alongside the above.
+6. 🟡 **Gap 7 — tests**: started (65 tests across 4 files, incl. the record-grade maths). Continue alongside.
 
 Everything above is deliberately scoped to be **"as simple as possible"** and to ride on data Wangari already owns. None of it requires a pivot, a rewrite, or money — only the founder's time, which is exactly the resource you have.
 
 ---
 
 *Coverage verified by direct inspection of `server/src/routes/*` and `server/prisma/schema.prisma` on 2 Oct 2026 (not from marketing copy). "Solved" means the capability exists in code; "partial" means it exists but not at the level the industry now requires. Re-audit after building Gaps 1–3.*
+
+---
+
+## Corrections log
+
+An audit that is never corrected becomes a lie. Recording the mistakes here, because a founder who trusts his own analysis without checking it will be wrong in front of investors too.
+
+- **Oct 2026 — Gap 12 / G4 (milk delivery statement) was mislabelled 🔴 MISSING.** It was **PARTIAL and mostly built**: the `Delivery` model and `/api/deliveries/statement` already computed gross, deductions, net, paid and outstanding. The genuine gaps were per-buyer, all-time and printable/Swahili — now shipped. Lesson: the "missing" rows came from scanning route *filenames* and the schema, not from reading the route bodies. `deliveries.ts` was 284 lines and none of it was visible from its name.
+- **Oct 2026 — Gap 9 ("records provable to a third party") was filed as needing "signed export / attestation".** Re-reading the actual lender framework (Oct 2026) showed what a loan officer wants is an **operational history in four categories over multiple seasons** — activity, inputs, yield, market linkage. A signature or a self-generated hash proves nothing to them; a farm code plus a dated four-category history does. Built the latter.
+- **Oct 2026 — Gap 8 was framed as "credit scoring", which would have been the wrong product.** Building a `creditScore` would make Wangari a regulated credit decision-maker. The build instead produces **record strength** — five stars, each one a thing the farmer controls — and explicitly no loan estimate, no rate, no approval. The proof layer, not the lender.

@@ -2,6 +2,11 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
+import {
+  MIN_DAYS_TO_GRADE,
+  WINDOW_DAYS,
+  CONSISTENCY_TARGET,
+} from "../lib/record-grade.js";
 
 /**
  * Action Engine — turns the farm's own data into a prioritized list of
@@ -39,6 +44,7 @@ router.get("/actions", async (req: Request, res: Response) => {
     const [
       flocks, crops, recentProd, lowStock, overdueCredits, unpaidInvoices,
       openTasks, pendingBreedings, recentApplications, todayProd,
+      prodInWindow, prodOldest, prodNewest, recentMoney,
     ] = await Promise.all([
       prisma.flock.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, currentCount: true, type: true, category: true, createdAt: true } }),
       prisma.crop.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, cropType: true, plantingDate: true, expectedHarvest: true } }),
@@ -50,7 +56,36 @@ router.get("/actions", async (req: Request, res: Response) => {
       prisma.breeding.findMany({ where: { farmId, status: "confirmed", expectedBirth: { not: null } }, include: { flock: { select: { name: true } } } }),
       prisma.cropApplication.findMany({ where: { farmId, type: "pesticide" }, orderBy: { date: "desc" }, take: 30, include: { crop: { select: { name: true } } } }),
       prisma.dailyProduction.findMany({ where: { farmId, date: today } }),
+      // For the record-completeness nudges: how far back does the record go,
+      // and has any money moved through the farm in the last 90 days?
+      prisma.dailyProduction.findMany({
+        where: { farmId, date: { gte: weekAgo } },
+        orderBy: { date: "asc" },
+        select: { date: true },
+      }),
+      prisma.dailyProduction.findMany({
+        where: { farmId },
+        orderBy: { date: "asc" },
+        select: { date: true },
+        take: 1,
+      }),
+      prisma.dailyProduction.findMany({
+        where: { farmId },
+        orderBy: { date: "desc" },
+        select: { date: true },
+        take: 1,
+      }),
+      prisma.transaction.findMany({
+        where: { farmId, type: { in: ["income", "expense"] }, date: { gte: new Date(now.getTime() - WINDOW_DAYS * 86400000) } },
+        select: { type: true },
+      }),
     ]);
+
+    const recentProdAll = prodInWindow;
+    const prodFirstDate = prodOldest[0]?.date ?? null;
+    const prodLastDate = prodNewest[0]?.date ?? null;
+    const recentIncome = recentMoney.filter((t: any) => t.type === "income");
+    const recentExpense = recentMoney.filter((t: any) => t.type === "expense");
 
     // ─── 1. CRITICAL: money owed to the farm ─────────────────
     const nowMs = now.getTime();
@@ -259,7 +294,57 @@ router.get("/actions", async (req: Request, res: Response) => {
       });
     }
 
-    // ─── 8. Stale open tasks ────────────────────────────────
+    // ─── 8. Record-completeness nudges (the bankable-farm grade) ──────────
+    // The farm-record report (see lib/record-grade.ts) is the proof layer: a
+    // farmer takes it to a lender when they need one. The grade is made of
+    // things the farmer controls, so each missing piece is turned here into a
+    // single, concrete, 30-second action. This is the loop that matters:
+    // records → grade → a conversation with a lender. Without these nudges the
+    // grade is a score nobody chases; with them it is a habit.
+    {
+      const activityDays = new Set(
+        recentProdAll.map((p) => new Date(p.date).toISOString().slice(0, 10))
+      ).size;
+      const recordSpanDays = prodFirstDate && prodLastDate
+        ? Math.floor((prodLastDate.getTime() - prodFirstDate.getTime()) / 86400000) + 1
+        : 0;
+      const graded = recordSpanDays >= MIN_DAYS_TO_GRADE;
+
+      if (flocks.length > 0 && recentIncome.length === 0 && recentExpense.length === 0) {
+        actions.push({
+          id: "record-money",
+          priority: "high",
+          icon: "Banknote",
+          title: "Andika shughuli yako ya kila siku",
+          detail: "Kila kitu unachopata na unachotumia kimeandikwa hapa. Hii ndiyo nakala unayoitishia benki au SACCO ukihitaji pesa.",
+          href: "/farm-record",
+          cta: "Ona rekodi yangu",
+        });
+      } else if (!graded) {
+        const remaining = MIN_DAYS_TO_GRADE - recordSpanDays;
+        actions.push({
+          id: "record-start",
+          priority: "medium",
+          icon: "CalendarCheck",
+          title: `Andika kila siku — siku ${remaining} zaidi`,
+          detail: "Ukisharekodi kwa miezi mitatu, unapata alama ya rekodi yako. Hiyo ndiyo nakala inayokusaidia kupata mkopo.",
+          href: "/farm-record",
+          cta: "Ona umbiko wangu",
+        });
+      } else if (activityDays < Math.floor(WINDOW_DAYS * CONSISTENCY_TARGET)) {
+        actions.push({
+          id: "record-consistency",
+          priority: "medium",
+          icon: "CalendarCheck",
+          title: `Umeandika siku ${activityDays} kati ya ${WINDOW_DAYS}`,
+          detail: "Ukisharekodi zaidi ya asilimia 70 ya siku, rekodi yako inaimarika na mwenyewe anajionea. Kazi ya sekunde 30 kwa siku.",
+          href: "/farm-record",
+          cta: "Ona rekodi yangu",
+        });
+      }
+    }
+
+    // ─── 9. Stale open tasks ────────────────────────────────
     const staleTasks = openTasks.filter((t: any) => t.createdAt && (now.getTime() - new Date(t.createdAt).getTime()) > 3 * 86400000);
     if (staleTasks.length > 0) {
       actions.push({
