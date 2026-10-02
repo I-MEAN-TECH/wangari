@@ -11,6 +11,7 @@ import dashboardRoutes from "./routes/dashboard.js";
 import actionEngineRoutes from "./routes/action-engine.js";
 import cronWeeklyRoutes from "./routes/cron-weekly.js";
 import flocksRoutes from "./routes/flocks.js";
+import animalsRoutes from "./routes/animals.js";
 import customersRoutes from "./routes/customers.js";
 import transactionsRoutes from "./routes/transactions.js";
 import salesRoutes from "./routes/sales.js";
@@ -160,6 +161,10 @@ app.use("/api/dashboard", actionEngineRoutes); // /actions first, then falls thr
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/flocks", flocksRoutes);
 app.use("/api/flocks", flocksUploadRoutes);
+// ANITRAC animal identity. Mounted under /api/flocks so the animal record
+// lives next to the flock it belongs to; the router also serves
+// /api/flocks/traceability/list for the buyer/county export.
+app.use("/api/flocks", animalsRoutes);
 app.use("/api/customers", customersRoutes);
 app.use("/api/promos", promoRedeemRoutes);
 app.use("/api/transactions", idempotencyGuard, transactionsRoutes);

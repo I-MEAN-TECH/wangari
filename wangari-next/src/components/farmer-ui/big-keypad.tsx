@@ -1,0 +1,203 @@
+"use client";
+
+import * as React from "react";
+import { Delete } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+/**
+ * BigKeypad — the farmer's number entry.
+ *
+ * WHY THIS EXISTS: our user often cannot read, let alone type. Every number
+ * Wangari asks for is entered on these giant keys instead of a system keyboard.
+ * This is the single most important low-literacy component in the product.
+ *
+ * RULES it enforces (see docs/module-plan.md §0):
+ *  - Digits only by default (a "code" mode allows `-` for ranges).
+ *  - Keys are huge (min 64px tall) — usable with gloves, in sun, one thumb.
+ *  - The current value is shown enormous, so the farmer can see it at a glance.
+ *  - Confirm is a full-width bar, not a small button.
+ *
+ * Voice input is deliberately a pluggable no-op for now (see `onVoiceAsk`);
+ * it will be wired to AI/WhatsApp in a later phase without changing any caller.
+ */
+
+export interface BigKeypadProps {
+  /** Current value as a string so the farmer can type "0" first (e.g. a date). */
+  value: string;
+  onChange: (value: string) => void;
+  /** Fired when the farmer hits the big confirm bar. */
+  onConfirm?: () => void;
+  /** Swahili label for the field being entered, shown above the value. */
+  label?: string;
+  /** Allow a leading minus sign (for ranges, e.g. temperature). Off for counts. */
+  allowMinus?: boolean;
+  /** Max characters. Defaults to 15 — the ANITRAC tag length. */
+  maxLength?: number;
+  /** Swahili word for the confirm action, e.g. "Hifadhi" (save). */
+  confirmLabel?: string;
+  disabled?: boolean;
+  className?: string;
+}
+
+const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+
+export function BigKeypad({
+  value,
+  onChange,
+  onConfirm,
+  label,
+  allowMinus = false,
+  maxLength = 15,
+  confirmLabel = "Hifadhi",
+  disabled = false,
+  className,
+}: BigKeypadProps) {
+  const press = (key: string) => {
+    if (disabled) return;
+    if (value.length >= maxLength) return;
+    if (key === "-" && (value.length > 0 || !allowMinus)) return;
+    onChange(value + key);
+  };
+
+  const backspace = () => {
+    if (disabled) return;
+    onChange(value.slice(0, -1));
+  };
+
+  // A keypad is useless without a keyboard for desktop/QA, so we also accept
+  // physical digits. This does not change the mobile experience.
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        press(e.key);
+      } else if (e.key === "Backspace") {
+        e.preventDefault();
+        backspace();
+      } else if (e.key === "Enter" && onConfirm) {
+        e.preventDefault();
+        onConfirm();
+      }
+    };
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener("keydown", onKey);
+    return () => el.removeEventListener("keydown", onKey);
+  });
+
+  return (
+    <div
+      ref={containerRef}
+      tabIndex={0}
+      className={cn(
+        "flex flex-col gap-3 rounded-3xl bg-white p-3 shadow-sm outline-none",
+        "focus-visible:ring-4 focus-visible:ring-wangari-green-200",
+        className
+      )}
+    >
+      {label ? (
+        <div className="px-1 text-center text-sm font-semibold text-wangari-muted">
+          {label}
+        </div>
+      ) : null}
+
+      {/* The value, shown enormous so it can be read from arm's length. */}
+      <div
+        className={cn(
+          "flex min-h-[72px] items-center justify-center rounded-2xl px-3 text-center",
+          "font-mono text-4xl font-bold tabular-nums tracking-wider",
+          value.length > 0
+            ? "bg-wangari-green-50 text-wangari-green-900"
+            : "bg-gray-50 text-gray-300"
+        )}
+      >
+        {value.length > 0 ? value : "—"}
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {KEYS.map((k) => (
+          <button
+            key={k}
+            type="button"
+            disabled={disabled || value.length >= maxLength}
+            onClick={() => press(k)}
+            aria-label={`Digit ${k}`}
+            className={cn(
+              "h-16 w-full rounded-2xl text-3xl font-bold",
+              "bg-wangari-green-800 text-white shadow-sm",
+              "transition-transform active:scale-95 active:bg-wangari-green-900",
+              "disabled:opacity-40"
+            )}
+          >
+            {k}
+          </button>
+        ))}
+
+        {allowMinus ? (
+          <button
+            type="button"
+            disabled={disabled || value.length > 0}
+            onClick={() => press("-")}
+            aria-label="Minus"
+            className="h-16 w-full rounded-2xl bg-gray-100 text-3xl font-bold text-gray-700 active:scale-95 disabled:opacity-40"
+          >
+            −
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled
+            aria-hidden
+            className="h-16 w-full rounded-2xl bg-transparent"
+          />
+        )}
+
+        <button
+          type="button"
+          disabled={disabled || value.length === 0}
+          onClick={() => press("0")}
+          aria-label="Digit 0"
+          className={cn(
+            "h-16 w-full rounded-2xl text-3xl font-bold",
+            "bg-wangari-green-800 text-white shadow-sm",
+            "transition-transform active:scale-95 active:bg-wangari-green-900",
+            "disabled:opacity-40"
+          )}
+        >
+          0
+        </button>
+
+        <button
+          type="button"
+          disabled={disabled || value.length === 0}
+          onClick={backspace}
+          aria-label="Delete"
+          className={cn(
+            "h-16 w-full rounded-2xl bg-red-50 text-red-600",
+            "transition-transform active:scale-95 disabled:opacity-40"
+          )}
+        >
+          <Delete className="mx-auto h-8 w-8" aria-hidden />
+        </button>
+      </div>
+
+      {onConfirm ? (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onConfirm}
+          className={cn(
+            "h-16 w-full rounded-2xl text-xl font-bold",
+            "bg-wangari-green-800 text-white shadow-md",
+            "transition-transform active:scale-95 disabled:opacity-40"
+          )}
+        >
+          {confirmLabel}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+export default BigKeypad;

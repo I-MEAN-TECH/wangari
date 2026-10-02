@@ -193,6 +193,7 @@ model Farm {
   invoices         Invoice[]
   quotes           Quote[]
   newsSends        NewsArticleSend[]
+  animals          Animal[]
 
   @@map("farms")
 }
@@ -256,6 +257,7 @@ model Flock {
   production   DailyProduction[]
   vaccinations Vaccination[]
   breeding     Breeding[]
+  animals      Animal[]
 
   @@map("flocks")
 }
@@ -462,6 +464,7 @@ model SoilTest {
 model Vaccination {
   id            Int       @id @default(autoincrement())
   flockId       Int       @map("flock_id")
+  animalId      Int?      @map("animal_id") // optional: a specific tagged animal, not the whole flock
   vaccineName   String    @map("vaccine_name")
   scheduledDate DateTime  @map("scheduled_date")
   completedDate DateTime? @map("completed_date")
@@ -469,9 +472,47 @@ model Vaccination {
   notes         String?
   createdAt     DateTime  @default(now()) @map("created_at")
 
-  flock Flock @relation(fields: [flockId], references: [id])
+  flock  Flock   @relation(fields: [flockId], references: [id])
+  animal Animal? @relation(fields: [animalId], references: [id], onDelete: SetNull)
 
+  @@index([animalId])
   @@map("vaccinations")
+}
+
+/// Individual animal identity for ANITRAC traceability.
+///
+/// Kenya rolled out ANITRAC in July 2026: every cattle, sheep and goat carries
+/// a 15-digit number starting with the 141 country prefix (visual tag left ear,
+/// RFID chip right ear). This model stores the tag the farmer ALREADY has and
+/// ties it to the farm's day-to-day record.
+///
+/// Deliberate design: the farmer does NOT manage animals individually. The
+/// flock's `currentCount` stays the daily source of truth; an Animal row is
+/// set up once and thereafter only ever VIEWED. Nothing here is required to
+/// log production — the existing flock flow is untouched.
+model Animal {
+  id        Int       @id @default(autoincrement())
+  farmId    Int       @map("farm_id")
+  flockId   Int?      @map("flock_id")
+  tagNumber String    @map("tag_number") // ANITRAC: 15 digits, starts with 141
+  species   String?
+  breed     String?
+  sex       String? // female | male | unknown
+  birthDate DateTime? @map("birth_date") @db.Date
+  status    String    @default("active") // active | sold | moved | died | missing
+  notes     String?
+  photoUrl  String?   @map("photo_url")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  farm        Farm          @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  flock       Flock?        @relation(fields: [flockId], references: [id], onDelete: SetNull)
+  vaccinations Vaccination[]
+
+  @@unique([farmId, tagNumber])
+  @@index([farmId, status])
+  @@index([flockId])
+  @@map("animals")
 }
 
 model Transaction {
