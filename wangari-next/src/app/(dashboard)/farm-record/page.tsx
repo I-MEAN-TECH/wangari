@@ -48,24 +48,26 @@ export default function FarmRecordPage() {
         description="Show your work — to a bank, SACCO or field agent."
       />
 
-      {/* THE button. Full width, tall, icon-first, Swahili. */}
+      {/* The button is full width and tall, icon first — one tap, no jargon. */}
       {!record ? (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Card className="border-green-200 bg-gradient-to-b from-green-50 to-white">
-            <CardContent className="space-y-4 pt-8 pb-8">
+          <Card className="border-wangari-border">
+            <CardContent className="space-y-4 px-5 pb-6 pt-8">
               <div className="flex justify-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-green-100">
-                  <FileText className="h-11 w-11 text-green-700" aria-hidden />
+                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-wangari-green-50">
+                  <FileText className="h-11 w-11 text-wangari-green-700" aria-hidden />
                 </div>
               </div>
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-900">Show my farm record</h2>
-                <p className="mx-auto mt-2 max-w-sm text-gray-600">
+                <h2 className="text-2xl font-bold tracking-tight text-wangari-heading">
+                  Show my farm record
+                </h2>
+                <p className="mx-auto mt-2 max-w-sm text-wangari-muted">
                   This record shows the work you have done, day by day. You can
-          print it or send it to anyone you choose.
+                  print it or send it to anyone you choose.
                 </p>
               </div>
 
@@ -84,14 +86,19 @@ export default function FarmRecordPage() {
               </Button>
 
               {error ? (
-                <p className="text-center text-sm font-medium text-red-600">{error}</p>
+                <p className="text-center text-sm font-medium text-tone-bad-text">
+                  {error}
+                </p>
               ) : null}
 
-              <div className="flex items-start gap-2 rounded-2xl bg-white p-3 text-left">
-                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-green-600" aria-hidden />
-                <p className="text-xs leading-relaxed text-gray-600">
-                  This record is never sent to anyone without your say-so. You choose
-          who sees it. Wangari hamuamuzi kukopesha.
+              <div className="flex items-start gap-2 rounded-2xl bg-wangari-cream p-3 text-left">
+                <ShieldCheck
+                  className="mt-0.5 h-5 w-5 shrink-0 text-wangari-muted"
+                  aria-hidden
+                />
+                <p className="text-xs leading-relaxed text-wangari-muted">
+                  This record is never sent to anyone without your say-so. You
+                  choose who sees it.
                 </p>
               </div>
             </CardContent>

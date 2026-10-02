@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils";
  *  - The biggest element is the FARM, then the record, then the grade. Not a
  *    chart. Nothing here requires the farmer to interpret an axis.
  *  - If the record is too short to grade, we DO NOT show an empty star row and
- *    let it read as failure. We show the countdown: "siku 21 zaidi". A grade is
+ *    let it read as failure. We show the countdown: "21 more days to go". A grade is
  *    never shown for a record that cannot support one.
  *  - Missing days are shown as missing. The report never flatters.
  *  - No promise of a loan. The card says what it is: a record of work done.
@@ -148,8 +148,8 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
       ``,
       `Record period: ${period.monthsWithRecords} months (${period.recordSpanDays} days)`,
       `Days recorded: ${evidence.activity.daysRecorded} of ${evidence.activity.windowDays}`,
-      `Gharama: ${money(evidence.inputs.totalExpense)}`,
-      `Mapato: ${money(evidence.market.totalIncome)}`,
+      `Costs: ${money(evidence.inputs.totalExpense)}`,
+      `Income: ${money(evidence.market.totalIncome)}`,
       evidence.market.deliveryOwed > 0 ? `Outstanding: ${money(evidence.market.deliveryOwed)}` : ``,
       ``,
       grade.graded
@@ -175,33 +175,33 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
   };
 
   return (
-    <Card className="overflow-hidden border-green-200">
+    <Card className="overflow-hidden border-tone-good-border">
       <CardContent className="space-y-5 pt-6">
         {/* ── WHO. The farm is the subject of this page. ────────────────── */}
         <div className="text-center">
-          <div className="mb-1 flex items-center justify-center gap-2 text-green-700">
+          <div className="mb-1 flex items-center justify-center gap-2 text-tone-good-text">
             <Sprout className="h-6 w-6" aria-hidden />
             <span className="text-xs font-bold uppercase tracking-widest">Farm record</span>
           </div>
-          <h1 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">{farm.name}</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold leading-tight text-wangari-heading sm:text-3xl">{farm.name}</h1>
+          <p className="mt-1 text-sm text-wangari-muted">
             {[farm.owner, farm.county, farm.location].filter(Boolean).join(" · ")}
           </p>
           {farm.code ? (
-            <p className="mt-1 font-mono text-xs text-gray-500">Farm code: {farm.code}</p>
+            <p className="mt-1 font-mono text-xs text-wangari-muted">Farm code: {farm.code}</p>
           ) : null}
         </div>
 
         {/* ── HOW LONG. Honesty first: banks want seasons, say where we are. ─ */}
-        <div className="rounded-3xl bg-gray-50 p-4 text-center">
-          <div className="flex items-center justify-center gap-2 text-gray-600">
+        <div className="rounded-3xl bg-wangari-cream p-4 text-center">
+          <div className="flex items-center justify-center gap-2 text-wangari-muted">
             <CalendarDays className="h-5 w-5" aria-hidden />
             <span className="text-sm font-semibold uppercase tracking-wide">Record period</span>
           </div>
-          <p className="mt-1 text-3xl font-bold tabular-nums text-gray-900">
+          <p className="mt-1 text-3xl font-bold tabular-nums text-wangari-heading">
             Months {period.monthsWithRecords}
           </p>
-          <p className="mt-1 text-sm font-medium text-gray-600">{period.seasonsNote}</p>
+          <p className="mt-1 text-sm font-medium text-wangari-muted">{period.seasonsNote}</p>
         </div>
 
         {/* ── THE GRADE. The centrepiece, in stars + colour. ─────────────── */}
@@ -209,15 +209,15 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
           className={cn(
             "rounded-3xl border-2 p-5 text-center",
             !grade.graded
-              ? "border-gray-200 bg-gray-50"
+              ? "border-wangari-border bg-wangari-cream"
               : grade.tone === "good"
-                ? "border-green-300 bg-green-50"
+                ? "border-tone-good-border bg-tone-good-bg"
                 : grade.tone === "warn"
-                  ? "border-amber-300 bg-amber-50"
-                  : "border-gray-300 bg-gray-50"
+                  ? "border-tone-warn-border bg-tone-warn-bg"
+                  : "border-wangari-border bg-wangari-cream"
           )}
         >
-          <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
+          <p className="text-xs font-bold uppercase tracking-widest text-wangari-muted">
             {grade.graded ? "Record grade" : "Record starting"}
           </p>
 
@@ -232,35 +232,35 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
                       "h-10 w-10",
                       i < grade.stars
                         ? grade.tone === "good"
-                          ? "fill-green-500 text-green-600"
-                          : "fill-amber-400 text-amber-500"
-                        : "text-gray-300"
+                          ? "fill-wangari-green-500 text-tone-good-text"
+                          : "fill-wangari-green-300 text-tone-warn-text"
+                        : "text-wangari-subtle"
                     )}
                     aria-hidden
                   />
                 ))}
               </div>
-              <p className="mt-1 text-2xl font-bold text-gray-800">
+              <p className="mt-1 text-2xl font-bold text-wangari-heading">
                 {grade.stars} / {grade.maxStars}
               </p>
             </>
           ) : (
             <>
-              <p className="mt-2 text-3xl font-bold text-gray-800">
+              <p className="mt-2 text-3xl font-bold text-wangari-heading">
                 {grade.progress.daysUntilGrading}
               </p>
-              <p className="text-sm font-semibold text-gray-600">siku zaidi kuanza</p>
+              <p className="text-sm font-semibold text-wangari-muted">more days to go</p>
             </>
           )}
 
-          <p className="mx-auto mt-3 max-w-sm text-sm font-medium leading-relaxed text-gray-700">
+          <p className="mx-auto mt-3 max-w-sm text-sm font-medium leading-relaxed text-wangari-text">
             {grade.summary}
           </p>
         </div>
 
         {/* ── The four things a loan officer actually asks for. ───────────── */}
         <div className="space-y-2">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-gray-500">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-wangari-muted">
             Ushahidi wa kazi
           </h2>
           <ul className="space-y-2">
@@ -269,17 +269,17 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
                 key={c.id}
                 className={cn(
                   "flex items-start gap-3 rounded-2xl border p-3",
-                  c.earned ? "border-green-200 bg-green-50/60" : "border-gray-200 bg-white"
+                  c.earned ? "border-tone-good-border bg-tone-good-bg" : "border-wangari-border bg-white"
                 )}
               >
                 {c.earned ? (
-                  <Star className="mt-0.5 h-6 w-6 shrink-0 fill-green-500 text-green-600" aria-hidden />
+                  <Star className="mt-0.5 h-6 w-6 shrink-0 fill-wangari-green-500 text-tone-good-text" aria-hidden />
                 ) : (
-                  <CircleDashed className="mt-0.5 h-6 w-6 shrink-0 text-gray-300" aria-hidden />
+                  <CircleDashed className="mt-0.5 h-6 w-6 shrink-0 text-wangari-subtle" aria-hidden />
                 )}
                 <div className="min-w-0">
-                  <p className="font-bold text-gray-900">{c.label}</p>
-                  <p className="text-sm text-gray-600">{c.detail}</p>
+                  <p className="font-bold text-wangari-heading">{c.label}</p>
+                  <p className="text-sm text-wangari-muted">{c.detail}</p>
                 </div>
               </li>
             ))}
@@ -288,21 +288,21 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
 
         {/* ── The numbers, biggest last because they are supporting evidence. ─ */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-2xl border border-green-200 bg-green-50 p-3 text-center">
-            <p className="text-xs font-semibold uppercase text-gray-600">Jumla ya mapato</p>
-            <p className="text-xl font-bold text-green-700">{money(evidence.market.totalIncome)}</p>
+          <div className="rounded-2xl border border-tone-good-border bg-tone-good-bg p-3 text-center">
+            <p className="text-xs font-semibold uppercase text-wangari-muted">Total income</p>
+            <p className="text-xl font-bold text-tone-good-text">{money(evidence.market.totalIncome)}</p>
           </div>
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-center">
-            <p className="text-xs font-semibold uppercase text-gray-600">Jumla ya gharama</p>
-            <p className="text-xl font-bold text-amber-700">{money(evidence.inputs.totalExpense)}</p>
+          <div className="rounded-2xl border border-tone-warn-border bg-tone-warn-bg p-3 text-center">
+            <p className="text-xs font-semibold uppercase text-wangari-muted">Total costs</p>
+            <p className="text-xl font-bold text-tone-warn-text">{money(evidence.inputs.totalExpense)}</p>
           </div>
         </div>
 
         {record.topProduct ? (
-          <div className="flex items-center justify-center gap-2 rounded-2xl bg-gray-50 p-3">
+          <div className="flex items-center justify-center gap-2 rounded-2xl bg-wangari-cream p-3">
             <span className="text-2xl" aria-hidden>{record.topProduct.icon}</span>
-            <span className="text-sm text-gray-600">Kitu unachozalisha zaidi:</span>
-            <span className="font-bold text-gray-900">
+            <span className="text-sm text-wangari-muted">Most produced:</span>
+            <span className="font-bold text-wangari-heading">
               {num(record.topProduct.amount)} {record.topProduct.unit} {record.topProduct.label.toLowerCase()}
             </span>
           </div>
@@ -312,7 +312,7 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
         <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
           <Fact icon={<Tractor className="h-4 w-4" aria-hidden />} label="Mifumo" value={num(record.scale.flocks)} />
           <Fact icon={<Beef className="h-4 w-4" aria-hidden />} label="Wanyama" value={num(record.scale.headCount)} />
-          <Fact icon={<Wheat className="h-4 w-4" aria-hidden />} label="Bustani" value={num(record.scale.crops)} />
+          <Fact icon={<Wheat className="h-4 w-4" aria-hidden />} label="Crops" value={num(record.scale.crops)} />
           <Fact icon={<Users className="h-4 w-4" aria-hidden />} label="Wateja" value={num(evidence.market.sales + evidence.market.deliveries)} />
         </div>
 
@@ -333,9 +333,9 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
         </div>
 
         {evidence.market.buyers.length > 0 ? (
-          <div className="rounded-2xl border border-gray-200 p-3">
-            <p className="text-xs font-semibold uppercase text-gray-500">Wanunuzi wako</p>
-            <p className="mt-1 font-medium text-gray-800">
+          <div className="rounded-2xl border border-wangari-border p-3">
+            <p className="text-xs font-semibold uppercase text-wangari-muted">Your buyers</p>
+            <p className="mt-1 font-medium text-wangari-heading">
               {evidence.market.buyers.join(", ")}
             </p>
             {evidence.market.deliveryOwed > 0 ? (
@@ -350,13 +350,13 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
         ) : null}
 
         {/* ── Growth. The honest early signal: the record itself improving. ─ */}
-        <div className="rounded-2xl bg-gray-50 p-3">
+        <div className="rounded-2xl bg-wangari-cream p-3">
           <div className="flex items-center gap-2">
             <TrendingUp
-              className={cn("h-5 w-5", trend.recordingImproving ? "text-green-600" : "text-gray-400")}
+              className={cn("h-5 w-5", trend.recordingImproving ? "text-tone-good-text" : "text-wangari-subtle")}
               aria-hidden
             />
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-sm font-medium text-wangari-text">
               {trend.recordingImproving
                 ? "Your record is getting bigger every month."
                 : "Keep recording every day so your record keeps growing."}
@@ -369,10 +369,10 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
                 return (
                   <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
                     <div
-                      className="w-full rounded-t bg-green-400"
+                      className="w-full rounded-t bg-wangari-green-400"
                       style={{ height: `${Math.max(4, (m.daysRecorded / max) * 40)}px` }}
                     />
-                    <span className="text-[10px] text-gray-500">{m.month.slice(5)}</span>
+                    <span className="text-[10px] text-wangari-muted">{m.month.slice(5)}</span>
                   </div>
                 );
               })}
@@ -381,9 +381,9 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
         </div>
 
         {grade.nextStep ? (
-          <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-center">
-            <p className="text-xs font-bold uppercase tracking-wide text-amber-800">Hatua inayofuata</p>
-            <p className="mt-1 text-lg font-bold text-gray-900">{grade.nextStep.label}</p>
+          <div className="rounded-2xl border-2 border-tone-warn-border bg-tone-warn-bg p-4 text-center">
+            <p className="text-xs font-bold uppercase tracking-wide text-tone-warn-text">Next step</p>
+            <p className="mt-1 text-lg font-bold text-wangari-heading">{grade.nextStep.label}</p>
           </div>
         ) : null}
 
@@ -401,7 +401,7 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
 
         {/* No loan promise. Ever. This is the sentence that has to be true. */}
         <p className="flex items-start gap-2 text-center text-xs leading-relaxed text-muted-foreground">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-green-600" aria-hidden />
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-tone-good-text" aria-hidden />
           {record.disclosure}
         </p>
 
@@ -431,12 +431,12 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
 
 function Fact({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-gray-50 p-2">
-      <div className="flex items-center justify-center gap-1 text-gray-500">
+    <div className="rounded-2xl bg-wangari-cream p-2">
+      <div className="flex items-center justify-center gap-1 text-wangari-muted">
         {icon}
         <span className="text-[11px] font-semibold uppercase">{label}</span>
       </div>
-      <p className="text-lg font-bold text-gray-900">{value}</p>
+      <p className="text-lg font-bold text-wangari-heading">{value}</p>
     </div>
   );
 }

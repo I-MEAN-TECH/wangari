@@ -21,6 +21,22 @@
   --color-wangari-muted: #64748B;
   --color-wangari-subtle: #94A3B8;
 
+  /* Semantic status tones. The fixed colour+icon language a farmer learns
+     once (see components/farmer-ui/status-chip.tsx). Defined here so no
+     component ever reaches for a raw Tailwind palette colour. */
+  --color-tone-good-bg: #F0FDF4;
+  --color-tone-good-border: #BBF7D0;
+  --color-tone-good-text: #166534;
+  --color-tone-warn-bg: #FFFBEB;
+  --color-tone-warn-border: #FDE68A;
+  --color-tone-warn-text: #92400E;
+  --color-tone-bad-bg: #FEF2F2;
+  --color-tone-bad-border: #FECACA;
+  --color-tone-bad-text: #991B1B;
+  --color-tone-neutral-bg: #F8FAFC;
+  --color-tone-neutral-border: #E2E8F0;
+  --color-tone-neutral-text: #475569;
+
   --color-badge-orange-bg: #FED7AA;
   --color-badge-orange-text: #C2410C;
   --color-badge-yellow-bg: #FEF9C3;

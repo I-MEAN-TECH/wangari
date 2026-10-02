@@ -113,7 +113,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
       await api.patch(`/animals/${id}`, { status });
       await load();
     } catch {
-      setError("Imeshindikana kubadilisha hali ya mnyama.");
+      setError("Could not update the animal status.");
     }
   };
 
@@ -151,7 +151,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      setError("Imeshindikana kupakua orodha.");
+      setError("Could not download the list.");
     }
   };
 
@@ -193,12 +193,12 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
         </p>
 
         {notice ? (
-          <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-800">
+          <div className="rounded-2xl border border-tone-good-border bg-tone-good-bg px-4 py-3 text-sm font-semibold text-tone-good-text">
             ✅ {notice}
           </div>
         ) : null}
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          <div className="rounded-2xl border border-tone-bad-border bg-tone-bad-bg px-4 py-3 text-sm font-semibold text-tone-bad-text">
             {error}
           </div>
         ) : null}

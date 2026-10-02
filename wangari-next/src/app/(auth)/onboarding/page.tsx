@@ -81,9 +81,10 @@ export default function OnboardingPage() {
       try {
         const d = await api.get<any>("/api/auth/onboarding");
         if (cancelled || !d?.farm) return;
-        // A Google sign-in mints "Jane Doe Farm" as a placeholder — offer it as
-        // a suggestion but never as an answer the farmer didn't give.
-        setFarmName((prev) => prev || "");
+        // Only the county is worth pre-filling. The farm NAME is never
+        // suggested from server data: a name the farmer did not choose is not
+        // their answer, and silently accepting one is how a placeholder like
+        // "Jane Doe Farm" ends up on a real statement.
         if (d.farm.county) setCounty((prev) => prev || d.farm.county);
       } catch {
         /* the form still works without the prefill */
@@ -158,18 +159,23 @@ export default function OnboardingPage() {
                   <button
                     key={f.id}
                     type="button"
-                    onClick={() => {
-                      setFarmType(f.id);
-                      setStep(1);
-                    }}
-                    className={`flex min-h-[128px] flex-col items-center justify-center gap-1 rounded-xl border-2 p-3 transition-all active:scale-[0.98] ${
-                      active ? "border-wangari-green-800 bg-wangari-card shadow-lg" : "border-wangari-green-100 bg-wangari-card"
+                    onClick={() => setFarmType(f.id)}
+                    className={`relative flex min-h-[128px] flex-col items-center justify-center gap-1 rounded-xl border-2 p-3 transition-colors duration-200 active:scale-[0.98] ${
+                      active
+                        ? "border-wangari-green-700 bg-wangari-green-50"
+                        : "border-wangari-border bg-wangari-card hover:border-wangari-green-300"
                     }`}
                     aria-pressed={active}
                   >
+                    {active ? (
+                      <Check
+                        className="absolute right-2 top-2 h-5 w-5 text-wangari-green-700"
+                        aria-hidden
+                      />
+                    ) : null}
                     <span className="text-4xl" aria-hidden>{f.emoji}</span>
                     <span className="flex items-center gap-1 text-sm font-bold text-wangari-heading">
-                      <Icon className="h-4 w-4 text-wangari-green-800" aria-hidden />
+                      <Icon className="h-4 w-4 text-wangari-green-700" aria-hidden />
                       {f.label}
                     </span>
                     <span className="text-[11px] text-wangari-muted">{f.sub}</span>
@@ -178,7 +184,21 @@ export default function OnboardingPage() {
               })}
             </div>
 
-            <p className="mt-5 text-center text-xs text-wangari-subtle">
+            {/* Tapping a tile selects it and marks it with a tick, rather than
+                jumping straight on. Without that confirmation the farmer never
+                learns whether the tap landed — and at this point on a cheap
+                handset they usually assume it did not. Two taps, not one. */}
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              disabled={!farmType}
+              className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-wangari-green-800 text-base font-bold text-white transition-transform active:scale-[0.99] disabled:opacity-40"
+            >
+              Continue
+              <ArrowRight className="h-5 w-5" aria-hidden />
+            </button>
+
+            <p className="mt-4 text-center text-xs text-wangari-subtle">
               You can add more later. We do not need everything today.
             </p>
           </>
@@ -196,7 +216,7 @@ export default function OnboardingPage() {
             <div className="space-y-4 rounded-xl border border-wangari-green-100 bg-wangari-card p-5">
               <div>
                 <label htmlFor="farmName" className="mb-1.5 block text-sm font-bold text-wangari-heading">
-                  Jina la shamba
+                  Farm name
                 </label>
                 <input
                   id="farmName"
@@ -210,7 +230,7 @@ export default function OnboardingPage() {
 
               <div>
                 <label htmlFor="county" className="mb-1.5 block text-sm font-bold text-wangari-heading">
-                  Wilaya <span className="font-normal text-wangari-subtle">(hiari)</span>
+                  County <span className="font-normal text-wangari-subtle">(optional)</span>
                 </label>
                 <div className="relative">
                   <MapPin className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-wangari-subtle" aria-hidden />
@@ -227,7 +247,8 @@ export default function OnboardingPage() {
 
               <div>
                 <label htmlFor="phone" className="mb-1.5 block text-sm font-bold text-wangari-heading">
-                  Namba ya simu <span className="font-normal text-wangari-subtle">(hiari)</span>
+                  Phone number{" "}
+                  <span className="font-normal text-wangari-subtle">(optional)</span>
                 </label>
                 <input
                   id="phone"
@@ -241,7 +262,7 @@ export default function OnboardingPage() {
               </div>
 
               {error ? (
-                <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                <p className="rounded-xl border border-tone-bad-border bg-tone-bad-bg px-4 py-3 text-sm font-semibold text-tone-bad-text">
                   {error}
                 </p>
               ) : null}
@@ -253,7 +274,7 @@ export default function OnboardingPage() {
                   disabled={saving}
                   className="h-14 flex-1 rounded-xl border-2 border-wangari-border text-base font-bold text-wangari-muted disabled:opacity-50"
                 >
-                  Nyuma
+                  Back
                 </button>
                 <button
                   type="button"

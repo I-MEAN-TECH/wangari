@@ -15,15 +15,20 @@ import { cn } from "@/lib/utils";
  *   warn     = amber, triangle → due, low, pending attention
  *   bad      = red, x          → overdue, lost, failed
  *   neutral  = grey, dashed    → not started, no data
+ *
+ * The colours come from `--color-tone-*` in globals.css, never from a raw
+ * Tailwind palette value. That keeps the language changeable in one place
+ * and guarantees a status can never drift out of step with its own meaning.
  */
 
 export type StatusTone = "good" | "warn" | "bad" | "neutral";
 
 const TONE_CLASS: Record<StatusTone, string> = {
-  good: "bg-green-50 text-green-800 border-green-200",
-  warn: "bg-amber-50 text-amber-800 border-amber-200",
-  bad: "bg-red-50 text-red-700 border-red-200",
-  neutral: "bg-gray-50 text-gray-600 border-gray-200",
+  good: "bg-tone-good-bg text-tone-good-text border-tone-good-border",
+  warn: "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border",
+  bad: "bg-tone-bad-bg text-tone-bad-text border-tone-bad-border",
+  neutral:
+    "bg-tone-neutral-bg text-tone-neutral-text border-tone-neutral-border",
 };
 
 const TONE_ICON: Record<StatusTone, React.ComponentType<{ className?: string }>> = {
@@ -35,7 +40,7 @@ const TONE_ICON: Record<StatusTone, React.ComponentType<{ className?: string }>>
 
 export interface StatusChipProps {
   tone?: StatusTone;
-  /** Swahili label shown next to the icon. */
+  /** Text label shown next to the icon. */
   label?: string;
   /** Optional emoji, used instead of the lucide icon when provided. */
   emoji?: string;

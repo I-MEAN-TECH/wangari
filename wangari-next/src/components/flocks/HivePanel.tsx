@@ -195,8 +195,8 @@ export function HivePanel() {
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Hexagon className="h-5 w-5 text-amber-600" aria-hidden />
-            <h3 className="font-bold text-gray-900">Hives</h3>
+            <Hexagon className="h-5 w-5 text-tone-warn-text" aria-hidden />
+            <h3 className="font-bold text-wangari-heading">Hives</h3>
             <StatusChip
               tone={totals.activeHives > 0 ? "good" : "neutral"}
               label={`${totals.activeHives}/${totals.totalHives}`}
@@ -212,7 +212,7 @@ export function HivePanel() {
         </div>
 
         {/* The colony is the unit. Say so plainly, it prevents the wrong mental model. */}
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-wangari-muted">
           You record the hive, not the bee. Each hive has its own number
           kwenye sanduku.
         </p>
@@ -225,15 +225,15 @@ export function HivePanel() {
         ) : null}
 
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          <div className="rounded-2xl border border-tone-bad-border bg-tone-bad-bg px-4 py-3 text-sm font-semibold text-tone-bad-text">
             {error}
           </div>
         ) : null}
 
         {adding ? (
-          <div className="rounded-3xl border border-amber-200 bg-amber-50/60 p-4 space-y-3">
+          <div className="rounded-3xl border border-tone-warn-border bg-tone-warn-bg p-4 space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-gray-600">
+              <Label className="text-xs font-semibold text-wangari-muted">
                 🔢 Hive number *
               </Label>
               <Input
@@ -246,11 +246,11 @@ export function HivePanel() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-gray-600">🛖 Aina</Label>
+              <Label className="text-xs font-semibold text-wangari-muted">Type</Label>
               <select
                 value={form.hiveType}
                 onChange={(e) => setForm({ ...form, hiveType: e.target.value })}
-                className="w-full h-12 rounded-xl border border-gray-200 px-3"
+                className="w-full h-12 rounded-xl border border-wangari-border px-3"
               >
                 <option value="langstroth">Langstroth</option>
                 <option value="topbar">Top bar</option>
@@ -260,7 +260,7 @@ export function HivePanel() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-gray-600">🪵 Frame</Label>
+                <Label className="text-xs font-semibold text-wangari-muted">Frame</Label>
                 <Input
                   type="number"
                   inputMode="numeric"
@@ -270,7 +270,7 @@ export function HivePanel() {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-gray-600">📍 Eneo</Label>
+                <Label className="text-xs font-semibold text-wangari-muted">Location</Label>
                 <Input
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
@@ -291,7 +291,7 @@ export function HivePanel() {
         ) : null}
 
         {loading ? (
-          <p className="py-6 text-center text-sm text-gray-500">Loading hives...</p>
+          <p className="py-6 text-center text-sm text-wangari-muted">Loading hives...</p>
         ) : hives.length === 0 ? (
           <EmptyState
             icon={<Hexagon className="h-8 w-8" />}
@@ -311,21 +311,21 @@ export function HivePanel() {
               return (
                 <li
                   key={h.id}
-                  className="rounded-2xl border border-gray-200 bg-white"
+                  className="rounded-2xl border border-wangari-border bg-white"
                 >
                   <div className="flex items-center justify-between gap-3 px-4 py-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-lg font-bold text-amber-700">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-wangari-green-100 text-lg font-bold text-tone-warn-text">
                         {h.name}
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate font-bold text-gray-900">
+                        <p className="truncate font-bold text-wangari-heading">
                           Hive {h.name}
                           {h.hiveType
                             ? ` · ${HIVE_TYPE_SW[h.hiveType] ?? h.hiveType}`
                             : ""}
                         </p>
-                        <p className="truncate text-xs text-gray-500">
+                        <p className="truncate text-xs text-wangari-muted">
                           {last
                             ? `Ukaguzi: ${last.broodFrames ?? 0} brood · ${last.storesFrames ?? 0} stores${
                                 last.honeyKg ? ` · ${last.honeyKg} kg` : ""
@@ -354,7 +354,7 @@ export function HivePanel() {
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
-                      className="space-y-3 border-t border-gray-100 bg-gray-50/60 px-4 py-4"
+                      className="space-y-3 border-t border-wangari-border bg-wangari-cream px-4 py-4"
                     >
                       <div className="grid gap-3 sm:grid-cols-2">
                         <Stepper
@@ -393,8 +393,8 @@ export function HivePanel() {
                           className={cn(
                             "flex h-14 items-center gap-2 rounded-2xl px-4 text-sm font-bold",
                             insp.queenSeen
-                              ? "bg-green-600 text-white"
-                              : "bg-white text-gray-600 border border-gray-200"
+                              ? "bg-wangari-green-700 text-white"
+                              : "bg-white text-wangari-muted border border-wangari-border"
                           )}
                         >
                           <Crown className="h-5 w-5" aria-hidden />
@@ -408,8 +408,8 @@ export function HivePanel() {
                           className={cn(
                             "flex h-14 items-center gap-2 rounded-2xl px-4 text-sm font-bold",
                             insp.queenCells
-                              ? "bg-amber-500 text-white"
-                              : "bg-white text-gray-600 border border-gray-200"
+                              ? "bg-wangari-green-700 text-white"
+                              : "bg-white text-wangari-muted border border-wangari-border"
                           )}
                         >
                           <Bug className="h-5 w-5" aria-hidden />

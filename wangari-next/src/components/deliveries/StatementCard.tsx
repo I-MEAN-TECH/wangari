@@ -114,7 +114,7 @@ export function StatementCard({
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Hoja ya mapato", text });
+        await navigator.share({ title: "Payment statement", text });
       } else {
         await navigator.clipboard.writeText(text);
       }
@@ -124,12 +124,12 @@ export function StatementCard({
   };
 
   return (
-    <Card className={cn("overflow-hidden", settled ? "border-green-200" : "border-amber-300")}>
+    <Card className={cn("overflow-hidden", settled ? "border-tone-good-border" : "border-tone-warn-border")}>
       <CardContent className="space-y-4 pt-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <ReceiptText className={cn("h-5 w-5", settled ? "text-green-600" : "text-amber-600")} aria-hidden />
-            <h2 className="font-semibold text-lg">Hoja ya mapato</h2>
+            <ReceiptText className={cn("h-5 w-5", settled ? "text-tone-good-text" : "text-tone-warn-text")} aria-hidden />
+            <h2 className="font-semibold text-lg">Payment statement</h2>
           </div>
           <span className="text-sm text-muted-foreground">{monthLabel}</span>
         </div>
@@ -138,29 +138,29 @@ export function StatementCard({
         <div
           className={cn(
             "rounded-3xl p-5 text-center",
-            settled ? "bg-green-50" : "bg-amber-50"
+            settled ? "bg-tone-good-bg" : "bg-tone-warn-bg"
           )}
         >
           <div className="mb-1 flex items-center justify-center gap-2">
             {settled ? (
-              <CheckCircle2 className="h-6 w-6 text-green-600" aria-hidden />
+              <CheckCircle2 className="h-6 w-6 text-tone-good-text" aria-hidden />
             ) : (
-              <AlertTriangle className="h-6 w-6 text-amber-600" aria-hidden />
+              <AlertTriangle className="h-6 w-6 text-tone-warn-text" aria-hidden />
             )}
-            <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">
+            <span className="text-sm font-semibold uppercase tracking-wide text-wangari-muted">
               {settled ? "All payments received" : "Owed to you"}
             </span>
           </div>
           <p
             className={cn(
               "font-mono text-4xl font-bold tabular-nums sm:text-5xl",
-              settled ? "text-green-700" : "text-amber-700"
+              settled ? "text-tone-good-text" : "text-tone-warn-text"
             )}
           >
             {money(owed)}
           </p>
           {!settled ? (
-            <p className="mt-1 text-sm font-medium text-gray-600">
+            <p className="mt-1 text-sm font-medium text-wangari-muted">
               {statement.unpaidDeliveries} deliveries unpaid
             </p>
           ) : null}
@@ -168,24 +168,24 @@ export function StatementCard({
 
         {/* This month's movement, kept visually secondary to the balance. */}
         <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-2xl bg-gray-50 p-3">
-            <p className="text-xs font-semibold uppercase text-gray-500">Delivered</p>
-            <p className="text-lg font-bold text-green-700">{money(statement.gross)}</p>
+          <div className="rounded-2xl bg-wangari-cream p-3">
+            <p className="text-xs font-semibold uppercase text-wangari-muted">Delivered</p>
+            <p className="text-lg font-bold text-tone-good-text">{money(statement.gross)}</p>
           </div>
-          <div className="rounded-2xl bg-gray-50 p-3">
-            <p className="text-xs font-semibold uppercase text-gray-500">Deductions</p>
-            <p className="text-lg font-bold text-amber-600">−{money(statement.deductions)}</p>
+          <div className="rounded-2xl bg-wangari-cream p-3">
+            <p className="text-xs font-semibold uppercase text-wangari-muted">Deductions</p>
+            <p className="text-lg font-bold text-tone-warn-text">−{money(statement.deductions)}</p>
           </div>
-          <div className="rounded-2xl bg-gray-50 p-3">
-            <p className="text-xs font-semibold uppercase text-gray-500">Paid</p>
-            <p className="text-lg font-bold text-green-700">{money(statement.paid)}</p>
+          <div className="rounded-2xl bg-wangari-cream p-3">
+            <p className="text-xs font-semibold uppercase text-wangari-muted">Paid</p>
+            <p className="text-lg font-bold text-tone-good-text">{money(statement.paid)}</p>
           </div>
         </div>
 
         {/* Per-buyer: the line that makes a co-op engage. */}
         {Object.keys(buyers).length > 0 ? (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+            <div className="flex items-center gap-2 text-sm font-semibold text-wangari-text">
               <Building2 className="h-4 w-4" aria-hidden />
               Per buyer
             </div>
@@ -193,11 +193,11 @@ export function StatementCard({
               {Object.entries(buyers).map(([buyer, c]) => (
                 <li
                   key={buyer}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-wangari-border px-4 py-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-bold text-gray-900">{buyer}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="truncate font-bold text-wangari-heading">{buyer}</p>
+                    <p className="text-xs text-wangari-muted">
                       {c.deliveries} deliveries
                     </p>
                   </div>

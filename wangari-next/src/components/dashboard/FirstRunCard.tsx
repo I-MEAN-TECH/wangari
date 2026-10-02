@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Milk, Wheat, Package, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
+import { Milk, Wheat, Package, ArrowRight, CheckCircle2, Hand } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showFirstRunCard } from "@/lib/first-run";
 
@@ -28,7 +28,8 @@ import { showFirstRunCard } from "@/lib/first-run";
  *
  * ── Design rules ───────────────────────────────────────────────────────────
  *  - TWO giant targets, not a form. The farmer picks a picture, not a path.
- *  - Swahili first. These are the first words they read.
+ *  - Words before numbers. (Copy is English today; Swahili returns via the
+ *    i18n layer, so these strings move rather than get rewritten twice.)
  *  - This card RETIRES the moment the farmer records anything (the parent gates
  *    it on `firstRecordAt`), so it never nags a farmer who is already doing the
  *    useful thing. The old banner used totalFlocks for that check, which meant
@@ -86,7 +87,7 @@ export function FirstRunCard({ firstRecordAt, locked }: FirstRunCardProps) {
 
         <div className="relative">
           <div className="mb-1 flex items-center gap-2 text-wangari-green-800">
-            <Sparkles className="h-4 w-4" aria-hidden />
+            <Hand className="h-4 w-4" aria-hidden />
             <span className="text-xs font-semibold uppercase tracking-widest">Start here</span>
           </div>
 

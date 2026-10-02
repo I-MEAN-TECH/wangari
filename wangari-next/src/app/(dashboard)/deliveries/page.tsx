@@ -40,9 +40,9 @@ interface Suggestion {
 const EGGS_PER_TRAY = 30;
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
-  pending: { label: "Awaiting payment", cls: "bg-amber-50 text-amber-700 border-amber-200" },
-  paid: { label: "Paid", cls: "bg-green-50 text-green-700 border-green-200" },
-  disputed: { label: "Disputed", cls: "bg-red-50 text-red-700 border-red-200" },
+  pending: { label: "Awaiting payment", cls: "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border" },
+  paid: { label: "Paid", cls: "bg-tone-good-bg text-tone-good-text border-tone-good-border" },
+  disputed: { label: "Disputed", cls: "bg-tone-bad-bg text-tone-bad-text border-tone-bad-border" },
 };
 
 // Mirrors the server response. `byBuyer`, `allTimeOutstanding` and
@@ -187,11 +187,11 @@ export default function DeliveriesPage() {
                     return (
                       <button key={c.commodity} type="button" onClick={() => setForm({ ...form, commodity: c.commodity })}
                         title={c.source ? `From your ${c.source}` : undefined}
-                        className={`rounded-xl border p-3 text-left transition ${active ? "border-green-500 bg-green-50" : "border-border hover:border-green-300"}`}>
-                        <Icon className={`h-5 w-5 mb-1 ${active ? "text-green-600" : "text-muted-foreground"}`} />
+                        className={`rounded-xl border p-3 text-left transition ${active ? "border-wangari-green-600 bg-tone-good-bg" : "border-border hover:border-tone-good-border"}`}>
+                        <Icon className={`h-5 w-5 mb-1 ${active ? "text-tone-good-text" : "text-muted-foreground"}`} />
                         <span className="block text-sm font-medium leading-tight">{c.label}</span>
                         <span className="block text-[10px] text-muted-foreground">per {c.unit}</span>
-                        {c.source && <span className="mt-0.5 block text-[9px] text-green-700/70 truncate">↳ {c.source}</span>}
+                        {c.source && <span className="mt-0.5 block text-[9px] text-tone-good-text truncate">↳ {c.source}</span>}
                       </button>
                     );
                   })}
@@ -205,8 +205,8 @@ export default function DeliveriesPage() {
                         setForm({ ...form, commodity: value });
                       }
                     }}
-                    className={`rounded-xl border border-dashed p-3 text-left transition ${form.commodity.startsWith("custom_") ? "border-green-500 bg-green-50" : "border-border hover:border-green-300"}`}>
-                    <HelpCircle className={`h-5 w-5 mb-1 ${form.commodity.startsWith("custom_") ? "text-green-600" : "text-muted-foreground"}`} />
+                    className={`rounded-xl border border-dashed p-3 text-left transition ${form.commodity.startsWith("custom_") ? "border-wangari-green-600 bg-tone-good-bg" : "border-border hover:border-tone-good-border"}`}>
+                    <HelpCircle className={`h-5 w-5 mb-1 ${form.commodity.startsWith("custom_") ? "text-tone-good-text" : "text-muted-foreground"}`} />
                     <span className="block text-sm font-medium leading-tight">Other…</span>
                     <span className="block text-[10px] text-muted-foreground">anything else</span>
                   </button>
@@ -218,7 +218,7 @@ export default function DeliveriesPage() {
                   <Label>Quantity ({current.unit})</Label>
                   <Input type="number" step="0.5" placeholder={current.commodity === "eggs" ? `e.g. ${EGGS_PER_TRAY * 2} (= 2 trays)` : current.commodity === "milk" ? "e.g. 12" : "e.g. 50"} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
                   {eggTrayHint && (
-                    <p className="mt-1 text-[11px] text-green-700">≈ {eggTrayHint} tray{Number(eggTrayHint) === 1 ? "" : "s"} ({EGGS_PER_TRAY} eggs per tray)</p>
+                    <p className="mt-1 text-[11px] text-tone-good-text">≈ {eggTrayHint} tray{Number(eggTrayHint) === 1 ? "" : "s"} ({EGGS_PER_TRAY} eggs per tray)</p>
                   )}
                 </div>
                 <div><Label>Delivered to (buyer)</Label><Input placeholder="e.g. Brookside, factory name, broker" value={form.buyer} onChange={(e) => setForm({ ...form, buyer: e.target.value })} /></div>
@@ -255,7 +255,7 @@ export default function DeliveriesPage() {
                 const sb = statusBadge[d.status] ?? statusBadge.pending;
                 return (
                   <div key={d.id} className="flex items-center gap-3 py-3">
-                    <div className="h-9 w-9 rounded-full bg-green-50 flex items-center justify-center shrink-0"><Icon className="h-4 w-4 text-green-600" /></div>
+                    <div className="h-9 w-9 rounded-full bg-tone-good-bg flex items-center justify-center shrink-0"><Icon className="h-4 w-4 text-tone-good-text" /></div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
                         {sug?.label ?? d.commodity.replace(/_/g, " ")}: {Number(d.quantity).toLocaleString()} {d.unit} → {d.buyer}
@@ -274,7 +274,7 @@ export default function DeliveriesPage() {
                     {d.status === "pending" && (
                       <Button size="sm" variant="outline" onClick={() => markPaid(d.id)}><CheckCircle2 className="h-3.5 w-3.5 mr-1" />Paid</Button>
                     )}
-                    <Button size="sm" variant="ghost" onClick={() => remove(d.id)}><Trash2 className="h-3.5 w-3.5 text-red-400" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => remove(d.id)}><Trash2 className="h-3.5 w-3.5 text-tone-bad-text" /></Button>
                   </div>
                 );
               })}

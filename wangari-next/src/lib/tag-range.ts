@@ -44,7 +44,7 @@ export interface ResolvedTagRange {
   expected: number | null;
   /** True when the range matches the stated head count. */
   consistent: boolean;
-  /** Swahili explanation for the farmer, or null when everything agrees. */
+  /** Plain-language explanation for the farmer, or null when everything agrees. */
   note: string | null;
   tags: string[];
 }
@@ -80,7 +80,7 @@ export function resolveTagRange(input: TagRangeInput): ResolvedTagRange {
       span: 0,
       expected,
       consistent: false,
-      note: "Enter the first and last number.",
+      note: "Enter the first and last tag number.",
       tags: [],
     };
   }
@@ -116,7 +116,7 @@ export function resolveTagRange(input: TagRangeInput): ResolvedTagRange {
       span: 0,
       expected,
       consistent: false,
-      note: `Hiyo ni mimezo ${span}. Ingiza kipande cha ${MAX_TAG_RANGE}.`,
+      note: `That is ${span} tags. Enter ${MAX_TAG_RANGE} or fewer.`,
       tags: [],
     };
   }
@@ -139,7 +139,7 @@ export function resolveTagRange(input: TagRangeInput): ResolvedTagRange {
 
 /**
  * A plain-language summary a farmer (or a county officer) can read aloud.
- * Swahili, no jargon, because this may be printed on a traceability list.
+ * Plain language, no jargon, because this may be printed on a traceability list.
  */
 export function describeTagRange(
   r: ResolvedTagRange,

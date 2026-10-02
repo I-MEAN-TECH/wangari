@@ -42,7 +42,7 @@ export function resolveTagRange(
       span: 0,
       expected,
       consistent: false,
-      note: "Weka namba ya kwanza na namba ya mwisho.",
+      note: "Enter the first and last tag number.",
       tags: [],
     };
 
@@ -75,7 +75,7 @@ export function resolveTagRange(
       span: 0,
       expected,
       consistent: false,
-      note: `Hiyo ni mimezo ${span}. Ingiza kipande cha ${MAX_TAG_RANGE}.`,
+      note: `That is ${span} tags. Enter ${MAX_TAG_RANGE} or fewer.`,
       tags: [],
     };
 

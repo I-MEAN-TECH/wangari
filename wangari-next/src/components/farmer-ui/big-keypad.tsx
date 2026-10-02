@@ -109,7 +109,7 @@ export function BigKeypad({
           "font-mono text-4xl font-bold tabular-nums tracking-wider",
           value.length > 0
             ? "bg-wangari-green-50 text-wangari-green-900"
-            : "bg-gray-50 text-gray-300"
+            : "bg-wangari-cream text-wangari-subtle"
         )}
       >
         {value.length > 0 ? value : "—"}
@@ -140,7 +140,7 @@ export function BigKeypad({
             disabled={disabled || value.length > 0}
             onClick={() => press("-")}
             aria-label="Minus"
-            className="h-16 w-full rounded-2xl bg-gray-100 text-3xl font-bold text-gray-700 active:scale-95 disabled:opacity-40"
+            className="h-16 w-full rounded-2xl bg-wangari-cream text-3xl font-bold text-wangari-text active:scale-95 disabled:opacity-40"
           >
             −
           </button>
@@ -174,7 +174,7 @@ export function BigKeypad({
           onClick={backspace}
           aria-label="Delete"
           className={cn(
-            "h-16 w-full rounded-2xl bg-red-50 text-red-600",
+            "h-16 w-full rounded-2xl bg-tone-bad-bg text-tone-bad-text",
             "transition-transform active:scale-95 disabled:opacity-40"
           )}
         >

@@ -61,7 +61,7 @@ export function validateTag(raw: string): {
     return {
       ok: true,
       tone: "warn",
-      message: `Ina tarakimu ${t.length}. ANITRAC kawaida ni ${ANITRAC_MAX_DIGITS}.`,
+      message: `This has ${t.length} digits. A full ANITRAC tag has ${ANITRAC_MAX_DIGITS}.`,
     };
   if (!t.startsWith(ANITRAC_PREFIX))
     return {
@@ -86,7 +86,7 @@ export function expandTagRange(
   // Defensive: these arrive straight from a form and may be null/undefined.
   const a = String(start ?? "").replace(/\D/g, "");
   const b = String(end ?? "").replace(/\D/g, "");
-  if (!a || !b) return { tags: [], error: "Weka namba mbili" };
+  if (!a || !b) return { tags: [], error: "Enter both numbers" };
   // Compare by length then lexicographically, since a mistyped 16-digit tag can
   // exceed Number.MAX_SAFE_INTEGER. Equal endpoints is valid: it is one animal.
   const cmp =
@@ -97,7 +97,10 @@ export function expandTagRange(
   const endN = BigInt(b);
   const count = Number(endN - startN) + 1;
   if (count > max)
-    return { tags: [], error: `Hiyo ni mimezo ${count}. Ingiza kidi za ${max}.` };
+    return {
+      tags: [],
+      error: `That is ${count} tags. Enter ${max} or fewer.`,
+    };
   const tags: string[] = [];
   // BigInt() calls rather than 0n literals: the TS target here is < ES2020.
   for (let i = BigInt(0); i < BigInt(count); i++) tags.push((startN + i).toString());
@@ -155,7 +158,7 @@ export function AnitracTagInput({
         value={value.tagNumber}
         onChange={(v) => setDigits(v)}
         onConfirm={ready ? onConfirm : undefined}
-        label={`Mwanzo ${ANITRAC_PREFIX} kimewekwa`}
+        label={`Starts with ${ANITRAC_PREFIX}`}
         maxLength={ANITRAC_MAX_DIGITS}
         confirmLabel="Save tag"
       />
@@ -165,9 +168,12 @@ export function AnitracTagInput({
         <div
           className={cn(
             "flex items-start gap-2 rounded-2xl border px-4 py-3",
-            check.tone === "good" && "border-green-200 bg-green-50 text-green-800",
-            check.tone === "warn" && "border-amber-200 bg-amber-50 text-amber-800",
-            check.tone === "bad" && "border-red-200 bg-red-50 text-red-700"
+            check.tone === "good" &&
+              "border-tone-good-border bg-tone-good-bg text-tone-good-text",
+            check.tone === "warn" &&
+              "border-tone-warn-border bg-tone-warn-bg text-tone-warn-text",
+            check.tone === "bad" &&
+              "border-tone-bad-border bg-tone-bad-bg text-tone-bad-text"
           )}
         >
           {check.tone === "good" ? (
@@ -192,7 +198,13 @@ export function AnitracTagInput({
                 rangeEnd: next ? value.rangeEnd ?? "" : undefined,
               });
             }}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gray-50 py-3 text-sm font-bold text-wangari-green-800"
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-2xl py-3",
+              "text-sm font-bold transition-colors",
+              advanced
+                ? "bg-wangari-green-800 text-white"
+                : "bg-wangari-cream text-wangari-green-800 hover:bg-wangari-green-50"
+            )}
           >
             <ScanLine className="h-5 w-5" aria-hidden />
             {advanced ? "Single tag" : "More (tag range)"}
@@ -216,7 +228,7 @@ export function AnitracTagInput({
                 <p
                   className={cn(
                     "text-center text-sm font-semibold",
-                    endCheck.ok ? "text-green-700" : "text-red-600"
+                    endCheck.ok ? "text-tone-good-text" : "text-tone-bad-text"
                   )}
                 >
                   {endCheck.message}
