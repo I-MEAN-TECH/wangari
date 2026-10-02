@@ -42,6 +42,18 @@ export interface GradeInput {
   recordSpanDays: number;
   /** Whole months between first and last record (inclusive of the first). */
   recordMonths: number;
+  /**
+   * Distinct calendar months that CONTAIN at least one record.
+   *
+   * This is deliberately separate from `recordMonths`. Live production data
+   * caught the difference the hard way: one farm spanned 479 days across 16
+   * calendar months but held only 2 recorded days, and a span-based "duration"
+   * star handed it 4/5 with a green tone. Two entries in eighteen months is not
+   * an operating history, and a bank reads it as one.
+   *
+   * So "duration" means months with something IN them, not months that elapsed.
+   */
+  monthsWithRecords: number;
   /** Sum of expense transactions in the recent window (KES). */
   expenses: number;
   /** Sum of income transactions in the recent window (KES). */
@@ -95,6 +107,7 @@ function sanitize(raw: GradeInput): GradeInput {
     daysWithProduction: count(raw.daysWithProduction),
     recordSpanDays: count(raw.recordSpanDays),
     recordMonths: count(raw.recordMonths),
+    monthsWithRecords: count(raw.monthsWithRecords),
     expenses: money(raw.expenses),
     income: money(raw.income),
     salesOrDeliveries: count(raw.salesOrDeliveries),
@@ -170,10 +183,13 @@ export function buildStars(raw: GradeInput): Star[] {
     {
       id: "duration",
       label: "Muda",
-      detail: input.recordMonths >= MIN_MONTHS
-        ? `Umeandika kwa miezi ${input.recordMonths}.`
-        : `Umeandika kwa miezi ${input.recordMonths}. Lengo ni miezi ${MIN_MONTHS}.`,
-      earned: input.recordMonths >= MIN_MONTHS,
+      // Reported by months-with-records, never by elapsed calendar time: telling
+      // a farmer they have "16 months of records" when they have 2 days in them
+      // would be the exact overstatement this report exists to avoid.
+      detail: input.monthsWithRecords >= MIN_MONTHS
+        ? `Umeandika miezi ${input.monthsWithRecords}.`
+        : `Umeandika miezi ${input.monthsWithRecords}. Lengo ni miezi ${MIN_MONTHS}.`,
+      earned: input.monthsWithRecords >= MIN_MONTHS,
     },
   ];
 }

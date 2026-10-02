@@ -64,8 +64,9 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
           <p className="font-semibold">Scope and limits</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5">
             <li>
-              Record spans <strong>{period.recordSpanDays} days</strong> ({period.recordMonths}{" "}
-              months), {period.firstRecord} to {period.lastRecord}.
+              Record spans <strong>{period.recordSpanDays} days</strong> across{" "}
+              <strong>{period.monthsWithRecords} months</strong> containing entries (
+              {period.firstRecord} to {period.lastRecord}).
             </li>
             <li>
               Farmer self-recorded via Wangari. Figures are as entered, not

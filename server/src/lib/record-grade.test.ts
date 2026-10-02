@@ -29,6 +29,7 @@ const full = (over: Partial<GradeInput> = {}): GradeInput => ({
   daysWithProduction: 88,
   recordSpanDays: 200,
   recordMonths: 6,
+  monthsWithRecords: 6,
   expenses: 45000,
   income: 120000,
   salesOrDeliveries: 24,
@@ -98,6 +99,41 @@ describe("rule 2 — only farmer-controlled things count", () => {
     expect(g.stars).toBeLessThanOrEqual(1);
   });
 
+  // ── Regression, found in PRODUCTION data ────────────────────────────────
+  // A real farm scored 4/5 with a GREEN tone on 2 recorded days, because
+  // "duration" counted calendar months elapsed (16) rather than months
+  // containing records (2). Banks read seasons of records; two entries in
+  // eighteen months is not that, and the overstatement is exactly what this
+  // report exists to avoid. Duration must never be earned by time passing.
+  it("does NOT earn duration from months that merely elapsed", () => {
+    const g = computeRecordGrade(
+      full({
+        daysWithProduction: 2,
+        recordSpanDays: 479,
+        recordMonths: 16,
+        monthsWithRecords: 2,
+        expenses: 30000,
+        income: 11500,
+        salesOrDeliveries: 2,
+        hasOutput: true,
+      })
+    );
+    expect(g.criteria.find((c) => c.id === "duration")!.earned).toBe(false);
+    // Still honest about the rest: it does have output, spend and a buyer.
+    expect(g.stars).toBe(3);
+    expect(g.tone).not.toBe("good");
+    expect(g.nextStep?.id).toBe("consistency");
+  });
+
+  it("never tells a farmer they have more months of records than they logged", () => {
+    const g = computeRecordGrade(
+      full({ daysWithProduction: 2, recordSpanDays: 479, recordMonths: 16, monthsWithRecords: 2 })
+    );
+    const duration = g.criteria.find((c) => c.id === "duration")!;
+    const claimed = Number(duration.detail.match(/miezi (\d+)/)![1]);
+    expect(claimed).toBe(2);
+  });
+
   it("a perfect farm scores 5 of 5", () => {
     const g = computeRecordGrade(full());
     expect(g.graded).toBe(true);
@@ -128,10 +164,10 @@ describe("rule 2 — only farmer-controlled things count", () => {
 
   it("duration needs a full quarter, not a single month", () => {
     expect(
-      computeRecordGrade(full({ recordMonths: 2 })).criteria.find((c) => c.id === "duration")!.earned
+      computeRecordGrade(full({ monthsWithRecords: 2 })).criteria.find((c) => c.id === "duration")!.earned
     ).toBe(false);
     expect(
-      computeRecordGrade(full({ recordMonths: 3 })).criteria.find((c) => c.id === "duration")!.earned
+      computeRecordGrade(full({ monthsWithRecords: 3 })).criteria.find((c) => c.id === "duration")!.earned
     ).toBe(true);
   });
 

@@ -58,7 +58,14 @@ export interface FarmRecordResponse {
     firstRecord: string | null;
     lastRecord: string | null;
     recordSpanDays: number;
+    /** Months of calendar time elapsed since the first record. */
     recordMonths: number;
+    /**
+     * Months that CONTAIN records. This is the honest "how much history do I
+     * have" number and the one shown to the farmer — elapsed months alone would
+     * overstate a farm with two entries in eighteen months.
+     */
+    monthsWithRecords: number;
     seasonsNote: string;
   };
   evidence: {
@@ -139,7 +146,7 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
       farm.county ? ` county: ${farm.county}` : "",
       farm.code ? ` Namba: ${farm.code}` : "",
       ``,
-      `Muda wa rekodi: miezi ${period.recordMonths} (siku ${period.recordSpanDays})`,
+      `Muda wa rekodi: miezi ${period.monthsWithRecords} (siku ${period.recordSpanDays})`,
       `Siku zilizoandikwa: ${evidence.activity.daysRecorded} kati ya ${evidence.activity.windowDays}`,
       `Gharama: ${money(evidence.inputs.totalExpense)}`,
       `Mapato: ${money(evidence.market.totalIncome)}`,
@@ -192,7 +199,7 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
             <span className="text-sm font-semibold uppercase tracking-wide">Muda wa rekodi</span>
           </div>
           <p className="mt-1 text-3xl font-bold tabular-nums text-gray-900">
-            Miezi {period.recordMonths}
+            Miezi {period.monthsWithRecords}
           </p>
           <p className="mt-1 text-sm font-medium text-gray-600">{period.seasonsNote}</p>
         </div>

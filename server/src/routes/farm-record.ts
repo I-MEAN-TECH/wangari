@@ -116,6 +116,14 @@ router.get("/", async (req: Request, res: Response) => {
     const lastDate = allDates.length ? new Date(Math.max(...allDates.map((d) => d.getTime()))) : null;
     const recordSpanDays = firstDate && lastDate ? daysBetween(firstDate, lastDate) : 0;
     const recordMonths = firstDate && lastDate ? monthsBetween(firstDate, lastDate) : 0;
+    // Months that CONTAIN a record, which is what "seasons of records" means to
+    // a bank. Distinct from recordMonths (time elapsed): a farm with two entries
+    // spread over 16 months has 2 months of records, not 16. Live production
+    // data caught that difference — see the regression test in record-grade.
+    const monthsWithRecords = new Set<string>([
+      ...production.map((p) => ymd(new Date(p.date)).slice(0, 7)),
+      ...harvests.map((h) => ymd(new Date(h.date)).slice(0, 7)),
+    ]).size;
 
     // ── Output totals (any of the three production measures, or a harvest) ──
     const eggs = production.reduce((s, p) => s + (p.eggsCollected || 0), 0);
@@ -200,6 +208,7 @@ router.get("/", async (req: Request, res: Response) => {
       daysWithProduction,
       recordSpanDays,
       recordMonths,
+      monthsWithRecords,
       expenses: windowExpenses,
       income: windowIncome,
       salesOrDeliveries,
@@ -221,10 +230,11 @@ router.get("/", async (req: Request, res: Response) => {
         lastRecord: lastDate ? ymd(lastDate) : null,
         recordSpanDays,
         recordMonths,
+        monthsWithRecords,
         /** Honest framing: banks want multiple seasons. Say plainly where we are. */
-        seasonsNote: recordMonths < 3
-          ? `Mwezi ${recordMonths} kati ya miezi 3. Rekodi inaingia.`
-          : `Miezi ${recordMonths} ya rekodi. Inaendelea kukua.`,
+        seasonsNote: monthsWithRecords < 3
+          ? `Mwezi ${monthsWithRecords} kati ya miezi 3. Rekodi inaingia.`
+          : `Miezi ${monthsWithRecords} ya rekodi. Inaendelea kukua.`,
       },
       evidence: {
         activity: { daysRecorded: daysWithProduction, windowDays: WINDOW_DAYS },
