@@ -19,6 +19,7 @@ import {
   Heart,
   Leaf,
   CreditCard,
+  Sprout,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { FirstRunCard } from "@/components/dashboard/FirstRunCard";
@@ -52,7 +53,7 @@ const stagger = {
 
 // ─── FCR Rating ──────────────────────────────────────────
 function getFCRRating(fcr: number): { label: string; color: string; bg: string } {
-  if (fcr === 0) return { label: "No data yet", color: "text-wangari-muted", bg: "bg-gray-50" };
+  if (fcr === 0) return { label: "No data yet", color: "text-wangari-muted", bg: "bg-wangari-cream-50" };
   if (fcr <= 1.8) return { label: "Excellent", color: "text-wangari-green-700", bg: "bg-wangari-green-50" };
   if (fcr <= 2.2) return { label: "Good", color: "text-wangari-green-700", bg: "bg-wangari-green-50" };
   if (fcr <= 2.5) return { label: "Watch", color: "text-badge-yellow-text", bg: "bg-badge-yellow-bg" };
@@ -225,7 +226,9 @@ function DashboardContent() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
         <div className="w-full max-w-md rounded-2xl border border-wangari-border bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-wangari-green-50 text-2xl">🌱</div>
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-wangari-green-50">
+            <Sprout className="h-6 w-6 text-wangari-green-700" aria-hidden />
+          </div>
           <h1 className="text-xl font-bold text-wangari-heading">Welcome to Wangari!</h1>
           <p className="mt-2 text-sm text-wangari-muted">
             One last step — name your farm and your 14-day free trial starts immediately.
@@ -241,7 +244,7 @@ function DashboardContent() {
                 className="h-12 w-full rounded-xl border border-wangari-border px-4 text-sm focus:border-wangari-green-500 focus:outline-none focus:ring-2 focus:ring-wangari-green-500/20"
               />
             </div>
-            {farmError && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{farmError}</div>}
+            {farmError && <div className="rounded-lg border border-tone-bad-border bg-tone-bad-bg px-3 py-2 text-xs text-tone-bad-text">{farmError}</div>}
             <button
               type="submit"
               disabled={creatingFarm || !farmName.trim()}
@@ -312,14 +315,14 @@ function DashboardContent() {
       >
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-wangari-green-500/20 text-wangari-green-50-300 border border-wangari-green-50-500/30">
               {data?.farmName || "Active Farm"}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1.5">
             {greeting}, {user?.name?.split(" ")[0] || "Farmer"}!
           </h1>
-          <p className="text-xs sm:text-sm text-emerald-100/80 mt-1">
+          <p className="text-xs sm:text-sm text-wangari-green-100/80 mt-1">
             Here is your daily farm overview and operations summary.
           </p>
         </div>
@@ -327,7 +330,7 @@ function DashboardContent() {
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           {(!trialData?.subscription || trialData?.subscription?.daysLeft <= 7) && (
             <Link href="/subscription">
-              <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold gap-1.5 shadow cursor-pointer">
+              <Button size="sm" className="bg-wangari-green-800 hover:bg-wangari-green-900 text-white font-extrabold gap-1.5 shadow cursor-pointer">
                 <CreditCard className="h-4 w-4" />
                 {trialData?.subscription ? "Renew Subscription" : "Subscribe Now"}
               </Button>
@@ -337,7 +340,7 @@ function DashboardContent() {
             <Button
               size="sm"
               title={fullyLocked ? "Subscribe to unlock" : undefined}
-              className={`bg-emerald-500 hover:bg-emerald-600 text-white font-bold gap-1.5 shadow cursor-pointer ${fullyLocked ? "opacity-60" : ""}`}
+              className={`bg-wangari-green-500 hover:bg-wangari-green-700 text-white font-bold gap-1.5 shadow cursor-pointer ${fullyLocked ? "opacity-60" : ""}`}
             >
               <Plus className="h-4 w-4" /> Record Today's Output
             </Button>
@@ -356,7 +359,7 @@ function DashboardContent() {
             onClick={handleRefresh}
             variant="ghost"
             size="sm"
-            className="text-emerald-100 hover:bg-white/10 hover:text-white cursor-pointer"
+            className="text-wangari-green-100 hover:bg-white/10 hover:text-white cursor-pointer"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
           </Button>
@@ -395,22 +398,22 @@ function DashboardContent() {
       {/* Profile completion reminder */}
       {user && !user.profileComplete && !profileDismissed && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="border border-amber-200 bg-amber-50/80">
+          <Card className="border border-tone-warn-border bg-tone-warn-bg">
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-                    <Target className="h-5 w-5 text-amber-600" />
+                  <div className="h-10 w-10 rounded-xl bg-tone-warn-bg flex items-center justify-center shrink-0">
+                    <Target className="h-5 w-5 text-tone-warn-text" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-[#0F172A]">Complete your farm profile</p>
-                    <p className="text-xs text-[#64748B] mt-0.5">Add your phone, farm location, and details to get the most out of Wangari.</p>
-                    <Link href="/settings" className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-amber-700 hover:underline">
+                    <p className="text-sm font-bold text-wangari-heading">Complete your farm profile</p>
+                    <p className="text-xs text-wangari-muted mt-0.5">Add your phone, farm location, and details to get the most out of Wangari.</p>
+                    <Link href="/settings" className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-tone-warn-bg-700 hover:underline">
                       Complete Profile →
                     </Link>
                   </div>
                 </div>
-                <button onClick={() => setProfileDismissed(true)} className="text-amber-400 hover:text-amber-600 text-xs shrink-0 cursor-pointer">Dismiss</button>
+                <button onClick={() => setProfileDismissed(true)} className="text-tone-warn-text hover:text-tone-warn-text text-xs shrink-0 cursor-pointer">Dismiss</button>
               </div>
             </CardContent>
           </Card>
@@ -522,7 +525,7 @@ function DashboardContent() {
                     {fcrRating.label}
                   </Badge>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] shrink-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-wangari-green-50 text-wangari-text shrink-0">
                   <Target className="h-5 w-5" />
                 </div>
               </div>
@@ -543,7 +546,7 @@ function DashboardContent() {
                     {mortalityRating.label}
                   </Badge>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] shrink-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-wangari-green-50 text-wangari-text shrink-0">
                   <Heart className="h-5 w-5" />
                 </div>
               </div>
@@ -561,7 +564,7 @@ function DashboardContent() {
                     {data?.costPerEgg ? `KES ${data.costPerEgg}` : "—"}
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] shrink-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-wangari-green-50 text-wangari-text shrink-0">
                   <DollarSign className="h-5 w-5" />
                 </div>
               </div>
@@ -579,7 +582,7 @@ function DashboardContent() {
                     {data?.feedPerBird ? `${data.feedPerBird}g` : "—"}
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] shrink-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-wangari-green-50 text-wangari-text shrink-0">
                   <Wheat className="h-5 w-5" />
                 </div>
               </div>
@@ -596,7 +599,7 @@ function DashboardContent() {
         <div className="lg:col-span-7 space-y-6">
           {/* Daily Tasks */}
           <motion.div variants={fadeUp}>
-            <Card className="border border-[#E5E7EB] shadow-sm">
+            <Card className="border border-wangari-border shadow-sm">
               <CardContent className="p-5">
                 <DailyTasks flocks={data?.flocks || []} />
               </CardContent>
@@ -651,8 +654,8 @@ function DashboardContent() {
                         <div
                           className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                             tx.type === "income"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-gray-100 text-gray-600"
+                              ? "bg-wangari-green-50 text-wangari-green-800"
+                              : "bg-wangari-cream text-wangari-muted"
                           }`}
                         >
                           {tx.type === "income" ? (
@@ -673,8 +676,8 @@ function DashboardContent() {
                       <p
                         className={`text-sm font-semibold tabular-nums ${
                           tx.type === "income"
-                            ? "text-emerald-700"
-                            : "text-gray-700"
+                            ? "text-wangari-green-800"
+                            : "text-wangari-text"
                         }`}
                       >
                         {tx.type === "income" ? "+" : "-"}KES {Number(tx.amount).toLocaleString()}
@@ -756,7 +759,7 @@ function DashboardContent() {
                         {item.reorderLevel > 0 && (
                           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-wangari-border">
                             <div
-                              className="h-full rounded-full bg-emerald-500"
+                              className="h-full rounded-full bg-wangari-green-500"
                               style={{
                                 width: `${Math.min((item.quantity / item.reorderLevel) * 100, 100)}%`,
                               }}

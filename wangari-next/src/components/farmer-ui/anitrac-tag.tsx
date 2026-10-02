@@ -186,7 +186,7 @@ export function AnitracTagInput({
       ) : null}
 
       {allowRange ? (
-        <div className="rounded-3xl border border-dashed border-wangari-green-300 bg-white p-3">
+        <div className="rounded-2xl border border-dashed border-wangari-green-300 bg-white p-3">
           <button
             type="button"
             onClick={() => {

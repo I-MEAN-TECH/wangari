@@ -1,7 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { Tag, Download, X, Plus } from "lucide-react";
+import {
+  Tag,
+  Download,
+  X,
+  Plus,
+  Beef,
+  Banknote,
+  Truck,
+  Skull,
+  CircleHelp,
+  CheckCircle2,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -37,18 +48,24 @@ interface Animal {
 
 const STATUS_SW: Record<string, string> = {
   active: "Farm",
-  sold: "Imezuzwa",
-  moved: "Imehamishwa",
-  died: "Imekufa",
-  missing: "Haipo",
+  sold: "Sold",
+  moved: "Moved",
+  died: "Died",
+  missing: "Missing",
 };
 
-const STATUS_EMOJI: Record<string, string> = {
-  active: "🐄",
-  sold: "💸",
-  moved: "🚚",
-  died: "⚰️",
-  missing: "❓",
+/**
+ * Subject icon per status, so the chip says what happened AND whether it is a
+ * problem. The tone icon (tick / triangle / cross) is added by StatusChip
+ * itself and is never replaced — the two together are the fixed status
+ * language the farmer learns once.
+ */
+const STATUS_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  active: Beef,
+  sold: Banknote,
+  moved: Truck,
+  died: Skull,
+  missing: CircleHelp,
 };
 
 export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
@@ -186,25 +203,25 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
           </div>
         </div>
 
-        {/* One calm line explaining why this is not extra daily work. */}
-        <p className="text-sm text-wangari-muted">
-          Enter a tag once. Then you keep recording the herd as a count,
-          kawaida.
+        {/* One calm line explaining why this is not extra daily work. */}<p className="text-sm text-wangari-muted">
+          Enter a tag once. Then you keep recording the herd as a count.
         </p>
 
         {notice ? (
-          <div className="rounded-2xl border border-tone-good-border bg-tone-good-bg px-4 py-3 text-sm font-semibold text-tone-good-text">
-            ✅ {notice}
+          <div className="flex items-start gap-2 rounded-xl border border-tone-good-border bg-tone-good-bg px-4 py-3 text-sm font-medium text-tone-good-text">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span>{notice}</span>
           </div>
         ) : null}
         {error ? (
-          <div className="rounded-2xl border border-tone-bad-border bg-tone-bad-bg px-4 py-3 text-sm font-semibold text-tone-bad-text">
-            {error}
+          <div className="flex items-start gap-2 rounded-xl border border-tone-bad-border bg-tone-bad-bg px-4 py-3 text-sm font-medium text-tone-bad-text">
+            <CircleHelp className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span>{error}</span>
           </div>
         ) : null}
 
         {adding ? (
-          <div className="rounded-3xl border border-wangari-green-200 bg-wangari-green-50/40 p-3">
+          <div className="rounded-2xl border border-wangari-green-200 bg-wangari-green-50/40 p-3">
             <AnitracTagInput
               value={tag}
               onChange={setTag}
@@ -252,13 +269,13 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
                     {a.tagNumber}
                   </p>
                   <p className="truncate text-xs text-wangari-muted">
-                    {a.breed || a.species || "Mnyama"}
+                    {a.breed || a.species || "Animal"}
                     {a.flock ? ` · ${a.flock.name}` : ""}
                   </p>
                 </div>
                 <StatusChip
                   tone={toneForStatus(a.status)}
-                  emoji={STATUS_EMOJI[a.status]}
+                  icon={STATUS_ICON[a.status]}
                   label={STATUS_SW[a.status]}
                 />
               </li>

@@ -42,8 +42,16 @@ export interface StatusChipProps {
   tone?: StatusTone;
   /** Text label shown next to the icon. */
   label?: string;
-  /** Optional emoji, used instead of the lucide icon when provided. */
-  emoji?: string;
+  /**
+   * Optional subject icon (a lucide component) shown BEFORE the tone icon, to
+   * say WHAT the status is about — eggs, honey, money.
+   *
+   * It is additive on purpose. An earlier `emoji` prop REPLACED the tone icon,
+   * which quietly destroyed the fixed colour+icon status language this
+   * component exists to guarantee: an "owed" chip could render as a smiling
+   * face. The tone icon always renders.
+   */
+  icon?: React.ComponentType<{ className?: string }>;
   size?: "sm" | "md" | "lg";
   className?: string;
 }
@@ -51,11 +59,12 @@ export interface StatusChipProps {
 export function StatusChip({
   tone = "neutral",
   label,
-  emoji,
+  icon: SubjectIcon,
   size = "md",
   className,
 }: StatusChipProps) {
   const Icon = TONE_ICON[tone];
+  const iconSize = size === "lg" ? "h-5 w-5" : "h-4 w-4";
   const sizing =
     size === "lg"
       ? "px-4 py-2 text-base gap-2"
@@ -72,15 +81,10 @@ export function StatusChip({
         className
       )}
     >
-      {emoji ? (
-        <span aria-hidden className="leading-none">
-          {emoji}
-        </span>
-      ) : (
-        <Icon
-          className={cn("shrink-0", size === "lg" ? "h-5 w-5" : "h-4 w-4")}
-        />
-      )}
+      {SubjectIcon ? (
+        <SubjectIcon className={cn("shrink-0", iconSize)} aria-hidden />
+      ) : null}
+      <Icon className={cn("shrink-0", iconSize)} aria-hidden />
       {label ? <span className="whitespace-nowrap">{label}</span> : null}
     </span>
   );

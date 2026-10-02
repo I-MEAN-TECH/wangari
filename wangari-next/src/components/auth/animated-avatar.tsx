@@ -61,23 +61,23 @@ export function AnimatedAvatar({ state, className }: AnimatedAvatarProps) {
   const getSpeechBubbleText = () => {
     switch (state) {
       case "typing-name":
-        return "Nice to meet you! 👋 What's your name?";
+        return "Nice to meet you. What's your name?";
       case "typing-email":
-        return "I'm watching! Make sure email is correct 📧";
+        return "I'm watching. Make sure the email is correct";
       case "typing-farm":
-        return "Ooh, tell me about your farm! 🌾";
+        return "Tell me about your farm.";
       case "typing-password":
-        return "Shh! I'm covering my eyes for privacy 🙈";
+        return "I'm covering my eyes for privacy.";
       case "show-password":
-        return "I saw that! Keeping it safe 👁️✨";
+        return "I saw that. Keeping it safe.";
       case "loading":
         return "Checking credentials... Hang tight! ⏳";
       case "error":
-        return "Oops! Double check those details 😅";
+        return "Double check those details.";
       case "success":
-        return "Welcome to your farm portal 🎉";
+        return "Welcome to your farm portal.";
       default:
-        return "Welcome to Wangari Farm System 🌾";
+        return "Welcome to Wangari Farm System";
     }
   };
 
@@ -165,7 +165,7 @@ export function AnimatedAvatar({ state, className }: AnimatedAvatarProps) {
             {/* EYES CONTAINER */}
             <g id="eyes">
               {state === "typing-password" ? (
-                /* Hands covering eyes 🙈 */
+                /* Hands covering eyes */
                 <g>
                   {/* Left Hand */}
                   <ellipse cx="75" cy="95" rx="16" ry="12" fill="var(--color-wangari-green-500)" />
@@ -173,7 +173,7 @@ export function AnimatedAvatar({ state, className }: AnimatedAvatarProps) {
                   <ellipse cx="125" cy="95" rx="16" ry="12" fill="var(--color-wangari-green-500)" />
                 </g>
               ) : state === "show-password" ? (
-                /* Wide excited eyes 👁️👁️ */
+                /* Wide eyes */
                 <g>
                   <circle cx="76" cy="94" r="12" fill="var(--color-wangari-card)" stroke="var(--color-wangari-heading)" strokeWidth="2" />
                   <circle cx="124" cy="94" r="12" fill="var(--color-wangari-card)" stroke="var(--color-wangari-heading)" strokeWidth="2" />
@@ -191,7 +191,7 @@ export function AnimatedAvatar({ state, className }: AnimatedAvatarProps) {
                   <line x1="128" y1="88" x2="116" y2="100" />
                 </g>
               ) : (
-                /* Dynamic Mouse Pointer Tracking Eyes 👀 */
+                /* Mouse-pointer tracking eyes */
                 <g>
                   {/* Eyeballs */}
                   <circle cx="76" cy="95" r="11" fill="var(--color-wangari-card)" stroke="var(--color-wangari-heading)" strokeWidth="1.5" />

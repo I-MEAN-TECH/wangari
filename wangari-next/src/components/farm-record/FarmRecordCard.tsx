@@ -14,6 +14,9 @@ import {
   Users,
   Tractor,
   CircleDashed,
+  Egg,
+  Milk,
+  Hourglass,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -90,7 +93,12 @@ export interface FarmRecordResponse {
     recentMonths: Array<{ month: string; daysRecorded: number; income: number; expense: number }>;
     recordingImproving: boolean;
   };
-  topProduct: { label: string; icon: string; amount: number; unit: string } | null;
+  topProduct: {
+    label: string;
+    icon: "eggs" | "milk" | "harvest" | "livestock";
+    amount: number;
+    unit: string;
+  } | null;
   grade: {
     graded: boolean;
     stars: number;
@@ -118,6 +126,18 @@ const STAR_TONE: Record<string, "good" | "warn" | "neutral"> = {
   market: "good",
   duration: "neutral",
 };
+
+/**
+ * Server sends an icon KEY, never a glyph — see routes/farm-record.ts. The
+ * client owns how it is drawn, so a record stays correct if the icon set
+ * changes and the same key renders identically in every surface that shows it.
+ */
+const TOP_PRODUCT_ICON = {
+  eggs: Egg,
+  milk: Milk,
+  harvest: Wheat,
+  livestock: Beef,
+} as const;
 
 export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
   const [printing, setPrinting] = React.useState(false);
@@ -193,7 +213,7 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
         </div>
 
         {/* ── HOW LONG. Honesty first: banks want seasons, say where we are. ─ */}
-        <div className="rounded-3xl bg-wangari-cream p-4 text-center">
+        <div className="rounded-2xl bg-wangari-cream p-4 text-center">
           <div className="flex items-center justify-center gap-2 text-wangari-muted">
             <CalendarDays className="h-5 w-5" aria-hidden />
             <span className="text-sm font-semibold uppercase tracking-wide">Record period</span>
@@ -207,7 +227,7 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
         {/* ── THE GRADE. The centrepiece, in stars + colour. ─────────────── */}
         <div
           className={cn(
-            "rounded-3xl border-2 p-5 text-center",
+            "rounded-2xl border-2 p-5 text-center",
             !grade.graded
               ? "border-wangari-border bg-wangari-cream"
               : grade.tone === "good"
@@ -299,8 +319,11 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
         </div>
 
         {record.topProduct ? (
-          <div className="flex items-center justify-center gap-2 rounded-2xl bg-wangari-cream p-3">
-            <span className="text-2xl" aria-hidden>{record.topProduct.icon}</span>
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-wangari-cream p-3">
+            {(() => {
+              const TopIcon = TOP_PRODUCT_ICON[record.topProduct.icon] ?? Wheat;
+              return <TopIcon className="h-4 w-4 text-wangari-green-700" aria-hidden />;
+            })()}
             <span className="text-sm text-wangari-muted">Most produced:</span>
             <span className="font-bold text-wangari-heading">
               {num(record.topProduct.amount)} {record.topProduct.unit} {record.topProduct.label.toLowerCase()}
@@ -310,25 +333,41 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
 
         {/* ── Scale + market: what a lender asks next. ───────────────────── */}
         <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
-          <Fact icon={<Tractor className="h-4 w-4" aria-hidden />} label="Mifumo" value={num(record.scale.flocks)} />
-          <Fact icon={<Beef className="h-4 w-4" aria-hidden />} label="Wanyama" value={num(record.scale.headCount)} />
+          <Fact icon={<Tractor className="h-4 w-4" aria-hidden />} label="Groups" value={num(record.scale.flocks)} />
+          <Fact icon={<Beef className="h-4 w-4" aria-hidden />} label="Animals" value={num(record.scale.headCount)} />
           <Fact icon={<Wheat className="h-4 w-4" aria-hidden />} label="Crops" value={num(record.scale.crops)} />
-          <Fact icon={<Users className="h-4 w-4" aria-hidden />} label="Wateja" value={num(evidence.market.sales + evidence.market.deliveries)} />
+          <Fact icon={<Users className="h-4 w-4" aria-hidden />} label="Buyers" value={num(evidence.market.sales + evidence.market.deliveries)} />
         </div>
 
         {/* Output detail — only the lines that apply to this farm. */}
         <div className="flex flex-wrap justify-center gap-2">
           {evidence.output.eggs > 0 ? (
-            <StatusChip tone="good" emoji="🥚" label={`${num(evidence.output.eggs)} mayai`} />
+            <StatusChip
+              tone="good"
+              icon={Egg}
+              label={`${num(evidence.output.eggs)} eggs`}
+            />
           ) : null}
           {evidence.output.milk > 0 ? (
-            <StatusChip tone="good" emoji="🥛" label={`${num(evidence.output.milk)} litre`} />
+            <StatusChip
+              tone="good"
+              icon={Milk}
+              label={`${num(evidence.output.milk)} litres`}
+            />
           ) : null}
           {evidence.output.harvestKg > 0 ? (
-            <StatusChip tone="good" emoji="🌾" label={`${num(evidence.output.harvestKg)} kg`} />
+            <StatusChip
+              tone="good"
+              icon={Wheat}
+              label={`${num(evidence.output.harvestKg)} kg`}
+            />
           ) : null}
           {evidence.output.weightKg > 0 ? (
-            <StatusChip tone="good" emoji="🐄" label={`${num(evidence.output.weightKg)} kg`} />
+            <StatusChip
+              tone="good"
+              icon={Beef}
+              label={`${num(evidence.output.weightKg)} kg`}
+            />
           ) : null}
         </div>
 
@@ -341,7 +380,7 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
             {evidence.market.deliveryOwed > 0 ? (
               <StatusChip
                 tone="warn"
-                emoji="⏳"
+                icon={Hourglass}
                 className="mt-2"
                 label={`${money(evidence.market.deliveryOwed)} outstanding`}
               />

@@ -8,17 +8,21 @@ import { cn } from "@/lib/utils";
  * BigKeypad — the farmer's number entry.
  *
  * WHY THIS EXISTS: our user often cannot read, let alone type. Every number
- * Wangari asks for is entered on these giant keys instead of a system keyboard.
- * This is the single most important low-literacy component in the product.
+ * Wangari asks for is entered on these keys instead of a system keyboard.
  *
- * RULES it enforces (see docs/module-plan.md §0):
- *  - Digits only by default (a "code" mode allows `-` for ranges).
- *  - Keys are huge (min 64px tall) — usable with gloves, in sun, one thumb.
- *  - The current value is shown enormous, so the farmer can see it at a glance.
- *  - Confirm is a full-width bar, not a small button.
+ * ── The one deliberate exception to house sizing ──────────────────────────
+ * Everything else in the app follows the Button component (h-8/h-10/h-12).
+ * These keys are h-16 (64px) and the value is text-4xl, because a number pad is
+ * the one control a farmer uses one-handed, outdoors, sometimes with gloves on.
+ * 64px is still above the 44px minimum touch target, so it breaks no
+ * accessibility rule — it just refuses to be small.
  *
- * Voice input is deliberately a pluggable no-op for now (see `onVoiceAsk`);
- * it will be wired to AI/WhatsApp in a later phase without changing any caller.
+ * Everything ELSE here is house-consistent: theme tokens only (no raw palette),
+ * rounded-2xl like every other card, and the confirm bar uses the same brand
+ * green as the standard Button.
+ *
+ * Voice input is deliberately a pluggable no-op for now; it will be wired to
+ * AI/WhatsApp in a later phase without changing any caller.
  */
 
 export interface BigKeypadProps {
@@ -27,7 +31,7 @@ export interface BigKeypadProps {
   onChange: (value: string) => void;
   /** Fired when the farmer hits the big confirm bar. */
   onConfirm?: () => void;
-  /** Swahili label for the field being entered, shown above the value. */
+  /** Label for the field being entered, shown above the value. */
   label?: string;
   /** Allow a leading minus sign (for ranges, e.g. temperature). Off for counts. */
   allowMinus?: boolean;
@@ -91,7 +95,7 @@ export function BigKeypad({
       ref={containerRef}
       tabIndex={0}
       className={cn(
-        "flex flex-col gap-3 rounded-3xl bg-white p-3 shadow-sm outline-none",
+        "flex flex-col gap-3 rounded-2xl bg-wangari-card p-3 outline-none border border-wangari-border",
         "focus-visible:ring-4 focus-visible:ring-wangari-green-200",
         className
       )}

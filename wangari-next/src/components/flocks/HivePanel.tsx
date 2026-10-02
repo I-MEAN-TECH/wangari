@@ -10,6 +10,11 @@ import {
   X,
   Check,
   Loader2,
+  Birdhouse,
+  Droplets,
+  Search,
+  Egg,
+  CircleAlert,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,24 +66,24 @@ interface Inspection {
 const HIVE_TYPE_SW: Record<string, string> = {
   langstroth: "Langstroth",
   topbar: "Top bar",
-  traditional: "Kiasili",
+  traditional: "Traditional",
   flow: "Flow",
 };
 
 const STATUS_SW: Record<string, string> = {
   active: "Inafanya kazi",
-  weak: "Dhaifu",
-  swarm: "Imetoka",
-  dead: "Imefufa",
-  requeened: "Malki mpya",
+  weak: "Weak",
+  swarm: "Swarmed",
+  dead: "Dead",
+  requeened: "Requeened",
 };
 
-const STATUS_EMOJI: Record<string, string> = {
-  active: "🐝",
-  weak: "😟",
-  swarm: "🧊",
-  dead: "⚰️",
-  requeened: "👑",
+const STATUS_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  active: Birdhouse,
+  weak: CircleAlert,
+  swarm: Droplets,
+  dead: X,
+  requeened: Crown,
 };
 
 const HIVE_TYPE_ICON: Record<string, React.ReactNode> = {
@@ -175,7 +180,7 @@ export function HivePanel() {
       });
       await load();
     } catch (e: any) {
-      setError(e?.message || "Ukaguzi haujawekwa.");
+      setError(e?.message || "Inspection not saved.");
     } finally {
       setSaving(false);
     }
@@ -200,7 +205,6 @@ export function HivePanel() {
             <StatusChip
               tone={totals.activeHives > 0 ? "good" : "neutral"}
               label={`${totals.activeHives}/${totals.totalHives}`}
-              emoji="🐝"
             />
           </div>
           {!adding ? (
@@ -214,13 +218,13 @@ export function HivePanel() {
         {/* The colony is the unit. Say so plainly, it prevents the wrong mental model. */}
         <p className="text-sm text-wangari-muted">
           You record the hive, not the bee. Each hive has its own number
-          kwenye sanduku.
+          with its own number.
         </p>
 
         {totals.totalHives > 0 ? (
           <div className="flex gap-2">
-            <StatusChip tone="good" emoji="🍯" label={`${totals.totalHoneyKg} kg asali`} />
-            <StatusChip tone="neutral" emoji="🔍" label={`Ukaguzi: ${hives.reduce((n, h) => n + (h.inspections?.length || 0), 0)}`} />
+            <StatusChip tone="good" icon={Droplets} label={`${totals.totalHoneyKg} kg honey`} />
+            <StatusChip tone="neutral" icon={Search} label={`Inspections: ${hives.reduce((n, h) => n + (h.inspections?.length || 0), 0)}`} />
           </div>
         ) : null}
 
@@ -231,15 +235,15 @@ export function HivePanel() {
         ) : null}
 
         {adding ? (
-          <div className="rounded-3xl border border-tone-warn-border bg-tone-warn-bg p-4 space-y-3">
+          <div className="rounded-2xl border border-tone-warn-border bg-tone-warn-bg p-4 space-y-3">
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-wangari-muted">
-                🔢 Hive number *
+                Hive number *
               </Label>
               <Input
                 type="number"
                 inputMode="numeric"
-                placeholder="mfano 1"
+                placeholder="e.g. 1"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className="h-12 rounded-xl text-lg"
@@ -254,7 +258,7 @@ export function HivePanel() {
               >
                 <option value="langstroth">Langstroth</option>
                 <option value="topbar">Top bar</option>
-                <option value="traditional">Kiasili</option>
+                <option value="traditional">Traditional</option>
                 <option value="flow">Flow</option>
               </select>
             </div>
@@ -327,7 +331,7 @@ export function HivePanel() {
                         </p>
                         <p className="truncate text-xs text-wangari-muted">
                           {last
-                            ? `Ukaguzi: ${last.broodFrames ?? 0} brood · ${last.storesFrames ?? 0} stores${
+                            ? `Inspection: ${last.broodFrames ?? 0} brood · ${last.storesFrames ?? 0} stores${
                                 last.honeyKg ? ` · ${last.honeyKg} kg` : ""
                               }`
                             : "No inspections yet"}
@@ -337,7 +341,7 @@ export function HivePanel() {
                     <div className="flex shrink-0 items-center gap-2">
                       <StatusChip
                         tone={toneForStatus(h.status)}
-                        emoji={STATUS_EMOJI[h.status]}
+                        icon={STATUS_ICON[h.status]}
                         label={STATUS_SW[h.status]}
                       />
                       <Button
@@ -345,7 +349,7 @@ export function HivePanel() {
                         variant="secondary"
                         onClick={() => setInspecting(inspecting === h.id ? null : h.id)}
                       >
-                        Ukaguzi
+                        Inspect
                       </Button>
                     </div>
                   </div>
@@ -359,25 +363,25 @@ export function HivePanel() {
                       <div className="grid gap-3 sm:grid-cols-2">
                         <Stepper
                           label="Brood frames"
-                          emoji="🥚"
+                          icon={Egg}
                           value={insp.broodFrames}
                           onChange={(v) => setInsp({ ...insp, broodFrames: v })}
                         />
                         <Stepper
-                          label="Stores (chakula)"
-                          emoji="🍯"
+                          label="Stores (food)"
+                          icon={Droplets}
                           value={insp.storesFrames}
                           onChange={(v) => setInsp({ ...insp, storesFrames: v })}
                         />
                         <Stepper
                           label="Varroa (mites)"
-                          emoji="🕷️"
+                          icon={Bug}
                           value={insp.varroaCount}
                           onChange={(v) => setInsp({ ...insp, varroaCount: v })}
                         />
                         <Stepper
-                          label="Asali (kg)"
-                          emoji="🍯"
+                          label="Honey (kg)"
+                          icon={Droplets}
                           step={0.5}
                           value={insp.honeyKg}
                           onChange={(v) => setInsp({ ...insp, honeyKg: v })}
@@ -385,36 +389,26 @@ export function HivePanel() {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        <button
+                        <Button
                           type="button"
-                          onClick={() =>
-                            setInsp({ ...insp, queenSeen: !insp.queenSeen })
-                          }
-                          className={cn(
-                            "flex h-14 items-center gap-2 rounded-2xl px-4 text-sm font-bold",
-                            insp.queenSeen
-                              ? "bg-wangari-green-700 text-white"
-                              : "bg-white text-wangari-muted border border-wangari-border"
-                          )}
+                          variant={insp.queenSeen ? "default" : "outline"}
+                          onClick={() => setInsp({ ...insp, queenSeen: !insp.queenSeen })}
+                          aria-pressed={insp.queenSeen}
                         >
-                          <Crown className="h-5 w-5" aria-hidden />
-                          Malki imeonekana
-                        </button>
-                        <button
+                          <Crown className="h-4 w-4" aria-hidden />
+                          Queen seen
+                        </Button>
+                        <Button
                           type="button"
+                          variant={insp.queenCells ? "default" : "outline"}
                           onClick={() =>
                             setInsp({ ...insp, queenCells: insp.queenCells ? 0 : 1 })
                           }
-                          className={cn(
-                            "flex h-14 items-center gap-2 rounded-2xl px-4 text-sm font-bold",
-                            insp.queenCells
-                              ? "bg-wangari-green-700 text-white"
-                              : "bg-white text-wangari-muted border border-wangari-border"
-                          )}
+                          aria-pressed={!!insp.queenCells}
                         >
-                          <Bug className="h-5 w-5" aria-hidden />
-                          Seli za malki
-                        </button>
+                          <Bug className="h-4 w-4" aria-hidden />
+                          Queen cells
+                        </Button>
                       </div>
 
                       <Button

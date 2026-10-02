@@ -196,11 +196,22 @@ router.get("/", async (req: Request, res: Response) => {
     const recordingImproving = earlyAvg > 0 ? lateAvg > earlyAvg : false;
 
     // ── Top product: the single most-produced thing, for a one-line card ────
-    const products: Array<{ label: string; icon: string; amount: number; unit: string }> = [];
-    if (eggs > 0) products.push({ label: "Eggs", icon: "🥚", amount: eggs, unit: "eggs" });
-    if (milk > 0) products.push({ label: "Milk", icon: "🥛", amount: Math.round(milk), unit: "litres" });
-    if (harvestKg > 0) products.push({ label: "Crop harvest", icon: "🌾", amount: Math.round(harvestKg), unit: "kg" });
-    if (weight > 0) products.push({ label: "Live weight gain", icon: "🐄", amount: Math.round(weight), unit: "kg" });
+    //
+    // `icon` is a stable KEY ("eggs" | "milk" | "harvest" | "livestock"), not a
+    // glyph. The server must not decide how this is drawn: it sends a fact, and
+    // the client maps the key to an icon from its own set. Shipping an emoji
+    // string here meant the illustration was frozen at the API boundary and
+    // rendered differently on every platform.
+    const products: Array<{
+      label: string;
+      icon: "eggs" | "milk" | "harvest" | "livestock";
+      amount: number;
+      unit: string;
+    }> = [];
+    if (eggs > 0) products.push({ label: "Eggs", icon: "eggs", amount: eggs, unit: "eggs" });
+    if (milk > 0) products.push({ label: "Milk", icon: "milk", amount: Math.round(milk), unit: "litres" });
+    if (harvestKg > 0) products.push({ label: "Crop harvest", icon: "harvest", amount: Math.round(harvestKg), unit: "kg" });
+    if (weight > 0) products.push({ label: "Live weight gain", icon: "livestock", amount: Math.round(weight), unit: "kg" });
     const topProduct = products.sort((a, b) => b.amount - a.amount)[0] ?? null;
 
     // ── The grade: pure, tested, no new tables ──────────────────────────────

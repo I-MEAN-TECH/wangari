@@ -1,102 +1,105 @@
 "use client";
 
 import * as React from "react";
-import { Plus, X, Egg, DollarSign, ShoppingCart, Bird } from "lucide-react";
-import Link from "next/link";
-import { useLanguage } from "@/components/language-provider";
+import { Plus, X, Egg, ShoppingCart, Bird, Package } from "lucide-react";
 
+/**
+ * FloatingActionButton — the Quick Add sheet.
+ *
+ * A farmer who wants to record something should not have to know which tab it
+ * lives under. This offers the four things they actually record, in the words
+ * they use for them.
+ *
+ * Sized to the house system: the trigger is a h-12 w-12 circle and the sheet is
+ * a rounded-2xl card, matching every other card and button in the app. The
+ * sheet entries are plain rows with an icon, not coloured tiles.
+ */
 export function FloatingActionButton() {
   const [open, setOpen] = React.useState(false);
-  const { lang, t } = useLanguage();
+
+  const ACTIONS = [
+    { href: "/production", icon: Egg, title: "Log eggs & milk", sub: "Record today's yield" },
+    { href: "/finances", icon: ShoppingCart, title: "Record money spent", sub: "Feed, vet or labour costs" },
+    { href: "/sales", icon: ShoppingCart, title: "Record a sale", sub: "Sell to a buyer" },
+    { href: "/flocks", icon: Bird, title: "Add animals or crops", sub: "Register new stock" },
+  ];
 
   return (
     <>
-      {/* Floating Action Button (FAB) */}
       <div className="fixed bottom-6 right-6 z-50">
         <button
+          type="button"
           onClick={() => setOpen(!open)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-wangari-green-700 text-white shadow-lg hover:bg-wangari-green-800 hover:scale-105 active:scale-95 transition-all cursor-pointer border-2 border-white"
-          aria-label="Quick Add"
+          aria-expanded={open}
+          aria-label="Quick add"
+          className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border-2 border-wangari-card bg-wangari-green-700 text-white shadow-lg transition-transform hover:scale-105 hover:bg-wangari-green-800 active:scale-95"
         >
-          {open ? <X className="h-7 w-7" /> : <Plus className="h-8 w-8" />}
+          {open ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
         </button>
       </div>
 
-      {/* Slide-Up Quick Action Modal */}
-      {open && (
-        <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center p-4">
+      {open ? (
+        <div className="fixed inset-0 z-40 flex items-end justify-center p-4 sm:items-center">
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs"
+            className="fixed inset-0 bg-wangari-ink/50"
             onClick={() => setOpen(false)}
           />
-          <div className="relative z-50 w-full max-w-sm rounded-3xl bg-wangari-card p-6 shadow-2xl border border-wangari-border animate-in slide-in-from-bottom duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-wangari-border mb-4">
+          <div className="relative z-50 w-full max-w-sm animate-in slide-in-from-bottom rounded-2xl border border-wangari-border bg-wangari-card p-6 shadow-2xl duration-200">
+            <div className="mb-4 flex items-start justify-between border-b border-wangari-border pb-4">
               <div>
-                <h3 className="text-base font-extrabold text-wangari-heading">
-                  "Quick Actions 🚜"
+                <h3 className="text-base font-semibold text-wangari-heading">
+                  Quick actions
                 </h3>
-                <p className="text-xs text-wangari-muted">
-                  "Select what you want to record right now"
+                <p className="text-sm text-wangari-muted">
+                  What do you want to record?
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setOpen(false)}
-                className="text-wangari-subtle hover:text-wangari-text p-1"
+                aria-label="Close"
+                className="rounded-lg p-1 text-wangari-subtle transition-colors hover:bg-wangari-cream hover:text-wangari-text"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
-              {[
-                {
-                  href: "/production",
-                  icon: Egg,
-                  color: "bg-tone-good-bg text-tone-good-text border-tone-good-border",
-                  title: "Log Eggs & Milk",
-                  subtitle: "Record today's yield",
-                },
-                {
-                  href: "/finances",
-                  icon: DollarSign,
-                  color: "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border",
-                  title: "Record Money Spent",
-                  subtitle: "Feed, vet, or labor costs",
-                },
-                {
-                  href: "/sales",
-                  icon: ShoppingCart,
-                  color: "bg-blue-50 text-blue-700 border-blue-200",
-                  title: "Record a Sale",
-                  subtitle: "Sell to buyers",
-                },
-                {
-                  href: "/flocks",
-                  icon: Bird,
-                  color: "bg-purple-50 text-purple-700 border-purple-200",
-                  title: "Add Animals / Crops",
-                  subtitle: "Register new stock",
-                },
-              ].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-4 p-4 rounded-2xl border ${item.color} hover:shadow-md transition-all active:scale-98`}
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-wangari-card shadow-sm shrink-0">
-                    <item.icon className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-extrabold text-wangari-heading">{item.title}</p>
-                    <p className="text-xs text-wangari-muted mt-0.5">{item.subtitle}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <ul className="grid gap-2">
+              {ACTIONS.map((a) => {
+                const Icon = a.icon;
+                return (
+                  <li key={a.href + a.title}>
+                    <a
+                      href={a.href}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 rounded-xl border border-wangari-border p-3 transition-colors hover:border-wangari-green-300 hover:bg-wangari-cream"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-wangari-green-50">
+                        <Icon className="h-4 w-4 text-wangari-green-700" aria-hidden />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-wangari-heading">
+                          {a.title}
+                        </span>
+                        <span className="block text-xs text-wangari-muted">
+                          {a.sub}
+                        </span>
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <p className="mt-4 flex items-center justify-center gap-1 text-xs text-wangari-subtle">
+              <Package className="h-3.5 w-3.5" aria-hidden />
+              Pick what you want to record right now.
+            </p>
           </div>
         </div>
-      )}
+      ) : null}
     </>
   );
 }
+
+export default FloatingActionButton;

@@ -181,8 +181,8 @@ export default function WorkerDashboardPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <RefreshCw className="h-10 w-10 text-[#166534] animate-spin" />
-        <p className="text-sm font-extrabold text-[#64748B]">Loading Worker Portal...</p>
+        <RefreshCw className="h-10 w-10 text-wangari-green-800 animate-spin" />
+        <p className="text-sm font-extrabold text-wangari-muted">Loading Worker Portal...</p>
       </div>
     );
   }
@@ -191,39 +191,39 @@ export default function WorkerDashboardPage() {
     <div className="w-full pb-12">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       {/* Worker Header */}
-      <div className="bg-gradient-to-br from-[#0F172A] via-[#14532D] to-[#166534] p-6 rounded-3xl text-white shadow-xl flex items-center justify-between lg:col-span-12">
+      <div className="bg-wangari-ink p-6 rounded-2xl text-white shadow-xl flex items-center justify-between lg:col-span-12">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-wangari-green-500/20 text-wangari-green-100-300 border border-wangari-green-700/30 uppercase tracking-wider">
               Worker Portal
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-2 flex items-center gap-2">
             Hello, {user?.name?.split(" ")[0] || "Worker"}!
           </h1>
-          <p className="text-xs text-emerald-100/80 font-medium mt-1">
+          <p className="text-xs text-wangari-green-100 font-medium mt-1">
             Tap any big card below to log output or mark tasks done.
           </p>
         </div>
 
         <button
           onClick={handleRefresh}
-          className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl cursor-pointer transition-all"
+          className="p-3 bg-wangari-card/10 hover:bg-wangari-card/20 text-white rounded-2xl cursor-pointer transition-all"
         >
           <RefreshCw className={`h-6 w-6 ${refreshing ? "animate-spin" : ""}`} />
         </button>
       </div>
 
       {/* INTERACTIVE CALENDAR WIDGET */}
-      <Card className="border border-gray-200 bg-white rounded-3xl p-4 shadow-sm lg:col-span-7">
+      <Card className="border border-wangari-border bg-wangari-card rounded-2xl p-4 shadow-sm lg:col-span-7">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-wangari-green-50 text-wangari-green-800 shrink-0">
               <CalendarIcon className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-[#0F172A]">Farm Calendar</h3>
-              <p className="text-xs text-[#64748B]">
+              <h3 className="text-sm font-black text-wangari-heading">Farm Calendar</h3>
+              <p className="text-xs text-wangari-muted">
                 {isToday ? "Today" : selectedDate.toLocaleDateString("en-KE", { weekday: "long" })},{" "}
                 {selectedDate.toLocaleDateString("en-KE", { month: "short", day: "numeric", year: "numeric" })}
               </p>
@@ -232,7 +232,7 @@ export default function WorkerDashboardPage() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => changeDate(-1)}
-              className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-[#0F172A] cursor-pointer"
+              className="p-2 rounded-xl border border-wangari-border hover:bg-wangari-cream text-wangari-heading cursor-pointer"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -240,15 +240,15 @@ export default function WorkerDashboardPage() {
               onClick={() => setSelectedDate(new Date())}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                 isToday
-                  ? "bg-[#166534] text-white border-[#166534]"
-                  : "bg-gray-50 text-[#0F172A] border-gray-200 hover:bg-gray-100"
+                  ? "bg-wangari-green-800 text-white border-wangari-green-800"
+                  : "bg-wangari-cream text-wangari-heading border-wangari-border hover:bg-wangari-cream"
               }`}
             >
               Today
             </button>
             <button
               onClick={() => changeDate(1)}
-              className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-[#0F172A] cursor-pointer"
+              className="p-2 rounded-xl border border-wangari-border hover:bg-wangari-cream text-wangari-heading cursor-pointer"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -270,8 +270,8 @@ export default function WorkerDashboardPage() {
                 onClick={() => setSelectedDate(dateObj)}
                 className={`flex-1 py-2 px-1 text-center rounded-2xl transition-all cursor-pointer border ${
                   isSelected
-                    ? "bg-[#166534] text-white border-[#166534] shadow-sm font-black"
-                    : "bg-gray-50 text-[#64748B] border-transparent hover:bg-gray-100 font-semibold"
+                    ? "bg-wangari-green-800 text-white border-wangari-green-800 shadow-sm font-black"
+                    : "bg-wangari-cream text-wangari-muted border-transparent hover:bg-wangari-cream font-semibold"
                 }`}
               >
                 <p className="text-[10px] uppercase tracking-wider">{dayName}</p>
@@ -283,51 +283,51 @@ export default function WorkerDashboardPage() {
       </Card>
 
       {/* Task Progress Summary */}
-      <Card className="border-2 border-emerald-200 bg-emerald-50/50 rounded-3xl p-5 shadow-sm lg:col-span-5">
+      <Card className="border-2 border-wangari-green-200 bg-wangari-green-50 rounded-2xl p-5 shadow-sm lg:col-span-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-[#166534] text-white flex items-center justify-center font-black text-lg shadow-xs">
+            <div className="h-12 w-12 rounded-full bg-wangari-green-800 text-white flex items-center justify-center font-black text-lg shadow-xs">
               {progressPct}%
             </div>
             <div>
-              <h3 className="text-base font-black text-[#0F172A]">Daily Task Progress</h3>
-              <p className="text-xs font-bold text-[#64748B]">{progressLabel}</p>
+              <h3 className="text-base font-black text-wangari-heading">Daily Task Progress</h3>
+              <p className="text-xs font-bold text-wangari-muted">{progressLabel}</p>
             </div>
           </div>
           {progressPct === 100 && totalTasks > 0 && (
             // "All Done" badge only appears when there is at least one task
-            <span className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-extrabold rounded-full flex items-center gap-1 shadow-xs">
+            <span className="px-3 py-1.5 bg-wangari-green-800 text-white text-xs font-extrabold rounded-full flex items-center gap-1 shadow-xs">
               <CheckCircle2 className="h-4 w-4" /> All Done
             </span>
           )}
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full h-3 bg-emerald-200/60 rounded-full mt-4 overflow-hidden">
+        <div className="w-full h-3 bg-wangari-green-200 rounded-full mt-4 overflow-hidden">
           <div
-            className="h-full bg-[#166534] rounded-full transition-all duration-500"
+            className="h-full bg-wangari-green-800 rounded-full transition-all duration-500"
             style={{ width: `${progressPct}%` }}
           />
         </div>
       </Card>
 
       {/* CLOCK IN / OUT + THIS WEEK'S ATTENDANCE */}
-      <Card className="border border-gray-200 bg-white rounded-3xl p-5 shadow-sm lg:col-span-5">
+      <Card className="border border-wangari-border bg-wangari-card rounded-2xl p-5 shadow-sm lg:col-span-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-wangari-green-50 text-wangari-green-800 shrink-0">
               <Clock className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-[#0F172A]">My Attendance</h3>
-              <p className="text-xs text-[#64748B]">{daysWorked} days worked in the last 7</p>
+              <h3 className="text-sm font-black text-wangari-heading">My Attendance</h3>
+              <p className="text-xs text-wangari-muted">{daysWorked} days worked in the last 7</p>
             </div>
           </div>
           {clockState === "none" && (
             <button
               onClick={handleClock}
               disabled={clocking}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#166534] text-white text-xs font-bold hover:bg-[#14532D] cursor-pointer min-h-[44px] shadow-xs disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-wangari-green-800 text-white text-xs font-bold hover:bg-wangari-green-900 cursor-pointer min-h-[44px] shadow-xs disabled:opacity-50"
             >
               <LogIn className="h-4 w-4" /> Clock In
             </button>
@@ -336,20 +336,20 @@ export default function WorkerDashboardPage() {
             <button
               onClick={handleClock}
               disabled={clocking}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200 hover:bg-amber-100 cursor-pointer min-h-[44px] disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-tone-warn-bg text-tone-warn-text text-xs font-bold border border-tone-warn-border hover:bg-tone-warn-bg cursor-pointer min-h-[44px] disabled:opacity-50"
             >
               <LogOut className="h-4 w-4" /> Clock Out
             </button>
           )}
           {clockState === "done" && (
-            <span className="px-3 py-1.5 rounded-xl bg-gray-100 text-[#64748B] text-xs font-bold">
-              {todayAtt.checkIn} – {todayAtt.checkOut} ✓
+            <span className="px-3 py-1.5 rounded-xl bg-wangari-cream text-wangari-muted text-xs font-bold">
+              {todayAtt.checkIn} – {todayAtt.checkOut}
             </span>
           )}
         </div>
 
         {attendance.length === 0 ? (
-          <p className="text-xs text-[#94A3B8] text-center py-4">
+          <p className="text-xs text-wangari-subtle text-center py-4">
             No attendance yet — clock in to start your shift.
           </p>
         ) : (
@@ -357,21 +357,21 @@ export default function WorkerDashboardPage() {
             {attendance.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between py-2 px-3 rounded-xl bg-gray-50 border border-gray-100"
+                className="flex items-center justify-between py-2 px-3 rounded-xl bg-wangari-cream border border-wangari-border"
               >
                 <div>
-                  <p className="text-xs font-extrabold text-[#0F172A]">
+                  <p className="text-xs font-extrabold text-wangari-heading">
                     {new Date(r.date).toLocaleDateString("en-KE", { weekday: "short", day: "numeric", month: "short" })}
                   </p>
-                  <p className="text-[10px] text-[#94A3B8]">
+                  <p className="text-[10px] text-wangari-subtle">
                     {r.checkIn || "--:--"} – {r.checkOut || "working…"}
                   </p>
                 </div>
                 <span
                   className={`text-[10px] font-bold px-2 py-1 rounded-full ${
                     r.checkOut
-                      ? "bg-gray-100 text-[#64748B]"
-                      : "bg-emerald-50 text-[#166534]"
+                      ? "bg-wangari-cream text-wangari-muted"
+                      : "bg-wangari-green-50 text-wangari-green-800"
                   }`}
                 >
                   {r.checkOut ? "Done" : "Present"}
@@ -384,7 +384,7 @@ export default function WorkerDashboardPage() {
 
       {/* GIANT QUICK LOG CARDS (No Emojis — Lucide Icons Only) */}
       <div className="lg:col-span-12">
-        <h2 className="text-xs font-black text-[#64748B] uppercase tracking-wider mb-3 px-1">
+        <h2 className="text-xs font-black text-wangari-muted uppercase tracking-wider mb-3 px-1">
           Quick Logging (Tap to Record)
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -392,17 +392,17 @@ export default function WorkerDashboardPage() {
           <motion.div
             whileTap={{ scale: 0.96 }}
             onClick={() => openLog("eggs")}
-            className="p-5 rounded-3xl bg-emerald-600 text-white shadow-lg cursor-pointer hover:bg-emerald-700 transition-all flex flex-col justify-between h-36 border-2 border-emerald-500"
+            className="p-5 rounded-2xl bg-wangari-green-800 text-white shadow-lg cursor-pointer hover:bg-wangari-green-900 transition-all flex flex-col justify-between h-36 border-2 border-wangari-green-700"
           >
             <div className="flex items-center justify-between">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/25 text-white shrink-0">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-wangari-card/25 text-white shrink-0">
                 <Egg className="h-6 w-6 stroke-[2.5]" />
               </div>
               <Plus className="h-6 w-6 text-white/80" />
             </div>
             <div>
               <h3 className="text-xl font-black">Log Eggs</h3>
-              <p className="text-xs text-emerald-100 font-medium">Record egg harvest</p>
+              <p className="text-xs text-wangari-green-100 font-medium">Record egg harvest</p>
             </div>
           </motion.div>
 
@@ -410,17 +410,17 @@ export default function WorkerDashboardPage() {
           <motion.div
             whileTap={{ scale: 0.96 }}
             onClick={() => openLog("milk")}
-            className="p-5 rounded-3xl bg-sky-600 text-white shadow-lg cursor-pointer hover:bg-sky-700 transition-all flex flex-col justify-between h-36 border-2 border-sky-500"
+            className="p-5 rounded-2xl bg-wangari-green-800 text-white shadow-lg cursor-pointer hover:bg-wangari-green-900 transition-all flex flex-col justify-between h-36 border-2 border-sky-500"
           >
             <div className="flex items-center justify-between">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/25 text-white shrink-0">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-wangari-card/25 text-white shrink-0">
                 <Milk className="h-6 w-6 stroke-[2.5]" />
               </div>
               <Plus className="h-6 w-6 text-white/80" />
             </div>
             <div>
               <h3 className="text-xl font-black">Log Milk</h3>
-              <p className="text-xs text-sky-100 font-medium">Record litres milked</p>
+              <p className="text-xs text-wangari-green-100 font-medium">Record litres milked</p>
             </div>
           </motion.div>
 
@@ -428,17 +428,17 @@ export default function WorkerDashboardPage() {
           <motion.div
             whileTap={{ scale: 0.96 }}
             onClick={() => openLog("feed")}
-            className="p-5 rounded-3xl bg-amber-600 text-white shadow-lg cursor-pointer hover:bg-amber-700 transition-all flex flex-col justify-between h-36 border-2 border-amber-500"
+            className="p-5 rounded-2xl bg-wangari-green-800 text-white shadow-lg cursor-pointer hover:bg-wangari-green-900 transition-all flex flex-col justify-between h-36 border-2 border-wangari-green-700"
           >
             <div className="flex items-center justify-between">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/25 text-white shrink-0">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-wangari-card/25 text-white shrink-0">
                 <Wheat className="h-6 w-6 stroke-[2.5]" />
               </div>
               <Plus className="h-6 w-6 text-white/80" />
             </div>
             <div>
               <h3 className="text-xl font-black">Log Feed</h3>
-              <p className="text-xs text-amber-100 font-medium">Record feed given</p>
+              <p className="text-xs text-wangari-green-100 font-medium">Record feed given</p>
             </div>
           </motion.div>
 
@@ -446,32 +446,32 @@ export default function WorkerDashboardPage() {
           <motion.div
             whileTap={{ scale: 0.96 }}
             onClick={() => openLog("mortality")}
-            className="p-5 rounded-3xl bg-rose-600 text-white shadow-lg cursor-pointer hover:bg-rose-700 transition-all flex flex-col justify-between h-36 border-2 border-rose-500"
+            className="p-5 rounded-2xl bg-wangari-green-800 text-white shadow-lg cursor-pointer hover:bg-wangari-green-900 transition-all flex flex-col justify-between h-36 border-2 border-rose-500"
           >
             <div className="flex items-center justify-between">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/25 text-white shrink-0">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-wangari-card/25 text-white shrink-0">
                 <Heart className="h-6 w-6 stroke-[2.5]" />
               </div>
               <Plus className="h-6 w-6 text-white/80" />
             </div>
             <div>
               <h3 className="text-xl font-black">Log Animal Loss</h3>
-              <p className="text-xs text-rose-100 font-medium">Record dead animals</p>
+              <p className="text-xs text-wangari-green-100 font-medium">Record dead animals</p>
             </div>
           </motion.div>
         </div>
       </div>
 
       {/* WORKER OUTPUT CHART (GOOD CHARTS) */}
-      <Card className="border border-gray-200 bg-white rounded-3xl p-5 shadow-sm lg:col-span-7">
+      <Card className="border border-wangari-border bg-wangari-card rounded-2xl p-5 shadow-sm lg:col-span-7">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-wangari-green-50 text-wangari-green-800 shrink-0">
               <BarChart3 className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-[#0F172A]">Weekly Logged Output</h3>
-              <p className="text-xs text-[#64748B]">Output trends over the past 7 days</p>
+              <h3 className="text-sm font-black text-wangari-heading">Weekly Logged Output</h3>
+              <p className="text-xs text-wangari-muted">Output trends over the past 7 days</p>
             </div>
           </div>
         </div>
@@ -496,19 +496,19 @@ export default function WorkerDashboardPage() {
       {/* TODAY'S TASKS LIST */}
       <div className="space-y-3 lg:col-span-5">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-xs font-black text-[#64748B] uppercase tracking-wider">
+          <h2 className="text-xs font-black text-wangari-muted uppercase tracking-wider">
             Assigned Tasks ({tasks.length})
           </h2>
-          <span className="text-xs font-bold text-[#166534] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+          <span className="text-xs font-bold text-wangari-green-800 bg-wangari-green-50 px-2.5 py-1 rounded-full border border-wangari-green-200">
             {completedCount} completed
           </span>
         </div>
 
         {tasks.length === 0 ? (
-          <Card className="border-2 border-dashed border-gray-200 p-8 text-center rounded-3xl bg-gray-50/50">
-            <ListTodo className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm font-extrabold text-[#0F172A]">No tasks assigned today</p>
-            <p className="text-xs text-[#64748B] mt-1">Use the big logging cards above to record farm activity.</p>
+          <Card className="border-2 border-dashed border-wangari-border p-8 text-center rounded-2xl bg-wangari-cream/50">
+            <ListTodo className="h-10 w-10 text-wangari-subtle mx-auto mb-2" />
+            <p className="text-sm font-extrabold text-wangari-heading">No tasks assigned today</p>
+            <p className="text-xs text-wangari-muted mt-1">Use the big logging cards above to record farm activity.</p>
           </Card>
         ) : (
           <div className="space-y-3">
@@ -526,26 +526,26 @@ export default function WorkerDashboardPage() {
       {/* TODAY'S ACTIVITY LOG */}
       {activities.length > 0 && (
         <div className="space-y-3 pt-2 lg:col-span-12">
-          <h2 className="text-xs font-black text-[#64748B] uppercase tracking-wider px-1">
+          <h2 className="text-xs font-black text-wangari-muted uppercase tracking-wider px-1">
             My Activity History ({activities.length})
           </h2>
-          <Card className="border border-gray-200 rounded-3xl p-4 divide-y divide-gray-100 bg-white">
+          <Card className="border border-wangari-border rounded-2xl p-4 divide-y divide-wangari-border bg-wangari-card">
             {activities.map((act) => (
               <div key={act.id} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] shrink-0">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-wangari-green-50 text-wangari-green-800 shrink-0">
                     <Check className="h-5 w-5 stroke-[2.5]" />
                   </div>
                   <div>
-                    <p className="text-sm font-extrabold text-[#0F172A] capitalize">
+                    <p className="text-sm font-extrabold text-wangari-heading capitalize">
                       Logged {act.quantity} {act.unit || act.type}
                     </p>
-                    <p className="text-[10px] text-[#94A3B8]">
+                    <p className="text-[10px] text-wangari-subtle">
                       {new Date(act.createdAt).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-[#64748B] bg-gray-50 px-2.5 py-1 rounded-xl uppercase">
+                <span className="text-xs font-bold text-wangari-muted bg-wangari-cream px-2.5 py-1 rounded-xl uppercase">
                   {act.type}
                 </span>
               </div>

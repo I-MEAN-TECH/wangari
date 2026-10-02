@@ -7,16 +7,21 @@ import {
   Milk,
   Wheat,
   Beef,
-  Sprout,
+  Rabbit,
   Egg,
-  Droplets,
+  Fish,
   Flower2,
+  Birdhouse,
   Check,
   ArrowRight,
   Loader2,
   MapPin,
 } from "lucide-react";
 import api from "@/lib/api-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 /**
  * Onboarding — claim your farm.
@@ -45,22 +50,28 @@ import api from "@/lib/api-client";
  *     assert ownership of a farm, so it states its farm here before entering.
  *     Google proves identity; saying what you farm is the claim on the data.
  *
- * DESIGN (docs/module-plan.md §0): big targets, icons before words, Swahili,
- * no typing where a tap will do. The farmer picks a picture of their farm.
+ * DESIGN: icons before words, no typing where a tap will do, and the same
+ * Card/Button/Input primitives and sizing as the rest of the app. The farmer
+ * picks a picture of their farm.
  */
 
 const FARM_TYPES = [
   // ONE accent colour. An earlier version gave each farm type its own tint,
-  // which turned a two-choice screen into a swatch chart and read as a
-  // template. The icon and emoji carry the meaning; colour does not.
-  { id: "poultry", label: "Poultry", sub: "Eggs · meat", icon: Egg, emoji: "🐔" },
-  { id: "dairy", label: "Dairy", sub: "Cattle · goats", icon: Milk, emoji: "🐄" },
-  { id: "cattle", label: "Cattle", sub: "Beef", icon: Beef, emoji: "🐃" },
-  { id: "goats", label: "Goats", sub: "Meat", icon: Sprout, emoji: "🐐" },
-  { id: "crops", label: "Crops", sub: "Maize · vegetables", icon: Wheat, emoji: "🌾" },
-  { id: "horticulture", label: "Horticulture", sub: "Flowers · fruit", icon: Flower2, emoji: "🥬" },
-  { id: "fish", label: "Fish", sub: "Ponds", icon: Droplets, emoji: "🐟" },
-  { id: "bees", label: "Bees", sub: "Honey", icon: Sprout, emoji: "🐝" },
+  // which turned this into a swatch chart and read as a template. The icon
+  // carries the meaning; colour does not.
+  //
+  // Icons are lucide, never emoji: emoji render differently per platform, do
+  // not inherit the text colour, and cannot be sized to match an icon set.
+  // Lucide has no goat or bee, so Goats uses Rabbit (small livestock) and
+  // Bees uses Birdhouse (the structure, which is how a keeper thinks of it).
+  { id: "poultry", label: "Poultry", sub: "Eggs · meat", icon: Egg },
+  { id: "dairy", label: "Dairy", sub: "Cattle · goats", icon: Milk },
+  { id: "cattle", label: "Cattle", sub: "Beef", icon: Beef },
+  { id: "goats", label: "Goats", sub: "Meat", icon: Rabbit },
+  { id: "crops", label: "Crops", sub: "Maize · vegetables", icon: Wheat },
+  { id: "horticulture", label: "Horticulture", sub: "Flowers · fruit", icon: Flower2 },
+  { id: "fish", label: "Fish", sub: "Ponds", icon: Fish },
+  { id: "bees", label: "Bees", sub: "Honey", icon: Birdhouse },
 ];
 
 export default function OnboardingPage() {
@@ -160,25 +171,26 @@ export default function OnboardingPage() {
                     key={f.id}
                     type="button"
                     onClick={() => setFarmType(f.id)}
-                    className={`relative flex min-h-[128px] flex-col items-center justify-center gap-1 rounded-xl border-2 p-3 transition-colors duration-200 active:scale-[0.98] ${
+                    className={cn(
+                      "relative flex flex-col items-center justify-center gap-2",
+                      "rounded-xl border p-4 transition-colors duration-200",
                       active
-                        ? "border-wangari-green-700 bg-wangari-green-50"
-                        : "border-wangari-border bg-wangari-card hover:border-wangari-green-300"
-                    }`}
+                        ? "border-wangari-green-600 bg-wangari-green-50"
+                        : "border-wangari-border bg-wangari-card hover:border-wangari-green-300 hover:bg-wangari-green-50"
+                    )}
                     aria-pressed={active}
                   >
                     {active ? (
                       <Check
-                        className="absolute right-2 top-2 h-5 w-5 text-wangari-green-700"
+                        className="absolute right-2 top-2 h-4 w-4 text-wangari-green-700"
                         aria-hidden
                       />
                     ) : null}
-                    <span className="text-4xl" aria-hidden>{f.emoji}</span>
-                    <span className="flex items-center gap-1 text-sm font-bold text-wangari-heading">
-                      <Icon className="h-4 w-4 text-wangari-green-700" aria-hidden />
+                    <Icon className="h-6 w-6 text-wangari-green-700" aria-hidden />
+                    <span className="text-sm font-semibold text-wangari-heading">
                       {f.label}
                     </span>
-                    <span className="text-[11px] text-wangari-muted">{f.sub}</span>
+                    <span className="text-xs text-wangari-muted">{f.sub}</span>
                   </button>
                 );
               })}
@@ -186,17 +198,17 @@ export default function OnboardingPage() {
 
             {/* Tapping a tile selects it and marks it with a tick, rather than
                 jumping straight on. Without that confirmation the farmer never
-                learns whether the tap landed — and at this point on a cheap
-                handset they usually assume it did not. Two taps, not one. */}
-            <button
-              type="button"
+                learns whether the tap landed — and on a cheap handset they
+                usually assume it did not. Two taps, not one. */}
+            <Button
+              size="lg"
+              className="mt-6 w-full"
               onClick={() => setStep(1)}
               disabled={!farmType}
-              className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-wangari-green-800 text-base font-bold text-white transition-transform active:scale-[0.99] disabled:opacity-40"
             >
               Continue
-              <ArrowRight className="h-5 w-5" aria-hidden />
-            </button>
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Button>
 
             <p className="mt-4 text-center text-xs text-wangari-subtle">
               You can add more later. We do not need everything today.
@@ -213,85 +225,88 @@ export default function OnboardingPage() {
               </p>
             </div>
 
-            <div className="space-y-4 rounded-xl border border-wangari-green-100 bg-wangari-card p-5">
+            <div className="space-y-4 rounded-xl border border-wangari-border bg-wangari-card p-6">
               <div>
-                <label htmlFor="farmName" className="mb-1.5 block text-sm font-bold text-wangari-heading">
+                <Label htmlFor="farmName" className="mb-1.5 block">
                   Farm name
-                </label>
-                <input
+                </Label>
+                <Input
                   id="farmName"
                   value={farmName}
                   onChange={(e) => setFarmName(e.target.value)}
                   placeholder="Amina's Farm"
                   maxLength={120}
-                  className="h-14 w-full rounded-xl border-2 border-wangari-border px-4 text-lg font-medium text-wangari-heading outline-none focus:border-wangari-green-800"
                 />
               </div>
 
               <div>
-                <label htmlFor="county" className="mb-1.5 block text-sm font-bold text-wangari-heading">
-                  County <span className="font-normal text-wangari-subtle">(optional)</span>
-                </label>
+                <Label htmlFor="county" className="mb-1.5 block">
+                  County{" "}
+                  <span className="font-normal text-wangari-subtle">(optional)</span>
+                </Label>
                 <div className="relative">
-                  <MapPin className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-wangari-subtle" aria-hidden />
-                  <input
+                  <MapPin
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-wangari-subtle"
+                    aria-hidden
+                  />
+                  <Input
                     id="county"
                     value={county}
                     onChange={(e) => setCounty(e.target.value)}
                     placeholder="Kahawa"
                     maxLength={80}
-                    className="h-14 w-full rounded-xl border-2 border-wangari-border pl-12 pr-4 text-lg text-wangari-heading outline-none focus:border-wangari-green-800"
+                    className="pl-10"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="phone" className="mb-1.5 block text-sm font-bold text-wangari-heading">
+                <Label htmlFor="phone" className="mb-1.5 block">
                   Phone number{" "}
                   <span className="font-normal text-wangari-subtle">(optional)</span>
-                </label>
-                <input
+                </Label>
+                <Input
                   id="phone"
                   value={phone}
                   inputMode="tel"
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="07XX XXX XXX"
                   maxLength={40}
-                  className="h-14 w-full rounded-xl border-2 border-wangari-border px-4 text-lg text-wangari-heading outline-none focus:border-wangari-green-800"
                 />
               </div>
 
               {error ? (
-                <p className="rounded-xl border border-tone-bad-border bg-tone-bad-bg px-4 py-3 text-sm font-semibold text-tone-bad-text">
+                <p className="rounded-lg border border-tone-bad-border bg-tone-bad-bg px-4 py-3 text-sm font-medium text-tone-bad-text">
                   {error}
                 </p>
               ) : null}
 
               <div className="flex gap-2 pt-1">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  className="flex-1"
                   onClick={() => setStep(0)}
                   disabled={saving}
-                  className="h-14 flex-1 rounded-xl border-2 border-wangari-border text-base font-bold text-wangari-muted disabled:opacity-50"
                 >
                   Back
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  className="flex-[2]"
                   onClick={submit}
                   disabled={saving}
-                  className="flex h-14 flex-[2] items-center justify-center gap-2 rounded-xl bg-wangari-green-800 text-base font-bold text-white disabled:opacity-60"
                 >
                   {saving ? (
-                    <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                   ) : (
                     <>
-                      <Check className="h-5 w-5" aria-hidden />
+                      <Check className="h-4 w-4" aria-hidden />
                       Start
-                      <ArrowRight className="h-5 w-5" aria-hidden />
+                      <ArrowRight className="h-4 w-4" aria-hidden />
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </div>
 

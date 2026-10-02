@@ -54,18 +54,18 @@ export default function FarmRecordPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Card className="border-wangari-border">
-            <CardContent className="space-y-4 px-5 pb-6 pt-8">
+          <Card>
+            <CardContent className="space-y-4 p-6">
               <div className="flex justify-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-wangari-green-50">
-                  <FileText className="h-11 w-11 text-wangari-green-700" aria-hidden />
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-wangari-green-50">
+                  <FileText className="h-6 w-6 text-wangari-green-700" aria-hidden />
                 </div>
               </div>
               <div className="text-center">
-                <h2 className="text-2xl font-bold tracking-tight text-wangari-heading">
+                <h2 className="text-xl font-bold tracking-tight text-wangari-heading">
                   Show my farm record
                 </h2>
-                <p className="mx-auto mt-2 max-w-sm text-wangari-muted">
+                <p className="mx-auto mt-2 max-w-sm text-sm text-wangari-muted">
                   This record shows the work you have done, day by day. You can
                   print it or send it to anyone you choose.
                 </p>
@@ -73,14 +73,14 @@ export default function FarmRecordPage() {
 
               <Button
                 size="lg"
-                className="h-20 w-full text-xl"
+                className="w-full"
                 onClick={load}
                 disabled={loading}
               >
                 {loading ? (
-                  <Loader2 className="h-7 w-7 animate-spin" aria-hidden />
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 ) : (
-                  <Eye className="h-7 w-7" aria-hidden />
+                  <Eye className="h-4 w-4" aria-hidden />
                 )}
                 {loading ? "Loading…" : "Show my farm record"}
               </Button>
@@ -91,9 +91,9 @@ export default function FarmRecordPage() {
                 </p>
               ) : null}
 
-              <div className="flex items-start gap-2 rounded-2xl bg-wangari-cream p-3 text-left">
+              <div className="flex items-start gap-2 rounded-xl bg-wangari-cream p-3 text-left">
                 <ShieldCheck
-                  className="mt-0.5 h-5 w-5 shrink-0 text-wangari-muted"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-wangari-muted"
                   aria-hidden
                 />
                 <p className="text-xs leading-relaxed text-wangari-muted">
@@ -131,7 +131,7 @@ export default function FarmRecordPage() {
           </div>
 
           {forLender ? (
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-center text-xs text-wangari-muted">
               An agent only ever sees your record. Nothing is sent to anyone
               without your say-so.
             </p>

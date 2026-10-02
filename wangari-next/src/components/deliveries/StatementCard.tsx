@@ -137,15 +137,15 @@ export function StatementCard({
         {/* THE number. Biggest thing on the card, on purpose. */}
         <div
           className={cn(
-            "rounded-3xl p-5 text-center",
+            "rounded-2xl p-4 text-center",
             settled ? "bg-tone-good-bg" : "bg-tone-warn-bg"
           )}
         >
           <div className="mb-1 flex items-center justify-center gap-2">
             {settled ? (
-              <CheckCircle2 className="h-6 w-6 text-tone-good-text" aria-hidden />
+              <CheckCircle2 className="h-5 w-5 text-tone-good-text" aria-hidden />
             ) : (
-              <AlertTriangle className="h-6 w-6 text-tone-warn-text" aria-hidden />
+              <AlertTriangle className="h-5 w-5 text-tone-warn-text" aria-hidden />
             )}
             <span className="text-sm font-semibold uppercase tracking-wide text-wangari-muted">
               {settled ? "All payments received" : "Owed to you"}
@@ -153,7 +153,7 @@ export function StatementCard({
           </div>
           <p
             className={cn(
-              "font-mono text-4xl font-bold tabular-nums sm:text-5xl",
+              "font-mono text-3xl font-bold tabular-nums sm:text-4xl",
               settled ? "text-tone-good-text" : "text-tone-warn-text"
             )}
           >
@@ -168,15 +168,15 @@ export function StatementCard({
 
         {/* This month's movement, kept visually secondary to the balance. */}
         <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-2xl bg-wangari-cream p-3">
+          <div className="rounded-xl bg-wangari-cream p-3">
             <p className="text-xs font-semibold uppercase text-wangari-muted">Delivered</p>
             <p className="text-lg font-bold text-tone-good-text">{money(statement.gross)}</p>
           </div>
-          <div className="rounded-2xl bg-wangari-cream p-3">
+          <div className="rounded-xl bg-wangari-cream p-3">
             <p className="text-xs font-semibold uppercase text-wangari-muted">Deductions</p>
             <p className="text-lg font-bold text-tone-warn-text">−{money(statement.deductions)}</p>
           </div>
-          <div className="rounded-2xl bg-wangari-cream p-3">
+          <div className="rounded-xl bg-wangari-cream p-3">
             <p className="text-xs font-semibold uppercase text-wangari-muted">Paid</p>
             <p className="text-lg font-bold text-tone-good-text">{money(statement.paid)}</p>
           </div>
@@ -193,7 +193,7 @@ export function StatementCard({
               {Object.entries(buyers).map(([buyer, c]) => (
                 <li
                   key={buyer}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-wangari-border px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-wangari-border px-4 py-3"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-bold text-wangari-heading">{buyer}</p>
@@ -203,7 +203,6 @@ export function StatementCard({
                   </div>
                   <StatusChip
                     tone={c.outstanding > 0.01 ? "warn" : "good"}
-                    emoji={c.outstanding > 0.01 ? "⏳" : "✅"}
                     label={money(c.outstanding)}
                   />
                 </li>
