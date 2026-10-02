@@ -4,7 +4,7 @@
 >
 > **Purpose:** you are one person doing product, marketing, sales, ops and support. This document is the thing to re-read the night before you walk into a room, so you know your numbers cold, what to say, what not to say, and how to ask properly. It assumes you have zero money and are building from scratch — which is a real constraint, not a weakness to hide.
 >
-> **Companion documents:** [vision.md](vision.md) (what we believe) · [roadmap.md](roadmap.md) (V1→V2→V3) · [valuation-audit.md](valuation-audit.md) (honest worth) · [partnership-prospects.md](partnership-prospects.md) (who to approach)
+> **Companion documents:** [vision.md](vision.md) (what we believe) · [roadmap.md](roadmap.md) (V1→V2→V3) · [valuation-audit.md](valuation-audit.md) (honest worth) · [partnership-prospects.md](partnership-prospects.md) (who to approach) · [aiae-2026-field-plan.md](aiae-2026-field-plan.md) (the 23–25 Oct KICC expo field plan)
 
 ---
 
