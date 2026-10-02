@@ -2,7 +2,7 @@
 
 > Written October 2026. This document is permanent. It does not change with pricing, features, or funding. If a decision contradicts this file, the decision is wrong.
 
-**Companion documents:** [roadmap.md](roadmap.md) (what we build next) · [partnership-prospects.md](partnership-prospects.md) (who we partner with) · [architecture.md](architecture.md) (how it runs)
+**Companion documents:** [roadmap.md](roadmap.md) (what we build next) · [valuation-audit.md](valuation-audit.md) (honest current state and worth) · [founder-guide.md](founder-guide.md) (money, pitch, and doing the room) · [partnership-prospects.md](partnership-prospects.md) (who we partner with) · [architecture.md](architecture.md) (how it runs)
 
 ---
 

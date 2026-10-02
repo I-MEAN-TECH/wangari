@@ -90,6 +90,8 @@ subscriptions — the frontend banner keys on it. Regression here shows a false
 > **The product vision lives in [vision.md](vision.md) (the belief) and
 > [roadmap.md](roadmap.md) (V1 records → V2 AI/automation → V3 IoT + connections).
 > Read both before changing what the product *is*; this section is only ops.**
+> The honest current state and valuation is [valuation-audit.md](valuation-audit.md);
+> the founder's money-and-pitch playbook is [founder-guide.md](founder-guide.md).
 
 1. **Observability** — pm2-logrotate is in; add a lightweight metrics endpoint
    or Sentry performance for latency trends + worker restart counts, so growth
