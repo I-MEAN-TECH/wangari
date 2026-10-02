@@ -194,8 +194,61 @@ model Farm {
   quotes           Quote[]
   newsSends        NewsArticleSend[]
   animals          Animal[]
+  hives            Hive[]
 
   @@map("farms")
+}
+
+/// A bee COLONY, which is the unit a beekeeper actually manages.
+///
+/// Bees are never recorded or tagged individually — a colony is tens of
+/// thousands of insects. Real apiary practice (and every beekeeping logbook)
+/// records per hive: colony strength, queen status, stores, varroa counts and
+/// honey harvested. This mirrors how a flock works for poultry: the unit is the
+/// thing you count, not the animal.
+model Hive {
+  id           Int       @id @default(autoincrement())
+  farmId       Int       @map("farm_id")
+  name         String // the hive number painted on the box
+  hiveType     String?   @map("hive_type") // langstroth | topbar | traditional | flow
+  status       String    @default("active") // active | weak | swarm | dead | requeened
+  queenYear    Int?      @map("queen_year")
+  queenStatus  String?   @map("queen_status") // seen | not_seen | new | laying_weak
+  frames       Int?
+  location     String? // apiary / stand position
+  establishedOn DateTime? @map("established_on") @db.Date
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  farm        Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  inspections HiveInspection[]
+
+  @@unique([farmId, name])
+  @@index([farmId, status])
+  @@map("hives")
+}
+
+/// One hive inspection: what the beekeeper looks at on the box.
+model HiveInspection {
+  id          Int      @id @default(autoincrement())
+  hiveId      Int      @map("hive_id")
+  inspectedAt DateTime @map("inspected_at")
+  broodFrames Int?     @map("brood_frames")
+  storesFrames Int?    @map("stores_frames")
+  queenSeen   Boolean? @map("queen_seen")
+  queenCells  Int?     @map("queen_cells")
+  varroaCount Int?     @map("varroa_count")
+  honeyKg     Decimal? @map("honey_kg") @db.Decimal(10, 2)
+  actionTaken String?  @map("action_taken") // e.g. treatment, requeen, super
+  notes       String?
+  createdBy   Int?     @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  hive Hive @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@index([hiveId, inspectedAt])
+  @@map("hive_inspections")
 }
 
 model FarmMember {
@@ -246,6 +299,13 @@ model Flock {
   expectedYield    String?  @map("expected_yield")
   expectedRevenue  Decimal? @map("expected_revenue") @db.Decimal(12, 2)
   expectedWeight   String?  @map("expected_weight")
+  // ANITRAC tag range issued to this flock. Three numbers cover 500 animals —
+  // the farmer never types a number per head. Individual tags are generated on
+  // demand for traceability lists. See `animals` for individually-tracked stock.
+  tagFrom          String?  @map("tag_from")
+  tagTo            String?  @map("tag_to")
+  taggedCount      Int?     @map("tagged_count")
+  taggedOn         DateTime? @map("tagged_on")
   notes            String?
 
   createdBy Int?     @map("created_by")

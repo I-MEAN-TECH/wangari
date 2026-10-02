@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { resolveTagRange, rangeRows } from "../lib/tag-range.js";
 
 /**
  * Animal identity — ANITRAC traceability.
@@ -292,6 +293,16 @@ router.delete("/:id", async (req: Request, res: Response) => {
 });
 
 // GET /api/animals/traceability — the list a buyer or county officer asks for
+//
+// Two sources are merged:
+//
+//  1. Individually-tracked animals (`animals` rows). Only a handful per farm —
+//     the sick one, the insured one, the one being sold.
+//  2. FLOCK TAG RANGES. A herd of 500 costs three columns on the flock; the 500
+//     individual numbers are generated here, on demand, only when someone asks
+//     for the list. We never store rows we would only ever read once.
+//
+// So a farmer with 500 tagged cattle enters three numbers, not five hundred.
 router.get("/traceability/list", async (req: Request, res: Response) => {
   try {
     const farmId = req.user!.farmId!;
@@ -300,7 +311,7 @@ router.get("/traceability/list", async (req: Request, res: Response) => {
       select: { name: true, county: true, location: true, code: true },
     });
 
-    const animals = await prisma.animal.findMany({
+    const individuallyTracked = await prisma.animal.findMany({
       where: { farmId },
       orderBy: { tagNumber: "asc" },
       select: {
@@ -323,10 +334,61 @@ router.get("/traceability/list", async (req: Request, res: Response) => {
       },
     });
 
+    // Expand flock tag ranges on the fly — no rows stored for these.
+    const taggedFlocks = await prisma.flock.findMany({
+      where: { farmId, NOT: { tagFrom: null } },
+      select: {
+        id: true,
+        name: true,
+        breed: true,
+        type: true,
+        category: true,
+        currentCount: true,
+        tagFrom: true,
+        tagTo: true,
+        taggedCount: true,
+      },
+    });
+
+    const fromRanges: any[] = [];
+    const flockRanges: any[] = [];
+    for (const f of taggedFlocks) {
+      const range = resolveTagRange(f.tagFrom, f.tagTo, f.taggedCount ?? f.currentCount);
+      if (!range.tags.length) {
+        flockRanges.push({
+          flock: f.name,
+          tagFrom: f.tagFrom,
+          tagTo: f.tagTo,
+          span: 0,
+          note: range.note,
+        });
+        continue;
+      }
+      fromRanges.push(...rangeRows(f, range));
+      flockRanges.push({
+        flock: f.name,
+        tagFrom: f.tagFrom,
+        tagTo: f.tagTo,
+        span: range.span,
+        consistent: range.consistent,
+        note: range.note,
+      });
+    }
+
+    const animals = [...individuallyTracked, ...fromRanges].sort((a: any, b: any) =>
+      String(a.tagNumber).localeCompare(String(b.tagNumber))
+    );
+
     res.json({
       farm,
       generatedAt: new Date().toISOString(),
       count: animals.length,
+      // Breakdown so the farmer understands where the numbers came from.
+      summary: {
+        individuallyTracked: individuallyTracked.length,
+        fromFlockRanges: fromRanges.length,
+        flockRanges,
+      },
       animals,
     });
   } catch (error) {

@@ -12,6 +12,7 @@ import actionEngineRoutes from "./routes/action-engine.js";
 import cronWeeklyRoutes from "./routes/cron-weekly.js";
 import flocksRoutes from "./routes/flocks.js";
 import animalsRoutes from "./routes/animals.js";
+import hivesRoutes from "./routes/hives.js";
 import customersRoutes from "./routes/customers.js";
 import transactionsRoutes from "./routes/transactions.js";
 import salesRoutes from "./routes/sales.js";
@@ -167,6 +168,8 @@ app.use("/api/flocks", flocksUploadRoutes);
 // GET /:id, so a nested mount would let "animals" be parsed as a flock id and
 // silently 404. /api/animals keeps the routes unambiguous.
 app.use("/api/animals", animalsRoutes);
+// Beekeeping: the hive is the unit, never the bee.
+app.use("/api/hives", hivesRoutes);
 app.use("/api/customers", customersRoutes);
 app.use("/api/promos", promoRedeemRoutes);
 app.use("/api/transactions", idempotencyGuard, transactionsRoutes);

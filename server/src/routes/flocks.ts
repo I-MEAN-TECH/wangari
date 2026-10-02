@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireOwner } from "../middleware/requireOwner.js";
+import { resolveTagRange } from "../lib/tag-range.js";
 
 const router = Router();
 router.use(authMiddleware);
@@ -64,6 +65,9 @@ router.post("/", requireOwner, async (req: Request, res: Response) => {
       vetName, vetPhone, healthOnArrival, insurancePolicy,
       expectedYield, expectedRevenue, expectedWeight,
       notes, vaccinationSchedule,
+      // ANITRAC: a farmer registers a RANGE of tags for the whole flock, not
+      // one number per animal. Three numbers cover a herd of 500.
+      tagFrom, tagTo, taggedOn,
     } = req.body;
 
     const count = Number(initialCount) || 0;
@@ -82,6 +86,19 @@ router.post("/", requireOwner, async (req: Request, res: Response) => {
         currentCount: count,
         hatchDate: hatchDate ? new Date(hatchDate) : null,
         createdBy: req.user!.userId,
+
+        // ANITRAC tag range. The farmer supplies the block they were issued;
+        // we validate it here and never expand it into rows.
+        ...(() => {
+          const r = resolveTagRange(tagFrom, tagTo, count);
+          if (!r.tags.length) return {};
+          return {
+            tagFrom: String(tagFrom).replace(/\D/g, ""),
+            tagTo: String(tagTo).replace(/\D/g, ""),
+            taggedCount: r.span,
+            taggedOn: taggedOn ? new Date(taggedOn) : new Date(),
+          };
+        })(),
 
         // Extended fields
         purpose: purpose || null,
