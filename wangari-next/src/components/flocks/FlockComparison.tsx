@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api-client";
-import { speciesTemplates, getSpeciesCategories } from "@/lib/species-templates";
+import { getSpeciesCategories } from "@/lib/species-templates";
+import { speciesFor } from "@/lib/species-resolve";
 
 interface FlockComparisonProps {
   flockIds: number[];
@@ -121,7 +122,7 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
           {/* Headers */}
           <div className="flex gap-4 mb-6">
             {data.map((flock) => {
-              const species = speciesTemplates[flock.type];
+              const species = speciesFor(flock);
               return (
                 <div key={flock.id} className="flex-1 p-4 rounded-xl bg-gray-50 border border-gray-100">
                   <div className="flex items-center gap-3">

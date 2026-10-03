@@ -12,14 +12,15 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { useToast } from "@/components/shared/toast";
 import api from "@/lib/api-client";
 import Link from "next/link";
-import { speciesTemplates } from "@/lib/species-templates";
+
+import { speciesFor } from "@/lib/species-resolve";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
 
 function getSpeciesInfo(type: string | null) {
   if (!type) return { label: "animals", metric: "output", icon: Beef, unit: "units" };
-  const t = speciesTemplates[type];
+  const t = speciesFor({ type });
   if (!t) return { label: "animals", metric: "output", icon: Beef, unit: "units" };
   // Per-species production metric: eggs for layers/kienyeji only — every
   // other animal records its own natural output (milk, weight, honey…).
@@ -152,7 +153,7 @@ export default function ProductionPage() {
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto">
                         {flocks.map(f => {
-                          const ft = speciesTemplates[f.type];
+                          const ft = speciesFor(f);
                           return (
                             <button key={f.id} onClick={() => { setForm({ ...form, flockId: String(f.id) }); setStep(1); }}
                               className="text-left rounded-xl border border-gray-200 px-3 py-2.5 hover:border-[#166534] hover:bg-[#F0FDF4] transition-all cursor-pointer">
@@ -268,7 +269,7 @@ export default function ProductionPage() {
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
           <div className="space-y-2">
             {records.filter(r => !search || r.flock?.name?.toLowerCase().includes(search.toLowerCase())).slice(0, 30).map((r) => {
-              const ft = r.flock?.type ? speciesTemplates[r.flock.type] : null;
+              const ft = r.flock ? speciesFor(r.flock) : null;
               const isMilk = ft?.name?.toLowerCase().includes("dairy");
               const isMeat = ["broilers", "cattle_beef", "goats", "sheep", "pigs"].includes(r.flock?.type);
               const output = isMilk ? `${Number(r.milkCollected || 0).toFixed(1)}L` : isMeat ? `${Number(r.weightGain || 0).toFixed(1)}kg` : `${r.eggsCollected} eggs`;

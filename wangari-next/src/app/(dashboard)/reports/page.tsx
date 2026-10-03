@@ -10,7 +10,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
 import api from "@/lib/api-client";
-import { speciesTemplates } from "@/lib/species-templates";
+
+import { speciesFor } from "@/lib/species-resolve";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
@@ -89,7 +90,7 @@ export default function ReportsPage() {
   // Species breakdown
   const speciesMap: Record<string, { count: number; name: string }> = {};
   flocks.forEach((f: any) => {
-    const sp = speciesTemplates[f.type];
+    const sp = speciesFor(f);
     const cat = sp?.category || "other";
     if (!speciesMap[cat]) speciesMap[cat] = { count: 0, name: cat.charAt(0).toUpperCase() + cat.slice(1) };
     speciesMap[cat].count += f.currentCount || 0;
@@ -99,7 +100,7 @@ export default function ReportsPage() {
   // Production by species
   const prodBySpecies: Record<string, number> = {};
   production.forEach((r) => {
-    const sp = r.flock?.type ? speciesTemplates[r.flock.type] : null;
+    const sp = r.flock ? speciesFor(r.flock) : null;
     const cat = sp?.category || "other";
     prodBySpecies[cat] = (prodBySpecies[cat] || 0) + (r.eggsCollected || 0) + Number(r.milkCollected || 0) + Number(r.weightGain || 0);
   });

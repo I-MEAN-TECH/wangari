@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import api from "@/lib/api-client";
-import { speciesTemplates } from "@/lib/species-templates";
+
+import { speciesFor } from "@/lib/species-resolve";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 
@@ -95,7 +96,7 @@ export default function FeedCalculatorPage() {
     }
   };
 
-  const flockSpecies = flock ? speciesTemplates[flock.type] : null;
+  const flockSpecies = flock ? speciesFor(flock) : null;
 
   return (
     <div className="space-y-6">
@@ -113,7 +114,7 @@ export default function FeedCalculatorPage() {
               <select value={selectedFlock} onChange={e => { setSelectedFlock(e.target.value); setHeadCount(""); }}
                 className="w-full h-12 rounded-xl border border-gray-200 px-3 text-sm font-medium focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534]">
                 <option value="">Choose a group...</option>
-                {flocks.map(f => <option key={f.id} value={f.id}>{f.name} — {f.currentCount} head ({speciesTemplates[f.type]?.name || f.type})</option>)}
+                {flocks.map(f => <option key={f.id} value={f.id}>{f.name} — {f.currentCount} head ({speciesFor(f)?.name || f.type})</option>)}
               </select>
               <div className="grid grid-cols-2 gap-3">
                 <div>

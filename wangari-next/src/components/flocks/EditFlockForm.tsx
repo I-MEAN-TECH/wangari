@@ -18,7 +18,8 @@ import {
   Save,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { speciesTemplates } from "@/lib/species-templates";
+
+import { speciesFor } from "@/lib/species-resolve";
 
 interface EditFlockFormProps {
   flock: any;
@@ -45,7 +46,7 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
   const [expandedSections, setExpandedSections] = React.useState<Set<FormSection>>(
     new Set(["basic"])
   );
-  const species = speciesTemplates[flock.type];
+  const species = speciesFor(flock);
 
   const [form, setForm] = React.useState({
     name: flock.name || "",

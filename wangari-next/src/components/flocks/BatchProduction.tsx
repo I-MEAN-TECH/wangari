@@ -4,8 +4,9 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { X, Check, ClipboardList, Egg, Droplets, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { speciesTemplates } from "@/lib/species-templates";
+
 import api from "@/lib/api-client";
+import { speciesFor } from "@/lib/species-resolve";
 
 interface BatchProductionProps {
   flocks: any[];
@@ -135,7 +136,7 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
               {flocks.filter((f) => f.status === "active").map((flock) => {
                 const isSelected = selectedFlocks.has(flock.id);
-                const species = speciesTemplates[flock.type];
+                const species = speciesFor(flock);
                 const isPoultry = flock.type === "layers" || flock.type === "kienyeji" || flock.type === "broilers";
                 const entry = entries[flock.id] || { production: "", mortality: "", feedUsed: "", notes: "" };
 

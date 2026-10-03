@@ -13,7 +13,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { speciesTemplates } from "@/lib/species-templates";
+
+import { speciesFor } from "@/lib/species-resolve";
 import Link from "next/link";
 
 interface FlockSetupProgressProps {
@@ -46,7 +47,7 @@ export function FlockSetupProgress({ flock }: FlockSetupProgressProps) {
 
   if (!shouldShow) return null;
 
-  const species = speciesTemplates[flock.type];
+  const species = speciesFor(flock);
   const vaccinations = flock.vaccinations || [];
   const hasVaccinations = vaccinations.length > 0;
   const hasProduction = (flock.production || []).length > 0;

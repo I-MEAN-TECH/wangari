@@ -4,7 +4,8 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { X, Calendar, Egg, Droplets, Scale, Wheat, AlertTriangle, Check, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { speciesTemplates } from "@/lib/species-templates";
+
+import { speciesFor } from "@/lib/species-resolve";
 
 interface RecordProductionFormProps {
   flock: any;
@@ -15,7 +16,7 @@ interface RecordProductionFormProps {
 export function RecordProductionForm({ flock, onSubmit, onCancel }: RecordProductionFormProps) {
   const [loading, setLoading] = React.useState(false);
   const [submitted, setSubmitted] = React.useState(false);
-  const species = speciesTemplates[flock.type];
+  const species = speciesFor(flock);
 
   const [form, setForm] = React.useState({
     date: new Date().toISOString().split("T")[0],

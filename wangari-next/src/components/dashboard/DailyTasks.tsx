@@ -16,8 +16,9 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { speciesTemplates } from "@/lib/species-templates";
+
 import api from "@/lib/api-client";
+import { speciesFor } from "@/lib/species-resolve";
 import Link from "next/link";
 
 interface Task {
@@ -43,7 +44,7 @@ function generateTasks(flocks: any[]): Task[] {
 
   for (const flock of flocks) {
     if (flock.status !== "active") continue;
-    const species = speciesTemplates[flock.type];
+    const species = speciesFor(flock);
     if (!species) continue;
 
     const hatchDate = flock.hatchDate ? new Date(flock.hatchDate) : null;
