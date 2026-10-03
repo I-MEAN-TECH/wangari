@@ -40,6 +40,10 @@ function env(key, fallback = "") {
 }
 
 const API_URL = env("API_SELF_URL", "http://localhost:3001");
+// The PM2 process name changed when the app moved to the shared VPS (the old
+// box ran it as "wangari-server"; ecosystem.config.cjs now names it
+// "wangari-api"). Hard-coding the old name made this check fail forever.
+const PM2_PROCESS_NAME = process.env.PM2_PROCESS_NAME || "wangari-api";
 const ALERT_EMAIL = env("ADMIN_ALERT_EMAIL", "admin@imeantech.com");
 const STATE_FILE = "/tmp/wangari-uptime-state.json";
 const BASELINE_FILE = new URL("../logs/.env-watchdog-baseline.json", import.meta.url).pathname;
@@ -100,8 +104,14 @@ async function checkRestartLoop() {
       );
     });
     const procs = JSON.parse(out);
-    const proc = procs.find((p) => p.name === "wangari-server");
-    if (!proc) return { ok: false, detail: "PM2 process wangari-server not found", restarts: 0 };
+    const proc = procs.find((p) => p.name === PM2_PROCESS_NAME);
+    if (!proc) {
+      return {
+        ok: false,
+        detail: `PM2 process ${PM2_PROCESS_NAME} not found (have: ${procs.map((p) => p.name).join(", ") || "none"})`,
+        restarts: 0,
+      };
+    }
     restarts = proc.pm2_env?.restart_time ?? 0;
     pmUptime = proc.pm2_env?.pm_uptime ?? 0;
   } catch (e) {
