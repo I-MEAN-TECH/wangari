@@ -87,6 +87,13 @@ initSentry(); // no-op unless SENTRY_DSN is set
 // clients correctly from X-Forwarded-For (silences ERR_ERL_UNEXPECTED_X_FORWARDED_FOR).
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3001;
+// Bind address. Production sits behind nginx on the shared VPS, where the
+// tenancy contract requires the app port to be reachable ONLY from
+// localhost — nginx must stay the single public listener, so an app that
+// binds 0.0.0.0 would expose the API directly and bypass TLS, the security
+// headers and the rate limiting nginx provides. Defaults to loopback.
+// Local dev overrides with HOST=0.0.0.0 when it needs LAN access.
+const HOST = process.env.HOST || "127.0.0.1";
 
 // ─── Performance & Compression ──────────────────────────────
 app.use(compression());
@@ -288,10 +295,10 @@ for (const sig of ["SIGTERM", "SIGINT"] as const) {
 }
 
 // ─── Start Server ─────────────────────────────────────────
-app.listen(PORT, () => {
+app.listen(Number(PORT), HOST, () => {
   // Seed pricing plans once at boot (create-if-missing; DB rows win afterwards)
   seedPlans();
-  console.log(`🌱 Wangari API server running on port ${PORT}`);
+  console.log(`🌱 Wangari API server running on ${HOST}:${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`   Frontend URL: ${process.env.FRONTEND_URL || "https://wangari.imeantech.com"}`);
 });

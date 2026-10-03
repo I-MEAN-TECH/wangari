@@ -32,14 +32,14 @@ router.get("/farms", requireAdmin(["support", "support_read"]), async (req: Requ
       : {};
 
     const [rows, total, allFarms] = await Promise.all([
-      prisma.farm.findMany({
+      (prisma.farm.findMany({
         where,
         include: {
           owner: { select: { id: true, name: true, email: true } },
           _count: { select: { workers: true, flocks: true } },
         },
         orderBy: { id: "desc" },
-      }),
+      }) as unknown as Awaited<Promise<any[]>>),
       prisma.farm.count({ where }),
       prisma.farm.findMany({
         select: { ownerId: true, owner: { select: { subscriptions: { where: { status: "active" }, select: { expiresAt: true } } } } },

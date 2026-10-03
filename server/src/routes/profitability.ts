@@ -63,7 +63,9 @@ router.get("/", async (req: Request, res: Response) => {
     };
 
     for (const tx of incomeTx) {
-      const e = matchEnterprise(tx.category || "") || matchEnterprise(tx.description || "") || general;
+      const category = String(tx.category || "");
+      const description = String(tx.description || "");
+      const e = matchEnterprise(category) || matchEnterprise(description) || general;
       e.revenue += Number(tx.amount);
     }
     for (const tx of expenseTx) {

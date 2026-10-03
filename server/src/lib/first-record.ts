@@ -38,6 +38,7 @@ export async function firstRecordAt(farmId: number): Promise<string | null> {
     `)
     .catch(() => [{ first: null }]);
 
-  const first = rows?.[0]?.first;
+  const row = rows?.[0];
+  const first = row?.first;
   return first ? new Date(first).toISOString() : null;
 }
