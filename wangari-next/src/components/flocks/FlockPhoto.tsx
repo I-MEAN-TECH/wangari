@@ -24,7 +24,12 @@ export function FlockPhoto({ flockId, photoUrl, onPhotoUpdate, size = "md" }: Fl
   const sizeClasses = {
     sm: "h-16 w-16",
     md: "h-32 w-32",
-    lg: "h-48 w-48",
+    // "lg" is a size name, not a breakpoint. On a phone the header row has to
+    // fit the photo, the name and five action buttons; at a fixed 192px the
+    // photo alone pushed Record/Batch/Export/Edit/Delete off the right edge,
+    // where the page does not scroll sideways and so they could never be
+    // tapped. Shrink it on small screens and let it grow into the space.
+    lg: "h-24 w-24 sm:h-32 sm:w-32 md:h-48 md:w-48",
   };
 
   const handleUpload = async (file: File) => {

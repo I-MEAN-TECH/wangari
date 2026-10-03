@@ -351,9 +351,12 @@ export default function FlocksPage() {
           </button>
         </motion.div>
 
-        {/* Header with photo + actions */}
-        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        {/* Header with photo + actions. Stacks on a phone and lets the buttons wrap:
+            as one non-wrapping row the five actions ran off the right edge,
+            and the page does not scroll sideways, so Edit/Batch/Export/Delete
+            were unreachable on mobile. */}
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
             <FlockPhoto
               flockId={flock.id}
               photoUrl={flock.photoUrl || null}
@@ -363,16 +366,16 @@ export default function FlocksPage() {
               }}
               size="lg"
             />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{flock.name}</h1>
-              <p className="text-sm text-gray-400 mt-0.5">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight break-words">{flock.name}</h1>
+              <p className="text-sm text-gray-400 mt-0.5 break-words">
                 {flock.breed || species?.name || flock.type}
                 {flock.purpose && ` — ${getPurposeLabel(flock.purpose)}`}
                 {flock.location && ` • ${flock.location}`}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <Badge variant={flock.status === "active" ? "default" : "outline"} className={
               flock.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : ""
             }>{flock.status}</Badge>
