@@ -53,11 +53,16 @@ credentials.json
 # Raw demo video source (large, not for git)
 media-master/www-master.mp4
 
-# Agent scratch (screenshots, local databases) - never part of the app
-.freebuff/
+# Agent scratch (screenshots, local databases) - never part of the app.
+# Every pattern here is anchored with a leading slash on purpose: in ignore-file
+# syntax a bare "*.png" matches at ANY depth, which would hide every logo and PWA
+# icon in wangari-next/public/ from git. It did exactly that until this was fixed.
+/.freebuff/
 audit-shots/
 agent/
-*.png
+/*.png
+/login-attempt.png
+/waadmin-overview-desktop.png
 
 .env*
 .vercel
