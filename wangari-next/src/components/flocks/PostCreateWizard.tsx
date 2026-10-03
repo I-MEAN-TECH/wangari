@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Check,
   Wheat,
@@ -175,8 +175,18 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
             ))}
           </div>
 
-          {/* Step 0: Feed Plan */}
-          <AnimatePresence mode="wait">
+          {/* Step panels.
+              This was wrapped in <AnimatePresence mode="wait"> so each step slid
+              out before the next slid in. In production it DEADLOCKED: clicking
+              "Next: Vaccinations" advanced the step indicator but left the Feed
+              Plan panel on screen, because mode="wait" refuses to mount the next
+              child until the previous one has finished exiting, and the exit
+              never completed. The wizard was stuck on step 0 with no way forward
+              except "Skip all".
+              The enter animation is kept — the `key` still remounts each panel so
+              it slides in. Only the exit animation is dropped, because a wizard
+              that cannot advance is worse than a wizard that cuts. */}
+          <div key={step}>
             {step === 0 && (
               <motion.div
                 key="feed"
@@ -553,7 +563,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
                 </div>
               </motion.div>
             )}
-          </AnimatePresence>
+          </div>
         </CardContent>
       </Card>
     </motion.div>

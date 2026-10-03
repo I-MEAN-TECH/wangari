@@ -27,6 +27,7 @@ import {
   type SpeciesTemplate,
 } from "@/lib/species-templates";
 import { AnitracRangeCard } from "@/components/flocks/AnitracRangeCard";
+import { useToast } from "@/components/shared/toast";
 
 const iconMap: Record<string, any> = { bird: Bird, beef: Beef, droplets: Droplets, flower: Flower };
 
@@ -40,6 +41,7 @@ interface CreateFlockFormProps {
 }
 
 export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: CreateFlockFormProps) {
+  const { showToast, ToastComponent } = useToast();
   const [step, setStep] = React.useState(0); // 0=category, 1=species, 2=basics, 3=review
   const [selectedCategory, setSelectedCategory] = React.useState("poultry");
   const [selectedSpecies, setSelectedSpecies] = React.useState<SpeciesTemplate | null>(null);
@@ -100,6 +102,16 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
           : {}),
         vaccinationSchedule: selectedSpecies.vaccinationSchedule,
       });
+    } catch (err) {
+      // Without this, a failed save was completely invisible: the promise
+      // rejected, `finally` reset the button, and the farmer was left staring at
+      // a form that looked like it had worked. They would click Save again and
+      // again. Always say what went wrong, and never navigate away on failure.
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Could not save your livestock. Check your connection and try again.";
+      showToast(message, "error");
     } finally {
       setLoading(false);
     }
@@ -107,8 +119,14 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
 
   const stepLabels = ["Category", "Species", "Details", "Confirm"];
 
+  // useToast returns the element as {ToastComponent}, not <ToastComponent />.
+  // Without this in the tree a failed save still said nothing.
+  const toast = ToastComponent;
+
   return (
-    <Card className="border border-wangari-border shadow-lg">
+    <>
+      {toast}
+      <Card className="border border-wangari-border shadow-lg">
       <CardContent className="p-6">
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-6">
@@ -264,5 +282,6 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
         )}
       </CardContent>
     </Card>
+    </>
   );
 }
