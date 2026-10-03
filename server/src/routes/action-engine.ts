@@ -213,7 +213,16 @@ router.get("/actions", async (req: Request, res: Response) => {
     // ─── 4. Vaccination & breeding windows ──────────────────
     const nextWeekDate = new Date(today.getTime() + 7 * 86400000);
     const upcomingVax = await prisma.vaccination.findMany({
-      where: { farmId, status: "scheduled", scheduledDate: { gte: today, lte: nextWeekDate } },
+      // A Vaccination belongs to a FLOCK, and a flock belongs to a farm. There is
+      // no farmId column on Vaccination, so filtering on it throws a Prisma
+      // validation error and takes the whole action list down with it. This ran
+      // broken in production until the error log was read; a green test suite
+      // did not catch it because no test reached this query.
+      where: {
+        flock: { farmId },
+        status: "scheduled",
+        scheduledDate: { gte: today, lte: nextWeekDate },
+      },
       include: { flock: { select: { name: true } } },
       take: 5,
     });
