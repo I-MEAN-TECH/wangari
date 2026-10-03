@@ -51,7 +51,9 @@ import { BatchProduction } from "@/components/flocks/BatchProduction";
 import { BreedingRecords } from "@/components/flocks/BreedingRecords";
 import { PostCreateWizard } from "@/components/flocks/PostCreateWizard";
 import { FlockSetupProgress } from "@/components/flocks/FlockSetupProgress";
-import { speciesTemplates, getSpeciesCategories, getSpeciesIconId } from "@/lib/species-templates";
+import { getSpeciesCategories, getSpeciesIconId } from "@/lib/species-templates";
+import { speciesFor } from "@/lib/species-resolve";
+import { SpeciesGuidanceCard } from "@/components/flocks/SpeciesGuidanceCard";
 
 const iconMap: Record<string, any> = { bird: Bird, beef: Beef, droplets: Droplets, flower: Flower };
 
@@ -187,9 +189,17 @@ export default function FlocksPage() {
     const newFlock = await api.post("/api/flocks", data);
     setShowForm(false);
     loadFlocks();
-    // Show the post-create wizard
+    // Show the post-create wizard.
+    //
+    // Offline, api.post returns { queued: true, offline: true } instead of the
+    // created row — there is no server response yet, only what we asked for.
+    // Passing that stub straight through is what made a dairy herd get poultry
+    // feed advice: the stub has no `type`, the species lookup missed, and the
+    // old `|| speciesTemplates.layers` fallback answered with Layers. So merge
+    // the farmer's own form data back in. We know what species they picked,
+    // and their own answer is more trustworthy than a guess made from a stub.
     if (newFlock) {
-      setWizardFlock(newFlock);
+      setWizardFlock({ ...data, ...newFlock });
       setShowWizard(true);
     }
   };
@@ -280,7 +290,9 @@ export default function FlocksPage() {
   // ─── DETAIL VIEW ──────────────────────────────────────
   if (selectedFlock) {
     const flock = flocks.find((f: any) => f.id === selectedFlock.id) || selectedFlock;
-    const species = speciesTemplates[flock.type];
+    // speciesFor, not speciesTemplates[type]: it recovers the species from the
+    // breed when the type is missing, and returns null instead of nothing.
+    const species = speciesFor(flock);
     const mortality = flock.initialCount > 0 ? ((flock.mortality / flock.initialCount) * 100).toFixed(1) : "0";
     const vaccinations = flock.vaccinations || [];
     const pendingVax = vaccinations.filter((v: any) => v.status === "pending");
@@ -350,6 +362,17 @@ export default function FlocksPage() {
             </button>
           </div>
         </motion.div>
+
+        {/* Feed, vaccine and housing guidance for THIS species. This used to
+            exist only in the wizard shown once at creation, so a farmer could
+            never get it back — and when the species lookup missed it showed
+            poultry advice for cattle. */}
+        <div className="mb-4">
+          <SpeciesGuidanceCard
+            flock={flock}
+            onEdit={() => { setEditingFlock(flock); setShowEditForm(true); }}
+          />
+        </div>
 
         {/* Quick Stats */}
         <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -840,7 +863,7 @@ export default function FlocksPage() {
         /* ─── CARD VIEW ─────────────────────────── */
         <motion.div initial="hidden" animate="visible" variants={stagger} className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((f: any) => {
-            const species = speciesTemplates[f.type];
+            const species = speciesFor(f);
             const mortality = f.initialCount > 0 ? ((f.mortality / f.initialCount) * 100).toFixed(1) : "0";
             const mortalityRating = getMortalityRating(Number(mortality));
             const pendingVax = (f.vaccinations || []).filter((v: any) => v.status === "pending").length;
@@ -977,7 +1000,7 @@ export default function FlocksPage() {
           </div>
 
           {filtered.map((f: any) => {
-            const species = speciesTemplates[f.type];
+            const species = speciesFor(f);
             const mortality = f.initialCount > 0 ? ((f.mortality / f.initialCount) * 100).toFixed(1) : "0";
             const mortalityRating = getMortalityRating(Number(mortality));
             const pendingVax = (f.vaccinations || []).filter((v: any) => v.status === "pending").length;
@@ -1088,7 +1111,7 @@ export default function FlocksPage() {
       {showWizard && wizardFlock && (
         <PostCreateWizard
           flock={wizardFlock}
-          species={speciesTemplates[wizardFlock.type] || speciesTemplates.layers}
+          species={speciesFor(wizardFlock)}
           onComplete={() => {
             setShowWizard(false);
             setWizardFlock(null);

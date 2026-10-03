@@ -29,7 +29,16 @@ const iconMap: Record<string, any> = { bird: Bird, beef: Beef, droplets: Droplet
 
 interface PostCreateWizardProps {
   flock: any;
-  species: SpeciesTemplate;
+  /**
+   * Null when we could not tell what species this is.
+   *
+   * This used to be optional-with-a-default: the caller passed
+   * `speciesTemplates[type] || speciesTemplates.layers`, so a dairy herd whose
+   * type was missing got Layers feed advice with complete confidence. Feed,
+   * vaccine and dosage advice for the wrong animal is worse than no advice, so
+   * a null species now renders an honest "we don't know yet" instead.
+   */
+  species: SpeciesTemplate | null;
   onComplete: () => void;
   onSkip: () => void;
 }
@@ -39,6 +48,44 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
   const [feedSupplier, setFeedSupplier] = React.useState("");
   const [addToInventory, setAddToInventory] = React.useState(false);
   const [showSchedule, setShowSchedule] = React.useState(true);
+
+  // An unidentifiable species gets a different wizard entirely: confirmation
+  // that the group was saved, and an invitation to name the species. It does
+  // NOT get someone else's feed plan.
+  if (!species) {
+    return (
+      <Card className="border-2 border-amber-200 bg-amber-50/40 shadow-xl">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-amber-900">
+                {flock.name} added
+              </p>
+              <p className="text-xs text-amber-700">
+                {flock.initialCount} animals recorded
+              </p>
+            </div>
+          </div>
+          <p className="mt-4 text-sm text-amber-900">
+            We could not tell what kind of animal this is, so we are not going to guess.
+            Feed, vaccine and treatment advice for the wrong animal costs more than no
+            advice at all.
+          </p>
+          <p className="mt-2 text-xs text-amber-800">
+            Open the group and set the species to get the right feed plan, vaccine
+            schedule and daily rates.
+          </p>
+          <div className="mt-5 flex gap-2">
+            <Button onClick={onComplete}>Open {flock.name}</Button>
+            <Button variant="outline" onClick={onSkip}>Done</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const monthlyFeedCost = (Number(species.feedCostEstimate) || 0) * (flock.initialCount || 0);
   const hatchDate = flock.hatchDate ? new Date(flock.hatchDate) : new Date();

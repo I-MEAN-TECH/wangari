@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/shared/empty-state";
+import { CropGuidanceCard } from "@/components/crops/CropGuidanceCard";
 import { useToast } from "@/components/shared/toast";
 import api from "@/lib/api-client";
 
@@ -490,6 +491,14 @@ export default function CropsPage() {
                       {crop.areaAcres && <div className="rounded-lg bg-gray-50 p-2"><span className="text-gray-400">Area</span><p className="font-bold">{crop.areaAcres} acres</p></div>}
                       {daysLeft !== null && <div className="rounded-lg bg-gray-50 p-2"><span className="text-gray-400">Harvest</span><p className="font-bold">{daysLeft > 0 ? `${daysLeft} days` : "Ready"}</p></div>}
                       {totalKg > 0 && <div className="rounded-lg bg-emerald-50 p-2"><span className="text-emerald-600">Harvested</span><p className="font-bold text-emerald-700">{totalKg.toFixed(0)} kg</p></div>}
+                    </div>
+
+                    {/* What to apply to THIS crop, at the stage it is actually at.
+                        Recording a crop used to end there: the farmer logged maize
+                        and got no fertiliser, pesticide or timing back. This sits on
+                        the card so the answer needs no extra tap. */}
+                    <div className="mb-3">
+                      <CropGuidanceCard crop={crop} />
                     </div>
 
                     {/* Lifecycle tabs */}
