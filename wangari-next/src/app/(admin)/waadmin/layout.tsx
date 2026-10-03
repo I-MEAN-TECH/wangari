@@ -9,6 +9,7 @@ import {
   LineChart,
 } from "lucide-react";
 import { getAdminToken, getAdminSession, clearAdminSession, AdminSession } from "@/lib/admin-client";
+import { MaintenanceNotice } from "@/components/shared/MaintenanceNotice";
 
 /**
  * Admin shell for the super-admin dashboard, styled with the same wangari
@@ -124,6 +125,10 @@ export default function WaAdminLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="min-h-screen bg-wangari-cream text-wangari-text">
+      {/* The admin panel is the first thing to break in an outage and the
+          hardest place to guess why — every list simply fails to load. Say so
+          at the top instead. */}
+      <MaintenanceNotice />
       {/* Sidebar — desktop, fixed so it never scrolls with the page */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[260px] flex-col border-r border-wangari-border bg-white md:flex">
         <div className="flex shrink-0 items-center gap-2.5 px-5 py-4">

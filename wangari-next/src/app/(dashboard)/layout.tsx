@@ -4,6 +4,7 @@ import * as React from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { AnnouncementBanner } from "@/components/dashboard/AnnouncementBanner";
+import { MaintenanceNotice } from "@/components/shared/MaintenanceNotice";
 import { usePathname } from "next/navigation";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { WorkerBlock } from "@/components/worker-block";
@@ -156,6 +157,9 @@ export default function DashboardLayout({
 
       {/* Main content */}
       <div className={`${isAI ? "" : "lg:pl-[260px]"} min-h-screen flex flex-col`}>
+        {/* Truth-teller for a dead API. Mounted above everything so a farmer
+            never mistakes an outage for an empty farm. */}
+        {!isAI && <MaintenanceNotice />}
         {!isAI && <Topbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />}
         {!isAI && (
           <div className="px-4 sm:px-6 pt-4">

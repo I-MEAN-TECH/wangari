@@ -62,7 +62,19 @@ async function request<T = any>(path: string, options: RequestInit & { json?: un
     fetchOptions.body = JSON.stringify(json);
   }
 
-  const res = await fetch(`${API_BASE}/api/admin${path}`, { ...fetchOptions, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/admin${path}`, { ...fetchOptions, headers });
+  } catch {
+    // The request never reached the API at all (DNS, timeout, host down). A
+    // raw "Failed to fetch" gave the admin no idea whether they had been logged
+    // out, lost privileges, or hit an outage — and an unreachable host looks
+    // like neither 401 nor 403, so it fell through as an unexplained failure.
+    throw new AdminApiError(
+      `Cannot reach the Wangari API at ${API_BASE}. The server may be down or unreachable.`,
+      0
+    );
+  }
   const data = await res.json().catch(() => ({}));
 
   if (res.status === 401 && typeof window !== "undefined" && !path.startsWith("/login")) {
