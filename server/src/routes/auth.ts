@@ -3,6 +3,7 @@ import { Router, Request, Response } from "express";
 import { recordStage } from "./activation.js";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
+import { shouldSendVerificationEmail, VERIFICATION_TTL_MS } from "../lib/verification-cooldown.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { createUniqueFarmCode } from "../lib/farm-code.js";
@@ -26,9 +27,28 @@ const router = Router();
 // session token is issued — at registration AND at login for any legacy
 // account that never verified. Google accounts are exempt: Google has already
 // verified the email (we check email_verified on the ID token).
+//
+// That made /login an email trigger: every attempt with the right password
+// mailed a fresh code. The verify-email screen then auto-sent a second one on
+// mount, so a single sign-in produced two emails, and any retry (refresh,
+// wrong code) produced two more. Worse, each call deleted the previous code, so
+// the code already sitting in the farmer's inbox stopped working while new ones
+// kept arriving. When a live code is still inside the cooldown we reuse it
+// instead of mailing another one.
+
 async function issueVerificationCode(user: { id: number; email: string }): Promise<{ ok: boolean; devCode?: string }> {
+  const now = new Date();
+  const live = await prisma.verificationCode.findFirst({
+    where: { userId: user.id, purpose: "email_verification", usedAt: null },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!shouldSendVerificationEmail(live, now)) {
+    // A code was emailed seconds ago and is still valid - do not send another.
+    return { ok: true };
+  }
+
   const code = crypto.randomInt(100000, 999999).toString();
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const expiresAt = new Date(now.getTime() + VERIFICATION_TTL_MS);
 
   await prisma.verificationCode.deleteMany({
     where: { userId: user.id, purpose: "email_verification" },
