@@ -83,7 +83,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
   const load = React.useCallback(async () => {
     try {
       const res = await api.get<{ animals: Animal[] }>(
-        `/animals${flockId ? `?flockId=${flockId}` : ""}`
+        `/api/animals${flockId ? `?flockId=${flockId}` : ""}`
       );
       setAnimals(res.animals || []);
     } catch {
@@ -127,7 +127,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
 
   const setStatus = async (id: number, status: string) => {
     try {
-      await api.patch(`/animals/${id}`, { status });
+      await api.patch(`/api/animals/${id}`, { status });
       await load();
     } catch {
       setError("Could not update the animal status.");

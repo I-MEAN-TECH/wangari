@@ -124,7 +124,7 @@ export function HivePanel() {
   const load = React.useCallback(async () => {
     try {
       const res = await api.get<typeof hives & { hives: Hive[]; totalHives: number; activeHives: number; totalHoneyKg: number }>(
-        "/hives"
+        "/api/hives"
       );
       setHives(res.hives || []);
       setTotals({
@@ -148,7 +148,7 @@ export function HivePanel() {
     setSaving(true);
     setError(null);
     try {
-      await api.post("/hives", {
+      await api.post("/api/hives", {
         name: form.name.trim(),
         hiveType: form.hiveType,
         frames: form.frames ? Number(form.frames) : null,
@@ -168,7 +168,7 @@ export function HivePanel() {
     setSaving(true);
     setError(null);
     try {
-      await api.post(`/hives/${hiveId}/inspections`, insp);
+      await api.post(`/api/hives/${hiveId}/inspections`, insp);
       setInspecting(null);
       setInsp({
         broodFrames: 0,
@@ -188,7 +188,7 @@ export function HivePanel() {
 
   const setStatus = async (id: number, status: string) => {
     try {
-      await api.patch(`/hives/${id}`, { status });
+      await api.patch(`/api/hives/${id}`, { status });
       await load();
     } catch {
       setError("Could not update hive status.");
