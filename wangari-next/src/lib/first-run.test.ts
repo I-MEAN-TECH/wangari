@@ -18,6 +18,8 @@ import {
   showFirstRunCard,
   showKpiGrid,
   openDeliveryFormByDefault,
+  showStatementOnDashboard,
+  statementPrompt,
 } from "./first-run";
 
 const NEW = { firstRecordAt: null, loading: false };
@@ -108,5 +110,69 @@ describe("the gates are mutually consistent", () => {
   it("an active farmer sees the grid and NOT the card", () => {
     expect(showFirstRunCard(ACTIVE)).toBe(false);
     expect(showKpiGrid(ACTIVE)).toBe(true);
+  });
+});
+
+describe("showStatementOnDashboard", () => {
+  it("shows the statement when the farmer is genuinely owed money", () => {
+    // The whole point of row 12: the proof a farmer hands a co-op clerk should
+    // not be behind a tab they have to know about.
+    expect(showStatementOnDashboard({ outstanding: 45000 })).toBe(true);
+    expect(showStatementOnDashboard({ outstanding: 1 })).toBe(true);
+  });
+
+  it("stays away when nothing is owed", () => {
+    expect(showStatementOnDashboard({ outstanding: 0 })).toBe(false);
+  });
+
+  it("stays away while loading, so a working farmer is never flashed KES 0", () => {
+    expect(showStatementOnDashboard({ outstanding: 0, loading: true })).toBe(false);
+    expect(showStatementOnDashboard({ outstanding: null, loading: true })).toBe(false);
+  });
+
+  it("stays away when the figure is unknown rather than guessing", () => {
+    expect(showStatementOnDashboard({ outstanding: null })).toBe(false);
+    expect(showStatementOnDashboard({ outstanding: undefined })).toBe(false);
+  });
+
+  // Postgres NUMERIC arrives as a string; "45000" must still count as owed.
+  it("accepts a numeric string from the API", () => {
+    expect(showStatementOnDashboard({ outstanding: "45000" as unknown as number })).toBe(true);
+    expect(showStatementOnDashboard({ outstanding: "0" as unknown as number })).toBe(false);
+  });
+
+  it("does not show for a negative balance the farmer owes the buyer", () => {
+    expect(showStatementOnDashboard({ outstanding: -500 })).toBe(false);
+  });
+});
+
+describe("statementPrompt", () => {
+  it("tells the dashboard to show the card, with the amount", () => {
+    expect(statementPrompt({ outstanding: 4200 })).toEqual({ kind: "show", outstanding: 4200 });
+  });
+
+  it("tells the dashboard to offer logging a delivery instead", () => {
+    // An empty gap teaches a farmer nothing. The next useful thing is always
+    // the next action.
+    expect(statementPrompt({ outstanding: 0 })).toEqual({ kind: "empty" });
+  });
+
+  it("says nothing at all while loading", () => {
+    expect(statementPrompt({ outstanding: null })).toEqual({ kind: "loading" });
+    expect(statementPrompt({ outstanding: 100, loading: true })).toEqual({ kind: "loading" });
+  });
+});
+
+describe("the statement and the delivery form are deliberately opposite", () => {
+  // The form offers itself when there is nothing; the statement speaks only
+  // when there is something. Reversing either one re-creates the original bug.
+  it("a brand new farmer gets the open form and no statement", () => {
+    expect(openDeliveryFormByDefault(0)).toBe(true);
+    expect(showStatementOnDashboard({ outstanding: 0 })).toBe(false);
+  });
+
+  it("a dairy farmer with money owed gets the statement and a closed form", () => {
+    expect(openDeliveryFormByDefault(30)).toBe(false);
+    expect(showStatementOnDashboard({ outstanding: 45000 })).toBe(true);
   });
 });

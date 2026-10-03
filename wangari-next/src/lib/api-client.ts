@@ -6,6 +6,7 @@
 
 import { getToken, logout } from "./auth-client";
 import { enqueue } from "./offline-queue";
+import { cacheGet, cacheSet, resolveRead } from "./read-cache";
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "https://api.wangari.imeantech.com";
 export { API_BASE };
@@ -43,10 +44,67 @@ async function request<T = any>(path: string, options: RequestOptions = {}): Pro
     return { queued: true, offline: true } as T;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...fetchOptions,
-    headers,
-  });
+  // ── Offline reads: prefer the network, fall back to the last good answer ──
+  // A farmer with no signal must still see the numbers they recorded earlier,
+  // or the empty screen reads as "my record was lost" — which is precisely the
+  // belief the write queue exists to prevent.
+  const serveFromCache = (): T | null => {
+    const cached = cacheGet<T>(path);
+    const resolved = resolveRead<T>({ ok: false }, cached, Date.now());
+    if (resolved.data === null || resolved.data === undefined) return null;
+    window.dispatchEvent(
+      new CustomEvent("wangari:showing_cached", {
+        detail: { path, label: resolved.label, age: resolved.age },
+      })
+    );
+    // Several endpoints return a bare ARRAY (deliveries, sales, transactions).
+    // Spreading an array into `{...d}` turns it into an object with numeric keys,
+    // which would then render as an empty list — the screen would look exactly
+    // like "your records are gone", which is the failure this whole layer exists
+    // to prevent. Copy the array instead, then hang the marker off it.
+    const out: any = Array.isArray(resolved.data) ? [...resolved.data] : { ...(resolved.data as any) };
+    out.__stale = true;
+    out.__cachedAt = cached?.at ?? null;
+    return out as T;
+  };
+
+  if (!isWrite && typeof window !== "undefined" && !navigator.onLine) {
+    const cached = serveFromCache();
+    if (cached) return cached;
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...fetchOptions,
+      headers,
+    });
+  } catch {
+    // The request never left the device — flaky signal, not an API error. Serve
+    // the last good answer rather than an error page.
+    if (!isWrite && typeof window !== "undefined") {
+      const cached = serveFromCache();
+      if (cached) return cached;
+    }
+    throw new Error("You appear to be offline, and these numbers are not saved on this device yet.");
+  }
+
+  // Successful GET → remember it, so the next cold spot has something to show.
+  if (!isWrite && res.ok && (res.headers.get("content-type") || "").includes("application/json")) {
+    res
+      .clone()
+      .json()
+      .then((payload) => cacheSet(path, payload))
+      .catch(() => {});
+  } else if (isWrite && res.ok) {
+    // A write that actually reached the server is the earliest moment a farmer
+    // may have a first record. The activation listener turns this into the
+    // `first_record` ping — the server verifies it against real rows, so this
+    // is only ever a hint.
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("wangari:write_succeeded", { detail: { path } }));
+    }
+  }
 
   // Handle auth errors — only logout on /api/auth routes, not dashboard data
   if (res.status === 401 && path.startsWith("/api/auth")) {

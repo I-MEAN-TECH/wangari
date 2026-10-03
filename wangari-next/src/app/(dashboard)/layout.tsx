@@ -19,6 +19,7 @@ import {
   Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { pingActivation } from "@/lib/activation";
 
 // ─── Mobile Bottom Navigation ────────────────────────────
 // 5 tabs: Home, Animals, Production, Finances, More (opens sidebar)
@@ -111,6 +112,23 @@ export default function DashboardLayout({
   React.useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
+
+  // ── Activation funnel heartbeat ──
+  // Reaching this layout means the farmer opened the app, which is the one
+  // thing we can observe without asking them anything. A successful write is
+  // our hint that they may have just recorded something — the server verifies
+  // that against real rows, so a client that reports a write which never
+  // landed is ignored rather than counted.
+  //
+  // Silent and fire-and-forget on purpose: this is the measurement we use to
+  // decide what to build next, and it must never be able to slow down or break
+  // a farmer saving a delivery.
+  React.useEffect(() => {
+    pingActivation("active");
+    const onWrite = () => pingActivation("first_record");
+    window.addEventListener("wangari:write_succeeded", onWrite);
+    return () => window.removeEventListener("wangari:write_succeeded", onWrite);
+  }, []);
 
   return (
     <WorkerBlock>

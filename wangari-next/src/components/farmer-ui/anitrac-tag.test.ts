@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   validateTag,
   expandTagRange,
+  shouldWarnRange,
   ANITRAC_PREFIX,
   ANITRAC_MAX_DIGITS,
 } from "./anitrac-tag";
@@ -120,5 +121,50 @@ describe("expandTagRange", () => {
   it("errors when an endpoint is missing", () => {
     expect(expandTagRange("", "1410005").error).toBeTruthy();
     expect(expandTagRange("1410001", undefined).error).toBeTruthy();
+  });
+});
+
+/**
+ * The "check the numbers" warning must never fire in single-tag mode.
+ *
+ * Found by driving the real create-flock modal with a real login: a farmer who
+ * typed one correct 15-digit tag was shown "The ANITRAC number is correct" AND,
+ * at the same time, "Check the numbers. The last tag should be the same as, or
+ * higher, than the first." There is no last tag to check in single-tag mode —
+ * the warning was reading an empty `rangeEnd` as a mismatch.
+ *
+ * Two contradictory statements on one screen is worse than no warning, because
+ * a farmer cannot act on it. It only teaches them that the app contradicts
+ * itself, at the exact moment they are trying to prove their herd is tagged.
+ */
+describe("shouldWarnRange", () => {
+  const VALID = "141001410000225";
+
+  it("never warns for a valid single tag", () => {
+    expect(shouldWarnRange({ tagNumber: VALID, mode: "exact", rangeEnd: "" })).toBe(false);
+  });
+
+  it("never warns for a single tag even if a stale rangeEnd is present", () => {
+    // Defensive: a draft carried over from range mode must not leak a warning
+    // into exact mode just because the old end value is still sitting there.
+    expect(shouldWarnRange({ tagNumber: VALID, mode: "exact", rangeEnd: "141001410000999" })).toBe(false);
+  });
+
+  it("never warns on an empty or partial tag", () => {
+    expect(shouldWarnRange({ tagNumber: "", mode: "exact" })).toBe(false);
+    expect(shouldWarnRange({ tagNumber: "141", mode: "exact" })).toBe(false);
+  });
+
+  it("does warn in range mode when the end is lower than the start", () => {
+    expect(shouldWarnRange({ tagNumber: "1410010", mode: "range", rangeEnd: "1410001" })).toBe(true);
+  });
+
+  it("does not warn in range mode when the two ends match", () => {
+    expect(shouldWarnRange({ tagNumber: VALID, mode: "range", rangeEnd: VALID })).toBe(false);
+  });
+
+  it("does not warn in range mode before the farmer has typed an end", () => {
+    // Half-typed is not a mistake; warning on it would fire on every keystroke.
+    expect(shouldWarnRange({ tagNumber: VALID, mode: "range", rangeEnd: "" })).toBe(false);
   });
 });

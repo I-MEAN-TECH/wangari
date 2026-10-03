@@ -12,6 +12,7 @@ import api from "@/lib/api-client";
 
 import { useAuth } from "@/hooks/useAuth";
 import { ShieldAlert } from "lucide-react";
+import { ActivationFunnelCard } from "@/components/admin/ActivationFunnelCard";
 
 const fadeUp = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
 
@@ -92,6 +93,13 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         ))}
+      </motion.div>
+
+      {/* Activation funnel — the measurement the next build decisions rest on.
+          Sits above the user table deliberately: users and revenue tell us what
+          already happened, this tells us why the next one will or won't. */}
+      <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+        <ActivationFunnelCard />
       </motion.div>
 
       {/* Users table */}

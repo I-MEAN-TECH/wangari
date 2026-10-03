@@ -68,3 +68,58 @@ export function showKpiGrid(s: FirstRunState): boolean {
 export function openDeliveryFormByDefault(deliveryCount: number): boolean {
   return deliveryCount === 0;
 }
+
+/**
+ * Show the "you are owed" statement ON THE DASHBOARD, not one tap away?
+ *
+ * This is gap-analysis row 12's remaining half. The capability shipped long ago
+ * — gross, deductions, net, paid, outstanding, per-buyer and printable — but the
+ * diagnosis was that it lived in a tab a farmer has to go and find, so the one
+ * screen that could settle a dispute with a co-op clerk was a screen they had to
+ * know to visit.
+ *
+ * So the rule is narrow on purpose. The statement appears on the dashboard ONLY
+ * when the farmer is owed real money. It is the single most valuable thing Wangari
+ * can put in front of a dairy farmer, and it only means anything once there is
+ * something behind it: a farmer with nothing logged has nothing owed, and showing
+ * them "you are owed KES 0" on their first day is how you teach someone that the
+ * app is empty.
+ *
+ * This is the OPPOSITE of the delivery-form rule above, and deliberately so:
+ * the form should offer itself when there is nothing, the statement should only
+ * speak when there is something.
+ */
+export function showStatementOnDashboard(state: {
+  outstanding: number | null | undefined;
+  loading?: boolean;
+}): boolean {
+  // While loading we know nothing, so we show nothing. Flashing "KES 0 owed"
+  // at a working dairy farmer on every dashboard load would be worse than the
+  // tab this is meant to replace.
+  if (state.loading || state.outstanding === null || state.outstanding === undefined) return false;
+  return Number(state.outstanding) > 0;
+}
+
+/**
+ * What to put on that card when it is NOT shown.
+ *
+ * Returning a reason rather than a boolean lets the dashboard offer the next
+ * useful thing instead of a blank gap — a farmer with no deliveries owed gets
+ * pointed at logging one.
+ */
+export type StatementPrompt =
+  | { kind: "show"; outstanding: number }
+  | { kind: "empty" }
+  | { kind: "loading" };
+
+export function statementPrompt(state: {
+  outstanding: number | null | undefined;
+  loading?: boolean;
+}): StatementPrompt {
+  if (state.loading || state.outstanding === null || state.outstanding === undefined) {
+    return { kind: "loading" };
+  }
+  return Number(state.outstanding) > 0
+    ? { kind: "show", outstanding: Number(state.outstanding) }
+    : { kind: "empty" };
+}

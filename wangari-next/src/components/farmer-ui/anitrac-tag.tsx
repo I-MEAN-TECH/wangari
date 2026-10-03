@@ -37,6 +37,30 @@ export interface AnitracTagValue {
   rangeEnd?: string;
 }
 
+/**
+ * Should the "check the numbers" warning be shown?
+ *
+ * ONLY in range mode. Found by driving the real create-flock modal: the warning
+ * was gated on `tagNumber && tagNumber !== rangeEnd`, and in the default
+ * single-tag mode `rangeEnd` is empty — so the condition was true for every
+ * valid single tag. A farmer entering one correct 15-digit tag was shown, at
+ * the same time, "The ANITRAC number is correct" AND "Check the numbers. The
+ * last tag should be the same as, or higher, than the first."
+ *
+ * There is no last tag to check. Two contradictory statements on one screen is
+ * worse than no warning: a farmer cannot act on it, so all it teaches them is
+ * that the app contradicts itself, right at the moment they are trying to prove
+ * to a county officer that their herd is tagged.
+ *
+ * Exported and pure so the rule is pinned by a test rather than by a
+ * screenshot someone remembers to look at.
+ */
+export function shouldWarnRange(v: Pick<AnitracTagValue, "tagNumber" | "mode" | "rangeEnd">): boolean {
+  if (v.mode !== "range") return false;
+  if (!v.tagNumber || !v.rangeEnd) return false;
+  return v.tagNumber !== v.rangeEnd;
+}
+
 /** Live validation. Never blocks saving for a "soft" problem — only for empty. */
 export function validateTag(raw: string): {
   ok: boolean;

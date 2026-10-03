@@ -1,5 +1,6 @@
 import { TRIAL_DAYS, trialEndDate } from "../lib/config.js";
 import { Router, Request, Response } from "express";
+import { recordStage } from "./activation.js";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 import bcrypt from "bcryptjs";
@@ -113,6 +114,11 @@ router.post("/register", async (req: Request, res: Response) => {
         role: "farm_owner",
       },
     });
+
+    // Funnel step 1. Emitted HERE and only here — the client is not allowed to
+    // claim this stage, or the funnel would measure our own optimism instead of
+    // farmer behaviour.
+    await recordStage(user.id, "signup");
 
     // No session token yet — the farmer must verify their email first.
     // The account + farm exist, so verifying (or logging in later) resumes here.
@@ -586,6 +592,10 @@ router.post("/onboarding", authMiddleware, async (req: Request, res: Response) =
       where: { id: farmId },
       select: { id: true, name: true, location: true, county: true, farmType: true, code: true, claimedAt: true },
     });
+
+    // Funnel step 2, emitted only after the farm update actually succeeded —
+    // otherwise a failed claim would count as a farmer who got onboarded.
+    await recordStage(userId, "onboarding_completed");
 
     res.json({ ok: true, farm });
   } catch (error) {

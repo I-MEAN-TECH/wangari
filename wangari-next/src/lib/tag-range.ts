@@ -31,8 +31,14 @@ export const ANITRAC_MAX_DIGITS = 15;
 export const MAX_TAG_RANGE = 2000;
 
 export interface TagRangeInput {
-  tagFrom: string | null | undefined;
-  tagTo: string | null | undefined;
+  /**
+   * Optional rather than merely nullable: a single tagged animal legitimately
+   * has NO tagTo, and forcing callers to write `tagTo: null` to express that
+   * invites exactly the confusion this file had already been bitten by. An
+   * absent key and an explicit null mean the same thing here.
+   */
+  tagFrom?: string | null;
+  tagTo?: string | null;
   /** How many animals are actually in the flock. */
   count?: number | null;
 }
@@ -75,7 +81,7 @@ export function resolveTagRange(input: TagRangeInput): ResolvedTagRange {
     };
   }
 
-  if (!from || !to) {
+  if (!from) {
     return {
       span: 0,
       expected,
@@ -83,6 +89,36 @@ export function resolveTagRange(input: TagRangeInput): ResolvedTagRange {
       note: "Enter the first and last tag number.",
       tags: [],
     };
+  }
+
+  // A single tag with no range end is a perfectly valid record of ONE tagged
+  // animal — and it is the DEFAULT mode of the ANITRAC keypad, whose button
+  // reads "Save tag" (singular). Treating it as a broken range made the summary
+  // row report "Optional. Skip if your animals are not tagged" immediately
+  // after a farmer successfully saved one, so they would enter it again.
+  if (!to) {
+    if (from.length > ANITRAC_MAX_DIGITS) {
+      return {
+        span: 0,
+        expected,
+        consistent: false,
+        note: `Tag number must be ${ANITRAC_MAX_DIGITS} digits only.`,
+        tags: [],
+      };
+    }
+    const single = BigInt(from);
+    // Still checked against the head count: 1 tag against 50 head is a real
+    // mismatch worth saying out loud, and one tag is not exempt from it.
+    if (expected != null && expected > 0 && expected !== 1) {
+      return {
+        span: 1,
+        expected,
+        consistent: false,
+        note: `Animals are ${expected}, tags cover 1.`,
+        tags: [single.toString()],
+      };
+    }
+    return { span: 1, expected, consistent: true, note: null, tags: [single.toString()] };
   }
 
   if (from.length > ANITRAC_MAX_DIGITS || to.length > ANITRAC_MAX_DIGITS) {
@@ -149,5 +185,8 @@ export function describeTagRange(
   if (r.span === 0) return "No tags yet";
   const a = digits(from);
   const b = digits(to);
+  // A single tag has no "to" — printing "141… to " with nothing after it reads
+  // as a broken record on a traceability list a county officer may hold.
+  if (!b) return r.span === 1 ? `Tag ${a}` : `Tags ${r.span}: ${a}`;
   return `Tags ${r.span}: ${a} to ${b}`;
 }

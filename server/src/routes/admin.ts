@@ -5,6 +5,7 @@ import { prisma } from "../db.js";
 import { adminLogin, requireAdmin, auditAdminAction, AdminRole, signAdminToken } from "../lib/admin-auth.js";
 import { generateSecret, otpauthUri, verifyTotp, generateRecoveryCodes, hashCode } from "../lib/totp.js";
 import { requireActivePlan, findPlan, type PlanInfo } from "../lib/plan-tier.js";
+import { computeFunnel } from "../lib/activation-funnel.js";
 
 /**
  * Super-admin API (Phase 1 of docs/ADMIN-BLUEPRINT.md).
@@ -770,6 +771,41 @@ router.get("/system", requireAdmin(["billing", "support", "support_read"]), asyn
   } catch (error) {
     console.error("Admin system error:", error);
     res.status(500).json({ error: "Health check failed" });
+  }
+});
+
+// GET /api/admin/activation — the funnel that decides whether we are solving
+// the right problem. Read-only, so any staff role with dashboard access.
+//
+// Why this lives in the admin router and not beside the farmer's own endpoints:
+// admins here are a separate identity system, and this is business measurement,
+// not a farm feature. The `untrackedUsers` figure in particular is a statement
+// about our own instrumentation and has no business being visible farm-side.
+//
+// ?days=N (default 30) so this month can be compared against last month. A
+// cumulative-only total can only ever rise, which is exactly how a real
+// improvement in the first-run flow stays invisible for a year.
+router.get("/activation", requireAdmin(["billing", "support", "support_read"]), async (req: Request, res: Response) => {
+  try {
+    const days = Math.min(365, Math.max(1, Number(req.query.days) || 30));
+    const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+
+    // Windowed on `day`, not `createdAt`, so it lines up with the UTC days the
+    // funnel is actually counted in.
+    const events = await prisma.activationEvent.findMany({
+      where: { day: { gte: since } },
+      select: { userId: true, stage: true, day: true },
+    });
+    const totalUsers = await prisma.user.count({ where: { role: "farm_owner" } });
+
+    res.json({
+      windowDays: days,
+      since,
+      ...computeFunnel(events as never, { totalUsers }),
+    });
+  } catch (error) {
+    console.error("Admin activation funnel error:", error);
+    res.status(500).json({ error: "Could not build the funnel" });
   }
 });
 

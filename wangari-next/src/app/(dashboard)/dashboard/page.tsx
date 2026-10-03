@@ -25,7 +25,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { FirstRunCard } from "@/components/dashboard/FirstRunCard";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { showKpiGrid } from "@/lib/first-run";
+import { showKpiGrid, statementPrompt } from "@/lib/first-run";
+import { StatementCard } from "@/components/deliveries/StatementCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import api from "@/lib/api-client";
@@ -88,6 +89,11 @@ function DashboardContent() {
   const { user } = useAuth();
   const router = useRouter();
   const [data, setData] = React.useState<any>(null);
+  // Row 12: the delivery statement, fetched here so the money a farmer is owed
+  // appears on the screen they land on. Null until loaded — statementPrompt
+  // treats unknown as "say nothing", so a slow or failing request cannot flash
+  // "KES 0 owed" at a working dairy farmer.
+  const [statement, setStatement] = React.useState<any>(null);
   const [weather, setWeather] = React.useState<any>(DEFAULT_WEATHER);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -153,10 +159,15 @@ function DashboardContent() {
         } catch {}
       }
 
-      const [dashboardData, weatherData, trialResult] = await Promise.allSettled([
+      const [dashboardData, weatherData, trialResult, statementResult] = await Promise.allSettled([
         api.get("/api/dashboard"),
         api.get(weatherUrl),
         api.get("/api/trial/status"),
+        // Row 12: the statement belongs on the day-one screen, so the dashboard
+        // fetches it rather than making the farmer navigate to it. allSettled
+        // because a farm with no deliveries yet gets an error or an empty
+        // result, and neither should break the dashboard.
+        api.get("/api/deliveries/statement"),
       ]);
       // Fresh signup with no farm yet: the API answers 403 + needsFarm.
       if (dashboardData.status === "rejected" && (dashboardData.reason as any)?.needsFarm) {
@@ -165,6 +176,9 @@ function DashboardContent() {
         return;
       }
       if (dashboardData.status === "fulfilled") setData(dashboardData.value);
+      if (statementResult.status === "fulfilled" && statementResult.value) {
+        setStatement(statementResult.value);
+      }
       if (weatherData.status === "fulfilled" && weatherData.value && !weatherData.value.noData) {
         setWeather(weatherData.value);
       }
@@ -430,6 +444,30 @@ function DashboardContent() {
         firstRecordAt={loading ? undefined : data?.firstRecordAt ?? null}
         locked={fullyLocked}
       />
+
+      {/* ═══════════════════════════════════════════════════════════════
+          THE STATEMENT — promoted from a tab to the day-one screen
+          (gap-analysis row 12).
+
+          The capability shipped long ago (gross, deductions, net, paid,
+          outstanding, per-buyer, printable). What was missing was that it
+          lived somewhere a farmer had to go and find, when it is the one
+          document that settles a dispute with a co-op clerk.
+
+          Shown ONLY when real money is owed. Gated by statementPrompt, which
+          is the exact inverse of the first-run rules above: the form offers
+          itself when there is nothing, the statement speaks only when there
+          is something.
+          ═══════════════════════════════════════════════════════════════ */}
+      {statementPrompt({
+        outstanding: loading ? null : statement?.outstanding ?? null,
+        loading,
+      }).kind === "show" && statement && (
+        <StatementCard
+          statement={statement}
+          monthLabel={new Date().toLocaleDateString("en-KE", { month: "long", year: "numeric" })}
+        />
+      )}
 
 {/* ═══════════════════════════════════════════════════════
           SECTION 1: Primary Key Indicators (Core Highlights)

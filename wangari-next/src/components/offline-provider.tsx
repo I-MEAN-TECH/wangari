@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { WifiOff, CloudUpload, Loader2 } from "lucide-react";
+import { WifiOff, CloudUpload, Loader2, History } from "lucide-react";
 import { queueSize, flushQueue, oldestQueuedMinutes } from "@/lib/offline-queue";
 import { API_BASE } from "@/lib/api-client";
 import { getToken } from "@/lib/auth-client";
@@ -15,6 +15,8 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
   const [pending, setPending] = React.useState(0);
   const [syncing, setSyncing] = React.useState(false);
   const [justSynced, setJustSynced] = React.useState<string | null>(null);
+  // What we are currently showing instead of live numbers, e.g. "2 hrs ago".
+  const [showingCached, setShowingCached] = React.useState<{ label: string; age: string } | null>(null);
 
   const refreshCount = React.useCallback(() => setPending(queueSize()), []);
 
@@ -69,6 +71,15 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("wangari:write_queued", refreshCount);
     window.addEventListener("wangari:queue_changed", refreshCount as EventListener);
 
+    // When a screen falls back to cached numbers, say so. A farmer who sees
+    // figures with no indication they are hours old will act on them — and the
+    // one thing a record book must never do is let yesterday look like today.
+    const onCached = (e: Event) => {
+      const d = (e as CustomEvent).detail;
+      if (d?.label) setShowingCached({ label: d.label, age: d.age });
+    };
+    window.addEventListener("wangari:showing_cached", onCached);
+
     // Also try a flush on load (records queued while the tab was closed).
     sync();
 
@@ -77,6 +88,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("online", goOnline);
       window.removeEventListener("wangari:write_queued", refreshCount);
       window.removeEventListener("wangari:queue_changed", refreshCount as EventListener);
+      window.removeEventListener("wangari:showing_cached", onCached);
     };
   }, [sync, refreshCount]);
 
@@ -101,6 +113,25 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-x-0 top-0 z-[100] flex items-center justify-center gap-2 bg-wangari-green-600 py-1.5 text-xs font-semibold text-white shadow-md">
           <CloudUpload className="h-3.5 w-3.5" />
           {justSynced}
+        </div>
+      )}
+      {/* Cached numbers, not live ones. Tone escalates with the age: an hour
+          old is a small caveat, a week old is a different warning entirely. */}
+      {showingCached && (
+        <div
+          className={`fixed inset-x-0 bottom-0 z-[100] flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold shadow-md ${
+            showingCached.age === "abandoned"
+              ? "bg-tone-bad-text text-white"
+              : showingCached.age === "stale"
+                ? "bg-tone-warn-text text-white"
+                : "bg-wangari-ink text-wangari-cream"
+          }`}
+        >
+          <History className="h-3.5 w-3.5 shrink-0" />
+          <span className="text-center">
+            No connection — showing your numbers as of {showingCached.label}. They are saved on
+            this device and will update.
+          </span>
         </div>
       )}
     </>

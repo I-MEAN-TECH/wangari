@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { AnitracTagInput, type AnitracTagValue } from "@/components/farmer-ui/anitrac-tag";
+import { AnitracTagInput, shouldWarnRange, type AnitracTagValue } from "@/components/farmer-ui/anitrac-tag";
 
 /**
  * AnitracRangeCard — record the tags for a WHOLE herd with three numbers.
@@ -112,13 +112,18 @@ export function AnitracRangeCard({
             ANITRAC tags
             {hasTags ? (
               <span className="ml-2 font-mono text-xs tabular-nums text-tone-good-text">
-                {range.span} tags
+                {range.span === 1 ? "1 tag" : `${range.span} tags`}
               </span>
             ) : null}
           </span>
           <span className="block text-xs text-wangari-muted">
             {hasTags
-              ? `${value.tagFrom} to ${value.tagTo}`
+              ? // A single tag has no "to" — "141… to " with nothing after it
+                // reads as a half-entered record, which is exactly the doubt
+                // this row is supposed to remove.
+                value.tagTo
+                ? `${value.tagFrom} to ${value.tagTo}`
+                : `Tag ${value.tagFrom}`
               : "Optional. Skip if your animals are not tagged."}
           </span>
         </span>
@@ -132,7 +137,9 @@ export function AnitracRangeCard({
             <DialogDescription>
               Enter the first and last tag number. Every tag between them belongs
               to this group
-              {headCount ? ` (${headCount} animals)` : ""}
+              {/* "1 animals" is the kind of thing a farmer notices and stops
+                  trusting. Spelling it right costs nothing. */}
+              {headCount ? ` (${headCount} animal${headCount === 1 ? "" : "s"})` : ""}
               .
             </DialogDescription>
           </DialogHeader>
@@ -145,7 +152,7 @@ export function AnitracRangeCard({
             className="min-h-0 flex-1 overflow-y-auto pr-1"
           />
 
-          {draft.tagNumber && draft.tagNumber !== draft.rangeEnd ? (
+          {shouldWarnRange(draft) ? (
             <p className="flex items-start gap-2 rounded-lg border border-tone-warn-border bg-tone-warn-bg px-3 py-2 text-xs text-tone-warn-text">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
               <span>

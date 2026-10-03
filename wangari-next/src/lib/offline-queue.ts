@@ -10,7 +10,43 @@
  * honours it — replaying a queued write twice never creates two records.
  */
 
-const QUEUE_KEY = "wangari_offline_queue_v1";
+const QUEUE_PREFIX = "wangari_offline_queue_v1";
+
+/**
+ * The queue is namespaced PER USER.
+ *
+ * A queued write is replayed with whoever's token is current at flush time, so a
+ * single shared queue means farmer A's unsent delivery lands in farmer B's farm
+ * the moment B signs in on the same phone. Shared handsets are a documented
+ * reality in this market (ICTworks lists them among the reasons farmers abandon
+ * agri-apps), so this is the normal case, not an edge case.
+ *
+ * It also stops the reverse: B cannot flush or see A's pending records.
+ */
+function queueKey(): string {
+  if (typeof window === "undefined") return QUEUE_PREFIX;
+  try {
+    const uid = window.localStorage.getItem("wangari_user_id");
+    return `${QUEUE_PREFIX}:${uid || "anon"}`;
+  } catch {
+    return QUEUE_PREFIX;
+  }
+}
+
+/** Drop every user's queued writes. Called on sign-out — see read-cache.cacheClear. */
+export function queueClearAll(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const doomed: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(QUEUE_PREFIX)) doomed.push(k);
+    }
+    for (const k of doomed) localStorage.removeItem(k);
+  } catch {
+    /* best-effort */
+  }
+}
 
 export interface QueuedWrite {
   id: string; // unique clientId sent to the backend for idempotency
@@ -24,14 +60,14 @@ export interface QueuedWrite {
 function readQueue(): QueuedWrite[] {
   if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]") as QueuedWrite[];
+    return JSON.parse(localStorage.getItem(queueKey()) || "[]") as QueuedWrite[];
   } catch {
     return [];
   }
 }
 
 function writeQueue(queue: QueuedWrite[]) {
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  localStorage.setItem(queueKey(), JSON.stringify(queue));
   window.dispatchEvent(new CustomEvent("wangari:queue_changed", { detail: queue.length }));
 }
 

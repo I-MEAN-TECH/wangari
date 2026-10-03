@@ -7,6 +7,7 @@ import {
   WINDOW_DAYS,
   CONSISTENCY_TARGET,
 } from "../lib/record-grade.js";
+import { weatherActions, type ForecastDay } from "../lib/weather-rules.js";
 
 /**
  * Action Engine — turns the farm's own data into a prioritized list of
@@ -355,6 +356,55 @@ router.get("/actions", async (req: Request, res: Response) => {
         detail: staleTasks.slice(0, 2).map((t: any) => `"${t.title}"${t.worker ? ` (${t.worker.name})` : ""}`).join(", ") + (staleTasks.length > 2 ? ` +${staleTasks.length - 2} more` : ""),
         href: "/worker",
         cta: "Review tasks",
+      });
+    }
+
+    // ─── 10. Weather → action rules (gap-analysis row 4) ────────────────────
+    // Wangari has always fetched a 7-day forecast and displayed it as icons. An
+    // icon is not a decision. These rules turn the same forecast into something
+    // to DO, reusing the WeatherCache the daily cron already writes, so this
+    // costs no extra API call and no new farmer data entry.
+    //
+    // Skipped when there is no cached forecast: better a silent rule than a rule
+    // that fires on empty data and tells a farmer to act on nothing.
+    const cachedForecast = await prisma.weatherCache.findFirst({
+      where: { farmId },
+      orderBy: { date: "desc" },
+      select: { forecastJson: true, date: true },
+    });
+
+    let forecast: ForecastDay[] | null = null;
+    if (cachedForecast?.forecastJson) {
+      const raw = cachedForecast.forecastJson;
+      const daily =
+        raw && typeof raw === "object" && "daily" in raw
+          ? (raw as any).daily
+          : Array.isArray(raw)
+            ? (raw as any[])
+            : null;
+      if (Array.isArray(daily)) {
+        forecast = daily
+          .map((d: any) => ({
+            date: String(d?.date ?? d?.time ?? ""),
+            tempMax: Number(d?.temperature_2m_max ?? d?.tempMax),
+            tempMin: Number(d?.temperature_2m_min ?? d?.tempMin),
+            rain: Number(d?.precipitation_sum ?? d?.rain ?? 0),
+          }))
+          .filter((d) => d.date && Number.isFinite(d.tempMax) && Number.isFinite(d.rain));
+      }
+    }
+
+    for (const w of weatherActions(forecast, today)) {
+      actions.push({
+        id: w.id,
+        priority: w.priority,
+        // CloudSun is deliberately generic: the rule text already says what to
+        // do, and the icon only has to say "this is about weather".
+        icon: "CloudSun",
+        title: w.title,
+        detail: w.detail,
+        href: w.href,
+        cta: w.cta,
       });
     }
 

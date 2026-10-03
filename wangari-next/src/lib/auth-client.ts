@@ -3,8 +3,14 @@
  * Stores the token in localStorage and provides helpers for login/register/logout.
  */
 
+import { cacheClear } from "./read-cache";
+import { queueClearAll } from "./offline-queue";
+
 const TOKEN_KEY = "wangari_token";
 const USER_KEY = "wangari_user";
+/** Namespace for the offline read cache. Shared handsets are the norm here, so
+ *  cached numbers MUST be tied to whoever is currently signed in. */
+const USER_ID_KEY = "wangari_user_id";
 
 // ─── Analytics (PostHog) ──────────────────────────────────
 // Dynamic import keeps this dependency-free at module scope; trackEvent is a
@@ -48,6 +54,12 @@ export function setToken(token: string): void {
 export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  // Drop the offline read cache AND the pending-write queue on sign-out. Leaving
+  // the queue behind is worse than leaking screen contents: a queued delivery
+  // replays under the NEXT person's token and lands in the wrong farm.
+  cacheClear();
+  queueClearAll();
+  localStorage.removeItem(USER_ID_KEY);
 }
 
 // ─── User Management ──────────────────────────────────────
@@ -65,6 +77,7 @@ export function getUser(): AuthUser | null {
 
 export function setUser(user: AuthUser): void {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+  if (user.id != null) localStorage.setItem(USER_ID_KEY, String(user.id));
 }
 
 export function isLoggedIn(): boolean {

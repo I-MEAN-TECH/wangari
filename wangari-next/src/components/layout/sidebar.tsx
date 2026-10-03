@@ -23,6 +23,10 @@ import {
   ChevronDown,
   LogOut,
   Syringe,
+  Stethoscope,
+  Thermometer,
+  Scale,
+  ShieldCheck,
   Calculator,
   CloudSun,
   Leaf,
@@ -78,8 +82,15 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "My Animals", href: "/flocks", icon: <PawPrint className="h-5 w-5" /> },
       { label: "My Crops", href: "/crops", icon: <Leaf className="h-5 w-5" /> },
+      // Cold chain readings (row 15) sit beside Crops because a batch is
+      // created there.
+      { label: "Cold Chain", href: "/cold-chain", icon: <Thermometer className="h-5 w-5" /> },
       { label: "Daily Output", href: "/production", icon: <ClipboardList className="h-5 w-5" /> },
       { label: "Health & Vaccines", href: "/vaccinations", icon: <Syringe className="h-5 w-5" /> },
+      // Per-animal health log (gap-analysis row 5). Separate from Vaccines
+      // because they answer different questions: WHEN is the next jab due vs
+      // WHAT HAPPENED to this animal.
+      { label: "Animal Health", href: "/health", icon: <Stethoscope className="h-5 w-5" /> },
     ],
   },
   {
@@ -88,6 +99,11 @@ const navGroups: NavGroup[] = [
       { label: "Documents", href: "/documents", icon: <Search className="h-5 w-5" /> },
       { label: "Quotes", href: "/quotes", icon: <FileText className="h-5 w-5" /> },
       { label: "Deliveries", href: "/deliveries", icon: <Truck className="h-5 w-5" /> },
+      // Market price benchmark (row 14) and cold chain readings (row 15).
+      // Prices sits next to Deliveries because that is where a farmer types the
+      // price a buyer offered — the checker has to be one tap from that form.
+      { label: "Market Prices", href: "/market-prices", icon: <Scale className="h-5 w-5" /> },
+      { label: "Insurance", href: "/insurance", icon: <ShieldCheck className="h-5 w-5" /> },
       { label: "Income & Expenses", href: "/finances", icon: <DollarSign className="h-5 w-5" /> },
       { label: "Sales", href: "/sales", icon: <ShoppingCart className="h-5 w-5" /> },
       { label: "Store / Inventory", href: "/inventory", icon: <Package className="h-5 w-5" /> },
@@ -101,6 +117,8 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Feed Helper", href: "/feed-calculator", icon: <Calculator className="h-5 w-5" /> },
       { label: "Season Planner", href: "/planner", icon: <CalendarRange className="h-5 w-5" /> },
+      // Co-op / group mode (rows 11 + 17).
+      { label: "My Group", href: "/coop", icon: <Users className="h-5 w-5" /> },
       { label: "My Farm Record", href: "/farm-record", icon: <FileText className="h-5 w-5" /> },
       { label: "Profitability", href: "/profitability", icon: <Trophy className="h-5 w-5" /> },
       { label: "Weather", href: "/weather", icon: <CloudSun className="h-5 w-5" /> },

@@ -37,7 +37,7 @@ export function resolveTagRange(
   if (!from && !to)
     return { span: 0, expected, consistent: true, note: null, tags: [] };
 
-  if (!from || !to)
+  if (!from)
     return {
       span: 0,
       expected,
@@ -45,6 +45,37 @@ export function resolveTagRange(
       note: "Enter the first and last tag number.",
       tags: [],
     };
+
+  // A single tag with no range end is a valid record of ONE tagged animal, and
+  // it is the DEFAULT mode of the ANITRAC keypad (whose button reads "Save
+  // tag", singular). The old rule returned span 0 here, which made this export
+  // list zero tags for a flock that genuinely had one — telling a county
+  // officer an untagged herd is tagged. Wrong in the untagged direction is
+  // worse than merely missing.
+  //
+  // A head-count mismatch is REPORTED, never used to suppress the tag.
+  if (!to) {
+    if (from.length > ANITRAC_MAX_DIGITS)
+      return {
+        span: 0,
+        expected,
+        consistent: false,
+        note: `Tag number must be ${ANITRAC_MAX_DIGITS} digits only.`,
+        tags: [],
+      };
+    const single = BigInt(from);
+    const tags = [single.toString()];
+    if (expected != null && expected > 0 && expected !== 1) {
+      return {
+        span: 1,
+        expected,
+        consistent: false,
+        note: `Animals are ${expected}, tags cover 1.`,
+        tags,
+      };
+    }
+    return { span: 1, expected, consistent: true, note: null, tags };
+  }
 
   if (from.length > ANITRAC_MAX_DIGITS || to.length > ANITRAC_MAX_DIGITS)
     return {

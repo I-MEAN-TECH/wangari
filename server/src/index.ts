@@ -7,6 +7,7 @@ import { initSentry, flushTelemetry, captureError } from "./lib/sentry.js";
 
 // Routes
 import authRoutes from "./routes/auth.js";
+import authPhoneRoutes from "./routes/auth-phone.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import actionEngineRoutes from "./routes/action-engine.js";
 import cronWeeklyRoutes from "./routes/cron-weekly.js";
@@ -20,6 +21,11 @@ import workersRoutes from "./routes/workers.js";
 import inventoryRoutes from "./routes/inventory.js";
 import productionRoutes from "./routes/production.js";
 import vaccinationsRoutes from "./routes/vaccinations.js";
+import healthRoutes from "./routes/health.js";
+import insuranceRoutes from "./routes/insurance.js";
+import marketPriceRoutes from "./routes/market-price.js";
+import coldChainRoutes from "./routes/cold-chain.js";
+import coopRoutes from "./routes/coop.js";
 import attendanceRoutes from "./routes/attendance.js";
 import weatherRoutes from "./routes/weather.js";
 import aiRoutes from "./routes/ai.js";
@@ -57,6 +63,7 @@ import { planGate } from "./middleware/plan-gate.js";
 import adminCrmRoutes from "./routes/admin-crm.js";
 import contactRoutes from "./routes/contact.js";
 import siteContentRoutes from "./routes/site-content.js";
+import activationRoutes from "./routes/activation.js";
 import { seedPlans } from "./lib/seed-plans.js";
 
 // ─── Process-Level Crash Safety ────────────────────────────
@@ -139,6 +146,18 @@ const otpLimiter = rateLimit({
   message: { error: "Too many attempts. Please wait a few minutes and try again." },
 });
 app.use("/api/auth/verify-email", otpLimiter);
+// Phone + PIN (gap-analysis row 0). Mounted HERE rather than beside the other
+// auth limiters because otpLimiter is a const declared above this line: an
+// earlier version referenced it 10 lines earlier and the process died on boot
+// with a temporal-dead-zone ReferenceError.
+//
+// The tighter otpLimiter is deliberate. A 4-digit PIN has 10,000 combinations,
+// so IP-level throttling alone is not enough — it would lock out a whole
+// village behind one NAT address while doing nothing about a targeted sweep at
+// one account. The per-phone counter in auth-phone.ts does the real work.
+app.use("/api/auth/login-phone", otpLimiter);
+app.use("/api/auth/register-phone", authLimiter);
+app.use("/api/auth/pin", otpLimiter);
 // Promo redemption: prevent code-guessing/enumeration via rapid attempts.
 app.use("/api/promos", otpLimiter);
 
@@ -159,6 +178,10 @@ app.get("/health", (_req, res) => {
 // before every module router; skips routes it doesn't gate.
 app.use("/api", planGate);
 app.use("/api/auth", authRoutes);
+// Phone + PIN, on its own mount BEFORE /api/auth so its /register-phone,
+// /login-phone and /pin/change paths win over anything in authRoutes that
+// might otherwise swallow them.
+app.use("/api/auth", authPhoneRoutes);
 app.use("/api/dashboard", actionEngineRoutes); // /actions first, then falls through to the main dashboard router
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/flocks", flocksRoutes);
@@ -179,6 +202,21 @@ app.use("/api/workers", workersRoutes);
 app.use("/api/inventory", idempotencyGuard, inventoryRoutes);
 app.use("/api/production", idempotencyGuard, productionRoutes);
 app.use("/api/vaccinations", idempotencyGuard, vaccinationsRoutes);
+// ─── Gap closures, October 2026 ──────────────────────────────────────────
+// Per-animal health and disease log (row 5). Own path for the same reason
+// /api/animals has its own: vaccinationsRoutes has no GET /:id, but keeping
+// health beside vaccinations in one namespace invites a future collision.
+app.use("/api/health-records", idempotencyGuard, healthRoutes);
+// Index-insurance policy register (row 13).
+app.use("/api/insurance", insuranceRoutes);
+// Market price benchmark (row 14).
+app.use("/api/market-prices", idempotencyGuard, marketPriceRoutes);
+// Cold chain readings (row 15).
+app.use("/api/cold-chain", idempotencyGuard, coldChainRoutes);
+// Co-op / group mode + bulk onboarding (rows 11, 17). Must be mounted BEFORE
+// any /api/:something that could parse "coop" as an id, and it defines
+// GET /invites/:code which must precede GET /:id.
+app.use("/api/coop", coopRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/weather", weatherRoutes);
 app.use("/api/ai", aiRoutes);
@@ -206,6 +244,12 @@ app.use("/api/paystack", paystackRoutes);
 app.use("/api/trial", trialRoutes);
 app.use("/api/plans", plansRoutes);
 app.use("/api/deliveries", deliveriesRoutes);
+// Activation heartbeat. planGate only gates the prefixes in its ROUTE_MODULE
+// map, and /api/activation is not one of them — so this keeps working for a
+// farmer whose trial has lapsed. That matters: silently dropping the return
+// signal for exactly the people who stopped paying is how a funnel starts
+// reporting an improvement that is really a measurement gap.
+app.use("/api/activation", activationRoutes);
 app.use("/api/documents", documentsRoutes);
 app.use("/api/cron", cronRoutes);
 app.use("/api/cron", cronAdvisoryRoutes);
