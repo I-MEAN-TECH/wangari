@@ -772,7 +772,13 @@ export default function FlocksPage() {
               <h3 className="text-xs font-bold uppercase text-gray-400 tracking-wider mb-4 flex items-center gap-1.5">
                 <Bell className="h-3.5 w-3.5" /> Upcoming Vaccinations
               </h3>
-              <VaccinationReminders onSelectFlock={(id) => { const f = flocks.find((fl: any) => fl.id === id); if (f) setSelectedFlock(f); }} />
+              {/* Scoped to THIS flock. Without flockId the panel listed every
+                  flock's pending vaccines on this herd's page, so it told a
+                  farmer their cattle were due FMD that belonged to their poultry. */}
+              <VaccinationReminders
+                flockId={flock.id}
+                onSelectFlock={(id) => { const f = flocks.find((fl: any) => fl.id === id); if (f) setSelectedFlock(f); }}
+              />
             </CardContent>
           </Card>
         </motion.div>

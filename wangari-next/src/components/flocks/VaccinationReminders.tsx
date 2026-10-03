@@ -23,9 +23,13 @@ interface VaccinationReminder {
 
 interface VaccinationRemindersProps {
   onSelectFlock?: (flockId: number) => void;
+  /** Restrict to one flock. This panel is rendered INSIDE a single flock's
+   *  detail page, so listing every other flock's vaccines there made the page
+   *  claim this herd was due for vaccines that belonged to a different herd. */
+  flockId?: number;
 }
 
-export function VaccinationReminders({ onSelectFlock }: VaccinationRemindersProps) {
+export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemindersProps) {
   const [reminders, setReminders] = React.useState<VaccinationReminder[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [filter, setFilter] = React.useState<"all" | "overdue" | "today" | "week">("all");
@@ -46,6 +50,7 @@ export function VaccinationReminders({ onSelectFlock }: VaccinationRemindersProp
 
         const items: VaccinationReminder[] = (Array.isArray(vaxData) ? vaxData : [])
           .filter((v: any) => v.status === "pending")
+          .filter((v: any) => (flockId === undefined ? true : v.flockId === flockId))
           .map((v: any) => {
             const schedDate = new Date(v.scheduledDate);
             const schedDay = new Date(schedDate.getFullYear(), schedDate.getMonth(), schedDate.getDate());
@@ -74,7 +79,7 @@ export function VaccinationReminders({ onSelectFlock }: VaccinationRemindersProp
       }
     };
     load();
-  }, []);
+  }, [flockId]);
 
   const filtered = reminders.filter((r) => {
     if (filter === "overdue") return r.daysUntil < 0;
