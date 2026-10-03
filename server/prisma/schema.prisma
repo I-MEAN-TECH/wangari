@@ -90,6 +90,23 @@ model VerificationCode {
   @@map("verification_codes")
 }
 
+// Failed PIN attempts, keyed by phone number.
+//
+// This has to live in the database rather than a Map in the route module. The
+// API runs under `pm2` in cluster mode with two workers, so an in-process
+// counter is split across two disjoint maps: consecutive attempts on one account
+// land on different workers, neither ever reaches five, and the lockout that the
+// 4-digit PIN depends on silently never fires. A restart wipes it too. In the DB
+// it is one row every worker reads and writes.
+model PhonePinAttempt {
+  phone     String    @id
+  count     Int       @default(0)
+  lockedUntil DateTime? @map("locked_until")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("phone_pin_attempts")
+}
+
 // Pricing source of truth — seeded from code once, editable in DB afterwards.
 // amount is in Pesewas (Paystack minor unit) to avoid float money.
 model Plan {

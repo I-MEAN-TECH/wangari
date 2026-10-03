@@ -5,6 +5,14 @@ import { generateToken } from "../middleware/auth.js";
 import { createUniqueFarmCode } from "../lib/farm-code.js";
 import { normalisePhone, phoneErrorMessage, formatPhoneForDisplay } from "../lib/phone.js";
 import { hashPin, verifyPin } from "../lib/pin.js";
+import {
+  getLockout,
+  recordFailure,
+  clearFailures,
+  attemptsLeft,
+  wrongPinMessage,
+  LOCKOUT_MINUTES,
+} from "../lib/pin-attempts.js";
 import { recordStage } from "./activation.js";
 
 /**
@@ -44,41 +52,11 @@ import { recordStage } from "./activation.js";
  * 4. **Rate limiting is on the phone+PIN pair, not the IP.** A family in a
  *    village shares one NAT address, so IP limiting locks out a whole village
  *    while doing nothing against someone spraying 10,000 PINs at one account.
+ *    That counter lives in Postgres, not in this module — see lib/pin-attempts.ts
+ *    for why an in-process counter silently does nothing under pm2 cluster mode.
  */
 
 const router = Router();
-
-/** Failed PIN attempts before the phone is temporarily locked out. */
-const MAX_PIN_ATTEMPTS = 5;
-/** Lockout length. Long enough to make a 10,000-PIN sweep impractical. */
-const LOCKOUT_MINUTES = 15;
-
-/** Per-process attempt counter: phone -> { count, until }. */
-const pinAttempts = new Map<string, { count: number; until: number }>();
-
-function isLockedOut(phone: string, now = Date.now()): boolean {
-  const rec = pinAttempts.get(phone);
-  if (!rec) return false;
-  if (rec.until > now) return true;
-  // Expired — clear it so the counter restarts from zero.
-  if (rec.until !== 0) pinAttempts.delete(phone);
-  return false;
-}
-
-function recordFailure(phone: string): number {
-  const rec = pinAttempts.get(phone) ?? { count: 0, until: 0 };
-  rec.count += 1;
-  if (rec.count >= MAX_PIN_ATTEMPTS) {
-    rec.until = Date.now() + LOCKOUT_MINUTES * 60 * 1000;
-    rec.count = 0;
-  }
-  pinAttempts.set(phone, rec);
-  return rec.count;
-}
-
-function clearFailures(phone: string): void {
-  pinAttempts.delete(phone);
-}
 
 /**
  * POST /api/auth/register-phone
@@ -224,9 +202,9 @@ router.post("/login-phone", async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Enter your 4-digit PIN", field: "pin" });
   }
 
-  if (isLockedOut(phone)) {
-    const rec = pinAttempts.get(phone);
-    const mins = rec ? Math.ceil((rec!.until - Date.now()) / 60000) : LOCKOUT_MINUTES;
+  const lockout = await getLockout(phone);
+  if (lockout.locked) {
+    const mins = lockout.minutesLeft || LOCKOUT_MINUTES;
     return res.status(429).json({
       error: `Too many attempts. Try again in ${mins} minute${mins === 1 ? "" : "s"}.`,
       lockedOut: true,
@@ -244,17 +222,14 @@ router.post("/login-phone", async (req: Request, res: Response) => {
 
     const ok = await verifyPin(pin, user.phonePin);
     if (!ok) {
-      const attemptsLeft = MAX_PIN_ATTEMPTS - 1 - recordFailure(phone);
+      const failures = await recordFailure(phone);
       return res.status(401).json({
-        error:
-          attemptsLeft > 0
-            ? `That PIN is not right. ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} left.`
-            : "That PIN is not right.",
-        attemptsLeft: Math.max(0, attemptsLeft),
+        error: wrongPinMessage(failures),
+        attemptsLeft: attemptsLeft(failures),
       });
     }
 
-    clearFailures(phone);
+    await clearFailures(phone);
 
     const member = await prisma.farmMember.findFirst({ where: { userId: user.id } });
     const farmId = member?.farmId || null;

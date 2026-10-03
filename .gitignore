@@ -53,6 +53,12 @@ credentials.json
 # Raw demo video source (large, not for git)
 media-master/www-master.mp4
 
+# Agent scratch (screenshots, local databases) - never part of the app
+.freebuff/
+audit-shots/
+agent/
+*.png
+
 .env*
 .vercel
 tmp/

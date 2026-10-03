@@ -1,0 +1,24 @@
+# The Vercel project builds wangari-next/ only. Everything else in this repo is
+# either the backend, agent scratch, or local database copies, and uploading them
+# only slows the deploy (and once broke it: the .freebuff scratch DB alone is 95 MB).
+.freebuff/
+agent/
+audit-shots/
+skills/
+.agents/
+.claude/
+.kiro/
+.vercel-disabled/
+skills-lock.json
+server/
+media-master/
+*.png
+docs/*.png
+docs/*.html
+docs/*.json
+login-attempt.png
+waadmin-overview-desktop.png
+wangari-next/.vercel
+wangari-next/.env*
+wangari-next/next-env.d.ts
+wangari-next/public/demo.mp4
