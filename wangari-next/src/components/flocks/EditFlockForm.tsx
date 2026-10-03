@@ -18,6 +18,7 @@ import {
   Save,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/shared/toast";
 
 import { speciesFor } from "@/lib/species-resolve";
 
@@ -42,6 +43,7 @@ const sectionLabels: Record<FormSection, { label: string; icon: any }> = {
 };
 
 export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps) {
+  const { showToast, ToastComponent } = useToast();
   const [loading, setLoading] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState<Set<FormSection>>(
     new Set(["basic"])
@@ -117,12 +119,24 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
         expectedWeight: form.expectedWeight,
         notes: form.notes,
       });
+    } catch (err) {
+      // try/finally with no catch swallowed the failure: the promise rejected,
+      // the button reset, and the farmer saw nothing at all. Say what went
+      // wrong and stay on the form.
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Could not save your changes. Check your connection and try again.";
+      showToast(message, "error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
+    <>
+    {/* useToast returns the element as {ToastComponent}, not <ToastComponent />. */}
+    {ToastComponent}
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -337,5 +351,6 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
         </div>
       </motion.div>
     </motion.div>
+    </>
   );
 }

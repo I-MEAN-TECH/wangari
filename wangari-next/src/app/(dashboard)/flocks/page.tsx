@@ -275,6 +275,37 @@ export default function FlocksPage() {
     if (selectedFlock?.id === id) setSelectedFlock(null);
   };
 
+  // Modals reached from BOTH the list view and the detail view. These used to
+  // live at the bottom of the list-view return, which the detail view's early
+  // `return` never reaches — so from inside a flock, "Edit" and "Batch" set
+  // their state and rendered nothing. Rendered here, once, for both branches.
+  const sharedModals = (
+    <>
+      {showEditForm && editingFlock && (
+        <EditFlockForm
+          flock={editingFlock}
+          onSubmit={handleEdit}
+          onCancel={() => { setShowEditForm(false); setEditingFlock(null); }}
+        />
+      )}
+
+      {showBatchProduction && (
+        <BatchProduction
+          flocks={flocks}
+          onSubmit={handleBatchProduction}
+          onCancel={() => setShowBatchProduction(false)}
+        />
+      )}
+
+      {showComparison && (
+        <FlockComparison
+          flockIds={Array.from(selectedForCompare)}
+          onClose={() => setShowComparison(false)}
+        />
+      )}
+    </>
+  );
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-4">
@@ -765,6 +796,8 @@ export default function FlocksPage() {
         {showExport && (
           <ExportReport flock={flock} onClose={() => setShowExport(false)} />
         )}
+
+        {sharedModals}
       </div>
     );
   }
@@ -858,7 +891,21 @@ export default function FlocksPage() {
       </motion.div>
 
       {filtered.length === 0 ? (
-        <EmptyState title="No livestock yet" description="Add your first group to start tracking." />
+        /* Distinguish "you have nothing" from "your filter/search matched
+           nothing" — telling a farmer with a full herd that they have "No
+           livestock yet" is alarming and wrong. */
+        flocks.length === 0 ? (
+          <EmptyState title="No livestock yet" description="Add your first group to start tracking." />
+        ) : (
+          <EmptyState
+            title="Nothing matches"
+            description={
+              search.trim()
+                ? `No livestock matches "${search.trim()}". Try a different name, breed or species.`
+                : `No livestock in this category. Switch back to All (${flocks.length}).`
+            }
+          />
+        )
       ) : viewMode === "card" ? (
         /* ─── CARD VIEW ─────────────────────────── */
         <motion.div initial="hidden" animate="visible" variants={stagger} className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1138,28 +1185,11 @@ export default function FlocksPage() {
         </div>
       )}
 
-      {showEditForm && editingFlock && (
-        <EditFlockForm flock={editingFlock} onSubmit={handleEdit} onCancel={() => { setShowEditForm(false); setEditingFlock(null); }} />
-      )}
-
       {showProductionForm && selectedFlock && (
         <RecordProductionForm flock={selectedFlock} onSubmit={handleRecordProduction} onCancel={() => setShowProductionForm(false)} />
       )}
 
-      {showBatchProduction && (
-        <BatchProduction
-          flocks={flocks}
-          onSubmit={handleBatchProduction}
-          onCancel={() => setShowBatchProduction(false)}
-        />
-      )}
-
-      {showComparison && (
-        <FlockComparison
-          flockIds={Array.from(selectedForCompare)}
-          onClose={() => setShowComparison(false)}
-        />
-      )}
+      {sharedModals}
     </div>
   );
 }

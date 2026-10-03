@@ -51,14 +51,25 @@ function getBestMetric(values: number[], mode: "highest" | "lowest"): number {
 export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
   const [data, setData] = React.useState<ComparisonData[]>([]);
   const [loading, setLoading] = React.useState(true);
+  // A failed load used to be swallowed into "Select at least 2 flocks to
+  // compare" — the farmer was told they had selected too few when in fact the
+  // request had failed. Track the failure so the message can tell the truth.
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const load = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const result = await api.get(`/api/flocks/compare?ids=${flockIds.join(",")}`);
         setData(Array.isArray(result) ? result : []);
       } catch (err) {
         console.error("Failed to load comparison:", err);
+        setError(
+          err instanceof Error && err.message
+            ? err.message
+            : "Could not load the comparison. Please try again."
+        );
       } finally {
         setLoading(false);
       }
@@ -74,10 +85,28 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
     );
   }
 
+  if (error) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 text-center" onClick={(e) => e.stopPropagation()}>
+          <p className="text-sm text-tone-warn-text">{error}</p>
+          <button onClick={onClose} className="mt-4 px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 border border-gray-200 cursor-pointer">
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (data.length < 2) {
     return (
-      <div className="text-center py-12">
-        <p className="text-sm text-gray-400">Select at least 2 flocks to compare</p>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 text-center" onClick={(e) => e.stopPropagation()}>
+          <p className="text-sm text-gray-400">Select at least 2 flocks to compare</p>
+          <button onClick={onClose} className="mt-4 px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 border border-gray-200 cursor-pointer">
+            Close
+          </button>
+        </div>
       </div>
     );
   }
