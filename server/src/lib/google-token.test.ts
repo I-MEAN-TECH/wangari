@@ -100,9 +100,17 @@ describe("jwkToPublicKey", () => {
     const pem = jwkToPublicKey(publicJwk) as string;
     expect(pem).toContain("BEGIN PUBLIC KEY");
     // Round-trips: the PEM verifies something the JWK signed.
+    //
+    // `clockTimestamp` is required, not decorative. `sign()` derives `exp`
+    // from the FIXED `NOW` above so the rest of the suite is
+    // deterministic, but a bare `jwt.verify` checks expiry against the
+    // real wall clock — so this assertion silently started failing once
+    // NOW fell into the past, which is a test bug about time, not a bug
+    // in jwkToPublicKey. Verifying at NOW keeps the assertion about the
+    // PEM being usable.
     const token = sign();
     expect(() =>
-      jwt.verify(token, pem, { algorithms: ["RS256"] })
+      jwt.verify(token, pem, { algorithms: ["RS256"], clockTimestamp: Math.floor(NOW / 1000) })
     ).not.toThrow();
   });
 

@@ -208,6 +208,280 @@ select:focus {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Eye tracker (components/ai/eye-tracker.tsx) ──────────
+   Vendored from Bencho (bencho.dev/licence, MIT).
+
+   Bencho's original CSS read four design tokens it did not define:
+   --bg, --fill-on, --fill-slab and --ink. Rather than add them as new
+   globals, each is mapped onto a Wangari token that already does that
+   job, declared HERE on the component's own root so nothing leaks:
+
+     --bg        -> cream, the page ground behind the mark
+     --fill-slab -> the white card surface the ball is drawn on
+     --fill-on   -> ink, the eyes sitting on that surface
+     --ink       -> ink (kept separate: Bencho's "logo-test" variant
+                    inverts body and eyes against the ground)
+
+   Wangari has no dark theme today, so the upstream [data-theme="dark"]
+   overrides are dropped rather than left pointing at tokens that
+   cannot resolve. If a dark theme is added later, re-add them here. */
+.eyt {
+  /* Bencho's original .eyt was a fixed 200x200 slot sized to hold the
+     largest ball in a wall of them. Wangari uses the eye as a small
+     mark inside a panel, so the frame sizes to the ball instead of
+     the other way round — otherwise a 20px eye sat in a 200px box and
+     pushed the layout apart. */
+  display: inline-grid;
+  place-items: center;
+  line-height: 0;
+
+  --bg: var(--color-wangari-cream, #FAFBFC);
+  --fill-slab: var(--color-wangari-card, #FFFFFF);
+  --fill-on: var(--color-wangari-ink, #0B1220);
+  --ink: var(--color-wangari-ink, #0B1220);
+}
+
+.eyt-ball {
+  width: var(--eyt-size, 100px);
+  height: var(--eyt-size, 100px);
+  overflow: visible;
+}
+
+/* the ball is the card's own surface and the eyes its ink: white
+   with dark eyes on a light fill, near-black with light eyes on a
+   dark one */
+.eyt-body {
+  fill: var(--fill-slab, #FFFFFF);
+}
+
+.eyt-eye {
+  fill: var(--fill-on, #0B1220);
+}
+
+/* ── Wangari's own eye ───────────────────────────────────
+   A white ball on a white card is invisible, so as the agent's
+   mark the body takes the brand green and the eyes go to white
+   for contrast. Scoped to .wangari-avatar rather than to .eyt, so
+   the vendored component keeps its own tokens and still renders
+   correctly anywhere else it is used bare.
+
+   Keyed to the avatar, NOT to whatever wrapper happens to hold it:
+   an earlier version scoped this to .wangari-orb-frame and the
+   avatar rendered invisible the moment it moved outside that
+   wrapper. The character must own its own colour. */
+.wangari-avatar .eyt-body {
+  fill: var(--color-wangari-green-500, #22C55E);
+}
+
+.wangari-avatar .eyt-eye {
+  fill: #ffffff;
+}
+
+/* ─── Wangari avatar (components/ai/wangari-avatar.tsx) ──
+   Behaviour lives in CSS and is selected by [data-state] on the
+   component root, so what the farmer sees and what the component
+   believes it is doing cannot drift apart.
+
+   Style is bs-grokbot-avatar's Original mode: one solid body, two solid
+   eyes, no mouth, no outline, no shading. Every animation is therefore
+   transform-only — a flat design has no surface to light or squash
+   convincingly, and scaling the silhouette is the honest way to convey
+   effort on a shape with no other articulation.
+
+   Because the style has no mouth, "speaking" animates the whole body on
+   the audio envelope (--wangari-voice) rather than lip-syncing. */
+.wangari-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  /* The eye owns its own sizing; this is just the square it sits in. */
+  line-height: 0;
+}
+
+.wangari-avatar-body {
+  display: grid;
+  place-items: center;
+  transform-origin: 50% 62%; /* around the "hips", so a bob looks like weight shifting */
+  will-change: transform;
+}
+
+/* ── idle: a slow breath, the resting state ─────────────── */
+/* The breath shortens as the farmer types faster. calc() on the animation
+   duration keeps one keyframe definition serving every pace, rather than
+   swapping keyframe names (which would restart the animation on change). */
+@keyframes wangari-breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.035, 0.975); }
+}
+
+/* Typed with a LONGER duration and placed AFTER the per-state rules, so
+   it wins the cascade. Using `animation` (the shorthand) here would reset
+   animation-name and stop her breathing; only the duration is touched.
+   Typing is the only state whose rhythm follows the farmer, so pace is
+   scoped to it rather than applied to every state. */
+[data-state="typing"] .wangari-avatar-body {
+  animation-duration: calc(
+    4.6s - (4.6s - 1.5s) * var(--wangari-pace, 0)
+  );
+}
+
+/* ── a completed word gets a small acknowledging pulse ────
+   The farmer's words are the input, so the only moment worth
+   marking is when one is finished — it is the natural beat in
+   typing, and it tells the farmer she is following along rather
+   than idling beside the box.
+
+   This lives on the component ROOT, not on .wangari-avatar-body.
+   The body already owns the state's motion, and two `animation`
+   shorthands on one element do not stack — the later one wins and
+   the breath dies. The root owns no animation of its own, so the
+   pulse simply multiplies with whatever the body is doing. */
+@keyframes wangari-word-pop {
+  0%   { transform: scale(1, 1); }
+  38%  { transform: scale(1.055, 0.955); }
+  100% { transform: scale(1, 1); }
+}
+
+.wangari-word-pulse {
+  animation: wangari-word-pop 0.34s ease-out 1;
+  will-change: transform;
+}
+
+/* ── listening: leaning in toward the farmer ───────────── */
+@keyframes wangari-lean {
+  0%, 100% { transform: scale(1.02, 1.02) rotate(-1.2deg); }
+  50% { transform: scale(1.07, 1.05) rotate(1.2deg); }
+}
+
+/* ── reasoning: settling back and up, as if looking away ─ */
+@keyframes wangari-recede {
+  0%, 100% { transform: translateY(0) scale(0.97, 0.97); }
+  50% { transform: translateY(3px) scale(0.94, 0.94); }
+}
+
+/* ── working: a small focused bob, quicker than idle ───── */
+@keyframes wangari-work {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  30% { transform: translateY(-3px) scale(0.985, 1.02); }
+  65% { transform: translateY(1px) scale(1.015, 0.99); }
+}
+
+/* ── speaking: the body carries the voice ────────────────
+   No mouth exists in this style, so the envelope drives the whole
+   silhouette. calc() keeps the base animation and the live voice
+   level composed rather than fighting over `transform`. */
+@keyframes wangari-speak {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(calc(1 + (var(--wangari-voice, 1) - 1) * 0.35), calc(1 + (var(--wangari-voice, 1) - 1) * -0.25)); }
+}
+
+/* ── error: one short shake, then still ────────────────── */
+@keyframes wangari-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px) rotate(-2deg); }
+  45% { transform: translateX(4px) rotate(2deg); }
+  70% { transform: translateX(-2px); }
+}
+
+[data-state="idle"] .wangari-avatar-body { animation: wangari-breathe 4.2s ease-in-out infinite; }
+[data-state="listening"] .wangari-avatar-body { animation: wangari-lean 2.4s ease-in-out infinite; }
+[data-state="typing"] .wangari-avatar-body { animation: wangari-breathe 4.6s ease-in-out infinite; }
+[data-state="reasoning"] .wangari-avatar-body { animation: wangari-recede 3.4s ease-in-out infinite; }
+[data-state="working"] .wangari-avatar-body { animation: wangari-work 1.15s ease-in-out infinite; }
+[data-state="speaking"] .wangari-avatar-body { animation: wangari-speak 0.42s ease-in-out infinite; }
+[data-state="error"] .wangari-avatar-body { animation: wangari-shake 0.6s ease-out 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* The farmer gets a still character, not a broken one: the eye's own
+     internal reduced-motion path already stops the spring and blinking. */
+  .wangari-avatar-body,
+  [data-state] .wangari-avatar-body,
+  .wangari-word-pulse {
+    animation: none !important;
+  }
+}
+
+/* ─── Wangari AI presence ────────────────────────────────
+   The orb and the eye share one green so the assistant reads as a
+   single character rather than two competing decorations. */
+/* A tight square around the character. Everything that needs to be
+   positioned against Wangari — halo, spin ring — anchors here, so
+   `inset: 0` means "around the character" rather than "around the
+   whole panel". */
+.wangari-orb-stage {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+}
+
+.wangari-orb-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full, 9999px);
+  /* The eye is a small mark that sits behind the orb rather than
+     beside it: sharing one 88px stage is what makes them read as a
+     single character instead of two stacked widgets. */
+  width: 56px;
+  height: 56px;
+}
+
+/* A breathing halo behind the orb. Pairs with the orb's own
+   animation so the character looks alive even between states, and
+   is switched off wholesale by prefers-reduced-motion. */
+@keyframes wangari-halo {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 0.6; transform: scale(1); }
+}
+
+.wangari-orb-halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 88px;
+  height: 88px;
+  margin: -44px 0 0 -44px;
+  border-radius: var(--radius-full, 9999px);
+  background: radial-gradient(
+    circle,
+    rgba(34, 197, 94, 0.28) 0%,
+    rgba(34, 197, 94, 0.1) 55%,
+    rgba(34, 197, 94, 0) 72%
+  );
+  animation: wangari-halo 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Each tool step lands with a short rise. The stagger is applied
+   inline per index so a long agent run cascades instead of
+   appearing all at once. */
+@keyframes wangari-step-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.wangari-step {
+  animation: wangari-step-in 0.28s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wangari-orb-halo {
+    animation: none;
+    opacity: 0.5;
+  }
+  .wangari-step {
+    animation: none;
+  }
+  /* The orb and eye both honour this internally too; this stops
+     any CSS-driven motion on the surrounding chrome. */
+  .wangari-orb-frame * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 /* Admin sidebar nav: thin visible scrollbar so clipped items are discoverable */
 .admin-nav-scroll {
   scrollbar-width: thin;

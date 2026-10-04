@@ -40,19 +40,24 @@ export const AI_PROVIDERS: Record<string, AIProviderConfig> = {
   openrouter: {
     id: "openrouter",
     name: "OpenRouter",
-    description: "20+ free models from multiple providers. Single API key, OpenAI-compatible.",
+    description: "Free models from multiple providers. Single API key, OpenAI-compatible.",
     baseUrl: "https://openrouter.ai/api/v1",
-    defaultModel: "meta-llama/llama-3.3-70b-instruct:free",
+    // VERIFIED LIVE against the OpenRouter API: this model accepts
+    // OpenAI-style `tools` and returns correct `tool_calls` (checked with
+    // a two-step agentic run, not a single completion).
+    //
+    // The previous default, meta-llama/llama-3.3-70b-instruct:free, no
+    // longer exists as a free model — OpenRouter retired it and returns
+    // HTTP 404 "This model is unavailable for free", which took the whole
+    // assistant down. The roster below was stale for the same reason, so
+    // treat it as a hint and re-check /api/v1/models before trusting it.
+    defaultModel: "qwen/qwen3.8-27b:free",
     freeModels: [
-      "meta-llama/llama-3.3-70b-instruct:free",
-      "meta-llama/llama-3.1-8b-instruct:free",
-      "qwen/qwen-2.5-72b-instruct:free",
-      "qwen/qwen-2.5-32b-instruct:free",
-      "google/gemma-2-9b-it:free",
-      "microsoft/phi-3-medium-128k-instruct:free",
-      "mistralai/mistral-7b-instruct:free",
-      "nousresearch/hermes-3-llama-3.1-405b:free",
-      "deepseek/deepseek-chat-v3-0324:free",
+      "qwen/qwen3.8-27b:free",
+      "dots-studio/dots-3-note-preview:free",
+      "cohere/north-mini-code:free",
+      "inclusionai/ling-3.1-flash",
+      "nvidia/nemotron-3.5-lightning:free",
     ],
     rateLimit: "20 RPM, 50/day (1,000/day with $10 top-up)",
     creditCard: false,
