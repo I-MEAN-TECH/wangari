@@ -250,7 +250,7 @@ app.use("/api/worker", workerApiRoutes);
 app.use("/api/paystack", paystackRoutes);
 app.use("/api/trial", trialRoutes);
 app.use("/api/plans", plansRoutes);
-app.use("/api/deliveries", deliveriesRoutes);
+app.use("/api/deliveries", idempotencyGuard, deliveriesRoutes);
 // Activation heartbeat. planGate only gates the prefixes in its ROUTE_MODULE
 // map, and /api/activation is not one of them — so this keeps working for a
 // farmer whose trial has lapsed. That matters: silently dropping the return
