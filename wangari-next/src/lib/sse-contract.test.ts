@@ -23,7 +23,7 @@ const send = (event: string, data: unknown) =>
 
 /** A full run, in the order the agentic loop produces it. */
 const FULL_RUN =
-  send("start", { provider: "openrouter", model: "qwen/qwen3.8-27b:free" }) +
+  send("start", { provider: "unorouter", model: "space-bunny-alpha:free" }) +
   send("tool_start", { tool: "get_dashboard", args: {}, step: 0 }) +
   send("tool_end", { tool: "get_dashboard", ok: true, result: "Income KES 120,000" }) +
   send("message", { content: "Your farm made KES 120,000 this month." }) +
@@ -95,5 +95,61 @@ describe("server/client SSE contract", () => {
     const sw = send("message", { content: "Umezaa mayai 200 kutoka kuku wa kwanza." });
     const got = parseInChunks(sw, 4).find((e) => e.type === "message");
     expect(got).toEqual({ type: "message", content: "Umezaa mayai 200 kutoka kuku wa kwanza." });
+  });
+});
+
+describe("the provider's rate limit, told to the farmer", () => {
+  /**
+   * Measured live: "tell me the status of the farm" came back in 84,388ms on
+   * ONE tool call, because the free tier allows one request a minute and an
+   * agentic turn spends two - the one that picks a tool, and the one that
+   * writes the sentence.
+   *
+   * So for most of that turn the panel had nothing to show. An avatar sitting
+   * still for 60 seconds is not "busy" to a farmer, it is "broken", and a
+   * farmer who thinks that will not wait to find out. The server announces
+   * the wait; if the client drops the event, that minute goes back to being
+   * silence - which is the whole failure these tests exist to stop.
+   */
+  it("carries the wait through to the client", () => {
+    const wire = send("waiting", { seconds: 45, opensAt: 1_757_000_060_400 });
+    expect(parseInChunks(wire, 6)).toEqual([
+      { type: "waiting", seconds: 45, opensAt: 1_757_000_060_400 },
+    ]);
+  });
+
+  it("arrives mid-run without displacing the steps around it", () => {
+    const wire =
+      send("start", { provider: "unorouter", model: "space-bunny-alpha:free" }) +
+      send("tool_start", { tool: "get_farm_status", args: {}, step: 1 }) +
+      send("tool_end", { tool: "get_farm_status", ok: true, result: "Read the whole farm" }) +
+      send("waiting", { seconds: 58, opensAt: null }) +
+      send("message", { content: "You have one flock of 200 Sasso layers." }) +
+      send("done", { steps: 2, truncatedByBudget: false });
+    expect(parseInChunks(wire, 17).map((e) => e.type)).toEqual([
+      "start",
+      "tool_start",
+      "tool_end",
+      "waiting",
+      "message",
+      "done",
+    ]);
+  });
+
+  it("survives a wait with no known opening time", () => {
+    // `opensAt` is null whenever the server has not seen a call succeed and
+    // so has no window to aim at. The panel must still say it is waiting
+    // rather than fall through to an empty line.
+    const wire = send("waiting", { seconds: 2, opensAt: null });
+    const got = parseInChunks(wire, 3).find((e) => e.type === "waiting");
+    expect(got).toMatchObject({ type: "waiting", seconds: 2, opensAt: null });
+  });
+
+  it("is not mistaken for a failure", () => {
+    // The client humanises every `error`. A wait routed into that path would
+    // tell a farmer "Wangari is busy, try again in a few minutes" while she
+    // was about to answer - so it must arrive as its own type.
+    const got = parseSSE(send("waiting", { seconds: 30, opensAt: null })).events[0];
+    expect(got.type).not.toBe("error");
   });
 });

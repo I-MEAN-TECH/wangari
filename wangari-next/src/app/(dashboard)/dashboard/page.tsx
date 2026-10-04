@@ -33,6 +33,8 @@ import api from "@/lib/api-client";
 import { useAuth } from "@/hooks/useAuth";
 import { TrialBanner } from "@/components/trial/trial-banner";
 import { ActionCenter } from "@/components/dashboard/action-center";
+import { WangariMark } from "@/components/ai/wangari-mark";
+import { useWangariPresence, PRESENCE_LINE } from "@/lib/wangari-presence";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PaymentResultModal } from "@/components/subscription/PaymentResultModal";
 
@@ -145,6 +147,11 @@ function DashboardContent() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /* The Home header is where a farmer lands, so it is where Wangari stands.
+     She is the same animated character as the one in the module list — the
+     rename only means anything if it is visibly one person everywhere. */
+  const presence = useWangariPresence();
 
   const fetchData = React.useCallback(async () => {
     try {
@@ -325,20 +332,45 @@ function DashboardContent() {
         initial="hidden"
         animate="visible"
         variants={fadeUp}
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-wangari-green-900 via-wangari-green-800 to-wangari-green-900 p-6 rounded-2xl text-white shadow-md"
+        className="wangari-watch-frame flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-wangari-green-900 via-wangari-green-800 to-wangari-green-900 p-6 rounded-2xl text-white shadow-md"
       >
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-wangari-green-500/20 text-wangari-green-50-300 border border-wangari-green-50-500/30">
-              {data?.farmName || "Active Farm"}
+        {/* ── Wangari, on top of the Home module ──────────────
+            She stands in the greeting because the greeting is the
+            one line on this screen written to a person rather than
+            about their data. Putting the assistant's face on the
+            day-one screen is what makes her somebody who says good
+            morning, instead of a feature the farmer has to go and
+            find in a menu.
+
+            The line under her is not decoration. It reports the SAME
+            state her face is showing, so when she is mid-task the
+            farmer learns that the icon beside the module list is not
+            a logo either — it is telling them she is already on it. */}
+        <div className="flex items-start sm:items-center gap-4 sm:gap-5 min-w-0">
+          <Link
+            href="/ai"
+            className="shrink-0 flex flex-col items-center gap-1.5 rounded-2xl px-1.5 py-1 -mx-1.5 -my-1 transition-transform hover:scale-[1.03] active:scale-95 touch-target"
+            title="Ask Wangari about your farm"
+          >
+            <WangariMark size={76} />
+            <span className="block max-w-[76px] text-center text-[10px] font-bold leading-tight text-wangari-green-100/90">
+              {PRESENCE_LINE[presence]}
             </span>
+          </Link>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-wangari-green-500/20 text-wangari-green-50-300 border border-wangari-green-50-500/30">
+                {data?.farmName || "Active Farm"}
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1.5">
+              {greeting}, {user?.name?.split(" ")[0] || "Farmer"}!
+            </h1>
+            <p className="text-xs sm:text-sm text-wangari-green-100/80 mt-1">
+              Here is your daily farm overview and operations summary.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1.5">
-            {greeting}, {user?.name?.split(" ")[0] || "Farmer"}!
-          </h1>
-          <p className="text-xs sm:text-sm text-wangari-green-100/80 mt-1">
-            Here is your daily farm overview and operations summary.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">

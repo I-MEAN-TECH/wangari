@@ -37,34 +37,34 @@ export const AI_PROVIDERS: Record<string, AIProviderConfig> = {
     setupUrl: "https://aistudio.google.com/apikey",
   },
 
-  openrouter: {
-    id: "openrouter",
-    name: "OpenRouter",
-    description: "Free models from multiple providers. Single API key, OpenAI-compatible.",
-    baseUrl: "https://openrouter.ai/api/v1",
-    // VERIFIED LIVE against the OpenRouter API: this model accepts
-    // OpenAI-style `tools` and returns correct `tool_calls` (checked with
-    // a two-step agentic run, not a single completion).
+  // ─── Unified gateways ────────────────────────────────────
+  unorouter: {
+    id: "unorouter",
+    name: "UnoRouter",
+    description:
+      "One key, one OpenAI-compatible endpoint, many models. The free tier here is 1 request per minute ACCOUNT-WIDE.",
+    baseUrl: "https://api.unorouter.com/v1",
+    // NOT ":free". UnoRouter exposes this model only under the free id —
+    // `space-bunny-alpha`, `space-bunny-alpha:paid` and
+    // `stealth/space-bunny-alpha` all answer 404 here, so the paid variant
+    // the rate-limit message advertises is not reachable on this account.
     //
-    // The previous default, meta-llama/llama-3.3-70b-instruct:free, no
-    // longer exists as a free model — OpenRouter retired it and returns
-    // HTTP 404 "This model is unavailable for free", which took the whole
-    // assistant down. The roster below was stale for the same reason, so
-    // treat it as a hint and re-check /api/v1/models before trusting it.
-    defaultModel: "qwen/qwen3.8-27b:free",
-    freeModels: [
-      "qwen/qwen3.8-27b:free",
-      "dots-studio/dots-3-note-preview:free",
-      "cohere/north-mini-code:free",
-      "inclusionai/ling-3.1-flash",
-      "nvidia/nemotron-3.5-lightning:free",
-    ],
-    rateLimit: "20 RPM, 50/day (1,000/day with $10 top-up)",
+    // Probed live, not assumed: this model PASSES the two-step agentic probe
+    // on UnoRouter (chain a tool, read the result, chain a second) at ~1.7s a
+    // call. The OpenRouter copy of the same model failed that probe, so the
+    // provider — not the model — was the problem all along.
+    //
+    // The cost is throughput: the free tier allows 1 request a minute per
+    // account, and a farm task wants up to 8 calls. See MAX_AGENT_STEPS in
+    // routes/ai.ts, which is lowered for this provider on purpose.
+    defaultModel: "space-bunny-alpha:free",
+    freeModels: ["space-bunny-alpha:free"],
+    rateLimit: "1 request/minute, account-wide (free tier)",
     creditCard: false,
     openaiCompatible: true,
     headerFormat: "bearer",
-    website: "https://openrouter.ai",
-    setupUrl: "https://openrouter.ai/keys",
+    website: "https://unorouter.com",
+    setupUrl: "https://unorouter.com/en/token",
   },
 
   groq: {

@@ -185,8 +185,12 @@ export default function DashboardLayout({
         />
       )}
 
-      {/* Floating Action Button */}
-      <FloatingActionButton />
+      {/* Floating Action Button — never on the Wangari page. It sits at the
+          bottom right, which is exactly where the composer's send button
+          lives, so it rendered underneath it and stole taps meant for
+          sending. The page is a single-purpose full-screen surface; a quick
+          add shortcut has nowhere to go but on top of the primary action. */}
+      {!isAI && <FloatingActionButton />}
     </div>
       </AccessGate>
       </OnboardingGate>

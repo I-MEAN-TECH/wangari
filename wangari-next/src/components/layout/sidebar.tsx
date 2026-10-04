@@ -15,7 +15,6 @@ import {
   Users,
   BarChart3,
   Settings,
-  Sparkles,
   MessageCircle,
   Truck,
   CalendarRange,
@@ -41,6 +40,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFarm } from "@/hooks/useFarm";
 import { Tractor } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { WangariMark } from "@/components/ai/wangari-mark";
 import api from "@/lib/api-client";
 import { UpgradePopup } from "@/components/trial/upgrade-popup";
 
@@ -124,7 +124,11 @@ const navGroups: NavGroup[] = [
       { label: "Weather", href: "/weather", icon: <CloudSun className="h-5 w-5" /> },
       { label: "Learn", href: "/library", icon: <GraduationCap className="h-5 w-5" /> },
       { label: "Reports", href: "/reports", icon: <BarChart3 className="h-5 w-5" /> },
-      { label: "AI Assistant", href: "/ai", icon: <Sparkles className="h-5 w-5" />, badge: "Soon" },
+      // Wangari is her own face, not an "AI" glyph. The mark carries the same
+      // animated character as the panel and shows what she is doing, so a
+      // farmer can see she is mid-task without opening anything. The "Soon"
+      // badge is gone because she is no longer soon — it shipped.
+      { label: "Wangari", href: "/ai", icon: <WangariMark size={24} /> },
       { label: "WhatsApp & USSD", href: "/whatsapp", icon: <MessageCircle className="h-5 w-5" />, badge: "Soon" },
     ],
   },

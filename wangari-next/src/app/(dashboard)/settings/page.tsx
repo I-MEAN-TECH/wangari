@@ -1,7 +1,9 @@
 "use client";
 import * as React from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { Settings, User, Bell, Palette, Shield, Save, CheckCircle2, Mail, Phone, MapPin, Lock, Eye, EyeOff, Download, Trash2, Leaf, PawPrint, ClipboardList, ShoppingCart, Package, DollarSign, Users, BarChart3, Calculator, Syringe, Heart, CloudSun, Sparkles, Fingerprint, Building2, CloudUpload } from "lucide-react";
+import { Settings, User, Bell, Palette, Shield, Save, CheckCircle2, Mail, Phone, MapPin, Lock, Eye, EyeOff, Download, Trash2, Leaf, PawPrint, ClipboardList, ShoppingCart, Package, DollarSign, Users, BarChart3, Calculator, Syringe, Heart, CloudSun, ChevronRight, Fingerprint, Building2, CloudUpload } from "lucide-react";
+import { WangariMark } from "@/components/ai/wangari-mark";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +25,7 @@ type Tab = "profile" | "farm_profile" | "ai" | "biometric" | "modules" | "notifi
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
   { id: "farm_profile", label: "Farm Branding", icon: <Building2 className="h-4 w-4" /> },
-  { id: "ai", label: "AI Assistant", icon: <Sparkles className="h-4 w-4" /> },
+  { id: "ai", label: "Wangari", icon: <WangariMark size={18} /> },
   { id: "biometric", label: "Biometric", icon: <Fingerprint className="h-4 w-4" /> },
   { id: "modules", label: "Modules", icon: <Settings className="h-4 w-4" /> },
   { id: "notifications", label: "Notifications", icon: <Bell className="h-4 w-4" /> },
@@ -221,19 +223,24 @@ export default function SettingsPage() {
             <FarmProfileEditor />
           )}
 
-          {/* AI Assistant */}
+          {/* Wangari */}
           {activeTab === "ai" && (
             <Card className="border border-[#E5E7EB]">
-              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Sparkles className="h-4 w-4 text-[#166534]" /> AI Assistant (Coming Soon)</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><WangariMark size={22} /> Wangari</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-xl bg-amber-50 border border-amber-200 p-5 text-center">
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 uppercase tracking-wider">
-                    Under Active Development
-                  </span>
-                  <p className="text-sm font-bold text-[#0F172A] mt-3">Smart AI Farm Intelligence is Launching Soon</p>
-                  <p className="text-xs text-[#64748B] mt-1 max-w-md mx-auto">
-                    We are currently building automated AI models for feed calculation, yield forecasting, and health advisory tailored for Kenyan livestock & poultry.
+                <div className="rounded-xl bg-wangari-green-50 border border-wangari-green-200 p-5">
+                  <p className="text-sm font-bold text-[#0F172A]">Wangari works on your farm records</p>
+                  <p className="text-xs text-[#64748B] mt-1">
+                    Ask her a question and she reads your flocks, production, sales and money — and she can
+                    record things for you, not just answer about them. Tell her things like
+                    &ldquo;Record 200 eggs from flock 1 today&rdquo; or &ldquo;How is my farm doing this month?&rdquo;
                   </p>
+                  <Link
+                    href="/ai"
+                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-wangari-green-800 hover:underline"
+                  >
+                    Open Wangari <ChevronRight className="h-4 w-4" />
+                  </Link>
                 </div>
               </CardContent>
             </Card>

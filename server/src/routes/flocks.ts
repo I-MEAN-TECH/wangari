@@ -1,11 +1,13 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
-import { requireOwner } from "../middleware/requireOwner.js";
+import { requireOwner, requireFarm } from "../middleware/requireOwner.js";
 import { resolveTagRange } from "../lib/tag-range.js";
 
 const router = Router();
-router.use(authMiddleware);
+// requireFarm, not requireOwner: workers may read flocks, but a session with
+// no farm attached must not fall through to an unscoped query.
+router.use(authMiddleware, requireFarm);
 
 // Species → category map so a flock's category always matches its species,
 // whatever the client sends (or doesn't send). Covers all 11 species.

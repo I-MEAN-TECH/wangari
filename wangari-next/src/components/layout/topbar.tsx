@@ -27,7 +27,7 @@ const pageTitles: Record<string, string> = {
   "/workers": "Workers",
   "/reports": "Reports",
   "/settings": "Settings",
-  "/ai": "AI Assistant",
+  "/ai": "Wangari",
   "/vaccinations": "Vaccinations",
   "/attendance": "Attendance",
   "/feed-calculator": "Feed Calculator",
@@ -50,7 +50,10 @@ const searchablePages = [
   { label: "Feed Calculator", href: "/feed-calculator", keywords: "feed ratio nutrition mix" },
   { label: "Weather", href: "/weather", keywords: "forecast rain temperature climate" },
   { label: "Reports", href: "/reports", keywords: "analytics data export" },
-  { label: "AI Assistant", href: "/ai", keywords: "chatbot help assistant" },
+  // A farmer looking for help does not search for "chatbot". Wangari is
+  // searchable by what she does — record, ask, check — so the words she is
+  // useful for are the ones in her keywords, not the ones in her category.
+  { label: "Wangari", href: "/ai", keywords: "ask record help assistant question chat check" },
   { label: "WhatsApp Bot", href: "/whatsapp", keywords: "messaging integration" },
   { label: "Settings", href: "/settings", keywords: "config profile account" },
   { label: "Customers", href: "/customers", keywords: "buyers contacts" },

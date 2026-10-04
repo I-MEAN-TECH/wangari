@@ -3,6 +3,7 @@ import { prisma } from "../db.js";
 import { authMiddleware, JWT_SECRET } from "../middleware/auth.js";
 import jwt from "jsonwebtoken";
 import { hashPin, verifyPin } from "../lib/pin.js";
+import { requireFarm } from "../middleware/requireOwner.js";
 
 const router = Router();
 
@@ -96,7 +97,10 @@ router.post("/login", async (req: Request, res: Response) => {
 });
 
 // All routes below require auth token
-router.use(authMiddleware);
+// /login is public and stays above this. Everything after it is farm-scoped:
+// a session with no farmId would turn `where: { farmId }` into an unscoped
+// query and read or write every farm's rows.
+router.use(authMiddleware, requireFarm);
 
 // ─── GET /api/worker/tasks — Today's tasks ────────────────
 router.get("/tasks", async (req: Request, res: Response) => {

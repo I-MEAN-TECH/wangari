@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { requireFarm } from "../middleware/requireOwner.js";
 
 /**
  * GET /api/documents?q=...&type=...  — unified search across every document
@@ -17,7 +18,7 @@ import { authMiddleware } from "../middleware/auth.js";
  * render one unified result list and deep-link to the right page.
  */
 const router = Router();
-router.use(authMiddleware);
+router.use(authMiddleware, requireFarm);
 
 router.get("/", async (req: Request, res: Response) => {
   try {

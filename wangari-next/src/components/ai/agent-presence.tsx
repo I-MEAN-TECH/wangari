@@ -24,6 +24,7 @@ export type AgentActivity =
   | "listening"
   | "reasoning"
   | "working"
+  | "waiting"
   | "speaking"
   | "done"
   | "error";
@@ -34,6 +35,11 @@ const ACTIVITY_COPY: Record<AgentActivity, { label: string; tone: string }> = {
   listening: { label: "Listening…", tone: "text-wangari-green-700" },
   reasoning: { label: "Wangari is thinking…", tone: "text-wangari-green-700" },
   working: { label: "Wangari is working on your farm…", tone: "text-wangari-green-700" },
+  // Not an error, and not silence. The provider's free tier allows one
+  // request a minute, and a two-step farm question spends two - so this is a
+  // queue, not a fault, and saying so is what stops a farmer from giving up
+  // and reloading at second forty.
+  waiting: { label: "Waiting for a free slot…", tone: "text-wangari-green-700" },
   speaking: { label: "Wangari is speaking…", tone: "text-wangari-green-700" },
   done: { label: "Done", tone: "text-wangari-green-700" },
   error: { label: "Something went wrong", tone: "text-tone-bad-text" },
@@ -52,6 +58,9 @@ const AVATAR_STATE: Record<AgentActivity, AvatarState> = {
   listening: "listening",
   reasoning: "reasoning",
   working: "working",
+  // She is still working; the model is simply not ready yet. The spinner and
+  // the thinking face both stay on.
+  waiting: "reasoning",
   speaking: "speaking",
   done: "idle",
   error: "error",
@@ -70,6 +79,7 @@ const PRESENCE_SIZE: Record<AgentActivity, number> = {
   listening: 82,
   reasoning: 74,
   working: 92,
+  waiting: 80,
   speaking: 86,
   done: 84,
   error: 84,
@@ -116,6 +126,8 @@ const TOOL_LABELS: Record<string, string> = {
   list_crops: "Read crops",
   get_weather: "Checked weather",
   get_dashboard: "Read farm summary",
+  get_farm_status: "Read the whole farm",
+  search_web: "Looked it up on the internet",
   undo_last_action: "Undid last action",
 };
 

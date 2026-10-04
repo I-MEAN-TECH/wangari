@@ -77,6 +77,87 @@ describe("AI tool executor", () => {
     }
   });
 
+  it("get_dashboard filters production by a real Date, not a date-only string", () => {
+    const c = executorCase("get_dashboard");
+    // The old bug: `sinceDay` was a "YYYY-MM-DD" string handed to a
+    // `date DateTime @db.Date` column's `gte`. Prisma accepts that on write
+    // and rejects it in a filter, so the single most likely demo question —
+    // "how is my farm doing?" — threw and the farmer saw a generic failure.
+    expect(c).not.toMatch(/sinceDay/);
+    expect(c).toMatch(/date: \{ gte: since \}/);
+  });
+
+  it("never filters a date column with a sliced date-only string", () => {
+    // Guards the whole class, not just the one call site: the mistake is
+    // invisible to TypeScript (a string is assignable nowhere near this
+    // filter) and only fails at runtime against Postgres.
+    expect(aiSource).not.toMatch(/(gte|lte): \w*Day\b/);
+  });
+
+  it("never WRITES a date column with a sliced date-only string", () => {
+    // The filter half of this bug was found and fixed while the write half
+    // was still live: record_production, create_transaction and
+    // record_attendance all failed with "premature end of input. Expected
+    // ISO-8601 DateTime", which meant "record 200 eggs" could not reach the
+    // database at all.
+    //
+    // Checked per-tool rather than globally, because slicing a date to a
+    // string is legitimately used elsewhere for display, and a blanket ban
+    // would pass for the wrong reason.
+    for (const t of ["record_production", "create_transaction", "record_attendance"]) {
+      const c = executorCase(t);
+      expect(c, `${t} writes a real Date`).toMatch(/date: new Date\(\)/);
+      expect(c, `${t} does not write a date-only string`).not.toMatch(/split\("T"\)/);
+    }
+    // The transaction that undo_last_action restores is a DateTime too.
+    const undo = executorCase("undo_last_action");
+    expect(undo, "the restored transaction has a real Date").toMatch(/date: new Date\(\)/);
+    expect(undo).not.toMatch(/split\("T"\)/);
+  });
+
+  it("agrees with the schema about which columns are dates", () => {
+    // The root cause both times was trusting a string where the schema says
+    // DateTime. If a column changes type, this is the test that notices the
+    // tool layer still assumes otherwise.
+    const schema = readFileSync(join(process.cwd(), "prisma/schema.prisma"), "utf8");
+    for (const model of ["DailyProduction", "Transaction", "Attendance"]) {
+      const body = schema.slice(schema.indexOf(`model ${model} {`));
+      expect(body.slice(0, 800), `${model}.date is a DateTime`).toMatch(/date\s+DateTime/);
+    }
+  });
+
+  it("summarises every list tool in words instead of echoing its name", () => {
+    const listTools = [
+      ...aiSource.matchAll(/name: "(list_[a-z_]+)", description/g),
+    ].map((m) => m[1]);
+    expect(listTools.length).toBeGreaterThan(5);
+    // The old bug: list_* had no label, so the panel showed the farmer the raw
+    // identifier "list_flocks". A row count also gives the model something
+    // concrete to answer from.
+    for (const t of listTools) {
+      expect(aiSource, `${t} has a human label`).toContain(`${t}: "`);
+    }
+    expect(aiSource).toContain("COUNT_NOUN");
+    expect(aiSource).toMatch(/if \(Array\.isArray\(result\)\)/);
+  });
+
+  it("counts in words, with the right number", () => {
+    // "Read sales — 1 sales" is exactly the kind of detail a farmer notices
+    // and stops trusting. One row takes the singular, many take the plural,
+    // and an empty list says so rather than saying "0".
+    expect(aiSource).toContain("SINGULAR_NOUN");
+    expect(aiSource).toMatch(/result\.length === 1 \? one : noun/);
+    expect(aiSource).toContain("— none yet");
+    // The compound nouns a trailing-s strip cannot reach must name a singular.
+    for (const [tool, noun] of Object.entries({
+      list_production: "record",
+      list_transactions: "money record",
+      list_attendance: "attendance record",
+    })) {
+      expect(aiSource, `${tool} has a singular`).toContain(`${tool}: "${noun}"`);
+    }
+  });
+
   it("every advertised tool has an executor case", () => {
     const declared = [...aiSource.matchAll(/name: "([a-z_]+)", description/g)].map((m) => m[1]);
     expect(declared.length).toBeGreaterThan(25);

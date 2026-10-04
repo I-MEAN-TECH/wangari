@@ -24,8 +24,10 @@ import { trialEndDate } from "../lib/config.js";
  * concept — a Starter farm's workers get Starter modules).
  */
 
-// Mirrors MODULE_HUB_MAP in routes/trial.ts — keep in sync.
-const MODULE_HUB_MAP: Record<string, string> = {
+// The single table of "which module belongs to which plan hub". routes/trial.ts
+// imports this rather than keeping a copy: two copies drift, and a drifted
+// padlock is a farmer staring at a locked screen they were told they had.
+export const MODULE_HUB_MAP: Record<string, string> = {
   production: "livestock",
   vaccinations: "livestock",
   livestock: "livestock",
@@ -151,7 +153,9 @@ async function resolveContext(identity: Identity): Promise<{ ctx: PlanContext; h
   return { ctx, hubs };
 }
 
-function moduleAllowed(ctx: PlanContext, hubs: string[], module: string): boolean {
+// Exported for the plan-gate regression test: this pure function is the single
+// rule, and both the 403s and the AI's refusals are derived from it.
+export function moduleAllowed(ctx: PlanContext, hubs: string[], module: string): boolean {
   if (ctx.reason === "trial") return true;
   if (ctx.reason !== "subscription" || !ctx.planId) return false;
   const isGrowthOrEnterprise = /growth|enterprise/.test(ctx.planId);
@@ -161,7 +165,30 @@ function moduleAllowed(ctx: PlanContext, hubs: string[], module: string): boolea
   if (hub === "_always") return true;
   // Starter: chosen hubs only. Workers/team is a Growth+ feature even if
   // somehow selected as a hub.
+  //
+  // An EMPTY hub list means the farmer never finished choosing, not that they
+  // chose nothing. Locking every module in that state produced an app where a
+  // new Starter account could not open a single farm screen while the AI
+  // happily wrote records into them — work nobody could then see.
+  if (hubs.length === 0) return isStarter && hub !== "team";
   return isStarter && hub !== "team" && hubs.includes(hub);
+}
+
+/**
+ * May this user open `module`?
+ *
+ * Exported so the AI agent obeys the SAME rules as the screens rather than a
+ * second copy. Two copies of the plan rules drift apart, and the farmer is the
+ * one who finds out — as "the AI said it saved my chickens and the module is
+ * empty".
+ */
+export async function isModuleAllowed(userId: number, module: string): Promise<boolean> {
+  const { ctx, hubs } = await resolveContext({
+    userId,
+    role: "farm_owner",
+    email: "",
+  } as Identity);
+  return moduleAllowed(ctx, hubs, module);
 }
 
 export function planGate(req: Request, res: Response, next: NextFunction) {

@@ -151,6 +151,13 @@ export function WangariAvatar({
      gets a face that keeps up; a deliberate one gets patience. Both are
      clamped because a caller could pass a value outside 0..1. */
   const p = Math.max(0, Math.min(1, pace));
+  /* She is now the module's icon as well as the panel's character, and a nav
+     item gives her 24px instead of 92. At that size the default eyes shrink
+     to about 2px each and sit close enough to read as a single dark smear
+     rather than a face, so small copies get proportionally bigger eyes —
+     the same reason a favicon drops its detail. Sized off the rendered px,
+     not a breakpoint, so any future placement gets the right answer. */
+  const small = size < 48 ? 1.4 : size < 72 ? 1.15 : 1;
   const s = {
     ...base,
     // Faster typing tightens the spring, so her eyes keep up instead of
@@ -158,6 +165,7 @@ export function WangariAvatar({
     bounce: base.bounce * (1 - p * 0.5),
     // ...and blinks more often, which reads as alert rather than sleepy.
     blink: Math.round(base.blink / (1 + p * 0.7)),
+    eyeScale: base.eyeScale * small,
   };
   const level = useRef(0);
   // The incoming envelope is held in a ref, NOT a dependency of the paint

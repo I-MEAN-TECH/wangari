@@ -19,7 +19,7 @@ describe("parseSSE", () => {
   });
 
   it("reads several events from one buffer", () => {
-    const buf = frame("start", { provider: "openrouter", model: "m" })
+    const buf = frame("start", { provider: "unorouter", model: "m" })
       + frame("message", { content: "Hello" })
       + frame("done", { steps: 0, truncatedByBudget: false });
     const { events } = parseSSE(buf);

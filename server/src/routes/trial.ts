@@ -2,23 +2,15 @@ import { TRIAL_DAYS, trialEndDate } from "../lib/config.js";
 import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { MODULE_HUB_MAP as GATED_HUB_MAP } from "../middleware/plan-gate.js";
 
 const router = Router();
 
+// The gated modules come straight from the table the 403s are enforced from —
+// one map, so the padlock and the server can never disagree. The rest are nav
+// entries that no plan restriction applies to.
 const MODULE_HUB_MAP: Record<string, string> = {
-  livestock: "livestock",
-  production: "livestock",
-  vaccinations: "livestock",
-  flocks: "livestock",
-  crops: "crops",
-  finances: "_always", // money tracking is included in every plan
-  sales: "sales",
-  customers: "sales",
-  invoices: "sales",
-  workers: "team", // gated to Growth/Enterprise plans (see below)
-  attendance: "team",
-  inventory: "_always",
-  dashboard: "_always",
+  ...GATED_HUB_MAP,
   "feed-calculator": "_always",
   weather: "_always",
   reports: "_always",
@@ -136,7 +128,11 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
         moduleAccess[module] = true;
       } else if (isStarter) {
         // Starter: allow modules belonging to the user's chosen hub(s) only.
-        moduleAccess[module] = selectedHubs.includes(hub);
+        // An empty list means the choice was never finished, so it must not
+        // lock everything — see moduleAllowed() in middleware/plan-gate.ts,
+        // which must agree with this or the sidebar padlocks lie.
+        moduleAccess[module] =
+          selectedHubs.length === 0 ? hub !== "team" : selectedHubs.includes(hub);
       } else if (hasAccess) {
         moduleAccess[module] = true;
       } else {

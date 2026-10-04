@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { requireFarm } from "../middleware/requireOwner.js";
 import { resolveTagRange, rangeRows } from "../lib/tag-range.js";
 
 /**
@@ -22,7 +23,7 @@ import { resolveTagRange, rangeRows } from "../lib/tag-range.js";
  */
 
 const router = Router();
-router.use(authMiddleware);
+router.use(authMiddleware, requireFarm);
 
 const ANITRAC_PREFIX = "141";
 const ANITRAC_MAX_DIGITS = 15;

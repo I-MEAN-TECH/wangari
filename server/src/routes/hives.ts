@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { requireFarm } from "../middleware/requireOwner.js";
 
 /**
  * Hives — beekeeping, where the unit is the COLONY, never the bee.
@@ -15,7 +16,7 @@ import { authMiddleware } from "../middleware/auth.js";
  */
 
 const router = Router();
-router.use(authMiddleware);
+router.use(authMiddleware, requireFarm);
 
 const HIVE_STATUS = new Set(["active", "weak", "swarm", "dead", "requeened"]);
 const HIVE_TYPES = new Set(["langstroth", "topbar", "traditional", "flow"]);
