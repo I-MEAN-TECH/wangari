@@ -4,6 +4,7 @@ import { recordStage } from "./activation.js";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 import { shouldSendVerificationEmail, VERIFICATION_TTL_MS } from "../lib/verification-cooldown.js";
+import { verifyGoogleIdToken, type GoogleTokenSuccess } from "../lib/google-token.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { createUniqueFarmCode } from "../lib/farm-code.js";
@@ -21,6 +22,52 @@ function isAllowedEmail(email: string): boolean {
 }
 
 const router = Router();
+
+// ─── Google sign-in failures ──────────────────────────────
+// Every rejected credential gets a reason the farmer (and the operator reading
+// the log) can act on. Previously all of this collapsed into one opaque
+// "Invalid Google token" 401, which is why a Google sign-in failure here was
+// undiagnosable from the outside. The wording is deliberately non-technical:
+// these strings go straight into the UI.
+const GOOGLE_FAILURE_MESSAGES: Record<string, string> = {
+  malformed: "Google sign-in failed. Please try again.",
+  unsupported_alg: "Google sign-in failed. Please try again.",
+  unknown_kid: "Google sign-in is temporarily unavailable. Please try again.",
+  bad_signature: "Google sign-in failed. Please try again.",
+  bad_issuer: "Google sign-in failed. Please try again.",
+  audience_mismatch: "Google sign-in is not available on this build. Please sign in with email and password.",
+  expired: "Google sign-in timed out. Please try again.",
+};
+
+/**
+ * Verify a credential and turn any failure into a logged 401. Never returns a
+ * truthy identity for a token we could not prove.
+ */
+async function authenticateGoogle(
+  credential: unknown
+): Promise<{ user: GoogleTokenSuccess } | { error: string; reason: string }> {
+  const result = await verifyGoogleIdToken(credential, process.env.GOOGLE_CLIENT_ID);
+
+  if (!result.ok) {
+    // The token itself is never logged - only the reason and safe metadata.
+    console.warn(
+      `[auth/google] rejected credential: ${result.reason}${result.detail ? ` (${result.detail})` : ""}`
+    );
+    return {
+      error: GOOGLE_FAILURE_MESSAGES[result.reason] ?? "Google sign-in failed. Please try again.",
+      reason: result.reason,
+    };
+  }
+
+  // Google is the authority on the address; if it says the email is not
+  // verified, the account is not eligible to sign in.
+  if (!result.emailVerified) {
+    console.warn(`[auth/google] email not verified by Google for sub ${result.sub}`);
+    return { error: "Google account email is not verified", reason: "email_unverified" };
+  }
+
+  return { user: result };
+}
 
 // ─── Email verification enforcement ──────────────────────
 // Every manual (password) account must verify its email address before a
@@ -367,30 +414,13 @@ router.post("/google", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Google credential is required" });
     }
 
-    // Verify the Google ID token by calling Google's tokeninfo endpoint
-    let googleUser: { sub: string; email: string; name: string; picture: string; email_verified: string | boolean; aud?: string };
-    try {
-      const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
-      if (!googleRes.ok) {
-        return res.status(401).json({ error: "Invalid Google token" });
-      }
-      googleUser = await googleRes.json() as any;
-    } catch {
-      return res.status(401).json({ error: "Failed to verify Google token" });
+    // Verify the ID token locally against Google's published signing keys.
+    // See lib/google-token.ts for why we no longer call tokeninfo.
+    const auth = await authenticateGoogle(credential);
+    if (!("user" in auth)) {
+      return res.status(401).json({ error: auth.error, reason: auth.reason });
     }
-
-    if (!googleUser.email || !googleUser.sub) {
-      return res.status(400).json({ error: "Invalid Google token data" } as any);
-    }
-
-    // Token must be issued for OUR client ID and the email must be verified by Google.
-    const expectedAud = process.env.GOOGLE_CLIENT_ID;
-    if (expectedAud && googleUser.aud !== expectedAud) {
-      return res.status(401).json({ error: "Google token was not issued for this app" } as any);
-    }
-    if (googleUser.email_verified === "false" || googleUser.email_verified === false) {
-      return res.status(401).json({ error: "Google account email is not verified" } as any);
-    }
+    const googleUser = auth.user;
 
     const normalizedGoogleEmail = googleUser.email.toLowerCase().trim();
 
@@ -464,15 +494,13 @@ router.post("/link-google", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Google credential is required" });
     }
 
-    // Verify token
-    let googleUser: { sub: string; email: string; name: string; picture: string };
-    try {
-      const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
-      if (!googleRes.ok) return res.status(401).json({ error: "Invalid Google token" });
-      googleUser = await googleRes.json() as any;
-    } catch {
-      return res.status(401).json({ error: "Failed to verify Google token" });
+    // Same local verification as /google - an unverified token must never be
+    // able to attach a Google identity to an existing account.
+    const auth = await authenticateGoogle(credential);
+    if (!("user" in auth)) {
+      return res.status(401).json({ error: auth.error, reason: auth.reason });
     }
+    const googleUser = auth.user;
 
     // Check if this Google account is already linked to another user
     const existingGoogleUser = await prisma.user.findUnique({ where: { googleId: googleUser.sub } });

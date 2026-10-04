@@ -8,7 +8,7 @@ import { Loader2, ArrowRight, User, Mail, Lock, Sprout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { register, googleLogin } from "@/lib/auth-client";
+import { register, googleLogin, AccountNotProvisionedError } from "@/lib/auth-client";
 
 import { AuthAvatarContext } from "@/app/(auth)/layout";
 
@@ -33,6 +33,17 @@ export default function RegisterPage() {
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
+  // The login page sends a farmer who tapped Google here with their verified
+  // address (?googleEmail=...). Pre-fill it so they do not retype an address
+  // Google has already proven - they only need to add a password and name.
+  React.useEffect(() => {
+    const googleEmail = new URLSearchParams(window.location.search).get("googleEmail");
+    if (googleEmail) {
+      setForm((f) => (f.email ? f : { ...f, email: googleEmail }));
+      setError("Google sign-in works. Add your name and password below to finish creating your farm.");
+    }
+  }, []);
+
   const googleButtonRef = React.useRef<HTMLDivElement>(null);
   const [googleLoaded, setGoogleLoaded] = React.useState(false);
 
@@ -54,8 +65,22 @@ export default function RegisterPage() {
               setAvatarState("success");
               router.push("/dashboard");
             } catch (err) {
-              setAvatarState("error");
-              setError(err instanceof Error ? err.message : "Google sign-up failed");
+              setAvatarState("idle");
+              // The server deliberately never auto-creates a farm from a Google
+              // tap. On the LOGIN page that is correct - the farmer is sent to
+              // register. But here the farmer is ALREADY registering, so
+              // surfacing "no Wangari account uses this Google account yet" was
+              // a dead end that looked like a failure. Google has proven the
+              // email; all that is left is naming the farm. Carry the identity
+              // into the form and let them finish.
+              if (err instanceof AccountNotProvisionedError) {
+                setForm((f) => ({ ...f, email: err.email ?? f.email }));
+                setError(
+                  "Google sign-in works. Add your name and password below to finish creating your farm."
+                );
+              } else {
+                setError(err instanceof Error ? err.message : "Google sign-up failed");
+              }
             } finally {
               setLoading(false);
             }
@@ -227,7 +252,7 @@ export default function RegisterPage() {
                     if (window.google?.accounts?.id) {
                       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
                           if (!clientId) return;
-                      window.google.accounts.id.initialize({ client_id: clientId, callback: async (r: any) => { try { await googleLogin(r.credential); router.push("/dashboard"); } catch (e: any) { setError(e?.message || "Google sign-up failed"); } } });
+                      window.google.accounts.id.initialize({ client_id: clientId, callback: async (r: any) => { try { await googleLogin(r.credential); router.push("/dashboard"); } catch (e: any) { if (e instanceof AccountNotProvisionedError) { setForm((f) => ({ ...f, email: e.email ?? f.email })); setError("Google sign-in works. Add your name and password below to finish creating your farm."); } else { setError(e?.message || "Google sign-up failed"); } } } });
                       if (googleButtonRef.current) window.google.accounts.id.renderButton(googleButtonRef.current, { theme: "outline", size: "large", width: "100%", text: "signup_with" });
                       setGoogleLoaded(true);
                     }
