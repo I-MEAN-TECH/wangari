@@ -16,12 +16,16 @@ import {
   ArrowRight,
   Loader2,
   MapPin,
+  PartyPopper,
 } from "lucide-react";
+import Link from "next/link";
 import api from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { FIRST_RECORD_CHOICES } from "@/lib/first-record-choices";
+import { onboardingRequired } from "@/lib/onboarding";
 
 /**
  * Onboarding — claim your farm.
@@ -50,6 +54,15 @@ import { cn } from "@/lib/utils";
  *     assert ownership of a farm, so it states its farm here before entering.
  *     Google proves identity; saying what you farm is the claim on the data.
  *
+ *  4. IT ENDS ON THE FIRST RECORD, NOT ON A DASHBOARD OF ZEROS. The 2 Oct
+ *     production audit found 5 of 8 farms had recorded nothing at all, and the
+ *     documented cause was not sign-up but what a farmer met next: a dashboard
+ *     of empty ratios that paid him nothing, so there was nothing to do twice.
+ *     So the last step offers the two day-one jobs (docs/module-plan.md §8,
+ *     Phase 0) and walks him straight into one. This is deliberately NOT a
+ *     gate: the skip button is right there, because a step that traps a farmer
+ *     is the exact bug this file was rewritten to kill.
+ *
  * DESIGN: icons before words, no typing where a tap will do, and the same
  * Card/Button/Input primitives and sizing as the rest of the app. The farmer
  * picks a picture of their farm.
@@ -77,7 +90,7 @@ const FARM_TYPES = [
 export default function OnboardingPage() {
   const router = useRouter();
 
-  const [step, setStep] = React.useState<0 | 1>(0);
+  const [step, setStep] = React.useState<0 | 1 | 2>(0);
   const [farmType, setFarmType] = React.useState<string | null>(null);
   const [farmName, setFarmName] = React.useState("");
   const [county, setCounty] = React.useState("");
@@ -92,6 +105,17 @@ export default function OnboardingPage() {
       try {
         const d = await api.get<any>("/api/auth/onboarding");
         if (cancelled || !d?.farm) return;
+        // Already claimed? Then this form is a dead end he has already passed.
+        // Without this, a farmer who claimed his farm and then refreshed on the
+        // last step would be dropped back onto step 0 to type his farm name a
+        // second time — the claim is durable, so the form must be too.
+        //
+        // The decision is the same tested rule the gate uses, not a second
+        // copy of it, so the two cannot disagree about who is finished.
+        if (!onboardingRequired({ firstRecordAt: d.firstRecordAt, claimedAt: d.claimedAt })) {
+          router.replace("/dashboard");
+          return;
+        }
         // Only the county is worth pre-filling. The farm NAME is never
         // suggested from server data: a name the farmer did not choose is not
         // their answer, and silently accepting one is how a placeholder like
@@ -104,7 +128,7 @@ export default function OnboardingPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [router]);
 
   const submit = async () => {
     if (!farmType) return;
@@ -121,16 +145,16 @@ export default function OnboardingPage() {
         county: county.trim() || undefined,
         phone: phone.trim() || undefined,
       });
-      // Straight to the day-one money moment, which is the whole point:
-      // the farmer should see a number, not a setup checklist.
+      // Step 2, NOT the dashboard. Claiming the farm is the security boundary
+      // and it is done; the farmer is now owed something for having done it.
       //
-      //  is REQUIRED, not cosmetic. The dashboard layout mounts
-      // OnboardingGate, which fetches /auth/onboarding on mount. Without this,
-      // Next reuses the cached router state and the gate can still be holding
-      // the pre-claim "gate" decision, which bounced the farmer straight back
-      // here — the loop we just fixed server-side would survive this one.
-      router.push("/dashboard", { scroll: false });
-      router.refresh();
+      // The server sets farms.claimed_at on this POST, and OnboardingGate clears
+      // on either claimedAt or real activity — so the doors on step 2 lead into
+      // a farm he legitimately owns and the gate will not bounce him back.
+      // That was verified against the server before building this, precisely
+      // because getting it wrong would loop him between this page and /onboarding
+      // forever.
+      setStep(2);
     } catch (e: any) {
       // Never swallow this. The old page's empty catch is exactly why farm
       // details were being lost without anyone noticing.
@@ -146,9 +170,9 @@ export default function OnboardingPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl"
       >
-        {/* Progress: 2 steps, visible, no numbers to read */}
+        {/* Progress: 3 steps, visible, no numbers to read */}
         <div className="mb-6 flex items-center gap-2" aria-hidden>
-          {[0, 1].map((i) => (
+          {[0, 1, 2].map((i) => (
             <div
               key={i}
               className={`h-2 flex-1 rounded-full transition-colors ${
@@ -221,7 +245,7 @@ export default function OnboardingPage() {
               You can add more later. We do not need everything today.
             </p>
           </>
-        ) : (
+        ) : step === 1 ? (
           <>
             <div className="mb-6 text-center">
               <h1 className="text-2xl font-bold leading-tight text-wangari-heading sm:text-3xl">
@@ -320,6 +344,80 @@ export default function OnboardingPage() {
             <p className="mt-4 text-center text-xs leading-relaxed text-wangari-subtle">
               We never share your details with anyone without your permission.
             </p>
+          </>
+        ) : (
+          /* ── Step 2: the first record, and the reason to come back ──────────
+             Claiming the farm is the last thing we ask him to do before he gets
+             anything. So we do not leave him on a dashboard of zeros; we offer
+             the one job he can finish tonight.
+
+             The same two choices the dashboard FirstRunCard shows, from the
+             shared module, so the two screens can never drift apart. */
+          <>
+            <div className="mb-6 text-center">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-wangari-green-50 px-4 py-1.5 text-wangari-green-800">
+                <PartyPopper className="h-4 w-4" aria-hidden />
+                <span className="text-sm font-semibold">Farm claimed</span>
+              </div>
+              <h1 className="text-2xl font-bold leading-tight text-wangari-heading sm:text-3xl">
+                What did you get today?
+              </h1>
+              <p className="mx-auto mt-2 max-w-md text-wangari-muted">
+                Pick one. You will see the number straight away.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {FIRST_RECORD_CHOICES.map((c) => {
+                const Icon = c.icon;
+                return (
+                  <Link
+                    key={c.id}
+                    href={c.href}
+                    className={cn(
+                      "group flex flex-col gap-2 rounded-2xl border border-wangari-border bg-wangari-card p-6",
+                      "transition-all duration-200",
+                      "hover:-translate-y-0.5 hover:border-wangari-green-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] active:scale-[0.99]"
+                    )}
+                  >
+                    <Icon className="h-7 w-7 text-wangari-green-700" aria-hidden />
+                    <span className="text-base font-semibold text-wangari-heading">
+                      {c.title}
+                    </span>
+                    <span className="-mt-1 text-sm text-wangari-muted">
+                      {c.subtitle}
+                    </span>
+                    <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-wangari-green-800">
+                      {c.cta}
+                      <ArrowRight
+                        className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                        aria-hidden
+                      />
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* A visible way out (R9). The step is an invitation, not a toll
+                gate — a farmer who cannot answer today must still be able to
+                reach the dashboard and come back tomorrow. */}
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="mt-6 w-full"
+              onClick={() => {
+                // Pushing here rather than automatically is deliberate: the
+                // dashboard layout mounts OnboardingGate, and entering it via a
+                // real navigation makes it re-read the claim we just saved
+                // instead of reusing a cached pre-claim decision.
+                router.push("/dashboard", { scroll: false });
+                router.refresh();
+              }}
+            >
+              Do this later
+            </Button>
           </>
         )}
       </motion.div>

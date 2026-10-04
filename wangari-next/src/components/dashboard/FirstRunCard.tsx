@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Milk, Wheat, Package, ArrowRight, CheckCircle2, Hand } from "lucide-react";
+import { Package, ArrowRight, CheckCircle2, Hand } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { showFirstRunCard } from "@/lib/first-run";
+import { FIRST_RECORD_CHOICES } from "@/lib/first-record-choices";
 
 /**
  * FirstRunCard — the farmer's first screen, and the reason they come back.
@@ -44,24 +45,7 @@ interface FirstRunCardProps {
   locked?: boolean;
 }
 
-const CHOICES = [
-  {
-    id: "livestock",
-    icon: Milk,
-    title: "I sell milk or eggs",
-    subtitle: "Milk, eggs or meat",
-    href: "/deliveries",
-    cta: "Record a sale",
-  },
-  {
-    id: "crops",
-    icon: Wheat,
-    title: "I grow crops",
-    subtitle: "Maize, vegetables, fruit",
-    href: "/crops",
-    cta: "Record a harvest",
-  },
-] as const;
+const CHOICES = FIRST_RECORD_CHOICES;
 
 export function FirstRunCard({ firstRecordAt, locked }: FirstRunCardProps) {
   // The gating rule lives in lib/first-run.ts so it is pinned by tests rather
