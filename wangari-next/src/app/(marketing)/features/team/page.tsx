@@ -29,18 +29,7 @@ export default function TeamFeaturePage() {
         { title: "Shift Scheduler", desc: "Plan weekly and monthly shifts. Workers get their schedules in advance with automatic reminders. Handle shift swaps and overtime tracking effortlessly." },
         { title: "Compliance Reports", desc: "Generate payroll reports for tax filing, NHIF, and NSSF contributions. Keep your farm compliant with Kenyan labor laws without the paperwork headache." },
       ]}
-      stats={[
-        { value: "5K+", label: "Workers Managed" },
-        { value: "30%", label: "Productivity Increase" },
-        { value: "Zero", label: "Payroll Errors" },
-        { value: "100%", label: "Attendance Accuracy" },
-      ]}
-      testimonial={{
-        name: "Grace Wanjiku",
-        role: "Layer Farmer, Nakuru",
-        text: "Managing 12 workers used to be a nightmare of paper timesheets and disputed wages. Now everything is digital and transparent. My workers love it because they can see their hours and earnings in real-time. No more arguments about pay.",
-      }}
-      farmerExperience={{
+                  farmerExperience={{
         heading: "Payday without the arguments",
         steps: [
           { title: "7:00 AM — workers clock in with their phones", desc: "Each worker taps in on their own device. GPS confirms they're actually at the farm. The paper timesheet — and its creative arithmetic — is gone." },

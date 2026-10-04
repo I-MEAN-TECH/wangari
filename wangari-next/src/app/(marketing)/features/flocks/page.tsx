@@ -29,18 +29,7 @@ export default function FlocksFeaturePage() {
         { title: "Mortality Analysis", desc: "Track and categorize mortality events by cause, age, and flock. Identify patterns that indicate disease, nutrition issues, or management problems before they escalate." },
         { title: "Financial Per Flock", desc: "See exactly how much each flock costs to raise and how much revenue it generates. Calculate ROI per bird, per kg, or per egg — giving you clear profitability insights." },
       ]}
-      stats={[
-        { value: "Every Bird", label: "Tracked Individually" },
-        { value: "98%", label: "Health Alert Accuracy" },
-        { value: "3x", label: "Faster Disease Detection" },
-        { value: "25%", label: "Average Cost Savings" },
-      ]}
-      testimonial={{
-        name: "Grace Wanjiku",
-        role: "Layer Farmer, Nakuru",
-        text: "Wangari's flock management completely changed how I run my farm. I used to lose chickens to disease before I even knew something was wrong. Now I get alerts the moment production drops, and I can trace it back to the exact cause. Last quarter I saved KES 120,000 just from early disease detection.",
-      }}
-      farmerExperience={{
+                  farmerExperience={{
         heading: "A morning with your flocks",
         steps: [
           { title: "6:30 AM — Open the coop, count the birds", desc: "Tap My Animals, pick the flock. Yesterday's numbers are right there — birds, eggs, feed used. You know instantly if anything is off." },

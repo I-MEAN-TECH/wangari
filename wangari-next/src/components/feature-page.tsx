@@ -15,8 +15,17 @@ interface FeaturePageProps {
   description: string;
   highlights: string[];
   capabilities: { title: string; desc: string }[];
-  stats: { value: string; label: string }[];
-  testimonial: { name: string; role: string; text: string };
+  /**
+   * Optional. `stats` and `testimonial` were once REQUIRED, which quietly
+   * pressured every page to supply them -- and for a feature that is not
+   * shipped yet, "supply one" meant inventing a number like "<2s response
+   * time" or quoting a named farmer who had never used it. A required prop
+   * made dishonesty the path of least resistance.
+   *
+   * They are optional now, so a page can be honest by leaving them out.
+   */
+  stats?: { value: string; label: string }[];
+  testimonial?: { name: string; role: string; text: string };
   /** Optional narrative walkthrough of the feature in a farmer's day. */
   farmerExperience?: { heading: string; steps: { title: string; desc: string }[] };
 }
@@ -66,6 +75,7 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
       </section>
 
       {/* Stats */}
+      {stats && stats.length > 0 && (
       <section className="py-16 px-6 bg-[#F0FDF4]">
         <div className="mx-auto max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((s) => (
@@ -76,6 +86,7 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
           ))}
         </div>
       </section>
+      )}
 
       {/* Capabilities */}
       <section className="py-24 px-6">
@@ -116,6 +127,7 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
       </section>
 
       {/* Testimonial */}
+      {testimonial && (
       <section className="py-24 px-6">
         <div className="mx-auto max-w-3xl">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-2xl border border-[#E5E7EB] bg-white p-10 text-center">
@@ -125,6 +137,7 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
           </motion.div>
         </div>
       </section>
+      )}
 
       {/* The farmer's experience — a day-in-the-life walkthrough */}
       {farmerExperience && (

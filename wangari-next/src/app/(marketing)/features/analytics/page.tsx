@@ -29,18 +29,7 @@ export default function AnalyticsFeaturePage() {
         { title: "Custom Reports", desc: "Generate custom reports for any time period, flock, or metric. Share reports with partners, investors, or financial institutions with one tap." },
         { title: "Benchmark Comparisons", desc: "Compare your farm's performance against industry averages and your own historical data. See where you excel and where there's room for improvement." },
       ]}
-      stats={[
-        { value: "Real-Time", label: "Revenue Tracking" },
-        { value: "40%", label: "Better Decision Making" },
-        { value: "15%", label: "Average Cost Reduction" },
-        { value: "Real-time", label: "Data Updates" },
-      ]}
-      testimonial={{
-        name: "Mary Akinyi",
-        role: "Mixed Farm, Kisumu",
-        text: "The analytics showed me that one of my flocks was costing me more in feed than it was producing in eggs. I would never have caught that without Wangari. I restructured that flock and saved KES 200,000 last quarter. The forecasting feature helps me plan purchases ahead of time.",
-      }}
-      farmerExperience={{
+                  farmerExperience={{
         heading: "From guesses to numbers in one dashboard",
         steps: [
           { title: "End of month — the question arrives", desc: "'Is this farm actually making money?' With paper records, that answer takes a weekend with a calculator. With Wangari, it's on your dashboard already." },

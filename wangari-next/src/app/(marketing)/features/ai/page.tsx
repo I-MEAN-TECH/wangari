@@ -3,51 +3,61 @@
 import { Sparkles } from "lucide-react";
 import { FeaturePage } from "@/components/feature-page";
 
+/**
+ * The AI Assistant — planned, not shipped.
+ *
+ * ── Why this page was rewritten ─────────────────────────────────────────────
+ * It carried a testimonial attributed to a named farmer — "Mary Akinyi, Mixed
+ * Farm, Kisumu" — describing her asking the assistant why her layers were
+ * producing fewer eggs and getting an answer that traced it to a change in
+ * feed protein. She is not a user. The assistant is not switched on:
+ * `AI_API_KEY` is unset in production, so `/api/ai/chat` refuses to answer at
+ * all. The page also advertised "<2s response time" and "24/7 AI Available",
+ * numbers for a feature that has never run.
+ *
+ * That matters more than a normal copy error. This is the page an investor,
+ * a Ministry official or a feed company opens, and the whole pitch rests on
+ * being straight — the field plan's own rule is "never inflate, the honesty IS
+ * the pitch". A named farmer vouching for a feature that does not exist is the
+ * one claim that, if discovered, costs the credibility everything else is
+ * built on. It is also the kind of thing a due-diligence reader checks first.
+ *
+ * So: no invented numbers, no invented people. What is left is the real
+ * position, stated plainly — this is what it will do, this is what it will be
+ * grounded in, and it is not available today. Telling a partner the truth
+ * about today's build is what earns them the right to believe tomorrow's.
+ */
 export default function AIFeaturePage() {
   return (
     <FeaturePage
       icon={Sparkles}
-      badge="AI Assistant — Coming Soon"
-      title="Ask your farm anything"
-      subtitle="Get instant, data-driven answers about your farm. Powered by your own production data, market prices, and agricultural best practices."
-      description="Wangari's AI Assistant is like having an agricultural expert in your pocket. Ask it anything about your farm — from 'Which flock is most profitable?' to 'How much feed should I order this week?' — and get instant, personalized answers based on your actual data."
+      badge="In development — not available yet"
+      title="An assistant that reads your own records"
+      subtitle="Planned: ask questions about your farm in English or Swahili and get answers grounded in your actual production, costs and sales — never generic advice."
+      description="Wangari's AI assistant is planned to answer questions like 'Which flock is most profitable?' or 'How much feed should I order this week?' using the records the farmer has already kept. It is not switched on today. This page describes what it is being built to do, and it will say so here until it is genuinely live — we would rather show you an honest roadmap than a demo of something that does not work."
       highlights={[
-        "Natural language queries — ask in English or Swahili",
-        "Answers based on YOUR farm's real data, not generic advice",
-        "Production predictions and optimization recommendations",
-        "Disease diagnosis support based on symptoms",
-        "Feed optimization suggestions to reduce costs",
-        "Market price insights and selling timing recommendations",
-        "24/7 availability — no waiting for consultations",
-        "Continuously learns from your farm's patterns",
+        "Planned: answers grounded in YOUR farm's records, not generic advice",
+        "Planned: English and Swahili, typed or spoken",
+        "Planned: production trends, feed efficiency and cost analysis",
+        "Planned: market-price context for timing a sale",
+        "Planned: every answer shows the numbers behind it",
+        "Not available today — no key is configured in production",
       ]}
       capabilities={[
-        { title: "Natural Language Chat", desc: "Simply type or speak your question in plain English or Swahili. No special commands or technical knowledge needed. The AI understands context and follows up with clarifying questions." },
-        { title: "Data-Powered Answers", desc: "Every response is grounded in your actual farm data. When you ask about profitability, the AI analyzes your real costs and revenue — not industry averages. This means advice that's relevant to YOUR farm." },
-        { title: "Production Insights", desc: "Get AI-generated insights about your production trends. The assistant identifies patterns humans might miss — like correlating weather changes with production drops or identifying the most cost-effective feed brands." },
-        { title: "Health Advisory", desc: "Describe symptoms you're observing and the AI will suggest possible causes and recommended actions. While it doesn't replace a vet, it helps you make faster decisions in critical situations." },
-        { title: "Financial Planning", desc: "Ask the AI to forecast next month's revenue, calculate the ROI of expanding a flock, or compare the profitability of different breeds. Get numbers, not just opinions." },
-        { title: "Learning Library", desc: "The AI draws from a vast database of livestock and crop farming knowledge — dairy, beef, poultry, goats, fish, bees — adapted for Kenyan conditions. Ask about best practices, new techniques, or regulatory changes — and get actionable answers." },
+        { title: "Grounded in your data", desc: "The design rule is that every answer cites the farmer's own records — their real costs and revenue, never industry averages. That is also the moat: records a competitor cannot retroactively collect." },
+        { title: "Plain language, either way", desc: "Questions in English or Swahili, the way a farmer would actually say them. No commands, no menus, no jargon to learn first." },
+        { title: "Shows its working", desc: "A number with no explanation is a rumour. Every answer is meant to show the records behind it, so the farmer can check the reasoning rather than trust a black box." },
+        { title: "Advisory, never automatic", desc: "It proposes; the farmer decides. Automation that silently changes a farm's records is how you lose a user's trust permanently, so nothing gets written without them." },
+        { title: "Costs money to run", desc: "AI is an expense per user, so cheap models go where they suffice and expensive ones only where the value is proven. It has to earn its keep per farm." },
+        { title: "Honest when it does not know", desc: "Saying what is missing is the rule this product is built on. If the record does not support an answer, it says so rather than inventing one." },
       ]}
-      stats={[
-        { value: "<2s", label: "Response Time" },
-        { value: "24/7", label: "AI Available" },
-        { value: "EN/SW", label: "Language Support" },
-        { value: "24/7", label: "Availability" },
-      ]}
-      testimonial={{
-        name: "Mary Akinyi",
-        role: "Mixed Farm, Kisumu",
-        text: "The AI assistant is like having an agricultural expert on speed dial. I asked it why my layers were producing fewer eggs and it analyzed three months of data to find the answer — my feed supplier had changed the protein content. I would never have figured that out on my own.",
-      }}
       farmerExperience={{
-        heading: "Ask your farm anything",
+        heading: "What a farmer would be able to do",
         steps: [
-          { title: "Type it the way you'd say it", desc: "'Why are my eggs small this month?' No special commands, no menus. English or Swahili — the AI understands plain questions, even half-formed ones at 6am." },
-          { title: "It answers from YOUR data", desc: "Not generic internet advice. It reads your actual records — feed batches, production trends, expenses — and shows you the numbers behind every answer." },
-          { title: "Follow-up questions welcome", desc: "'Would raising prices by 10 shillings hurt sales?' Ask. It checks your own sales history across the price changes you've already made." },
-          { title: "An expert that never sleeps", desc: "Vet visit scheduled for next week but something looks off tonight? Ask now — the AI has read every record your farm has ever generated, at 2am if needed." },
-          { title: "Weekly insight, unprompted", desc: "Every morning digest can flag what the AI noticed: a cost creeping up, a flock underperforming, a vaccination window closing. You don't have to think to ask." },
+          { title: "Ask it the way you'd say it", desc: "'Why are my eggs smaller this month?' No commands, no menus — English or Swahili, at six in the morning." },
+          { title: "It reads your records, not the internet", desc: "Feed batches, production trends, expenses and sales — and it shows you which records it used." },
+          { title: "Follow-ups welcome", desc: "'Would charging 10 more shillings have hurt sales?' — checked against the price changes already in the records." },
+          { title: "It flags rather than nags", desc: "A cost creeping up, a flock underperforming, a vaccination window closing. Surfaced in the action centre, reversible, and never acted on without you." },
         ],
       }}
     />

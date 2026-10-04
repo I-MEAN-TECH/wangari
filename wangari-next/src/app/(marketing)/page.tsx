@@ -21,7 +21,7 @@ import {
   Star,
   Quote,
 } from "lucide-react";
-import { TestimonialsSlider } from "@/components/landing/TestimonialsSlider";
+import { EarlyAccessPanel } from "@/components/landing/EarlyAccessPanel";
 import { DemoVideoShowcase } from "@/components/landing/DemoVideoShowcase";
 import { StatCards } from "@/components/landing/StatCards";
 import { TextRoll } from "@/components/ui/text-roll";
@@ -64,7 +64,7 @@ const features = [
   { icon: Package, title: "Inventory Control", desc: "Never run out of feed or medication. Get low-stock alerts and track every bag in and out.", href: "/features/inventory" },
   { icon: Users, title: "Team Management", desc: "Manage workers, attendance, and wages. Assign tasks and track who did what.", href: "/features/team" },
   { icon: Smartphone, title: "Works Without Bundles", desc: "Record sales and output with zero internet. Everything is saved on your phone and syncs automatically when you're back online.", href: "/register" },
-  { icon: Sparkles, title: "AI Assistant", desc: "Ask your farm anything and get instant answers from your data.", href: "/features/ai" },
+  { icon: Sparkles, title: "AI Assistant", desc: "Coming soon — an assistant that answers from your own records, never generic advice.", href: "/features/ai" },
 ];
 
 const steps = [
@@ -93,11 +93,9 @@ const stats = [
   { value: "14 Days", label: "Free Trial", icon: Shield },
 ];
 
-const testimonials = [
-  { name: "Early Adopter", role: "Pilot Farmer", text: "Finally, a tool built for Kenyan farms. The WhatsApp bot means I can log data without opening an app. Simple and fast.", rating: 5 },
-  { name: "Beta Tester", role: "Poultry Farmer", text: "I can see my real profit now, not just guesswork. The inventory alerts help me never run out of feed.", rating: 5 },
-  { name: "Pilot Program", role: "Mixed Farm", text: "My workers can log everything on their phones. The reports show me exactly where my money goes.", rating: 5 },
-];
+// A second, unused testimonials array used to sit here. It was dead code, and
+// it credited "the WhatsApp bot" — which is not built; /whatsapp is still a
+// Coming Soon page. Removed rather than left to rot next to real copy.
 
 const benefits = [
   { icon: Leaf, title: "Eco-Friendly", desc: "Reduce waste with smart inventory tracking and data-driven decisions." },
@@ -244,7 +242,7 @@ export default function LandingPage() {
               Everything your farm needs
             </h2>
             <p className="mt-5 text-lg text-[#64748B] max-w-2xl mx-auto">
-              From one-tap production logging to AI-powered insights — Wangari handles it all.
+              From one-tap production logging to real profit in shillings — Wangari handles it all.
             </p>
           </motion.div>
 
@@ -358,18 +356,20 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════ TESTIMONIALS ═══════ */}
+      {/* ═══════ WHAT'S REAL ═══════ */}
       <section className="py-28 px-6 bg-gradient-to-b from-white to-[#F0FDF4]">
         <div className="mx-auto max-w-7xl">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-12">
-            <p className="text-sm font-bold uppercase tracking-widest text-[#22C55E] mb-3">Testimonials</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-[#22C55E] mb-3">Why this is different</p>
             <h2 className="text-3xl md:text-5xl font-extrabold text-[#0F172A] tracking-tight">
-              Built for farmers, by people who farm
+              Built for farmers, not for a slide
             </h2>
-            <p className="mt-4 text-base md:text-lg text-[#64748B]">Real feedback from commercial & smallholder farmers across Kenya.</p>
+            <p className="mt-4 text-base md:text-lg text-[#64748B]">
+              What Wangari actually does today — no invented numbers, no invented customers.
+            </p>
           </motion.div>
 
-          <TestimonialsSlider />
+          <EarlyAccessPanel />
         </div>
       </section>
 

@@ -29,18 +29,7 @@ export default function ProductionFeaturePage() {
         { title: "Mortality Logs", desc: "Record and categorize mortality events in real-time. Track causes, ages, and patterns. The system flags unusual spikes and suggests potential causes." },
         { title: "Worker Reports", desc: "See who logged what and when. Track worker productivity and accountability. Identify training needs based on data quality and submission consistency." },
       ]}
-      stats={[
-        { value: "10s", label: "Average Log Time" },
-        { value: "300K+", label: "Records Logged Monthly" },
-        { value: "100%", label: "Offline Reliability" },
-        { value: "3x", label: "Faster Than Manual" },
-      ]}
-      testimonial={{
-        name: "Peter Ochieng",
-        role: "Broiler Farm, Eldoret",
-        text: "Before Wangari, my workers would fill paper forms that often got lost or damaged. Now they log everything on their phones in seconds. The offline mode is a lifesaver — our farm has patchy signal but the data always syncs. I can see production data from my office in Nairobi.",
-      }}
-      farmerExperience={{
+                  farmerExperience={{
         heading: "Recording today's output — even with no signal",
         steps: [
           { title: "At the coop, phone says 'No service'", desc: "Doesn't matter. Open Wangari, tap Record Today's Output. The app works exactly the same as when you have full bars." },

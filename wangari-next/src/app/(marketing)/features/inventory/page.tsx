@@ -29,18 +29,7 @@ export default function InventoryFeaturePage() {
         { title: "Expiry Management", desc: "Track medication and vaccine expiry dates. Get advance warnings for items approaching expiry so you can use them in time or adjust orders." },
         { title: "Value Reports", desc: "See the total value of your inventory at any point in time. Generate reports for accounting, insurance, or business planning purposes." },
       ]}
-      stats={[
-        { value: "Low Stock", label: "Alerts Enabled" },
-        { value: "0", label: "Stockouts After Setup" },
-        { value: "24/7", label: "Monitoring" },
-        { value: "99%", label: "Stock Accuracy" },
-      ]}
-      testimonial={{
-        name: "Peter Ochieng",
-        role: "Broiler Farm, Eldoret",
-        text: "The inventory alerts help me know exactly when to reorder. No more over-ordering feed out of fear. The system tracks every bag in and out.",
-      }}
-      farmerExperience={{
+                  farmerExperience={{
         heading: "Never run out of feed mid-week again",
         steps: [
           { title: "The old way: feed runs out Thursday", desc: "You thought you had enough for the week. Now you're buying emergency feed at a premium, or worse — rationing, and production drops for it." },
