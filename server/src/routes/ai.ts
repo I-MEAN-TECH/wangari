@@ -75,6 +75,37 @@ function pushUndo(farmId: number, entry: { undoId: string; tool: string; args: a
 }
 
 
+/**
+ * Has this model been RETIRED, as opposed to having a bad minute?
+ *
+ * The distinction is the entire safety of a fallback. A 404 or a
+ * model_not_found means the id no longer exists and will never come back, so
+ * switching is the only way to answer the farmer. A 429, a 500 or a dropped
+ * connection means wait and try the SAME model, and switching there would
+ * trade a verified model for an unverified one because of a transient blip.
+ */
+export function isModelGone(status: number, body: string): boolean {
+  if (status === 404 || status === 410) return true;
+  if (status !== 400) return false;
+  const b = String(body ?? "").toLowerCase();
+  return b.includes("model_not_found") || b.includes("does not exist") || b.includes("no such model");
+}
+
+/**
+ * Verified backups for the pinned model, tried IN ORDER, and only once the
+ * pinned one is confirmed gone.
+ *
+ * Empty by default and deliberately NOT discovered at request time. Every
+ * entry must have passed the two-step agentic probe
+ * (scripts/pick-free-model.cjs), because a model that cannot chain two tool
+ * calls leaves the panel dead halfway through recording a sale - and that
+ * failure is worse than being told the assistant is down.
+ */
+const AI_MODEL_FALLBACKS = (process.env.AI_MODEL_FALLBACKS || "")
+  .split(",")
+  .map((m) => m.trim())
+  .filter(Boolean);
+
 function getProviderConfig(): AIProviderConfig & { model: string; baseUrl: string } {
   const provider = getProvider(AI_PROVIDER) || getProvider("gemini")!;
   return {
@@ -785,6 +816,8 @@ async function callOpenAICompatible(
   tools: any[],
   config: ReturnType<typeof getProviderConfig>,
   onWait?: (waitMs: number, opensAt: number | null) => void,
+  /** Backups still untried, so two dead models still end up answered. */
+  remainingFallbacks: string[] = AI_MODEL_FALLBACKS,
 ): Promise<{ content: string; tool_calls: any[] }> {
   const body = JSON.stringify({ model: config.model, messages, tools, temperature: 0.7, max_tokens: 4096 });
   // `Response` alone means Express's Response in this file, not fetch's.
@@ -828,6 +861,20 @@ async function callOpenAICompatible(
   if (!res.ok) {
     if (!err) err = await res.text().catch(() => "");
     console.error(`${config.name}:`, err);
+
+    /* The pinned model was retired - most likely mid-expo, since the current
+       one is flagged for deprecation this month. Answer the farmer on a
+       probe-verified backup instead of failing every question until someone
+       edits an env var. Deliberately narrow: only a permanent
+       404/410/model_not_found moves us, never a 429 or a 500. */
+    if (isModelGone(res.status, err) && remainingFallbacks.length) {
+      const [next, ...rest] = remainingFallbacks;
+      console.warn(
+        `${config.name}: ${config.model} is gone (${res.status}). Falling back to ${next}.` +
+          (rest.length ? ` Further backups: ${rest.join(", ")}` : ""),
+      );
+      return callOpenAICompatible(messages, tools, { ...config, model: next }, onWait, rest);
+    }
     throw new Error(`${config.name}: ${res.status}`);
   }
   const data: any = await res.json();

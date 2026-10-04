@@ -13,18 +13,24 @@
  * the same space-bunny-alpha that FAILS this probe on OpenRouter PASSES it
  * on UnoRouter, at ~1.7s a call. The provider was the problem, not the model.
  *
- * ── why there is no roster any more ──────────────────────
- * This used to hold a list of "free" models and probe down it. That list
- * rotted the way rotted lists do — a retired model answers 404 and takes
- * the assistant down — so it was replaced by live discovery, which needs a
- * provider that publishes per-model pricing. UnoRouter does not, so
- * discovery cannot run there and would have silently returned an empty
- * roster, i.e. a 404 by another route.
+ * ── the roster, and why it was wrongly written off ───────
+ * An earlier version held a hardcoded list of "free" models and probed down
+ * it. That list rotted the way rotted lists do — a retired model answers 404
+ * and takes the assistant down — so it was replaced by live discovery and the
+ * roster was deleted outright, on the stated grounds that "UnoRouter does not
+ * publish per-model pricing, so discovery cannot run there".
  *
- * So the roster is gone and the model is pinned by AI_MODEL instead. What
- * survives is the probe: it is the part that stops a broken model from
- * reaching a farmer, and it is what was run by hand to choose this one.
- * Run it against any provider before pointing AI_MODEL at something new.
+ * That ground was wrong, and checking rather than repeating the assumption is
+ * what caught it. A live call returned 267 models with ZERO pricing fields —
+ * so the old filter (pricing.prompt === 0) matched nothing. But the price IS
+ * published: 116 ids end in ":free" and the rest are billable. The filter did
+ * not apply to this provider; the roster was there the whole time.
+ *
+ * So discovery is back, in lib/free-model-roster.ts, using the signal this
+ * endpoint actually carries. The probe is still what turns a shortlist into a
+ * decision: run scripts/pick-free-model.cjs, and pin the winner in AI_MODEL.
+ * Nothing here chooses a model per request — a model re-chosen mid-conversation
+ * is a model that can vanish in front of a farmer.
  */
 
 export interface AgenticProbeResult {
@@ -95,6 +101,23 @@ export async function probeAgentic(
   apiKey: string,
   baseUrl: string,
   fetchImpl: typeof fetch = fetch,
+  /**
+   * Milliseconds to wait BETWEEN step 1 and step 2.
+   *
+   * Zero by default, and that default is a trap this parameter exists to fix.
+   * The probe issues two requests; on UnoRouter's free tier the second lands
+   * inside the minute the first just used and comes back 429 — so EVERY
+   * candidate "failed", and a model serving the farm job fine in production
+   * was ruled out by the plan rather than by the model.
+   *
+   * Measured: four probed candidates all returned "step 2 answered 429".
+   * Production survives this because callOpenAICompatible retries on the
+   * window; the probe did not, so it was measuring the rate limiter.
+   *
+   * Default stays 0 so unit tests and any caller with spare quota are
+   * unaffected; the selection script passes the real window.
+   */
+  gapMs = 0,
 ): Promise<AgenticProbeResult> {
   const headers = {
     Authorization: `Bearer ${apiKey}`,
@@ -131,6 +154,7 @@ export async function probeAgentic(
       return { model, passed: false, reason: `step 1 sent unusable arguments: ${e.message}`, step1Ms };
     }
 
+    if (gapMs > 0) await new Promise((r) => setTimeout(r, gapMs));
     const t1 = Date.now();
     const second = await call({
       model,
