@@ -3,6 +3,7 @@ import { prisma } from "../db.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { AI_PROVIDERS, getProvider, type AIProviderConfig } from "../ai-providers.js";
+import { pickBestFreeModel } from "../lib/free-models.js";
 
 const router = Router();
 router.use(authMiddleware, requireOwner);
@@ -35,14 +36,65 @@ function pushUndo(farmId: number, entry: { undoId: string; tool: string; args: a
   undoStacks.set(farmId, stack);
 }
 
+/**
+ * A free model that passed an agentic probe, or null while unknown.
+ *
+ * Read SYNCHRONOUSLY by getProviderConfig, because the five provider
+ * helpers all take a plain config object. An earlier attempt awaited here
+ * and turned the model into a Promise, which typechecked loudly but would
+ * have sent "[object Promise]" as the model name.
+ *
+ * Discovery is kicked off at module load (see the warm-up below) and the
+ * value lands here whenever it resolves. A request that arrives first uses
+ * the configured default; that is the correct trade — the alternative is
+ * making every farmer wait on a network probe.
+ */
+let verifiedFreeModel: string | null = null;
+
+/** Kick off discovery once at boot so the first farmer does not pay for it. */
+function warmModelCache(): void {
+  if (AI_MODEL || !AI_API_KEY || AI_PROVIDER !== "openrouter") return;
+  pickBestFreeModel(AI_API_KEY, { baseUrl: AI_BASE_URL || undefined })
+    .then((pick) => {
+      if (pick?.model) {
+        verifiedFreeModel = pick.model;
+        if (!pick.verified) {
+          // Loud on purpose: a fallback means the allowlist needs updating,
+          // and that should be visible in the deploy logs, not discovered
+          // by a farmer mid-demo.
+          console.warn(
+            `[ai] verified free model unavailable; using discovered fallback ` +
+              `${pick.model} after ${pick.probed} probe(s). Update VERIFIED_MODELS.`,
+          );
+        }
+      }
+    })
+    .catch(() => {
+      /* keep the configured default; a failed probe must not block boot */
+    });
+}
+warmModelCache();
+
 function getProviderConfig(): AIProviderConfig & { model: string; baseUrl: string } {
   const provider = getProvider(AI_PROVIDER) || getProvider("gemini")!;
   return {
     ...provider,
-    model: AI_MODEL || provider.defaultModel,
+    // A verified working model overrides the hard-coded default, so a model
+    // OpenRouter retires overnight does not take the assistant down. An
+    // explicit AI_MODEL still wins: an operator who pinned a model meant it.
+    model: AI_MODEL || verifiedFreeModel || provider.defaultModel,
     baseUrl: AI_BASE_URL || provider.baseUrl,
   };
 }
+
+/**
+ * The model that actually passed an agentic probe, cached for the process.
+ *
+ * Discovery costs live requests and the free tier is 50 a day ACCOUNT-WIDE,
+ * so this runs once and is reused. An explicit AI_MODEL still wins: an
+ * operator who pinned a model meant it, and silently overriding that would
+ * be worse than the failure it prevents.
+ */
 
 // ─── Complete MCP Tool Definitions ────────────────────────
 const mcpTools = [
