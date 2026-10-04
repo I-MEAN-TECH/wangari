@@ -2,6 +2,26 @@
 
 Four changes in this batch. Local builds pass (server tsc + Next.js build). DB steps must run on the VPS.
 
+> **2026-10-04 — timezone is UTC, and must stay UTC.**
+> The PostgreSQL server this app shares with another tenant is configured
+> `Europe/Berlin`. Roughly 50 columns here are `timestamp without time zone`
+> with a `CURRENT_TIMESTAMP` default, so under that setting a database-default
+> write stored Berlin local time in a column the app reads as UTC — a silent
+> two-hour error. Prisma computes timestamps client-side and sends UTC, so
+> nothing written through Prisma was ever affected; the default was a trap for
+> any path that did not supply a value.
+>
+> Production was fixed with `ALTER DATABASE saas_db SET timezone TO 'UTC'` —
+> deliberately scoped to that one database, because the same server also serves
+> the SVE solar tenant and a cluster-wide change would alter its behaviour.
+> `20261004103000_force_utc_on_built_databases` makes every future database built
+> from this chain set its own UTC default, so a rebuild cannot inherit Berlin.
+>
+> If you ever add raw SQL that inserts without a timestamp, confirm it first:
+> ```sql
+> SHOW timezone;              -- must say UTC
+> ```
+
 ## 1. Crash safety (code only — nothing to run)
 - `unhandledRejection` → logged, process keeps serving
 - `uncaughtException` → logged, clean exit(1); PM2 restarts
