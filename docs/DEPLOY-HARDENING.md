@@ -22,14 +22,23 @@ Then in the Wangari UI, open each device's row to view its secret and configure 
 New devices registered via `POST /api/zkteco/devices` get a secret auto-generated and returned once in the response.
 
 ## 3. Migrations (one-time baseline)
-The repo now has `server/prisma/migrations/0_init` reflecting the current schema. Tell Prisma the live DB already matches:
+The repo now has `server/prisma/migrations/20260908140521_init` reflecting the current schema. Tell Prisma the live DB already matches:
 
 ```bash
 cd /var/www/wangari/server
-npm run db:deploy        # applies 0_init — will no-op after resolve
-npm run db:baseline      # marks 0_init as applied without running it
+npm run db:deploy        # applies 20260908140521_init — will no-op after resolve
+npm run db:baseline      # marks 20260908140521_init as applied without running it
 ```
 Order matters: run `deploy` first (it creates `_prisma_migrations` table), and if it errors on existing tables, run `baseline` then `deploy` again to confirm clean state.
+
+> **2026-10-04:** every migration directory was renamed from an unpadded ordinal
+> (`0_init`, `1_add_plans`, … `19_phone_pin_attempts`) to a real `YYYYMMDDHHMMSS`
+> commit timestamp. Prisma sorts migrations lexicographically, so the old names
+> applied in the order `0, 10, 11, … 19, 1, 2026…, 2` — two inversions — and
+> `migrate deploy` against a **fresh** database failed. The new timestamps are the
+> actual git commit times and reproduce the order already recorded in the live
+> `_prisma_migrations` ledger, so no schema change results. Always create new
+> migrations with `prisma migrate dev --name <change>`, which timestamps them.
 
 All future schema changes: edit `server/prisma/schema.prisma` → `npx prisma migrate dev --name <change>` locally, commit the migration folder, `npm run db:deploy` on the VPS. Never `db push` again (kept only as an escape hatch).
 

@@ -10,7 +10,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:baseline": "prisma migrate resolve --applied 0_init",
+    "db:baseline": "prisma migrate resolve --applied 20260908140521_init",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
