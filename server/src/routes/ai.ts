@@ -670,6 +670,9 @@ router.post("/stream", async (req: Request, res: Response) => {
     // "the tools scrolled past and then nothing happened" is indistinguishable
     // from a frozen app, and a farmer who cannot tell will not try again.
     let answered = false;
+    /* Set once the form is on the farmer's screen, and the reason this turn
+       stops instead of looping for another model call. See the break below. */
+    let intakeAsk = "";
     const actions: { tool: string; ok: boolean; summary: string }[] = [];
     /* Research is metered twice over, and only one of the two is ours to fix.
        The provider allows one request a minute, so a turn that searches three
@@ -755,6 +758,7 @@ router.post("/stream", async (req: Request, res: Response) => {
            conversation where they are already reading. */
         if (toolName === "start_flock_intake" && ok && raw && (raw as any).intake) {
           send("intake", { intake: (raw as any).intake });
+          intakeAsk = String((raw as any).intake.ask || "");
         }
         actions.push({
           tool: toolName,
@@ -807,6 +811,26 @@ router.post("/stream", async (req: Request, res: Response) => {
         answered = true;
         break;
       }
+
+      /* The turn ends HERE, with the form open.
+
+         Measured on the live model: opening the form worked exactly as
+         designed — she passed the name, count, breed, species, cost and supplier
+         in a single call — and then the SECOND request of the turn, whose only
+         job was to say a sentence, hit the free tier's limit and died with
+         "429". The farmer was left with a working form and an error bubble
+         sitting on top of it.
+
+         So the sentence is ours, not hers. The wording already exists in
+         farm-intake.ts, it is written for farmers, and sending it costs zero
+         requests. Half the quota per intake, and no way for this turn to end in
+         a rate-limit error after the hard part already succeeded. */
+      if (intakeAsk) {
+        send("message", { content: intakeAsk });
+        answered = true;
+        break;
+      }
+
       if (steps >= maxSteps) truncatedByBudget = true;
     }
 
@@ -1149,6 +1173,7 @@ router.post("/chat", async (req: Request, res: Response) => {
     // The guided form, for callers that do not read a stream. Same card, same
     // questions — a farmer must not get a worse assistant by using /chat.
     let intake: any = null;
+    let intakeAsk = "";
     let steps = 0;
     let message = "";
     let truncatedByBudget = false;
@@ -1169,6 +1194,9 @@ router.post("/chat", async (req: Request, res: Response) => {
           const result = await executeTool(tc.function.name, args, farmId, req.user!.userId);
           if (!intake && result && typeof result === "object" && (result as any).intake) {
             intake = (result as any).intake;
+            // The form's own words win over the model's, for the same reason as
+            // in the stream: it is written for farmers and costs no request.
+            intakeAsk = String((result as any).intake.ask || "");
           }
           if (result && typeof result === "object" && (result as any).error) {
             step.ok = false;
@@ -1190,9 +1218,13 @@ router.post("/chat", async (req: Request, res: Response) => {
       // A failed step means the model should stop and explain rather than
       // compounding the mistake with more writes.
       if (allSteps.some((s) => !s.ok)) break;
+      // The form is open: the turn is over, as it is on the stream.
+      if (intakeAsk) break;
     }
 
     if (steps >= MAX_AGENT_STEPS) truncatedByBudget = true;
+
+    if (intakeAsk) message = intakeAsk;
 
     return res.json({
       message: { role: "assistant", content: message },

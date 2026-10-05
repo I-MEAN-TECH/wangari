@@ -8,6 +8,7 @@ import {
   savedSummary,
   sectionLabel,
   submitIntake,
+  undoIntake,
   type IntakeSection,
 } from "./ai-intake";
 
@@ -214,5 +215,72 @@ describe("submitIntake", () => {
       if (result.ok) return;
       expect(result.error).toMatch(/no connection/i);
     });
+  });
+});
+
+describe("undoIntake", () => {
+  const withFetch = (impl: any, run: (calls: any[]) => Promise<any>) => {
+    const original = globalThis.fetch;
+    const calls: any[] = [];
+    globalThis.fetch = (async (url: string, init: any) => {
+      calls.push({ url, init });
+      return impl(url, init);
+    }) as any;
+    return run(calls).finally(() => {
+      globalThis.fetch = original;
+    });
+  };
+
+  it("hands over the purchase expense so the money row goes too", () => {
+    // Without it, undo removes the flock and leaves a cost in the books for
+    // animals that no longer exist — found by the end-to-end run.
+    return withFetch(
+      () => new Response(JSON.stringify({ ok: true, expenseRemoved: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+      async (calls) => {
+        const result = await undoIntake("flock", 42, 777);
+        expect(result.ok).toBe(true);
+        expect(calls[0].init.method).toBe("DELETE");
+        expect(calls[0].url).toContain("/api/ai/intake/flock/42");
+        expect(JSON.parse(calls[0].init.body)).toEqual({ expenseTransactionId: 777 });
+      },
+    );
+  });
+
+  it("still works when there was no expense to remove", () => {
+    return withFetch(
+      () => new Response(JSON.stringify({ ok: true, expenseRemoved: false }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+      async (calls) => {
+        const result = await undoIntake("flock", 42);
+        expect(result.ok).toBe(true);
+        expect(calls[0].init.body).toBeUndefined();
+      },
+    );
+  });
+
+  it("passes on the reason a money row was kept, rather than swallowing it", () => {
+    // The card tells the farmer "nothing was saved" — so if the expense stayed,
+    // they have to hear about that too.
+    return withFetch(
+      () =>
+        new Response(
+          JSON.stringify({
+            ok: true,
+            expenseRemoved: false,
+            expenseKeptReason: "The purchase cost was recorded separately.",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      async () => {
+        const result = await undoIntake("flock", 42);
+        expect(result.ok).toBe(true);
+        expect(result.expenseKeptReason).toMatch(/recorded separately/);
+      },
+    );
   });
 });

@@ -217,16 +217,32 @@ export async function submitIntake(
   return body as IntakeSaveResult;
 }
 
-/** Remove a flock saved from the chat. One tap, because undo must be cheap. */
-export async function undoIntake(entity: string, id: number): Promise<{ ok: boolean; error?: string }> {
+/**
+ * Remove a flock saved from the chat. One tap, because undo must be cheap.
+ *
+ * `expenseTransactionId` is the purchase expense the SAVE created. Passing it
+ * lets the backend remove that money row too — without it, undo leaves a cost
+ * in the books for animals that no longer exist, which the first version of
+ * this did. The backend still verifies it belongs to this flock before it
+ * deletes anything, so a wrong or stale id costs nothing but a kept expense.
+ */
+export async function undoIntake(
+  entity: string,
+  id: number,
+  expenseTransactionId?: number | null,
+): Promise<{ ok: boolean; error?: string; expenseKeptReason?: string | null }> {
   const token = typeof localStorage !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
   try {
     const res = await fetch(`/api/ai/intake/${entity}/${id}`, {
       method: "DELETE",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(expenseTransactionId ? { "Content-Type": "application/json" } : {}),
+      },
+      body: expenseTransactionId ? JSON.stringify({ expenseTransactionId }) : undefined,
     });
-    if (res.ok) return { ok: true };
     const body = await res.json().catch(() => null);
+    if (res.ok) return { ok: true, expenseKeptReason: body?.expenseKeptReason ?? null };
     return { ok: false, error: body?.error || "I could not remove that." };
   } catch {
     return { ok: false, error: "No connection. Try again in a moment." };

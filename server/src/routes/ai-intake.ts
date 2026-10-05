@@ -165,9 +165,20 @@ router.post("/:entity", async (req: Request, res: Response) => {
  * DELETE /api/ai/intake/:entity/:id — undo a flock saved from the chat.
  *
  * One tap, because the whole promise of the assistant is that a misheard
- * instruction is reversible. It removes the flock and the vaccinations that
- * were scheduled with it, which is exactly what the flocks screen's own delete
- * does — the two paths must not differ in what they leave behind.
+ * instruction is reversible.
+ *
+ * It removes the flock, the vaccinations scheduled with it, AND the purchase
+ * expense the save created. That last one was found by testing, not by review:
+ * the first version of this route deleted the flock and left a KES 100,000
+ * expense sitting in the books, while the card told the farmer "nothing was
+ * saved". A half-undone record is worse than no undo — the margin now shows a
+ * purchase of animals the farm does not have.
+ *
+ * The expense is only removed when the farmer names it AND it really is the
+ * one this flock was bought with. Deleting by description alone would be
+ * guessing: two flocks bought from the same place on the same day at the same
+ * price produce identical descriptions, and a farmer's own carefully entered
+ * transaction is not ours to remove on a hunch.
  */
 router.delete("/:entity/:id", async (req: Request, res: Response) => {
   const entity = entityOf(req, res);
@@ -177,15 +188,45 @@ router.delete("/:entity/:id", async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: "Which flock?" });
+    const farmId = req.user!.farmId!;
 
     // Scope by farm BEFORE deleting anything: an id from another farm must be
     // refused, not merely not found, so the row is never touched.
-    const flock = await prisma.flock.findFirst({ where: { id, farmId: req.user!.farmId! } });
+    const flock = await prisma.flock.findFirst({ where: { id, farmId } });
     if (!flock) return res.status(404).json({ error: "That flock is not on your farm." });
 
+    let expenseRemoved = false;
+    const claimedExpenseId = Number(req.body?.expenseTransactionId);
+    if (Number.isInteger(claimedExpenseId) && claimedExpenseId > 0) {
+      const tx = await prisma.transaction.findFirst({ where: { id: claimedExpenseId, farmId } });
+      // Three things must line up before a money row is deleted: it is on this
+      // farm, it is the category the save used, and its description names this
+      // flock. Anything less is a coincidence, and a coincidence is not
+      // permission to remove a farmer's books.
+      if (
+        tx &&
+        tx.type === "expense" &&
+        tx.category === "animal_feed" &&
+        String(tx.description || "").includes(`Livestock purchase: ${flock.name}`)
+      ) {
+        await prisma.transaction.delete({ where: { id: tx.id } });
+        expenseRemoved = true;
+      }
+    }
+
     await prisma.vaccination.deleteMany({ where: { flockId: id } });
-    await prisma.flock.deleteMany({ where: { id, farmId: req.user!.farmId! } });
-    res.json({ ok: true, removed: flock.name });
+    await prisma.flock.deleteMany({ where: { id, farmId } });
+
+    res.json({
+      ok: true,
+      removed: flock.name,
+      expenseRemoved,
+      // Said out loud rather than assumed: if the expense stayed, the farmer
+      // must be able to see that rather than find it in next month's margin.
+      expenseKeptReason: expenseRemoved
+        ? null
+        : "The purchase cost was recorded separately and has been left in your books for you to check.",
+    });
   } catch (error) {
     console.error("Intake undo error:", error);
     res.status(500).json({ error: "I could not remove that. Please try again." });

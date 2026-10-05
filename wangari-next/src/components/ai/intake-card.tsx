@@ -59,6 +59,10 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [notice, setNotice] = React.useState<string | null>(null);
   const [flock, setFlock] = React.useState<{ id: number; name: string; currentCount?: number; breed?: string | null } | null>(null);
+  /** The purchase expense the save created, so undo can remove it as well. */
+  const [expenseId, setExpenseId] = React.useState<number | null>(null);
+  /** Set when undo left a money row behind, so the farmer is told rather than surprised. */
+  const [expenseKept, setExpenseKept] = React.useState<string | null>(null);
   const headingRef = React.useRef<HTMLParagraphElement>(null);
 
   const section = intake.sections[index];
@@ -92,6 +96,7 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
     const result = await submitIntake(intake.entity, values);
     if (result.ok) {
       setFlock(result.flock);
+      setExpenseId(result.alsoCreated?.expenseTransactionId ?? null);
       setPhase("saved");
       onSaved?.(result.flock);
       return;
@@ -112,8 +117,12 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
   const undo = async () => {
     if (!flock || phase !== "saved") return;
     setPhase("undoing");
-    const result = await undoIntake(intake.entity, flock.id);
+    const result = await undoIntake(intake.entity, flock.id, expenseId);
     if (result.ok) {
+      // A kept expense is reported, not buried. Telling a farmer "nothing was
+      // saved" while a purchase expense is still in their books teaches them
+      // the undo button lies.
+      setExpenseKept(result.expenseKeptReason ?? null);
       setPhase("undone");
       return;
     }
@@ -175,6 +184,7 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
         <p className="text-sm font-semibold text-wangari-heading">
           Removed. Nothing was saved for {flock?.name}.
         </p>
+        {expenseKept && <p className="mt-1 text-xs text-tone-bad-text">{expenseKept}</p>}
       </motion.div>
     );
   }

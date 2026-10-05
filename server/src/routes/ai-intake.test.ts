@@ -94,6 +94,39 @@ describe("validation runs before the write", () => {
   });
 });
 
+describe("undo really undoes", () => {
+  const intake = read("routes/ai-intake.ts");
+  const del = intake.slice(intake.indexOf('router.delete("/:entity/:id"'));
+
+  it("removes the purchase expense the save created", () => {
+    // Found by the end-to-end run, not by reading: the first undo deleted the
+    // flock and left a KES 100,000 expense in the books while the card said
+    // "nothing was saved".
+    expect(del).toContain("expenseTransactionId");
+    expect(del).toContain("prisma.transaction.delete(");
+  });
+
+  it("only deletes a money row that really is this flock's purchase", () => {
+    // Two flocks bought the same way produce identical descriptions, so the id
+    // alone is not proof. All three checks must pass.
+    expect(del).toMatch(/tx\.category === "animal_feed"/);
+    expect(del).toContain("Livestock purchase: ${flock.name}");
+    expect(del).toContain('tx.type === "expense"');
+  });
+
+  it("says so when the expense was kept, instead of claiming nothing was saved", () => {
+    expect(del).toContain("expenseKeptReason");
+    expect(del).toContain("expenseRemoved");
+  });
+
+  it("checks the flock belongs to this farm before touching anything", () => {
+    expect(del.indexOf("findFirst({ where: { id, farmId } })")).toBeGreaterThan(-1);
+    expect(del.indexOf("findFirst({ where: { id, farmId } })")).toBeLessThan(
+      del.indexOf("prisma.flock.deleteMany"),
+    );
+  });
+});
+
 describe("the chat tells the farmer to answer the form", () => {
   const ai = read("routes/ai.ts");
 
@@ -125,5 +158,25 @@ describe("the chat tells the farmer to answer the form", () => {
     // extra requests to do it. The model gets the state, not the form.
     expect(ai).toContain('toolName === "start_flock_intake" && ok && raw && raw.intake');
     expect(ai).toMatch(/Do not repeat the questions/);
+  });
+
+  it("ends the turn itself instead of spending a second request on one sentence", () => {
+    // Measured live: the form opened correctly, then the closing sentence
+    // request hit the free tier's limit and the farmer saw a working form with
+    // an error bubble on top of it. The sentence is ours to say now.
+    expect(ai).toContain("let intakeAsk = \"\";");
+    expect(ai).toMatch(/if \(intakeAsk\) \{\s*\n\s*send\("message", \{ content: intakeAsk \}\);\s*\n\s*answered = true;\s*\n\s*break;/);
+  });
+
+  it("never calls the model again once the form is open", () => {
+    // The break has to sit inside the step loop, after the tool results are
+    // recorded — otherwise the history the next turn sees is missing the
+    // assistant's own tool call and the conversation stops making sense.
+    const loop = ai.indexOf("while (steps < maxSteps)");
+    const send = ai.indexOf('send("message", { content: intakeAsk })');
+    const push = ai.indexOf("convo.push({ role: \"assistant\"");
+    expect(loop).toBeGreaterThan(-1);
+    expect(send).toBeGreaterThan(loop);
+    expect(push).toBeLessThan(send);
   });
 });
