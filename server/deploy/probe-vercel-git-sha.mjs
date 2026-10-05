@@ -1,110 +1,133 @@
 #!/usr/bin/env node
 /**
- * Confirm the live Vercel build came from commit ed12086.
+ * Confirm the live Vercel build came from the current HEAD.
  *
  * The Vercel CLI inspect output does not always expose a git commit SHA, so
- * this probe tries two independent ways to confirm provenance:
+ * this probe uses two independent checks:
  *
- *   1. If a VERCEL_DEPLOY_ID was passed, it queries the Vercel deployments
- *      API for that deployment's git information. On success it prints the
- *      commit SHA Vercel recorded and compares it to HEAD.
+ *   1. If VERCEL_DEPLOY_ID is set, ask the Vercel deployments API for the
+ *      recorded git commit and compare it to HEAD. Only this check gives a
+ *      real SHA; it is skipped gracefully without the id or token, and a
+ *      missing env var is never treated as a failure.
  *
- *   2. Regardless of method 1, it fetches the production deployment's chunks
- *      and checks that a string unique to the NEXT.js frontend in this commit
- *      is present — the same proof-of-content technique as
- *      probe-vercel-panels.mjs. That is not a git SHA, but it proves the live
- *      bundle is the one built from this commit's frontend rather than dust on
- *      disk.
+ *   2. Regardless of method 1, fetch the pages the panels actually render on
+ *      and assert on strings unique to this commit's two admin components.
  *
- *   Usage (env var optional, but it gives a real SHA check):
- *     VERCEL_DEPLOY_ID=dpl_... node probe-vercel-git-sha.mjs
+ * ── why check 2 must fetch /waadmin/*, not the root ────────────────────────
+ * An earlier version of this file scanned the root page and reported both
+ * panels MISSING while they were demonstrably live. The root page does not
+ * reference the chunks that contain the admin panels — Next.js splits per
+ * route, so `/` and `/waadmin/ai` share almost no JS. Scanning the root can
+ * therefore only ever say "absent", which is a probe that fails for the wrong
+ * reason and would train a reader to ignore it.
  *
- *   A missing VERCEL_DEPLOY_ID is not a failure — it just means the SHA
- *   check is skipped and only the content check runs.
+ * The correct target is the page each component is mounted on:
+ *   ai-health-panel.tsx -> /waadmin/ai
+ *   ip-access-panel.tsx -> /waadmin/system
+ *
+ * Usage:
+ *   VERCEL_DEPLOY_ID=dpl_... VERCEL_TOKEN=… node probe-vercel-git-sha.mjs
+ *   node probe-vercel-git-sha.mjs          # content check only
  */
-import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const deployId = process.env.VERCEL_DEPLOY_ID;
 const BASE = process.argv[2] || "https://wangari.imeantech.com";
-const MARKERS = {
-  aiHealthPanel: "Wangari AI is answering",
-  ipAccessPanel: "ranges refused at the door",
-  protocolVersion: "PROTOCOL_VERSION",
-};
+
+/** One entry per panel: the route it renders on, and strings unique to it. */
+const PANELS = [
+  { name: "ai-health-panel", page: "/waadmin/ai", markers: ["Wangari AI is answering", "Live AI health"] },
+  { name: "ip-access-panel", page: "/waadmin/system", markers: ["ranges refused at the door", "Requests refused"] },
+];
 
 const failures = [];
 
-function now() {
-  return new Date().toISOString();
-}
-
-// ── 1. Git provenance, if we can ask Vercel ──────────────────────────────
+// ── 1. Deployments API, if we can ask Vercel ──────────────────────────────
 if (deployId) {
-  console.log(`[1/${deployId ? 2 : 1}] checking Vercel deployment ${deployId} for recorded git commit`);
+  console.log(`[1] deployments API: ${deployId}`);
+  let res;
   try {
-    const res = await fetch(`https://api.vercel.com/v1/deployments/${deployId}`, {
+    res = await fetch(`https://api.vercel.com/v1/deployments/${deployId}`, {
       headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN ?? ""}` },
+      signal: AbortSignal.timeout(15_000),
     });
-    if (res.status !== 200) {
-      console.log(`[1] skipped: deployments API returned ${res.status} (no VERCEL_TOKEN?)`);
-    } else {
-      const d = await res.json();
+  } catch (e) {
+    console.log(`[1] deployments API call failed: ${e.message}`);
+  }
+
+  if (res && res.status === 200) {
+    let d;
+    try {
+      d = await res.json();
+    } catch {
+      console.log(`[1] deployments API response was not JSON`);
+    }
+    if (d) {
       const sha = d?.meta?.commit?.sha ?? d?.commitSha ?? d?.meta?.git?.commit?.sha ?? null;
       if (sha) {
         console.log(`[1] Vercel recorded commit ${sha}`);
-        const head = (await import("node:child_process")).execSync("git rev-parse HEAD", { encoding: "utf8" }).trim();
+        const { execSync } = await import("node:child_process");
+        const head = execSync("git rev-parse HEAD", { encoding: "utf8" }).trim();
         if (sha === head) {
           console.log(`[1] ${sha} == HEAD — build provenance confirmed`);
         } else {
           console.log(`[1] Vercel recorded ${sha}, HEAD is ${head}`);
-          failures.push(`deployment ${deployId} recorded commit ${sha}, HEAD is ${head}`);
+          failures.push(`deployment ${deployId} recorded ${sha}, HEAD is ${head}`);
         }
       } else {
-        console.log(`[1] deployment response had no commit SHA in expected fields; keys=${(d?.meta ?? {}).commit ? "meta.commit present" : "no meta.commit"}`);
-        console.log(`[1] deploying app=${d?.name} org=${d?.org?.name ?? "?"} created=${d?.createdAt}`);
+        console.log(`[1] no commit SHA on the deployment object (meta.commit present=${!!d?.meta?.commit}, commitSha=${d?.commitSha ? "yes" : "no"})`);
+        console.log(`[1] app=${d?.name} org=${d?.org?.name ?? "?"} created=${d?.createdAt}`);
       }
     }
-  } catch (e) {
-    console.log(`[1] skipped: ${e.message}`);
+  } else if (res) {
+    console.log(`[1] deployments API returned ${res.status} (no VERCEL_TOKEN?)`);
   }
 } else {
   console.log(`[1] VERCEL_DEPLOY_ID not set — skipping deployments API check`);
 }
 
-// ── 2. Content proof that the production bundle is this commit's frontend
-console.log(`[2] scanning production chunks for commit-scoped frontend strings`);
-const srcs = ["wangari-next/src/components/admin/ai-health-panel.tsx", "wangari-next/src/components/admin/ip-access-panel.tsx"];
-const markerSet = new Set();
-for (const file of srcs) {
-  const src = fs.readFileSync(file, "utf8");
-  for (const [name, marker] of Object.entries(MARKERS)) {
-    if (src.includes(marker)) markerSet.add(name);
-  }
-}
-
-const html = await fetch(BASE).then((r) => r.text());
-const jsSrcs = [...new Set([...html.matchAll(/\/_next\/static\/[^"']+\.js/g)].map((m) => m[0]))];
-let haystack = html;
-const scannedChunks = [];
-for (const src of jsSrcs) {
+// ── 2. Content proof, fetched from the pages the panels render on ─────────
+console.log(`[2] scanning the panel pages for commit-scoped strings`);
+for (const { name, page, markers } of PANELS) {
+  const url = BASE + page;
+  let html;
   try {
-    const body = await fetch(BASE + src).then((r) => (r.ok ? r.text() : ""));
-    if (body) {
-      haystack += "\n" + body;
-      scannedChunks.push(src);
+    const res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(15_000) });
+    if (!res.ok) {
+      console.log(`[2] ${name}: ${page} -> HTTP ${res.status}`);
+      failures.push(`${name}: ${page} returned ${res.status}`);
+      continue;
     }
-  } catch {
-    /* chunk may 404 if the build rotated between requests */
+    html = await res.text();
+  } catch (e) {
+    console.log(`[2] ${name}: fetch failed — ${e.message.split("\n")[0]}`);
+    failures.push(`${name}: fetch failed`);
+    continue;
   }
-}
 
-for (const name of Object.keys(MARKERS)) {
-  const present = haystack.includes(MARKERS[name]);
-  console.log(`[2] ${present ? "PRESENT" : "MISSING"}  ${name}  (${MARKERS[name]})  — ${scannedChunks.length} chunks scanned`);
-  if (!present) failures.push(`${name} absent from production bundle`);
+  // A client component ships inside a JS chunk, so pull the ones this page
+  // references and scan the combined body. Route-scoped, so these are the
+  // chunks that actually contain the component.
+  const chunkUrls = [...new Set([...html.matchAll(/\/_next\/static\/[^"']+\.js/g)].map((m) => m[0]))];
+  let body = html;
+  let fetched = 0;
+  for (const c of chunkUrls) {
+    try {
+      const r = await fetch(BASE + c, { signal: AbortSignal.timeout(8_000) });
+      if (r.ok) {
+        body += "\n" + (await r.text());
+        fetched++;
+      }
+    } catch {
+      /* a chunk can 404 if the build rotated mid-scan */
+    }
+  }
+
+  for (const m of markers) {
+    const present = body.includes(m);
+    console.log(`[2] ${present ? "PRESENT" : "MISSING"}  ${name}  "${m}"  (${page}, ${fetched} chunks)`);
+    if (!present) failures.push(`${name}: "${m}" missing from ${page}`);
+  }
 }
 
 if (failures.length) {
