@@ -94,9 +94,41 @@ function pushUndo(farmId: number, entry: { undoId: string; tool: string; args: a
  */
 export function isModelGone(status: number, body: string): boolean {
   if (status === 404 || status === 410) return true;
+  if (status === 503 && isChannelExhausted(body)) return true;
   if (status !== 400) return false;
   const b = String(body ?? "").toLowerCase();
   return b.includes("model_not_found") || b.includes("does not exist") || b.includes("no such model");
+}
+
+/**
+ * Has this model run out of usable capacity, rather than merely hiccuped?
+ *
+ * UnoRouter answers 503 for both "the upstream had a moment" and "every provider
+ * behind this model is rate-limited at once". The status cannot tell them apart,
+ * but the body can, and the difference decides whether moving model is honest:
+ *
+ *   - A plain 503 is a hiccup. The same model answers seconds later, and
+ *     switching trades a probe-verified model for an unverified one over
+ *     nothing.
+ *   - An exhausted channel is not coming back on its own. On a free tier the
+ *     upstream channels stay capped for minutes, so every farmer who asks in
+ *     that window gets an error until it clears. That is what returned
+ *     "UnoRouter: 503" while a verified fallback sat unused.
+ *
+ * Deliberately matched on the body's own vocabulary rather than the model name,
+ * so it holds for any provider wording this meets.
+ */
+function isChannelExhausted(body: string): boolean {
+  const b = String(body ?? "").toLowerCase();
+  return (
+    b.includes("get_channel_failed") ||
+    b.includes("all_providers_busy") ||
+    // "All providers for model ... are busy right now"
+    (b.includes("all providers") && b.includes("busy")) ||
+    b.includes("no available channel") ||
+    b.includes("no channels available") ||
+    b.includes("no provider available")
+  );
 }
 
 /**

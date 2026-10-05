@@ -17,10 +17,19 @@ const src = readFileSync(join(process.cwd(), "src", "routes", "ai.ts"), "utf8");
 
 describe("recognising a retired model", () => {
   const gone = (status: number, body: string) => {
-    const m = /export function isModelGone\(status: number, body: string\): boolean \{([\s\S]*?)\n\}/.exec(src);
-    expect(m, "isModelGone is a small pure function we can evaluate").toBeTruthy();
+    const main = /export function isModelGone\(status: number, body: string\): boolean \{([\s\S]*?)\n\}/.exec(src);
+    expect(main, "isModelGone is a small pure function we can evaluate").toBeTruthy();
+    // isModelGone delegates the 503 case to a helper, so both have to be in
+    // scope. Each is reassembled with its own signature, which also keeps the
+    // locals inside separate scopes - both bodies use `b`.
+    const helper = /function isChannelExhausted\(body: string\): boolean \{([\s\S]*?)\n\}/.exec(src);
+    expect(helper, "the exhausted-channel helper must exist and stay pure").toBeTruthy();
+    const source =
+      `function isChannelExhausted(body) {${helper![1]}\n}` +
+      `\nfunction isModelGone(status, body) {${main![1]}\n}` +
+      `\nreturn isModelGone(status, body);`;
     // eslint-disable-next-line no-new-func
-    return new Function("status", "body", m![1])(status, body);
+    return new Function("status", "body", source)(status, body);
   };
 
   it("treats 404 as permanent", () => {
@@ -42,6 +51,62 @@ describe("recognising a retired model", () => {
 
   it("does NOT treat a server error or a dropped connection as permanent", () => {
     for (const s of [500, 502, 503, 408]) expect(gone(s, "upstream")).toBe(false);
+  });
+
+  it("treats an exhausted free-tier channel as the model being unavailable", () => {
+    // The live failure. UnoRouter answers 503 `get_channel_failed` when every
+    // provider behind a model is rate-limited at once — which is exactly what a
+    // free tier looks like at peak. The status alone is not distinguishable from
+    // a hiccup, but the body is, and the body is the whole signal.
+    //
+    // This is why the assistant was returning "UnoRouter: 503" to farmers while
+    // a verified fallback sat unused in the environment: the guard read the 503,
+    // saw it was not 404, and stayed put on a model with no channels left.
+    const body = JSON.stringify({
+      error: {
+        code: "get_channel_failed",
+        message:
+          'All providers for model "space-bunny-alpha:free" are busy right now ' +
+          "(they hit their rate limit). This is not a spelling error. Please try again in a little while, or switch to another model.",
+      },
+    });
+    expect(gone(503, body)).toBe(true);
+  });
+
+  it("recognises the exhausted channel however the body is phrased", () => {
+    const variants = [
+      "get_channel_failed",
+      "All providers for model are busy right now",
+      "all_providers_busy",
+      "no available channel for this model",
+      "no channels available",
+    ];
+    for (const v of variants) {
+      expect(gone(503, v), `"${v}" should count as the model being unavailable`).toBe(true);
+    }
+  });
+
+  it("still refuses to move on a 503 that is a plain upstream failure", () => {
+    // The distinction that keeps this safe. A generic 503 with no channel
+    // language is a server hiccup: the same model will answer in seconds, and
+    // swapping would trade a probe-verified model for an unverified one over
+    // nothing. Only the exhausted-channel body justifies the hop.
+    for (const body of [
+      "upstream",
+      "Service Unavailable",
+      '{"error":{"code":"internal_error","message":"upstream timeout"}}',
+      "bad gateway",
+    ]) {
+      expect(gone(503, body), `"${body}" must NOT trigger a fallback`).toBe(false);
+    }
+  });
+
+  it("does not treat a 429 as exhaustion no matter how it is worded", () => {
+    // UnoRouter's 429 is the account-wide per-minute cap and the retry loop
+    // already handles it by waiting. Jumping models here would defeat the
+    // window calculation in lib/rate-limit-window.ts.
+    expect(gone(429, "get_channel_failed")).toBe(false);
+    expect(gone(429, "All providers for model are busy right now")).toBe(false);
   });
 
   it("does not read a 400 as permanent just because it says 'model'", () => {
