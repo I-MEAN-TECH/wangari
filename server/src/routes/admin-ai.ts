@@ -5,6 +5,7 @@ import { encryptSecret, maskSecret } from "../lib/ai-secret.js";
 import { invalidateAiCache, resolveActiveModel, resolveSettings, DEFAULT_SETTINGS } from "../lib/ai-settings.js";
 import { probeAgentic } from "../lib/agentic-probe.js";
 import { fetchRoster, rankCandidates } from "../lib/free-model-roster.js";
+import { modelHealth, sidelinedForMs, summariseUsage } from "../lib/model-health.js";
 import { AI_PROVIDERS, getProvider } from "../ai-providers.js";
 
 /**
@@ -454,6 +455,105 @@ router.post("/discover", superOnly, async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Admin AI discover error:", error);
     res.status(500).json({ error: `Discovery failed: ${error?.message || "unknown error"}` });
+  }
+});
+
+// ─── GET /api/admin/ai/health ───────────────────────────────────────────────
+/**
+ * Which models are actually working, and who is feeling it.
+ *
+ * The registry above says what the operator CHOSE. This says what the upstream
+ * is DOING — the two diverge on a free tier, and only the second one explains
+ * why a farmer says the assistant is broken.
+ *
+ * ── on the cluster ───────────────────────────────────────────────────────
+ * PM2 runs two workers, and this store is in memory per process, so this
+ * response is one worker's view. That is stated rather than hidden: `pid` is in
+ * the payload so an operator reading two different views knows why, instead of
+ * concluding the data is wrong. Each worker learns the same thing from the same
+ * upstream within a request or two, and a shared store would cost a database
+ * round trip on the hot path to save one cooldown calculation.
+ *
+ * ── what is deliberately NOT here ─────────────────────────────────────────
+ * No request text, no response text, no tool arguments. An operator asking for
+ * AI forensics is asking "is it up, for whom, from where" — and the AI's own
+ * tenant isolation guarantee is that farm data does not travel between farms.
+ * A panel that logged prompt text would be the one place that promise broke.
+ */
+router.get("/health", superOnly, async (_req: Request, res: Response) => {
+  try {
+    const now = Date.now();
+    const active = await resolveActiveModel();
+    const snapshot = modelHealth.snapshot();
+    const uses = modelHealth.recentUses().slice().reverse(); // newest first
+
+    const models = Object.values(snapshot)
+      .map((h) => ({ ...h, sidelinedForMs: sidelinedForMs(h, now) }))
+      // Busy and broken first: the models an operator needs to act on, not the
+      // alphabetical ones.
+      .sort((a, b) => b.consecutiveFailures - a.consecutiveFailures || a.uptime - b.uptime);
+
+    // Every distinct fallback, with the reason that caused it. This is the
+    // answer to "why is it using that model instead of the one I configured" —
+    // which, before the selection was automatic, had no answer at all.
+    const fallbacks = uses
+      .filter((u) => u.fellBackFrom)
+      .slice(0, 50)
+      .map((u) => ({
+        at: u.at,
+        from: u.fellBackFrom,
+        to: u.model,
+        reason: u.reason,
+        userId: u.userId,
+        ip: u.ip,
+      }));
+
+    res.json({
+      // Per-process, and the reason two panels can disagree. See the docblock.
+      pid: process.pid,
+      now,
+      // The ordered, probe-verified list selection is choosing from right now.
+      candidates: [active.model, ...active.fallbacks],
+      models,
+      fallbacks,
+      usage: {
+        // Computed over EVERY record the store holds, not over the 60 sent
+        // below. See summariseUsage's docblock — a client-side count would
+        // under-report exactly when traffic got interesting.
+        ...summariseUsage(uses),
+        byModel: uses.reduce<Record<string, number>>((acc, u) => {
+          acc[u.model] = (acc[u.model] || 0) + 1;
+          return acc;
+        }, {}),
+        // Newest first. Enough to spot one farm hammering the assistant from
+        // one address; the counts above are the ones not limited by this slice.
+        recent: uses.slice(0, 60).map((u) => ({ ...u, at: new Date(u.at).toISOString() })),
+      },
+    });
+  } catch (error) {
+    console.error("Admin AI health error:", error);
+    res.status(500).json({ error: "Failed to load model health" });
+  }
+});
+
+// ─── POST /api/admin/ai/health/clear ────────────────────────────────────────
+/**
+ * An operator says "try that model again, I have fixed it".
+ *
+ * The only way out of `gone`, by design. A retirement that expires on its own
+ * is a trap: it would quietly reintroduce a model the operator retired, and
+ * the next farmer to ask would be the one who discovers it.
+ */
+router.post("/health/clear", superOnly, async (req: Request, res: Response) => {
+  try {
+    const model = String(req.body?.model ?? "").trim();
+    if (!model) return res.status(400).json({ error: "model is required" });
+    modelHealth.clear(model);
+    auditAdminAction((req as any).admin, "ai.model_health_cleared", "model", null, { model, pid: process.pid });
+    res.json({ ok: true, model, note: `Cleared on worker ${process.pid}. Other workers learn on their next call.` });
+  } catch (error) {
+    console.error("Admin AI health clear error:", error);
+    res.status(500).json({ error: "Failed to clear the model" });
   }
 });
 

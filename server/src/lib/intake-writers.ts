@@ -719,7 +719,14 @@ async function updateProduction(farmId: number, values: Record<string, string>, 
 async function updateVaccination(farmId: number, values: Record<string, string>, id: number): Promise<IntakeSaveResult> {
   const flockId = fieldNumber(values, "flockId");
   if (!flockId) return failed("Tell me which flock this vaccine is for — use the number from your flocks list.");
-  const existing = await prisma.vaccination.findFirst({ where: { id } });
+  // Scoped through the flock, NOT by a farmId column: Vaccination has no such
+  // column, it reaches the farm through flockId. Looking the row up by id alone
+  // would let a farmer who guesses somebody else's vaccination id rewrite it —
+  // the flock check below passes on THEIR flock while the write lands on
+  // someone else's row.
+  const existing = await prisma.vaccination.findFirst({
+    where: { id, flock: { farmId } },
+  });
   if (!existing) return failed("That vaccination is not on your farm.");
   const flock = await prisma.flock.findFirst({ where: { id: flockId, farmId } });
   if (!flock) return failed("That flock is not on your farm. Check the number from your flocks list.");

@@ -135,7 +135,12 @@ describe("undo really undoes", () => {
     // "nothing was saved".
     expect(del).toContain("alsoCreated");
     expect(del).toContain("expenseTransactionId");
-    expect(del).toContain("prisma.transaction.delete(");
+    // Asserted by what it does, not by which method is called. This used to
+    // pin the literal `prisma.transaction.delete(`, which then failed when the
+    // call was made SCOPED (`deleteMany` with the farm) — which is the change
+    // this test exists to protect. Pinning the method name would have meant
+    // keeping the unscoped version.
+    expect(del).toMatch(/prisma\.transaction\.delete(?:Many)?\(\{\s*where:\s*\{\s*id: tx\.id, farmId\s*\}\s*\}\)/);
   });
 
   it("only deletes a money row that really is this flock's purchase", () => {

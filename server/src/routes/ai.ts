@@ -4,6 +4,7 @@ import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { AI_PROVIDERS, getProvider, type AIProviderConfig } from "../ai-providers.js";import { searchWeb, searchConfigured, searchTierLabel } from "../lib/web-search.js";
 import { nextRetryWait } from "../lib/rate-limit-window.js";
+import { modelHealth, healthyModel } from "../lib/model-health.js";
 import { resolveActiveModel, resolveSettings, recordModelOutcome } from "../lib/ai-settings.js";
 import {
   buildIntake,
@@ -881,8 +882,13 @@ router.post("/stream", async (req: Request, res: Response) => {
       const stepStart = Date.now();
       const response = await callAI(convo, mcpTools, (waitMs, opensAt) => {
         send("waiting", { seconds: Math.round(waitMs / 1000), opensAt: opensAt ?? null });
-      }).then(
-        (r) => (void recordModelOutcome(resolved.model, true, Date.now() - stepStart), r),
+      }, { userId: req.user!.userId ?? null, ip: req.ip ?? null }).then(
+        // The model that ANSWERED, not the one the registry listed. With
+        // automatic selection those can differ, and the win belongs on the row
+        // of the model that actually worked.
+        (r) => (void recordModelOutcome(r.model, true, Date.now() - stepStart), r),
+        // On a throw we do not know which model was in flight — the failure
+        // happened inside the fallback chain — so the configured model takes it.
         (e) => (void recordModelOutcome(resolved.model, false, Date.now() - stepStart), Promise.reject(e)),
       );
       text = response.content || text;
@@ -1161,32 +1167,83 @@ function summariseToolResult(tool: string, result: any): string {
 }
 
 // ─── Unified AI Caller ────────────────────────────────────
+/**
+ * Who is asking, for the forensics log.
+ *
+ * Carried with the call rather than looked up inside it, because the only
+ * useful question about a model failure is "which farmer saw it, from where" —
+ * and the caller knows both. Without this the admin panel can say a model is
+ * broken but not how many people it broke for.
+ */
+export interface AiCaller {
+  userId: number | null;
+  ip: string | null;
+}
+
 async function callAI(
   messages: any[],
   tools: any[],
   onWait?: (waitMs: number, opensAt: number | null) => void,
-): Promise<{ content: string; tool_calls: any[] }> {
+  caller: AiCaller = { userId: null, ip: null },
+): Promise<{ content: string; tool_calls: any[]; model: string }> {
   // Registry first, environment second — see activeConfig(). Cached, so this is
   // one query per request rather than one per agent step.
   const config = await activeConfig();
   const settings = await resolveSettings();
 
-  // Special handling for non-OpenAI-compatible providers
-  if (config.id === "gemini") return callGemini(messages, tools, config);
-  if (config.id === "anthropic") return callAnthropic(messages, tools, config);
-  if (config.id === "cohere") return callCohere(messages, tools, config);
-  if (config.id === "cloudflare") return callCloudflare(messages, tools, config);
-  if (config.id === "ollama") return callOllama(messages, tools, config);
+  // Special handling for non-OpenAI-compatible providers. These have no
+  // fallback chain and no health tracking yet — they are one-shot — but they
+  // still report which model answered, so the panel never has to guess.
+  //
+  // Awaited inside each branch on purpose. Collecting the five calls into an
+  // object first would fire all of them at once and spend the free tier's one
+  // request a minute on four providers nobody asked for.
+  if (config.id === "gemini") return { ...(await callGemini(messages, tools, config)), model: config.model };
+  if (config.id === "anthropic") return { ...(await callAnthropic(messages, tools, config)), model: config.model };
+  if (config.id === "cohere") return { ...(await callCohere(messages, tools, config)), model: config.model };
+  if (config.id === "cloudflare") return { ...(await callCloudflare(messages, tools, config)), model: config.model };
+  if (config.id === "ollama") return { ...(await callOllama(messages, tools, config)), model: config.model };
 
   // All OpenAI-compatible providers (UnoRouter, Groq, Cerebras, Mistral, GitHub, NVIDIA, DeepSeek, OpenAI)
-  return callOpenAICompatible(messages, tools, config, onWait, config.fallbacks, settings);
+  return callOpenAICompatible(messages, tools, config, onWait, config.fallbacks, settings, caller);
 }
 
 // ─── OpenAI-Compatible (most providers) ───────────────────
+/**
+ * Call the model that is working RIGHT NOW, not the one that is written down.
+ *
+ * ── what changed and why ────────────────────────────────────────────────
+ * This used to try the pinned model, and only reach for a backup once that
+ * model had already returned 404 or an exhausted-channel 503 — which is one
+ * failed farmer-facing request per change of model, for as long as the
+ * condition lasts. On a free tier that is minutes, and it is why the assistant
+ * told farmers "UnoRouter: 503" through a whole afternoon while a verified
+ * backup sat unused.
+ *
+ * Now the selection happens BEFORE the request: `healthyModel` reads what the
+ * last few calls proved about each candidate and picks the best one still
+ * standing. The 404/exhaustion fallback below stays exactly as it was, so a
+ * model that dies between the choice and the response is still caught — the
+ * two mechanisms cover each other rather than replacing one with the other.
+ *
+ * ── what is deliberately still not automatic ────────────────────────────
+ * Which models EXIST. The candidate list is still an operator's ordered,
+ * probe-verified list (AI_MODEL_FALLBACKS, or the registry via
+ * resolveActiveModel). Nothing here discovers a model at request time: on a
+ * free tier that would spend the one-request-a-minute budget on discovery
+ * instead of on farmers, and an unprobed model that cannot chain two tool
+ * calls would leave the panel dead halfway through recording a sale.
+ *
+ * ── what is learned, and from what ──────────────────────────────────────
+ * Every response folds into a per-model verdict (lib/model-health.ts). The
+ * raw body never leaves this module — the panel shows a normalised sentence an
+ * operator can act on, because whatever the upstream happened to echo is not
+ * safe to render in a dashboard.
+ */
 async function callOpenAICompatible(
   messages: any[],
   tools: any[],
-  config: ReturnType<typeof getProviderConfig>,
+  baseConfig: ReturnType<typeof getProviderConfig>,
   onWait?: (waitMs: number, opensAt: number | null) => void,
   /** Backups still untried, so two dead models still end up answered. */
   remainingFallbacks: string[] = AI_MODEL_FALLBACKS,
@@ -1196,7 +1253,22 @@ async function callOpenAICompatible(
     rateLimitMaxWaitMs: RATE_LIMIT_MAX_WAIT_MS,
     rateLimitMaxRetries: RATE_LIMIT_MAX_RETRIES,
   },
-): Promise<{ content: string; tool_calls: any[] }> {
+  /** Who is asking, so a failure can be traced back to a farmer and a place. */
+  caller: AiCaller = { userId: null, ip: null },
+): Promise<{ content: string; tool_calls: any[]; model: string }> {
+  // ── choose ────────────────────────────────────────────────────────────
+  const preferred = baseConfig.model;
+  const pick = healthyModel([preferred, ...remainingFallbacks], modelHealth.snapshot(), Date.now());
+  const chosen = pick.model ?? preferred;
+  // Whatever we step over keeps its place at the head of the queue, so the
+  // recursion below can come back to it the moment this hop works. Dropping it
+  // would mean a second failure in a row had nothing left to try.
+  const stillToTry: string[] = chosen === preferred
+    ? remainingFallbacks
+    : [preferred, ...remainingFallbacks.filter((m) => m !== chosen)];
+  const config = chosen === preferred ? baseConfig : { ...baseConfig, model: chosen };
+  if (chosen !== preferred) console.warn(`${baseConfig.name}: ${pick.reason}`);
+
   const body = JSON.stringify({ model: config.model, messages, tools, temperature: 0.7, max_tokens: 4096 });
   // `Response` alone means Express's Response in this file, not fetch's.
   let res: Awaited<ReturnType<typeof fetch>> | null = null;
@@ -1221,6 +1293,10 @@ async function callOpenAICompatible(
     if (res.ok) lastAcceptedCallAt = Date.now();
     if (res.status !== 429) break;
     err = await res.text().catch(() => "");
+    // Learned even though it does not move the choice: the panel needs to be
+    // able to say "this model was rate limited 40s ago" rather than leaving the
+    // operator to infer it from a slow page.
+    modelHealth.observe(config.model, res.status, err, Date.now());
     if (attempt >= settings.rateLimitMaxRetries) break;
     const { waitMs, reason, opensAt } = nextRetryWait({
       lastAcceptedAt: lastAcceptedCallAt,
@@ -1239,24 +1315,37 @@ async function callOpenAICompatible(
   if (!res.ok) {
     if (!err) err = await res.text().catch(() => "");
     console.error(`${config.name}:`, err);
+    // The verdict is recorded before the fallback question is asked, so the
+    // next request's selection already knows what this one just learned.
+    modelHealth.observe(config.model, res.status, err, Date.now());
 
-    /* The pinned model was retired - most likely mid-expo, since the current
-       one is flagged for deprecation this month. Answer the farmer on a
-       probe-verified backup instead of failing every question until someone
-       edits an env var. Deliberately narrow: only a permanent
-       404/410/model_not_found moves us, never a 429 or a 500. */
-    if (isModelGone(res.status, err) && remainingFallbacks.length) {
-      const [next, ...rest] = remainingFallbacks;
+    /* The model we chose is not answering — retired (most likely mid-expo,
+       since the current one is flagged for deprecation this month) or its
+       upstream pool is saturated. Answer the farmer on a probe-verified backup
+       instead of failing every question until someone edits an env var.
+       Deliberately narrow: only a permanent 404/410/model_not_found or an
+       exhausted channel moves us, never a 429 or a plain 500. */
+    if (isModelGone(res.status, err) && stillToTry.length) {
+      const [next, ...rest] = stillToTry;
       console.warn(
         `${config.name}: ${config.model} is gone (${res.status}). Falling back to ${next}.` +
           (rest.length ? ` Further backups: ${rest.join(", ")}` : ""),
       );
-      return callOpenAICompatible(messages, tools, { ...config, model: next }, onWait, rest, settings);
+      return callOpenAICompatible(messages, tools, { ...config, model: next }, onWait, rest, settings, caller);
     }
     throw new Error(`${config.name}: ${res.status}`);
   }
   const data: any = await res.json();
-  return { content: data.choices?.[0]?.message?.content || "", tool_calls: data.choices?.[0]?.message?.tool_calls || [] };
+  modelHealth.observe(config.model, res.status, "", Date.now());
+  modelHealth.recordUse(config.model, { userId: caller.userId, ip: caller.ip }, Date.now(), {
+    fellBackFrom: pick.fellBackFrom ?? null,
+    reason: pick.reason,
+  });
+  return {
+    content: data.choices?.[0]?.message?.content || "",
+    tool_calls: data.choices?.[0]?.message?.tool_calls || [],
+    model: config.model,
+  };
 }
 
 // ─── Gemini ───────────────────────────────────────────────
@@ -1373,7 +1462,10 @@ router.post("/chat", async (req: Request, res: Response) => {
 
     while (steps < MAX_AGENT_STEPS) {
       steps++;
-      const response = await callAI(fullMessages, mcpTools);
+      const response = await callAI(fullMessages, mcpTools, undefined, {
+        userId: req.user!.userId ?? null,
+        ip: req.ip ?? null,
+      });
       message = response.content || message;
 
       if (response.tool_calls.length === 0) break;

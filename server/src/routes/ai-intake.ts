@@ -202,7 +202,7 @@ router.delete("/:entity/:id", async (req: Request, res: Response) => {
         tx.category === "animal_feed" &&
         String(tx.description || "").includes(`Livestock purchase: ${found.name}`)
       ) {
-        await prisma.transaction.delete({ where: { id: tx.id } });
+        await prisma.transaction.deleteMany({ where: { id: tx.id, farmId } });
         expenseRemoved = true;
       } else {
         expenseKeptReason =
@@ -215,16 +215,24 @@ router.delete("/:entity/:id", async (req: Request, res: Response) => {
     // real and the farmer did not ask for them to be deleted.
     const customerId = claimed.customer;
     if (customerId) {
-      const linked = await prisma.sale.count({ where: { customerId } });
+      /* Scoped to this farm even though `customerId` came from a record we just
+         created, which makes an unscoped count provably harmless today. It is
+         scoped anyway because the alternative is a query whose safety depends
+         on reasoning about provenance three functions away — and the day that
+         provenance changes, this silently becomes a cross-tenant count. */
+      const linked = await prisma.sale.count({ where: { customerId, farmId } });
       if (linked <= 1) {
         await prisma.customer.deleteMany({ where: { id: customerId, farmId } });
         companionRemoved++;
       }
     }
 
-    // Children that exist only because of this record.
+    // Children that exist only because of this record. `id` was resolved
+    // through this farm above, so flockId is too — but the flock is looked up
+    // rather than assumed below, because "it belongs to us" should be a fact
+    // the database agrees with at the moment of the write.
     if (entity === "flock") {
-      const { count } = await prisma.vaccination.deleteMany({ where: { flockId: id } });
+      const { count } = await prisma.vaccination.deleteMany({ where: { flock: { farmId }, flockId: id } });
       companionRemoved += count;
     }
 

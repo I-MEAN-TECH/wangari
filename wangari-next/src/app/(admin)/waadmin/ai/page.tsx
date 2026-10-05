@@ -4,12 +4,13 @@ import * as React from "react";
 import { adminApi } from "@/lib/admin-client";
 import {
   Bot, Plus, Play, CheckCircle2, XCircle, AlertTriangle, Trash2, Rocket,
-  RefreshCw, Search, Settings2, KeyRound, Gauge, ShieldCheck,
+  RefreshCw, Search, Settings2, KeyRound, Gauge, ShieldCheck, Activity,
 } from "lucide-react";
 import {
   canActivate, activateBlockedReason, latencyBand, formatSeconds, canDelete,
   costLabel, sourceLabel, validateSettings, parseSetting,
 } from "@/lib/ai-admin-decisions";
+import { AiHealthPanel, type AiHealthData } from "@/components/admin/ai-health-panel";
 
 /**
  * Super-admin AI control room.
@@ -91,9 +92,19 @@ export default function WaAdminAiPage() {
   const [busy, setBusy] = React.useState<number | "settings" | "discover" | null>(null);
   const [notice, setNotice] = React.useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
+  // The live-health panel is fetched separately and on its own timer, because
+  // it answers a different question from the registry above and fills in as
+  // farmers use the assistant. Tying the two together would mean an operator
+  // watching traffic refresh their model configuration once a minute.
+  const [health, setHealth] = React.useState<AiHealthData | null>(null);
+  const [healthLoading, setHealthLoading] = React.useState(true);
+  const [healthError, setHealthError] = React.useState<string | null>(null);
+  const [busyModel, setBusyModel] = React.useState<string | null>(null);
+
   const [showAdd, setShowAdd] = React.useState(false);
   const [showSettings, setShowSettings] = React.useState(false);
   const [showDiscover, setShowDiscover] = React.useState(false);
+  const [showHealth, setShowHealth] = React.useState(true);
 
   const load = React.useCallback(async () => {
     try {
@@ -106,7 +117,27 @@ export default function WaAdminAiPage() {
     }
   }, []);
 
+  const loadHealth = React.useCallback(async () => {
+    try {
+      setHealthError(null);
+      setHealth(await adminApi.get<AiHealthData>("/ai/health"));
+    } catch (e: any) {
+      setHealthError(e?.message || "Could not read model health");
+    } finally {
+      setHealthLoading(false);
+    }
+  }, []);
+
   React.useEffect(() => { load(); }, [load]);
+
+  React.useEffect(() => {
+    if (!showHealth) return;
+    loadHealth();
+    // 20s rather than the registry's on-load: this is a liveness signal, and
+    // the page it sits on is the one an operator opens during an incident.
+    const t = setInterval(() => loadHealth(), 20_000);
+    return () => clearInterval(t);
+  }, [showHealth, loadHealth]);
 
   const flash = (tone: "ok" | "err", text: string) => {
     setNotice({ tone, text });
@@ -162,10 +193,14 @@ export default function WaAdminAiPage() {
             <Bot className="h-5 w-5 text-wangari-green-700" /> AI Models
           </h1>
           <p className="mt-1 text-sm text-wangari-muted">
-            Choose the model Wangari answers with, and the one that takes over if it is retired.
+            Choose the order Wangari picks from, and watch what each model is actually doing.
+            She now picks whichever is working rather than relying on one.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button className={btnGhost} onClick={() => setShowHealth((v) => !v)}>
+            <Activity className="h-4 w-4" /> {showHealth ? "Hide" : "Show"} live health
+          </button>
           <button className={btnGhost} onClick={() => setShowDiscover((v) => !v)}>
             <Search className="h-4 w-4" /> Discover models
           </button>
@@ -206,6 +241,32 @@ export default function WaAdminAiPage() {
           detail={primary?.lastLatencyMs != null ? `Last real farmer request · ${latencyBand(primary.lastLatencyMs).label}` : "No traffic recorded yet"}
         />
       </div>
+
+      {/* Live health sits ABOVE the registry on purpose. The registry says what
+          was chosen; this says what is happening. During an outage the second
+          question is the one being asked, and burying it under the model table
+          would be how a working backup sat unused for an afternoon. */}
+      {showHealth && (
+        <AiHealthPanel
+          data={health}
+          loading={healthLoading}
+          error={healthError}
+          onReload={loadHealth}
+          busyModel={busyModel}
+          onClear={async (model) => {
+            setBusyModel(model);
+            try {
+              await adminApi.post("/ai/health/clear", { model });
+              await loadHealth();
+              flash("ok", `${model} will be tried again on the next question.`);
+            } catch (e: any) {
+              flash("err", e?.message || "Could not clear that model");
+            } finally {
+              setBusyModel(null);
+            }
+          }}
+        />
+      )}
 
       {showSettings && <SettingsPanel data={data} busy={busy === "settings"} onSave={(patch) => run("settings", () => adminApi.patch("/ai/settings", patch))} />}
       {showDiscover && <DiscoverPanel providers={data.providers} busy={busy === "discover"} onAdd={(m) => run("discover", () => adminApi.post("/ai/models", m))} />}

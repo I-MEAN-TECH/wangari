@@ -4,6 +4,7 @@ import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import { initSentry, flushTelemetry, captureError } from "./lib/sentry.js";
+import { ipGuard } from "./middleware/ipGuard.js";
 
 // Routes
 import authRoutes from "./routes/auth.js";
@@ -63,6 +64,7 @@ import { idempotencyGuard } from "./middleware/idempotency.js";
 import { planGate } from "./middleware/plan-gate.js";
 import adminCrmRoutes from "./routes/admin-crm.js";
 import adminAiRoutes from "./routes/admin-ai.js";
+import adminIpRoutes from "./routes/admin-ip.js";
 import contactRoutes from "./routes/contact.js";
 import siteContentRoutes from "./routes/site-content.js";
 import activationRoutes from "./routes/activation.js";
@@ -98,6 +100,15 @@ const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || "127.0.0.1";
 
 // ─── Performance & Compression ──────────────────────────────
+// ─── IP access control ───────────────────────────────────
+// Ahead of the rate limiter and every router on purpose. A block is only worth
+// having if a hostile request never reaches bcrypt or Prisma — and it must not
+// be able to consume a rate-limit token either, or a scan could exhaust the
+// quota of the address it is pretending to be.
+//
+// Fails open if the rule table is unreachable; see lib/ip-rules.ts.
+app.use(ipGuard);
+
 app.use(compression());
 
 // ─── Security ─────────────────────────────────────────────
@@ -277,6 +288,9 @@ app.use("/api/admin", adminCrmRoutes);
 // AI model registry. Mounted AFTER the other admin routers so a future
 // /api/admin/ai/:id route here cannot shadow a same-named path elsewhere.
 app.use("/api/admin/ai", adminAiRoutes);
+// A sibling prefix, so neither router can shadow the other: /api/admin/ai
+// matches /api/admin/ai/** only, and never /api/admin/ip.
+app.use("/api/admin/ip", adminIpRoutes);
 app.use("/api", contactRoutes);
 app.use("/api", siteContentRoutes);
 

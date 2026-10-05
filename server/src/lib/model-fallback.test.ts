@@ -131,14 +131,47 @@ describe("the fallback itself", () => {
     const roster = readFileSync(join(process.cwd(), "src", "lib", "free-model-roster.ts"), "utf8");
     expect(src).not.toMatch(/from "\.\/lib\/free-model-roster\.js"/);
     expect(roster).toMatch(/Nothing here decides the model at request time/);
-  });
-
-  it("carries the remaining backups forward, so two dead models still answer", () => {
+  });it("carries the remaining backups forward, so two dead models still answer", () => {
     // Without threading the tail, one dead backup just moves the failure.
     // `settings` is threaded through the recursive call as well: the retry budget
-// has to survive a fallback hop, or a model that dies mid-conversation would
-// hand the next one an unlimited number of free retries.
-expect(src).toMatch(/\{\s*\.\.\.config, model: next \}, onWait, rest, settings\)/);
+    // has to survive a fallback hop, or a model that dies mid-conversation would
+    // hand the next one an unlimited number of free retries.
+    //
+    // `caller` rides along too. A fallback hop is still the same farmer's
+    // question, so the usage log has to attribute the answer to them — a hop
+    // that dropped the caller would file the work under nobody.
+    expect(src).toMatch(/\{\s*\.\.\.config, model: next \}, onWait, rest, settings, caller\)/);
+  });
+
+  it("picks a healthy model BEFORE calling, rather than only after a failure", () => {
+    // The old behaviour was: try the pinned model, and reach for a backup only
+    // once it had already returned 404 or an exhausted-channel 503. That costs
+    // one farmer-facing failure per change of model, for as long as the
+    // condition lasts — minutes on a free tier, which is how the assistant
+    // showed farmers "UnoRouter: 503" all afternoon with a working backup idle.
+    const fn = src.slice(src.indexOf("async function callOpenAICompatible"));
+    expect(fn).toContain("healthyModel(");
+    expect(fn).toMatch(/healthyModel\(\[preferred, \.\.\.remainingFallbacks\], modelHealth\.snapshot\(\)/);
+    // And the reactive path stays, so a model that dies between the choice and
+    // the response is still caught. The two cover each other.
+    expect(fn.indexOf("healthyModel(")).toBeLessThan(fn.indexOf("isModelGone(res.status, err)"));
+  });
+
+  it("learns from every response, including the ones it does not fall back on", () => {
+    const fn = src.slice(src.indexOf("async function callOpenAICompatible"));
+    // The 429 is observed even though it deliberately does not move selection:
+    // the panel has to be able to say a model was rate limited, not infer it.
+    expect(fn).toMatch(/modelHealth\.observe\(config\.model, res\.status, err, Date\.now\(\)\)/);
+    expect(fn).toMatch(/modelHealth\.observe\(config\.model, res\.status, "", Date\.now\(\)\)/);
+    expect(fn).toContain("modelHealth.recordUse(");
+  });
+
+  it("records WHO the answer was for, which is the only useful question about a failure", () => {
+    // "This model is broken" is not actionable. "This model is broken, and it
+    // broke 40 farmers from 6 addresses" is. So the caller identity travels
+    // with the call rather than being looked up inside it.
+    expect(src).toMatch(/caller: AiCaller = \{ userId: null, ip: null \}/);
+    expect(src).toMatch(/userId: req\.user!\.userId \?\? null,\s*\n\s*ip: req\.ip \?\? null/);
   });
 
   it("keeps the retry loop and the fallback on the same path", () => {

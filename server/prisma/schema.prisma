@@ -1447,3 +1447,43 @@ model AiSettings {
 
   @@map("ai_settings")
 }
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// IP access control (System Health).
+///
+/// The server is on the internet and nothing could see what was knocking.
+/// A range, not just a single address, because a scan comes from a /24 and
+/// rotates inside it — storing only the exact address an attacker happened to
+/// use would be security theatre.
+///
+/// `allow` beats `block` when both match. See lib/ip-rules.ts for why that
+/// direction was chosen: the failure mode of getting it wrong is a farmer
+/// locked out of the app they pay for.
+///
+/// The hit counter is on the row rather than in a log table because the only
+/// question asked of it is "is this rule earning its keep", which one counter
+/// answers without a query per request.
+model IpRule {
+  id        Int    @id @default(autoincrement())
+
+  /// Exact address ("203.0.113.7"), CIDR ("203.0.113.0/24") or wildcard
+  /// ("203.0.113.*", "203.0.*.*"). Validated in lib/ip-rules.ts, which is the
+  /// only place that decides what a pattern means.
+  pattern   String
+  action    String @default("block") // "block" | "allow"
+
+  /// Why this rule exists, in the operator's words. The note is what makes the
+  /// list reviewable six months later, when nobody remembers adding it.
+  note      String?
+
+  /// Which super-admin added it, so the audit trail names a person and not an
+  /// anonymous action.
+  addedBy   String? @map("added_by")
+
+  hitCount    Int       @default(0) @map("hit_count")
+  lastHitAt   DateTime? @map("last_hit_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([action])
+  @@map("ip_rules")
+}
