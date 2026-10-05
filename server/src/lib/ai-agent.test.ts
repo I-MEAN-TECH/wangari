@@ -13,15 +13,22 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 const aiSource = readFileSync(join(process.cwd(), "src/routes/ai.ts"), "utf8");
+const writersSource = readFileSync(join(process.cwd(), "src/lib/intake-writers.ts"), "utf8");
+const registrySource = readFileSync(join(process.cwd(), "src/lib/intake-registry.ts"), "utf8");
 
 // Pull the executor + tool schema straight out of the route so these tests
 // cannot drift from the real implementation.
 function toolSchema(name: string): string {
   const i = aiSource.indexOf(`name: "${name}"`);
   expect(i, `tool ${name} is declared`).toBeGreaterThan(-1);
-  const start = aiSource.lastIndexOf("{ type: \"function\"", i);
-  const end = aiSource.indexOf("} } }", i);
-  return aiSource.slice(start, end);
+  const start = aiSource.lastIndexOf("{", aiSource.lastIndexOf("/*", i));
+  const end = aiSource.indexOf("required:", i);
+  return aiSource.slice(Math.max(0, start), end === -1 ? i + 2000 : end);
+}
+
+/** The declared tool names, tolerant of how the object is laid out. */
+function declaredTools(): string[] {
+  return [...aiSource.matchAll(/name: "([a-z_]+)",\s+description/g)].map((m) => m[1]);
 }
 
 function executorCase(name: string): string {
@@ -34,42 +41,101 @@ function executorCase(name: string): string {
   return next === -1 ? rest : rest.slice(0, next + 1);
 }
 
+/** The writer for one intake entity, read whole out of intake-writers.ts. */
+function writer(name: string): string {
+  const i = writersSource.indexOf(`async function save${name[0].toUpperCase()}${name.slice(1)}(`);
+  expect(i, `${name} has a writer`).toBeGreaterThan(-1);
+  const rest = writersSource.slice(i);
+  const next = rest.slice(1).search(/\n}/);
+  return next === -1 ? rest : rest.slice(0, next + 1);
+}
+
 describe("AI tool schema", () => {
-  it("create_crop declares area in acres, not hectares", () => {
-    const schema = toolSchema("create_crop");
-    expect(schema).toContain("areaAcres");
+  it("the crop form asks for area in acres, not hectares", () => {
     // The old bug: the model was asked for hectares and the handler stored the
     // raw number into the acres column (a 2.4x understatement of field size).
-    expect(schema).not.toContain("areaHectares");
+    // The question moved into the intake, so the guard moves with it.
+    const crop = registrySource.slice(registrySource.indexOf('entity: "crop"'));
+    expect(crop).toContain("areaAcres");
+    expect(crop).not.toContain("areaHectares");
+    expect(writersSource).toContain("areaAcres");
   });
 
-  it("exposes the billing tools the farmer needs to 'do anything'", () => {
-    for (const t of ["create_invoice", "list_invoices", "undo_last_action"]) {
+  it("exposes what the farmer needs to 'do anything'", () => {
+    // Every record is reachable now — but through the form, not a thin write.
+    expect(declaredTools()).toContain("start_intake");
+    for (const t of ["list_invoices", "undo_last_action", "ask_farmer"]) {
       expect(aiSource, `${t} is available to the agent`).toContain(`name: "${t}"`);
+    }
+  });
+
+  it("cannot write a record without a form", () => {
+    // The whole point of the intake: there is no tool left that saves something
+    // the farmer was not shown first.
+    const declared = declaredTools();
+    for (const t of [
+      "create_flock", "create_crop", "create_worker", "create_customer",
+      "create_inventory_item", "create_transaction", "create_sale",
+      "create_invoice", "record_production", "create_vaccination",
+      "record_attendance", "start_flock_intake",
+    ]) {
+      expect(declared, `${t} must not be offered to the model`).not.toContain(t);
     }
   });
 });
 
-describe("AI tool executor", () => {
-  it("create_crop writes areaAcres from args.areaAcres, never args.areaHectares", () => {
-    const c = executorCase("create_crop");
-    expect(c).toContain("areaAcres: raw");
-    expect(c).not.toContain("args.areaHectares");
+describe("intake writers", () => {
+  it("the crop writer stores acres, never hectares", () => {
+    const c = writer("crop");
+    expect(c).toContain("areaAcres");
+    expect(c).not.toContain("areaHectares");
   });
 
-  it("create_crop rejects a non-positive area instead of storing junk", () => {
-    const c = executorCase("create_crop");
-    expect(c).toMatch(/raw <= 0/);
+  it("the crop writer says so when the area is blank, rather than inventing one", () => {
+    // A field with no area cannot show yield per acre, and a farmer who is not
+    // told will read a zero as a failed crop.
+    expect(writer("crop")).toContain("I left the area blank");
   });
 
-  it("create_sale preserves line items passed by the model", () => {
-    const c = executorCase("create_sale");
-    expect(c).toContain("Array.isArray(args.items)");
+  it("the sale writer keeps what was sold, so the ledger is not empty", () => {
     // The old bug: items was hard-coded to [] so every AI-recorded sale was
     // invisible in the ledger breakdown.
+    const c = writer("sale");
+    expect(c).toContain("items:");
     expect(c).not.toMatch(/items: \[\], farmId/);
   });
 
+  it("refuses to record a sale with no amount", () => {
+    expect(writer("sale")).toMatch(/total === null \|\| total <= 0/);
+  });
+
+  it("will not add the same customer twice", () => {
+    // Two rows for one person split their history and make it unreadable.
+    expect(writer("customer")).toContain("already on your customer list");
+  });
+
+  it("refuses a production record for a day that already has one", () => {
+    // One row per flock per day is a database rule; caught before the write so
+    // the farmer hears it in words rather than as a Prisma error.
+    expect(writer("production")).toContain("already has a production record");
+  });
+
+  it("subtracts today's deaths from the flock's head count", () => {
+    // Arithmetic on what the farmer said, not an invention — and without it a
+    // farm ends up reporting birds it has not got.
+    const c = writer("production");
+    expect(c).toContain("currentCount: { decrement: deaths }");
+  });
+
+  it("refuses a flock, worker or vaccination that is not on this farm", () => {
+    // The id came from the model, so it is checked against the farm before use.
+    for (const name of ["production", "vaccination", "attendance"]) {
+      expect(writer(name), `${name} scopes by farm`).toContain("is not on your farm");
+    }
+  });
+});
+
+  describe("AI tool executor", () => {
   it("get_dashboard returns a financial summary, not a flock list", () => {
     const c = executorCase("get_dashboard");
     for (const field of ["profit", "income", "expense", "lowStock", "eggsCollected"]) {
@@ -95,24 +161,30 @@ describe("AI tool executor", () => {
   });
 
   it("never WRITES a date column with a sliced date-only string", () => {
-    // The filter half of this bug was found and fixed while the write half
-    // was still live: record_production, create_transaction and
-    // record_attendance all failed with "premature end of input. Expected
-    // ISO-8601 DateTime", which meant "record 200 eggs" could not reach the
-    // database at all.
+    // The filter half of this bug was found and fixed while the write half was
+    // still live: production, money records and attendance all failed with
+    // "premature end of input. Expected ISO-8601 DateTime", which meant
+    // "record 200 eggs" could not reach the database at all.
     //
-    // Checked per-tool rather than globally, because slicing a date to a
+    // Checked per-writer rather than globally, because slicing a date to a
     // string is legitimately used elsewhere for display, and a blanket ban
-    // would pass for the wrong reason.
-    for (const t of ["record_production", "create_transaction", "record_attendance"]) {
-      const c = executorCase(t);
-      expect(c, `${t} writes a real Date`).toMatch(/date: new Date\(\)/);
+    // would pass for the wrong reason. The writes moved into the intake
+    // writers when the form was built, so the guard moved with them.
+    for (const t of ["production", "transaction", "attendance"]) {
+      const c = writer(t);
+      expect(c, `${t} writes a real Date`).toMatch(/new Date\(\)/);
       expect(c, `${t} does not write a date-only string`).not.toMatch(/split\("T"\)/);
     }
     // The transaction that undo_last_action restores is a DateTime too.
     const undo = executorCase("undo_last_action");
     expect(undo, "the restored transaction has a real Date").toMatch(/date: new Date\(\)/);
     expect(undo).not.toMatch(/split\("T"\)/);
+  });
+
+  it("records nothing as dated before the farmer filled the form", () => {
+    // Every writer defaults an unsaid date to TODAY, which is what recording
+    // it now means — and never to the epoch or a sliced string.
+    expect(writersSource).toContain("fieldDate(values, \"date\") ?? new Date()");
   });
 
   it("agrees with the schema about which columns are dates", () => {
@@ -127,9 +199,7 @@ describe("AI tool executor", () => {
   });
 
   it("summarises every list tool in words instead of echoing its name", () => {
-    const listTools = [
-      ...aiSource.matchAll(/name: "(list_[a-z_]+)", description/g),
-    ].map((m) => m[1]);
+    const listTools = [...aiSource.matchAll(/name: "(list_[a-z_]+)",\s+description/g)].map((m) => m[1]);
     expect(listTools.length).toBeGreaterThan(5);
     // The old bug: list_* had no label, so the panel showed the farmer the raw
     // identifier "list_flocks". A row count also gives the model something
@@ -139,6 +209,18 @@ describe("AI tool executor", () => {
     }
     expect(aiSource).toContain("COUNT_NOUN");
     expect(aiSource).toMatch(/if \(Array\.isArray\(result\)\)/);
+  });
+
+  it("will not let anything be deleted without the farmer saying yes", () => {
+    // "Delete it" is one keystroke from "delete". The refusal is in front of
+    // every destructive tool, and the way out is a tap — not the model
+    // deciding the farmer meant it.
+    expect(aiSource).toContain("DESTRUCTIVE_TOOLS");
+    expect(aiSource).toMatch(/DESTRUCTIVE_TOOLS\.has\(toolName\) && args\.confirmed !== true/);
+    expect(aiSource).toContain("I have not deleted anything");
+    for (const t of ["delete_flock", "delete_transaction", "delete_sale", "delete_customer"]) {
+      expect(aiSource, `${t} is gated`).toContain(`${t}: "${t}"`.split('"')[0] + '"');
+    }
   });
 
   it("counts in words, with the right number", () => {
@@ -159,8 +241,12 @@ describe("AI tool executor", () => {
   });
 
   it("every advertised tool has an executor case", () => {
-    const declared = [...aiSource.matchAll(/name: "([a-z_]+)", description/g)].map((m) => m[1]);
-    expect(declared.length).toBeGreaterThan(25);
+    const declared = declaredTools();
+    // 23, down from 33: ten thin create_* tools were replaced by ONE
+    // start_intake, which means fewer declarations in every request's payload
+    // and one place where a thin write could creep back in.
+    expect(declared.length).toBeGreaterThanOrEqual(23);
+    expect(declared).toContain("undo_last_action");
     const missing = declared.filter((t) => !aiSource.includes(`case "${t}":`));
     expect(missing, `tools declared but never executed: ${missing.join(", ")}`).toEqual([]);
   });

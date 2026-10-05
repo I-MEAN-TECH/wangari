@@ -95,35 +95,61 @@ describe("every AI tool is gated, and writes are gated hardest", () => {
   );
 
   it("sees the tool list it is meant to check", () => {
-    expect(declared.length).toBeGreaterThan(25);
+    // 24, down from 33: ten thin create_* tools became ONE start_intake.
+    expect(declared.length).toBeGreaterThanOrEqual(24);
   });
 
   it("has a module for every declared tool", () => {
     // A tool with no entry is an UNGATED tool: the agent would write a record
     // the farmer's plan will never let them open.
+    //
+    // start_intake is the one exception, and it earns it: its module depends
+    // on the ENTITY the farmer asked for, so one static entry would be wrong
+    // for ten of the eleven. It resolves its own gate instead — asserted below.
     for (const tool of declared) {
+      if (tool === "start_intake") continue;
       expect(mapped.has(tool), `${tool} is missing from TOOL_MODULE`).toBe(true);
     }
   });
 
-  it("gates every mutating tool", () => {
-    // Adding animals goes through the guided intake, and that is a WRITE for
-    // gate purposes: the farmer's answers become a record they may not be able
-    // to open on this plan.
-    expect(gated.has("start_flock_intake")).toBe(true);
-    expect(gated.has("create_invoice")).toBe(true);
-    expect(gated.has("create_transaction")).toBe(true);
-    expect(gated.has("create_sale")).toBe(true);
-    expect(gated.has("create_worker")).toBe(true);
+  it("gates the intake on the module of the record, not the tool", () => {
+    // A single tool covering eleven entities is the one place this could go
+    // wrong: gate it on "flocks" and a Starter farmer is refused for a crop
+    // field they can open, or worse, allowed to write one they cannot.
+    expect(gated.has("start_intake")).toBe(true);
+    expect(src).toContain('toolName === "start_intake" && isIntakeEntity(args.entity)');
+    expect(src).toContain("intakeModule(args.entity)");
+    // And it comes from the registry, which is where the screens' own modules
+    // are declared.
+    expect(read("lib/intake-registry.ts")).toContain("module: \"crops\"");
   });
 
-  it("cannot add a flock without going through the intake", () => {
-    // The thin write is gone on purpose: `create_flock` took a name and a number
-    // and left twenty-six columns blank without asking. If it ever comes back,
-    // the assistant is again able to claim a flock is added when the farmer was
-    // never asked for it.
-    expect(declared).not.toContain("create_flock");
-    expect(declared).toContain("start_flock_intake");
+  it("gates every mutating tool", () => {
+    // Writes are start_intake and the deletes. There is nothing else left to
+    // gate, because there is nothing else left that writes.
+    expect(gated.has("start_intake")).toBe(true);
+    for (const t of [
+      "delete_flock", "delete_transaction", "delete_sale",
+      "delete_customer", "delete_inventory_item", "delete_worker",
+    ]) {
+      expect(gated.has(t), `${t} is a write`).toBe(true);
+    }
+  });
+
+  it("cannot write a record without the farmer filling a form", () => {
+    // The thin writes are gone on purpose: `create_flock` took a name and a
+    // number and left twenty-six columns blank without asking. If any of them
+    // comes back, the assistant can again claim a record is saved when the
+    // farmer was never asked for it.
+    for (const tool of [
+      "create_flock", "create_crop", "create_worker", "create_customer",
+      "create_inventory_item", "create_transaction", "create_sale",
+      "create_invoice", "record_production", "create_vaccination",
+      "record_attendance", "start_flock_intake",
+    ]) {
+      expect(declared, `${tool} must not be offered`).not.toContain(tool);
+    }
+    expect(declared).toContain("start_intake");
   });
 
   it("never gates a read", () => {

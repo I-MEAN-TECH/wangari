@@ -72,20 +72,21 @@ describe("quick actions", () => {
     // just as much as a one-liner, and a layout-sensitive pattern would report
     // a missing tool that is plainly there.
     const declared = [...aiSource.matchAll(/name: "([a-z_]+)",\s+description/g)].map((m) => m[1]);
-    expect(declared.length, "tools are declared").toBeGreaterThan(25);
+    expect(declared.length, "tools are declared").toBeGreaterThan(23);
 
     for (const a of QUICK_ACTIONS) {
       // The prompt must at least be answerable by the toolset; assert the
       // chip's own subject appears among the declared tool names.
-      const subject = a.id === "eggs" ? "record_production"
-        : a.id === "sale" ? "create_sale"
-        : a.id === "expense" ? "create_transaction"
-        // Adding animals opens the guided intake rather than writing a row, so
-        // the chip must reach THAT tool — a chip pointed at a tool that no
-        // longer exists would cost the farmer a whole request to be told no.
-        : a.id === "flock" ? "start_flock_intake"
-        : a.id === "invoice" ? "create_invoice"
-        : a.id === "stock" ? "create_inventory_item"
+      // Every write chip now opens the guided intake — the old
+      // create_/record_ tools were consolidated into start_intake so the
+      // farmer is asked for every field before anything is saved.
+      const subject =
+        a.id === "eggs" ? "start_intake"
+        : a.id === "sale" ? "start_intake"
+        : a.id === "expense" ? "start_intake"
+        : a.id === "flock" ? "start_intake"
+        : a.id === "invoice" ? "start_intake"
+        : a.id === "stock" ? "start_intake"
         : "get_dashboard";
       expect(declared, `${a.id} maps to a real tool (${subject})`).toContain(subject);
     }
