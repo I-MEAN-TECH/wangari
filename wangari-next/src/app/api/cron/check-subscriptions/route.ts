@@ -3,6 +3,10 @@ import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { planExpiredEmail } from "@/lib/email-templates";
 
+// Fail CLOSED: an unset CRON_SECRET must refuse, not admit. The old
+// `if (CRON_SECRET && ...)` skipped the whole check when the variable was
+// missing, so a deploy that lost the secret left these routes open to anyone —
+// and they send email to real farmers.
 const CRON_SECRET = process.env.CRON_SECRET || "";
 
 /**
@@ -17,7 +21,11 @@ const CRON_SECRET = process.env.CRON_SECRET || "";
 export async function GET(req: NextRequest) {
   // Verify cron secret (Vercel sends this header for cron jobs)
   const authHeader = req.headers.get("authorization");
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (!CRON_SECRET) {
+    console.error("[cron:check-subscriptions] CRON_SECRET is not set — refusing. This cron will not run until it is set in the environment.");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (authHeader !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

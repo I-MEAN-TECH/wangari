@@ -393,9 +393,17 @@ function advisoryEmailHtml(
 }
 
 router.get("/farm-advisory", async (req: Request, res: Response) => {
+  // Fail CLOSED: an unset CRON_SECRET must refuse, not admit. The old
+  // `if (CRON_SECRET && ...)` skipped the whole check when the variable was
+  // missing, so a deploy that lost the secret left these routes open to anyone —
+  // and they send email to real farmers.
   const CRON_SECRET = process.env.CRON_SECRET || "";
   const authHeader = req.headers.authorization || "";
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (!CRON_SECRET) {
+    console.error("[cron] CRON_SECRET is not set — refusing. This cron will not run until it is set in the environment.");
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  if (authHeader !== `Bearer ${CRON_SECRET}`) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
