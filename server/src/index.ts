@@ -61,6 +61,7 @@ import promoRedeemRoutes from "./routes/promo-redeem.js";
 import { idempotencyGuard } from "./middleware/idempotency.js";
 import { planGate } from "./middleware/plan-gate.js";
 import adminCrmRoutes from "./routes/admin-crm.js";
+import adminAiRoutes from "./routes/admin-ai.js";
 import contactRoutes from "./routes/contact.js";
 import siteContentRoutes from "./routes/site-content.js";
 import activationRoutes from "./routes/activation.js";
@@ -271,6 +272,9 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminModulesRoutes);
 app.use("/api", supportRoutes);
 app.use("/api/admin", adminCrmRoutes);
+// AI model registry. Mounted AFTER the other admin routers so a future
+// /api/admin/ai/:id route here cannot shadow a same-named path elsewhere.
+app.use("/api/admin/ai", adminAiRoutes);
 app.use("/api", contactRoutes);
 app.use("/api", siteContentRoutes);
 

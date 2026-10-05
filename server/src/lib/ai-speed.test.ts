@@ -180,7 +180,12 @@ describe("not paying a minute per search", () => {
   it("caps research at two searches per farmer turn", () => {
     const src = readFileSync(join(process.cwd(), "src", "routes", "ai.ts"), "utf8");
     expect(src).toMatch(/const SEARCHES_PER_TURN = Number\(process\.env\.AI_SEARCHES_PER_TURN \|\| 2\)/);
-    expect(src).toMatch(/budget\.searches >= SEARCHES_PER_TURN/);
+    // The cap is now per-turn, set from the super-admin registry on the budget,
+    // and the constant remains the fallback. Both matter: without the constant
+    // a registry read failure would leave `cap` undefined, and without the
+    // per-turn assignment an operator's setting would never be applied.
+    expect(src).toMatch(/budget\.searches >= \(budget\.cap \?\? SEARCHES_PER_TURN\)/);
+    expect(src).toMatch(/budget\.cap = opsSettings\.searchesPerTurn/);
     expect(src).toMatch(/if \(budget\) budget\.searches\+\+;/);
   });
 

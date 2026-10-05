@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Building2, Users, CreditCard, Tags, Ticket, TicketPercent,
   Megaphone, Handshake, Mail, ShieldCheck, Activity, Lock, ChevronDown, LogOut, X, Menu, Globe,
-  LineChart,
+  LineChart, Bot,
 } from "lucide-react";
 import { getAdminToken, getAdminSession, clearAdminSession, AdminSession } from "@/lib/admin-client";
 import { MaintenanceNotice } from "@/components/shared/MaintenanceNotice";
@@ -26,6 +26,7 @@ const NAV = [
     { href: "/waadmin/users", label: "Users", icon: Users },
     { href: "/waadmin/billing", label: "Billing", icon: CreditCard },
     { href: "/waadmin/plans", label: "Plans & Pricing", icon: Tags },
+    { href: "/waadmin/ai", label: "AI Models", icon: Bot },
   ]},
   { section: "Growth", items: [
     { href: "/waadmin/promos", label: "Promo Codes", icon: TicketPercent },

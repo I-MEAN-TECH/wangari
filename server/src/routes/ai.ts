@@ -4,6 +4,7 @@ import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { AI_PROVIDERS, getProvider, type AIProviderConfig } from "../ai-providers.js";import { searchWeb, searchConfigured, searchTierLabel } from "../lib/web-search.js";
 import { nextRetryWait } from "../lib/rate-limit-window.js";
+import { resolveActiveModel, resolveSettings, recordModelOutcome } from "../lib/ai-settings.js";
 
 const router = Router();
 router.use(authMiddleware, requireOwner);
@@ -115,6 +116,31 @@ function getProviderConfig(): AIProviderConfig & { model: string; baseUrl: strin
     // and takes the whole assistant down.
     model: AI_MODEL || provider.defaultModel,
     baseUrl: AI_BASE_URL || provider.baseUrl,
+  };
+}
+
+/**
+ * The config to actually use, preferring the super-admin registry.
+ *
+ * `resolveActiveModel()` is cached and returns the ENVIRONMENT configuration
+ * whenever the registry has no usable primary — see lib/ai-settings.ts for why
+ * that direction was chosen. So on a server where the admin module has never
+ * been used, or where the database is briefly unavailable, every line below
+ * produces exactly what it produced before this existed.
+ *
+ * It is async because the registry lives in the database, and it is called once
+ * per request rather than per agent step (the cache makes the repeat free).
+ */
+async function activeConfig(): Promise<AIProviderConfig & { model: string; baseUrl: string; apiKey: string; fallbacks: string[] }> {
+  const resolved = await resolveActiveModel();
+  const provider = getProvider(resolved.provider) || getProvider("gemini")!;
+  return {
+    ...provider,
+    id: resolved.provider as AIProviderConfig["id"],
+    model: resolved.model,
+    baseUrl: resolved.baseUrl || provider.baseUrl,
+    apiKey: resolved.apiKey,
+    fallbacks: resolved.fallbacks,
   };
 }
 
@@ -341,6 +367,13 @@ function rowsForModel(raw: any): unknown {
 export interface TurnBudget {
   /** Research calls already made in this turn. Mutated by executeTool. */
   searches: number;
+  /**
+   * Ceiling for this turn, set by the super-admin registry. Optional so the
+   * existing tests — which construct a bare `{ searches: 0 }` — keep meaning
+   * "use the code default", and so an unset field is never a silent zero that
+   * would block research entirely.
+   */
+  cap?: number;
 }
 
 async function executeTool(
@@ -463,7 +496,7 @@ async function executeTool(
     case "search_web": {
       const query = String(args.query || "").trim();
       if (!query) return { error: "Tell me what to look up." };
-      if (budget && budget.searches >= SEARCHES_PER_TURN) {
+      if (budget && budget.searches >= (budget.cap ?? SEARCHES_PER_TURN)) {
         return {
           error:
             "I have already looked twice for this question, and every search costs the farmer another minute. Answer from what you have, and name what is still missing.",
@@ -518,8 +551,11 @@ async function executeTool(
 // POST /api/ai/stream — same agentic loop as /chat, but each step is pushed to
 // the browser as it happens so the farmer can SEE the AI working on their farm.
 router.post("/stream", async (req: Request, res: Response) => {
-  if (!AI_API_KEY && AI_PROVIDER !== "ollama") {
-    return res.status(503).json({ error: "AI not configured", provider: AI_PROVIDER });
+  // Resolve first: the key may live in the registry rather than .env, so
+  // checking the module constant would 503 a correctly configured server.
+  const resolved = await resolveActiveModel();
+  if (!resolved.apiKey && resolved.provider !== "ollama") {
+    return res.status(503).json({ error: "AI not configured", provider: resolved.provider });
   }
 
   let farmId: number;
@@ -549,7 +585,7 @@ router.post("/stream", async (req: Request, res: Response) => {
   req.on("close", () => { aborted = true; });
 
   try {
-    send("start", { provider: AI_PROVIDER, model: getProviderConfig().model });
+    send("start", { provider: resolved.provider, model: resolved.model });
     const convo: any[] = [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
     let steps = 0;
     let text = "";
@@ -567,13 +603,25 @@ router.post("/stream", async (req: Request, res: Response) => {
        Capping at two keeps the worst case at about three minutes and leaves
        room for the follow-up refinement that genuinely helps. */
     const budget: TurnBudget = { searches: 0 };
+    // Registry knobs, falling back to the code defaults. A null means "use the
+    // default", so a half-filled settings row cannot silently change behaviour.
+    const opsSettings = await resolveSettings();
+    const maxSteps = opsSettings.maxSteps;
+    // Set on the budget rather than read from a module constant, because
+    // executeTool receives only the budget and must not re-query the database
+    // once per tool call.
+    budget.cap = opsSettings.searchesPerTurn;
 
-    while (steps < MAX_AGENT_STEPS) {
+    while (steps < maxSteps) {
       if (aborted) break;
       steps++;
+      const stepStart = Date.now();
       const response = await callAI(convo, mcpTools, (waitMs, opensAt) => {
         send("waiting", { seconds: Math.round(waitMs / 1000), opensAt: opensAt ?? null });
-      });
+      }).then(
+        (r) => (void recordModelOutcome(resolved.model, true, Date.now() - stepStart), r),
+        (e) => (void recordModelOutcome(resolved.model, false, Date.now() - stepStart), Promise.reject(e)),
+      );
       text = response.content || text;
 
       if (response.tool_calls.length === 0) {
@@ -654,7 +702,7 @@ router.post("/stream", async (req: Request, res: Response) => {
         answered = true;
         break;
       }
-      if (steps >= MAX_AGENT_STEPS) truncatedByBudget = true;
+      if (steps >= maxSteps) truncatedByBudget = true;
     }
 
     if (aborted) {
@@ -797,7 +845,10 @@ async function callAI(
   tools: any[],
   onWait?: (waitMs: number, opensAt: number | null) => void,
 ): Promise<{ content: string; tool_calls: any[] }> {
-  const config = getProviderConfig();
+  // Registry first, environment second — see activeConfig(). Cached, so this is
+  // one query per request rather than one per agent step.
+  const config = await activeConfig();
+  const settings = await resolveSettings();
 
   // Special handling for non-OpenAI-compatible providers
   if (config.id === "gemini") return callGemini(messages, tools, config);
@@ -807,7 +858,7 @@ async function callAI(
   if (config.id === "ollama") return callOllama(messages, tools, config);
 
   // All OpenAI-compatible providers (UnoRouter, Groq, Cerebras, Mistral, GitHub, NVIDIA, DeepSeek, OpenAI)
-  return callOpenAICompatible(messages, tools, config, onWait);
+  return callOpenAICompatible(messages, tools, config, onWait, config.fallbacks, settings);
 }
 
 // ─── OpenAI-Compatible (most providers) ───────────────────
@@ -818,6 +869,12 @@ async function callOpenAICompatible(
   onWait?: (waitMs: number, opensAt: number | null) => void,
   /** Backups still untried, so two dead models still end up answered. */
   remainingFallbacks: string[] = AI_MODEL_FALLBACKS,
+  /** Operator-tunable knobs from the registry; defaults keep this call safe. */
+  settings: { rateLimitWindowMs: number; rateLimitMaxWaitMs: number; rateLimitMaxRetries: number } = {
+    rateLimitWindowMs: RATE_LIMIT_WINDOW_MS,
+    rateLimitMaxWaitMs: RATE_LIMIT_MAX_WAIT_MS,
+    rateLimitMaxRetries: RATE_LIMIT_MAX_RETRIES,
+  },
 ): Promise<{ content: string; tool_calls: any[] }> {
   const body = JSON.stringify({ model: config.model, messages, tools, temperature: 0.7, max_tokens: 4096 });
   // `Response` alone means Express's Response in this file, not fetch's.
@@ -843,12 +900,12 @@ async function callOpenAICompatible(
     if (res.ok) lastAcceptedCallAt = Date.now();
     if (res.status !== 429) break;
     err = await res.text().catch(() => "");
-    if (attempt >= RATE_LIMIT_MAX_RETRIES) break;
+    if (attempt >= settings.rateLimitMaxRetries) break;
     const { waitMs, reason, opensAt } = nextRetryWait({
       lastAcceptedAt: lastAcceptedCallAt,
       now: Date.now(),
-      windowMs: RATE_LIMIT_WINDOW_MS,
-      maxWaitMs: RATE_LIMIT_MAX_WAIT_MS,
+      windowMs: settings.rateLimitWindowMs,
+      maxWaitMs: settings.rateLimitMaxWaitMs,
     });
     console.warn(`${config.name}: 429 on ${config.model}, waiting ${waitMs}ms (${reason}, attempt ${attempt + 1})`);
     // A minute of silence is indistinguishable from a frozen app, and a
@@ -873,7 +930,7 @@ async function callOpenAICompatible(
         `${config.name}: ${config.model} is gone (${res.status}). Falling back to ${next}.` +
           (rest.length ? ` Further backups: ${rest.join(", ")}` : ""),
       );
-      return callOpenAICompatible(messages, tools, { ...config, model: next }, onWait, rest);
+      return callOpenAICompatible(messages, tools, { ...config, model: next }, onWait, rest, settings);
     }
     throw new Error(`${config.name}: ${res.status}`);
   }
@@ -966,7 +1023,8 @@ router.post("/chat", async (req: Request, res: Response) => {
   try {
     const { messages } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "Messages array required" });
-    if (!AI_API_KEY && AI_PROVIDER !== "ollama") {
+    const resolvedChat = await resolveActiveModel();
+    if (!resolvedChat.apiKey && resolvedChat.provider !== "ollama") {
       // 503 + a generic message: the old 500 leaked the provider name and an
       // internal setup URL to any authenticated caller.
       return res.status(503).json({ error: "AI assistant is not configured yet. Please try again soon." });
@@ -1052,14 +1110,19 @@ router.get("/providers", (_req: Request, res: Response) => {
   res.json(providers);
 });
 
-router.get("/health", (_req: Request, res: Response) => {
-  const config = getProviderConfig();
+router.get("/health", async (_req: Request, res: Response) => {
+  // Reports what is ACTUALLY in use, registry included — a health check that
+  // answers from .env would claim "configured" for a model that is not live.
+  const resolved = await resolveActiveModel();
+  const config = getProvider(resolved.provider) || getProvider("gemini")!;
   res.json({
-    status: AI_API_KEY || AI_PROVIDER === "ollama" ? "configured" : "needs_api_key",
-    provider: config.id,
+    status: resolved.apiKey || resolved.provider === "ollama" ? "configured" : "needs_api_key",
+    provider: resolved.provider,
     providerName: config.name,
-    model: config.model,
-    hasApiKey: !!AI_API_KEY,
+    model: resolved.model,
+    hasApiKey: !!resolved.apiKey,
+    // Whether this model came from the admin registry or from the environment.
+    source: resolved.fromEnv ? "env" : "registry",
     webSearch: searchConfigured(),
     webSearchTier: searchTierLabel(),
     setupUrl: config.setupUrl,

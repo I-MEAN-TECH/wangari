@@ -65,8 +65,13 @@ describe("waiting out a per-minute rate limit", () => {
   });
 
   it("still gives up rather than retrying forever", () => {
+    // The cap is now read off the `settings` argument so a super-admin can tune
+    // it from the registry; the constant remains the default that argument
+    // falls back to. Both are asserted, because the guarantee ("give up") is
+    // only real if the default exists AND the call site uses it.
+    expect(src).toMatch(/rateLimitMaxRetries: RATE_LIMIT_MAX_RETRIES/);
     expect(src).toMatch(/attempt <= RATE_LIMIT_MAX_RETRIES/);
-    expect(src).toMatch(/if \(attempt >= RATE_LIMIT_MAX_RETRIES\) break/);
+    expect(src).toMatch(/if \(attempt >= settings\.rateLimitMaxRetries\) break/);
   });
 
   it("keeps a single wait inside nginx's 120s read timeout", () => {

@@ -70,7 +70,10 @@ describe("the fallback itself", () => {
 
   it("carries the remaining backups forward, so two dead models still answer", () => {
     // Without threading the tail, one dead backup just moves the failure.
-    expect(src).toMatch(/\{\s*\.\.\.config, model: next \}, onWait, rest\)/);
+    // `settings` is threaded through the recursive call as well: the retry budget
+// has to survive a fallback hop, or a model that dies mid-conversation would
+// hand the next one an unlimited number of free retries.
+expect(src).toMatch(/\{\s*\.\.\.config, model: next \}, onWait, rest, settings\)/);
   });
 
   it("keeps the retry loop and the fallback on the same path", () => {

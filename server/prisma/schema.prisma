@@ -1373,3 +1373,77 @@ model CoopInvite {
   @@index([phone])
   @@map("coop_invites")
 }
+
+/// A model the super-admin has registered for Wangari's assistant.
+///
+/// Exactly one row may hold role "primary" and one "fallback" at a time; that
+/// invariant is enforced by partial unique indexes in the migration rather than
+/// by application code, because two live primaries is the failure mode that
+/// silently halves throughput and is invisible until a farmer waits twice as
+/// long as everyone else.
+///
+/// `probeState` is why a model cannot simply be typed in and switched on: a
+/// model that cannot chain two tool calls looks fine until it leaves the screen
+/// quiet halfway through recording a sale. The super-admin UI refuses to
+/// activate anything that has not passed, and `probeState` records what the
+/// probe actually said so a bad activation is traceable afterwards.
+model AiModel {
+  id        Int      @id @default(autoincrement())
+  provider  String
+  model     String
+  label     String?
+  role      String   @default("candidate") // "primary" | "fallback" | "candidate"
+
+  /// Encrypted at rest with AES-256-GCM; the plaintext never touches the DB.
+  /// Nullable because a provider already configured in .env needs no row key,
+  /// and forcing one would put a secret in the database for no gain.
+  apiKeyEnc String?  @map("api_key_enc")
+  baseUrl   String?  @map("base_url")
+
+  /// USD per 1M tokens, as published by the provider. Null on providers that
+  /// publish no per-model pricing (UnoRouter), which is why the roster filter
+  /// reads the ":free" id suffix instead — see lib/free-model-roster.ts.
+  costInPerM  Float? @map("cost_in_per_m")
+  costOutPerM Float? @map("cost_out_per_m")
+  isFree      Boolean @default(true) @map("is_free")
+
+  contextLength Int? @map("context_length")
+
+  probeState String   @default("untested") @map("probe_state") // "untested" | "passing" | "failing" | "error"
+  probeReason String? @map("probe_reason")
+  probedAt    DateTime? @map("probed_at")
+  probeMs     Int?     @map("probe_ms")
+
+  /// Rolling health from real farmer traffic, so the UI can show a model that
+  /// passes its probe but is slow or flapping in production.
+  lastLatencyMs Int?      @map("last_latency_ms")
+  successCount  Int       @default(0) @map("success_count")
+  failureCount  Int       @default(0) @map("failure_count")
+  lastUsedAt    DateTime? @map("last_used_at")
+
+  enabled   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([provider, model])
+  @@index([role])
+  @@map("ai_models")
+}
+
+/// Operator-set AI knobs that are not per-model: search cap, rate-limit
+/// window, step ceiling. One row; anything NULL means "use the code default",
+/// which is what keeps a partially-filled table from changing behaviour.
+model AiSettings {
+  id                Int      @id @default(1)
+  searchesPerTurn   Int?     @map("searches_per_turn")
+  rateLimitWindowMs Int?     @map("rate_limit_window_ms")
+  maxSteps          Int?     @map("max_steps")
+  /// When true, a paid model may be activated. The default of FALSE is the
+  /// whole point: this is a farm SaaS with a $0 balance, and the cheapest
+  /// accident here is a real invoice.
+  allowPaidModels   Boolean  @default(false) @map("allow_paid_models")
+  updatedBy         Int?     @map("updated_by")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("ai_settings")
+}
