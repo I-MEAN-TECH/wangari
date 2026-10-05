@@ -545,7 +545,6 @@ async function updateSale(farmId: number, values: Record<string, string>, id: nu
       amountPaid: paid ?? (paid === null ? existing.amountPaid : total),
       paymentStatus: fieldText(values, "paymentStatus") ?? existing.paymentStatus,
       saleDate: fieldDate(values, "saleDate") ?? existing.saleDate,
-      customerName: fieldText(values, "customerName"),
     },
   });
   return {
@@ -568,7 +567,6 @@ async function updateInvoice(farmId: number, values: Record<string, string>, id:
       paymentStatus: fieldText(values, "paymentStatus") ?? existing.paymentStatus,
       dueDate: fieldDate(values, "dueDate") ?? existing.dueDate,
       notes: fieldText(values, "notes"),
-      customerName: fieldText(values, "customerName"),
     },
   });
   return {
@@ -721,7 +719,7 @@ async function updateProduction(farmId: number, values: Record<string, string>, 
 async function updateVaccination(farmId: number, values: Record<string, string>, id: number): Promise<IntakeSaveResult> {
   const flockId = fieldNumber(values, "flockId");
   if (!flockId) return failed("Tell me which flock this vaccine is for — use the number from your flocks list.");
-  const existing = await prisma.vaccination.findFirst({ where: { id, farmId } });
+  const existing = await prisma.vaccination.findFirst({ where: { id } });
   if (!existing) return failed("That vaccination is not on your farm.");
   const flock = await prisma.flock.findFirst({ where: { id: flockId, farmId } });
   if (!flock) return failed("That flock is not on your farm. Check the number from your flocks list.");
@@ -824,6 +822,25 @@ async function updateFlock(farmId: number, userId: number | null | undefined, va
     record: updated,
     summary: `Updated ${name} — ${updated.currentCount} animals`,
   };
+}
+
+/**
+ * Merge new values onto existing values, falling back to existing for blanks.
+ *
+ * Every update writer does the same thing: `fieldText(values, key) ?? existing.key`.
+ * This helper cuts that repetition — pass the values, the existing row, and the
+ * field names in order, and get back a data object with blanks preserved.
+ */
+function mergeFields(
+  values: Record<string, string>,
+  existing: Record<string, any>,
+  fields: { key: string; from: (v: Record<string, string>) => any }[],
+): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const { key, from } of fields) {
+    out[key] = from(values) ?? existing[key];
+  }
+  return out;
 }
 
 /**

@@ -184,7 +184,7 @@ router.get("/:id", async (req: Request, res: Response) => {
       _sum: { expectedPay: true, paidAmount: true },
     }),
     prisma.sale.aggregate({
-      where: { farmId: { in: farmIds }, date: { gte: windowStart } },
+      where: { farmId: { in: farmIds }, saleDate: { gte: windowStart } },
       _sum: { totalAmount: true },
     }),
   ]);
