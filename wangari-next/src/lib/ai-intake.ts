@@ -61,14 +61,20 @@ export interface IntakeCard {
   filled: number;
   total: number;
   ask: string;
+  /** When set, the form is editing an existing record and saving uses PUT. */
+  editing?: { entity: string; id: number };
 }
 
 export interface IntakeSaveResult {
   ok: true;
   entity: string;
-  flock: { id: number; name: string; currentCount?: number; [k: string]: unknown };
+  record: { id: number; [k: string]: unknown };
+  summary: string;
   alsoCreated?: { vaccinations: number; expenseTransactionId: number | null; totalInvestment: number | null };
-  tagWarning?: string | null;
+  warning?: string | null;
+  values?: Record<string, string>;
+  updated?: boolean;
+  flock?: { id: number; name: string; currentCount?: number; breed?: string | null; [k: string]: unknown };
 }
 
 export interface IntakeSaveFailure {
@@ -214,7 +220,61 @@ export async function submitIntake(
       missingRequired: body?.missingRequired,
     };
   }
-  return body as IntakeSaveResult;
+  const result = body as IntakeSaveResult;
+  // Back-compat: older server responses used `flock` for the flock entity.
+  if (entity === "flock" && result.record && !result.flock) {
+    result.flock = result.record as any;
+  }
+  return result;
+}
+
+/**
+ * Update a record the farmer already saved.
+ *
+ * PUTs the same shape as submitIntake, but to /api/ai/intake/:entity/:id so
+ * the server knows to update rather than create. Blank values keep their
+ * existing value on the server.
+ */
+export async function updateIntake(
+  entity: string,
+  id: number,
+  values: Record<string, string>,
+): Promise<IntakeSaveResult | IntakeSaveFailure> {
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+  let res: Response;
+  try {
+    res = await fetch(`/api/ai/intake/${entity}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ values }),
+    });
+  } catch {
+    return { ok: false, error: "No connection. Check your network and try again." };
+  }
+
+  let body: any = null;
+  try {
+    body = await res.json();
+  } catch {
+    /* a non-JSON body still has a status to act on */
+  }
+
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: body?.error || "I could not update that just now. Please try again.",
+      errors: body?.errors,
+      missingRequired: body?.missingRequired,
+    };
+  }
+  const result = body as IntakeSaveResult;
+  if (entity === "flock" && result.record && !result.flock) {
+    result.flock = result.record as any;
+  }
+  return result;
 }
 
 /**

@@ -15,7 +15,9 @@ import { WangariMark } from "@/components/ai/wangari-mark";
 import type { AgentActivity, AgentStep } from "@/components/ai/agent-presence";
 import { streamAI, type WireMessage, type StreamEvent } from "@/lib/ai-stream";
 import IntakeCard from "@/components/ai/intake-card";
+import ChoiceCard from "@/components/ai/choice-card";
 import type { IntakeCard as IntakeCardData } from "@/lib/ai-intake";
+import type { FarmerChoice } from "@/lib/ai-choice";
 import { setPresence, clearPresence, type Presence } from "@/lib/wangari-presence";
 import { caretGaze } from "@/lib/caret-gaze";
 import { TypingTracker } from "@/lib/typing-signal";
@@ -51,6 +53,12 @@ export default function AIAssistantPage() {
      time on purpose — two half-filled forms on screen is how a flock gets
      saved with the wrong numbers. */
   const [intake, setIntake] = React.useState<IntakeCardData | null>(null);
+
+  /* ── a question she wants answered by tapping ─────────────
+     Held beside the form because both are waiting on the farmer, and a tap on
+     one turns into their next message — which is how the answer reaches the
+     conversation and ends up in the form that opens next. */
+  const [choice, setChoice] = React.useState<FarmerChoice | null>(null);
 
   // Caret gaze and typing pace feed the avatar's eyes. WangariAgent
   // receives them; see components/ai/agent-presence.tsx.
@@ -101,6 +109,7 @@ export default function AIAssistantPage() {
     setError(undefined);
     setValue("");
     setIntake(null);
+    setChoice(null);
     setListOpen(false);
   }, []);
 
@@ -115,6 +124,7 @@ export default function AIAssistantPage() {
     // another one would show questions about a flock the farmer never asked for
     // in this thread.
     setIntake(null);
+    setChoice(null);
     setListOpen(false);
   }, []);
 
@@ -155,6 +165,8 @@ export default function AIAssistantPage() {
     // A new request supersedes any form still open: answering the old one after
     // asking something else is how a flock gets saved against the wrong request.
     setIntake(null);
+    // A new request supersedes whatever she was waiting for.
+    setChoice(null);
 
     const next = [...history, { role: "user" as const, content: prompt }];
 
@@ -189,10 +201,19 @@ export default function AIAssistantPage() {
             setWaitSeconds(e.seconds);
             break;
 
+          case "choice":
+            /* She is asking something with a short list of answers. Tapping one
+               sends it as the farmer's next message, which is cheaper for them
+               and exact for her. */
+            setChoice(e.choice);
+            setActivity("waiting");
+            break;
+
           case "intake":
             /* Wangari needs the farmer's answers before she writes anything.
                The card carries every question, prefilled with whatever she
-               already heard, and nothing is saved until they confirm it. */
+               already heard, and nothing is saved until they confirm it.
+               When editing is set the form is updating an existing record. */
             setIntake(e.intake);
             setActivity("waiting");
             break;
@@ -517,12 +538,30 @@ export default function AIAssistantPage() {
           pace={pace}
           wordTick={wordTick.current}
           waitSeconds={waitSeconds}
+          choice={
+            choice ? (
+              <ChoiceCard
+                choice={choice}
+                busy={running}
+                onAnswer={(answer) => {
+                  // Clear it before sending: the tap starts a new turn, and a
+                  // card still on screen under a fresh reply invites a second
+                  // answer to a question that has already been answered.
+                  setChoice(null);
+                  const history: WireMessage[] = turns
+                    .filter((t) => t.content.trim())
+                    .map((t) => ({ role: t.role, content: t.content }));
+                  void run(history, answer);
+                }}
+              />
+            ) : null
+          }
           intake={
             intake ? (
               <IntakeCard
                 intake={intake}
                 onDismiss={() => setIntake(null)}
-                onSaved={(flock) =>
+                onSaved={(record) =>
                   /* Her own words say it is saved the moment the server does.
                      Before that, saying so would be the lie this whole flow
                      exists to stop. */
@@ -531,7 +570,21 @@ export default function AIAssistantPage() {
                       turn.role === "assistant" && !turn.content.trim()
                         ? {
                             ...turn,
-                            content: `Saved ${flock.name} to your livestock. You can add the rest of the details any time.`,
+                            content: intake.editing
+                              ? `Updated ${record.name}. You can add the rest of the details any time.`
+                              : `Saved ${record.name} to your livestock. You can add the rest of the details any time.`,
+                          }
+                        : turn,
+                    ),
+                  )
+                }
+                onUpdated={(record) =>
+                  setTurns((t) =>
+                    t.map((turn) =>
+                      turn.role === "assistant" && !turn.content.trim()
+                        ? {
+                            ...turn,
+                            content: `Updated ${record.name}. You can add the rest of the details any time.`,
                           }
                         : turn,
                     ),

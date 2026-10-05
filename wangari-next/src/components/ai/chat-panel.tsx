@@ -132,6 +132,7 @@ export function ChatPanel({
   presenceOverride,
   waitSeconds = null,
   intake = null,
+  choice = null,
 }: {
   turns: Turn[];
   /** Tool steps currently executing, so progress shows before it lands. */
@@ -176,6 +177,14 @@ export function ChatPanel({
    * there with nothing to say about what they asked for.
    */
   intake?: React.ReactNode;
+  /**
+   * A tap-to-answer question Wangari opened, drawn below the tool feed.
+   *
+   * Sits beside the form for the same reason: both are the farmer's to fill,
+   * and answering the question may open the next form, so they share one
+   * place in the flow rather than two.
+   */
+  choice?: React.ReactNode;
 }) {
   const live = useWangariPresence();
   // Server-rendered markup always reads "idle", because the presence store is
@@ -374,6 +383,16 @@ export function ChatPanel({
                 className="w-full"
               >
                 {intake}
+              </motion.li>
+            )}
+
+            {choice && (
+              <motion.li
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full"
+              >
+                {choice}
               </motion.li>
             )}
 

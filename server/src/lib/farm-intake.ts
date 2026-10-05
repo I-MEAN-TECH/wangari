@@ -1,411 +1,50 @@
 /**
- * Guided intake — "add a flock" is a form, not a sentence.
+ * The machinery behind every guided intake: cleaning answers, asking what is
+ * still missing, and refusing what cannot be saved.
  *
- * ── what was wrong ──────────────────────────────────────
- * Ask Wangari to add livestock and she called `create_flock` with a name, a
- * breed and a number. The farmer got ONE record out of the ~28 columns the
- * livestock screen actually holds: no purpose, no pen, no supplier, no cost,
- * no feed plan, no vet, no target, no insurance. Nothing was asked for, so
- * nothing could be filled in, and the blank columns stayed blank for the life
- * of the flock. The farmer never learns they had a say in it.
+ * ── what this is ─────────────────────────────────────────
+ * Ask Wangari to add livestock and she used to call a tool with a name, a breed
+ * and a number. The farmer got ONE record out of the twenty-eight columns the
+ * livestock screen holds: no purpose, no pen, no supplier, no cost, no feed
+ * plan, no vet, no target, no insurance. Nothing was asked for, so nothing could
+ * be filled in, and the blank columns stayed blank for the life of the flock.
+ * The same was true of every other record the assistant could write.
  *
- * ── why the model does not just ask questions ───────────
- * It is tempting to let the model run the interview: "What is the flock
- * called?" "How many?" "What breed?" in its own words. Measured against this
- * product's constraints that is the wrong shape for two reasons.
+ * So the questions are DATA, in intake-registry.ts, and this file is what reads
+ * them. There is one list, and the card, the validation and the writers all get
+ * their fields from it. A second copy would drift, and the day it did the
+ * assistant would be asking about something the database cannot store.
+ *
+ * ── why the model does not just ask the questions ────────
+ * It is tempting to let the model run the interview in its own words. Measured
+ * against this product's constraints that is the wrong shape for two reasons.
  *
  * ONE: the free tier allows one request a MINUTE, account-wide (see
- * lib/agentic-probe.ts). A 12-question interview is 12 minutes of waiting, and
- * a farmer on a phone in Kiambu will not sit through it. So the questions are
- * DATA here, not model output: the server knows all of them, and asking costs
- * the farmer zero requests.
+ * lib/agentic-probe.ts). A twelve-question interview is twelve minutes of
+ * waiting, and a farmer on a phone in Kiambu will not sit through it. The
+ * questions are therefore data here, not model output: the server knows all of
+ * them, and asking costs the farmer zero requests.
  *
- * TWO: the questions must be the ones the livestock screen asks. They already
- * exist, in components/flocks/EditFlockForm.tsx, grouped into the sections a
- * farmer has seen before. Re-deriving them in a prompt would produce a second,
- * drifting set — and the day they differ, the AI has told a farmer something
- * the app does not actually store.
+ * TWO: the questions must be the ones the screens already ask. They exist in
+ * the flocks, crops, workers, customers, stock and money screens. Re-deriving
+ * them in a prompt would produce a second, drifting set.
  *
- * So this module is the single source of truth: it describes the sections, it
- * validates what comes back, and it says which fields are still missing. It is
- * pure — no database, no fetch — so all of it is unit-testable, which is the
- * only reason the rules below can be trusted.
- */
-
-export type IntakeEntity = "flock";
-
-export interface IntakeOption {
-  value: string;
-  label: string;
-}
-
-export type IntakeFieldType = "text" | "textarea" | "number" | "money" | "select" | "date";
-
-export interface IntakeField {
-  /** The Flock column this fills. One name, used for storage and for the form. */
-  key: string;
-  label: string;
-  type: IntakeFieldType;
-  required?: boolean;
-  options?: readonly IntakeOption[];
-  placeholder?: string;
-  /** Shown under the input. Say why it is being asked, not what it is. */
-  hint?: string;
-  /** Whole animals and whole shillings only — no 12.5 birds, no 0.3 deaths. */
-  integer?: boolean;
-  min?: number;
-}
-
-export interface IntakeSection {
-  id: string;
-  title: string;
-  /** One line on what this group of questions is for. */
-  blurb?: string;
-  fields: IntakeField[];
-}
-
-interface IntakeSource {
-  entity: IntakeEntity;
-  title: string;
-  /**
-   * The bare noun, used in the sentence Wangari says: "the livestock form".
-   *
-   * Derived from `title` it reads "the add your livestock form", which is
-   * grammatical and useless — it was caught by running the bare case live and
-   * reading what she actually said.
-   */
-  formNoun: string;
-  intro: string;
-  sections: IntakeSection[];
-  /**
-   * Words the MODEL uses for these fields, mapped onto ours.
-   *
-   * The model reads "add 200 Sasso layers called Sasso Kenya, 500 bob each"
-   * and has to hand those facts over in our names. Getting this wrong is not
-   * a crash, it is worse: the farmer's own words are silently dropped and the
-   * form opens blank on a detail they had already typed. So the aliases exist,
-   * and every one of them is a word a farmer actually says.
-   */
-  aliases: Record<string, string>;
-}
-
-/**
- * The eleven species the product knows, with the ids Prisma stores.
- *
- * Same ids as SPECIES_CATEGORY in lib/flock-create.ts and the templates in the
- * web app's lib/species-templates.ts. A flock whose species is not in this list
- * still saves — the field is free text underneath — but the category cannot be
- * derived, so it falls back to "livestock".
- */
-const SPECIES: readonly IntakeOption[] = [
-  { value: "layers", label: "Layers (eggs)" },
-  { value: "broilers", label: "Broilers (meat)" },
-  { value: "kienyeji", label: "Kienyeji (indigenous chicken)" },
-  { value: "cattle_dairy", label: "Dairy cattle" },
-  { value: "cattle_beef", label: "Beef cattle" },
-  { value: "goats", label: "Goats" },
-  { value: "sheep", label: "Sheep" },
-  { value: "pigs", label: "Pigs" },
-  { value: "rabbits", label: "Rabbits" },
-  { value: "fish", label: "Fish (aquaculture)" },
-  { value: "bees", label: "Bees (apiculture)" },
-];
-
-const FLOCK: IntakeSource = {
-  entity: "flock",
-  title: "Add your livestock",
-  formNoun: "livestock",
-  intro:
-    "I need a few details before I save this. I have already filled in what you " +
-    "told me — check it, fill the gaps, and leave anything you do not know yet.",
-  sections: [
-    {
-      id: "basic",
-      title: "Basic Info",
-      blurb: "Who these animals are and what the group is for.",
-      fields: [
-        {
-          key: "name",
-          label: "Flock Name",
-          type: "text",
-          required: true,
-          placeholder: "e.g. Sasso Kenya",
-          hint: "The name you call this group.",
-        },
-        {
-          key: "initialCount",
-          label: "How many animals",
-          type: "number",
-          required: true,
-          integer: true,
-          min: 1,
-          placeholder: "e.g. 200",
-        },
-        {
-          key: "type",
-          label: "Species",
-          type: "select",
-          options: SPECIES,
-          hint: "Decides how the app works out feed, space and vaccines.",
-        },
-        {
-          key: "status",
-          label: "Status",
-          type: "select",
-          options: [
-            { value: "active", label: "Active" },
-            { value: "inactive", label: "Inactive" },
-            { value: "sold", label: "Sold" },
-            { value: "deceased", label: "Deceased" },
-          ],
-        },
-        { key: "breed", label: "Breed", type: "text", placeholder: "e.g. Sasso, Kienyeji, Friesian" },
-        {
-          key: "mortality",
-          label: "Deaths (Mortality)",
-          type: "number",
-          integer: true,
-          min: 0,
-          placeholder: "0",
-          hint: "Deaths since you got them.",
-        },
-        {
-          key: "purpose",
-          label: "Purpose",
-          type: "select",
-          options: [
-            { value: "production", label: "Production" },
-            { value: "breeding", label: "Breeding" },
-            { value: "dual_purpose", label: "Dual Purpose" },
-          ],
-        },
-        {
-          key: "gender",
-          label: "Gender",
-          type: "select",
-          options: [
-            { value: "female", label: "All Female" },
-            { value: "male", label: "All Male" },
-            { value: "mixed", label: "Mixed" },
-          ],
-        },
-        {
-          key: "genderRatio",
-          label: "Male : Female ratio",
-          type: "text",
-          placeholder: "e.g. 1:9",
-        },
-        {
-          key: "hatchDate",
-          label: "Date you got them",
-          type: "date",
-          hint: "Used to work out the age and the vaccination dates.",
-        },
-      ],
-    },
-    {
-      id: "location",
-      title: "Location & Housing",
-      blurb: "Where they are kept.",
-      fields: [
-        {
-          key: "location",
-          label: "Location / Pen",
-          type: "text",
-          placeholder: "e.g. Pen A, Barn 2",
-        },
-      ],
-    },
-    {
-      id: "supply",
-      title: "Source & Cost",
-      blurb: "Where they came from and what they cost. This is what the profit page compares against.",
-      fields: [
-        { key: "source", label: "Source / Supplier", type: "text", placeholder: "e.g. Mamboeo market" },
-        {
-          key: "supplierContact",
-          label: "Supplier Phone",
-          type: "text",
-          placeholder: "07…",
-        },
-        {
-          key: "costPerAnimal",
-          label: "Cost per Animal (KES)",
-          type: "money",
-          min: 0,
-          placeholder: "e.g. 500",
-          hint: "One animal, not the whole group. The total is worked out for you.",
-        },
-        {
-          key: "targetMarket",
-          label: "Target Market",
-          type: "text",
-          placeholder: "e.g. Nairobi, local market",
-        },
-      ],
-    },
-    {
-      id: "feed",
-      title: "Feed Plan",
-      blurb: "Feed is 60–70% of a poultry farm's costs, so it is worth recording.",
-      fields: [
-        {
-          key: "feedType",
-          label: "Feed Type",
-          type: "text",
-          placeholder: "e.g. layers mash, hay",
-        },
-        { key: "feedSupplier", label: "Feed Supplier", type: "text", placeholder: "e.g. Unga Farm Care" },
-        {
-          key: "feedCostPerMonth",
-          label: "Feed Cost/Month (KES)",
-          type: "money",
-          min: 0,
-          placeholder: "e.g. 24000",
-        },
-      ],
-    },
-    {
-      id: "vet",
-      title: "Veterinarian & Health",
-      blurb: "Who to call when something is wrong.",
-      fields: [
-        { key: "vetName", label: "Veterinarian", type: "text", placeholder: "Name" },
-        { key: "vetPhone", label: "Vet Phone", type: "text", placeholder: "07…" },
-        {
-          key: "healthOnArrival",
-          label: "Health on Arrival",
-          type: "text",
-          placeholder: "e.g. all healthy, vaccinated against Newcastle",
-        },
-      ],
-    },
-    {
-      id: "target",
-      title: "Production Target",
-      blurb: "What this group is expected to produce. Blank is fine — do not guess a number for me.",
-      fields: [
-        {
-          key: "expectedYield",
-          label: "Expected Yield",
-          type: "text",
-          placeholder: "e.g. 250 eggs/bird/year",
-        },
-        { key: "expectedWeight", label: "Expected Weight", type: "text", placeholder: "e.g. 1.8 kg at 8 weeks" },
-        {
-          key: "expectedRevenue",
-          label: "Expected Revenue (KES)",
-          type: "money",
-          min: 0,
-          placeholder: "e.g. 600000",
-        },
-      ],
-    },
-    {
-      id: "insurance",
-      title: "Insurance & Notes",
-      fields: [
-        {
-          key: "insurancePolicy",
-          label: "Insurance Policy",
-          type: "text",
-          placeholder: "e.g. Kenya National Insurance, policy NHIF-2231",
-        },
-        { key: "notes", label: "Notes", type: "textarea", placeholder: "Anything else worth remembering." },
-      ],
-    },
-    {
-      id: "tags",
-      title: "ANITRAC Tags",
-      blurb: "First and last tag number for the whole group. Leave empty if they are not tagged.",
-      fields: [
-        { key: "tagFrom", label: "First tag number", type: "text", placeholder: "e.g. 1410001" },
-        { key: "tagTo", label: "Last tag number", type: "text", placeholder: "e.g. 1410200" },
-      ],
-    },
-  ],
-  aliases: {
-    count: "initialCount",
-    number: "initialCount",
-    quantity: "initialCount",
-    head: "initialCount",
-    flockName: "name",
-    groupName: "name",
-    deaths: "mortality",
-    mortalityCount: "mortality",
-    species: "type",
-    pen: "location",
-    house: "location",
-    barn: "location",
-    supplier: "source",
-    supplierName: "source",
-    phone: "supplierContact",
-    supplierPhone: "supplierContact",
-    cost: "costPerAnimal",
-    pricePerAnimal: "costPerAnimal",
-    market: "targetMarket",
-    feed: "feedType",
-    feedCost: "feedCostPerMonth",
-    vet: "vetName",
-    veterinarian: "vetName",
-    vetPhoneNumber: "vetPhone",
-    arrivedOn: "hatchDate",
-    dateAcquired: "hatchDate",
-    healthStatus: "healthOnArrival",
-    insurance: "insurancePolicy",
-    yield: "expectedYield",
-    revenue: "expectedRevenue",
-    weight: "expectedWeight",
-    note: "notes",
-    firstTag: "tagFrom",
-    lastTag: "tagTo",
-  },
-};
-
-const SOURCES: Record<IntakeEntity, IntakeSource> = { flock: FLOCK };
-
-/** What the server sends the farmer's browser to draw the form. */
-export interface IntakeCard {
-  entity: IntakeEntity;
-  title: string;
-  intro: string;
-  sections: IntakeSection[];
-  /** Field key → what is already filled in, as strings. */
-  values: Record<string, string>;
-  /** Fields still needed before it can be saved. */
-  missingRequired: string[];
-  /** Fields that would be nice, in the farmer's language. */
-  missingOptional: string[];
-  /** Count of the fields already answered. */
-  filled: number;
-  /** Count of everything asked. */
-  total: number;
-  /**
-   * One line the model reads out so the farmer knows what is being asked for,
-   * in the same words as the form. Never a status code, never a count.
-   */
-  ask: string;
-}
-
-export function isIntakeEntity(value: unknown): value is IntakeEntity {
-  return typeof value === "string" && Object.prototype.hasOwnProperty.call(SOURCES, value);
-}
-
-export function intakeSource(entity: IntakeEntity): IntakeSource {
-  return SOURCES[entity];
-}
+ * Pure throughout — no database, no fetch — so all of it is unit-testable,
+ * which is the only reason the rules below can be trusted.
+ */import { intakeSource, isIntakeEntity } from "./intake-registry.js";
+import type {
+  IntakeCard,
+  IntakeEntity,
+  IntakeField,
+  IntakeSource,
+  IntakeValidation,
+} from "./intake-types.js";
+export type { IntakeEntity, IntakeCard, IntakeField, IntakeValidation } from "./intake-types.js";
+export { intakeSource, intakeEntities, isIntakeEntity, intakeModule } from "./intake-registry.js";
 
 /** Every field key in the entity, in the order the sections list them. */
 export function intakeKeys(entity: IntakeEntity): string[] {
-  return SOURCES[entity].sections.flatMap((s) => s.fields.map((f) => f.key));
-}
-
-function fieldOf(entity: IntakeEntity, key: string): IntakeField | undefined {
-  for (const section of SOURCES[entity].sections) {
-    const hit = section.fields.find((f) => f.key === key);
-    if (hit) return hit;
-  }
-  return undefined;
+  return intakeSource(entity).sections.flatMap((s) => s.fields.map((f) => f.key));
 }
 
 /** Strip thousands separators and stray currency marks a farmer may type. */
@@ -431,9 +70,10 @@ function toDateOnly(raw: unknown): string | null {
 /**
  * Reduce a free-text answer to one of the field's options, or nothing.
  *
- * Case and spacing are forgiven because the answer may have come from a
- * farmer's speech, but an unrecognised word is DROPPED rather than guessed at:
- * inventing a species would mis-file the whole group.
+ * Case and spacing are forgiven because the answer may have come from a farmer's
+ * speech, but an unrecognised word is DROPPED rather than guessed at: inventing
+ * a species would mis-file the whole group, and inventing an expense category
+ * would put money on the wrong side of the profit page.
  */
 function toOption(field: IntakeField, raw: unknown): string | null {
   const text = String(raw ?? "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -443,8 +83,11 @@ function toOption(field: IntakeField, raw: unknown): string | null {
   if (exact) return exact.value;
   const byLabel = options.find((o) => o.label.toLowerCase() === text);
   if (byLabel) return byLabel.value;
-  // "eggs" for layers, "meat" for broilers — the words people actually use.
-  const byWord = options.find((o) => o.label.toLowerCase().includes(text) || text.includes(o.value.toLowerCase()));
+  // "eggs" for layers, "meat" for broilers, "income" for money in — the words
+  // people actually use rather than the ones the database wants.
+  const byWord = options.find(
+    (o) => o.label.toLowerCase().includes(text) || text.includes(o.value.toLowerCase()),
+  );
   if (byWord) return byWord.value;
   return null;
 }
@@ -478,6 +121,30 @@ export function cleanField(field: IntakeField, raw: unknown): string | null {
 }
 
 /**
+ * Coerce whatever the model handed over into a plain object.
+ *
+ * Nested objects are the natural shape for a tool call, but a model that sends
+ * `values` as a JSON string is not rare, and dropping it would open an EMPTY
+ * form on a farmer who had just said everything — the exact failure this whole
+ * feature exists to prevent. So a string is parsed rather than ignored.
+ */
+export function asRecord(raw: unknown): Record<string, unknown> {
+  if (!raw) return {};
+  if (typeof raw === "string") {
+    const text = raw.trim();
+    if (!text) return {};
+    try {
+      const parsed = JSON.parse(text);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  if (typeof raw === "object" && !Array.isArray(raw)) return raw as Record<string, unknown>;
+  return {};
+}
+
+/**
  * Map whatever the model handed over onto our field names, cleaning as it goes.
  *
  * Unknown keys are dropped, aliases are followed, and a key that arrives with
@@ -485,12 +152,11 @@ export function cleanField(field: IntakeField, raw: unknown): string | null {
  */
 export function prefillIntake(
   entity: IntakeEntity,
-  raw: Record<string, unknown> | null | undefined,
+  raw: Record<string, unknown> | null | undefined | string,
 ): Record<string, string> {
   const out: Record<string, string> = {};
-  if (!raw || typeof raw !== "object") return out;
   const source = intakeSource(entity);
-  for (const [key, value] of Object.entries(raw)) {
+  for (const [key, value] of Object.entries(asRecord(raw))) {
     const mapped = source.aliases[key] ?? key;
     const field = fieldOf(entity, mapped);
     if (!field) continue;
@@ -498,6 +164,14 @@ export function prefillIntake(
     if (cleaned !== null) out[mapped] = cleaned;
   }
   return out;
+}
+
+function fieldOf(entity: IntakeEntity, key: string): IntakeField | undefined {
+  for (const section of intakeSource(entity).sections) {
+    const hit = section.fields.find((f) => f.key === key);
+    if (hit) return hit;
+  }
+  return undefined;
 }
 
 /**
@@ -510,7 +184,7 @@ export function prefillIntake(
 export function buildIntake(
   entity: IntakeEntity,
   values: Record<string, unknown> | null | undefined = {},
-  prefill: Record<string, unknown> | null | undefined = {},
+  prefill: Record<string, unknown> | null | undefined | string = {},
 ): IntakeCard {
   const source = intakeSource(entity);
   const merged = { ...prefillIntake(entity, prefill), ...prefillIntake(entity, values) };
@@ -551,8 +225,8 @@ export function buildIntake(
  *
  * Names the gaps rather than reading the form back, and short: it is one line
  * in a chat, not a summary of twenty-eight fields. When everything required is
- * already known it says so, because that is the honest thing to say — the
- * form is there to be checked, not to be a wall.
+ * already known it says so, because that is the honest thing to say — the form
+ * is there to be checked, not to be a wall.
  */
 function askLine(
   source: IntakeSource,
@@ -565,7 +239,7 @@ function askLine(
     const need = listOut(missingRequired.slice(0, 6));
     // "with what you told me" only when something WAS told. This sentence was
     // written once, for both cases, and on a bare "add a livestock" it claimed
-    // the farmer had said things they had not — the first thing that sentence
+    // the farmer had said things they had not — the first thing this sentence
     // does is establish trust, so it has to be true.
     return filled > 0
       ? `I need ${need} before I can save this. I have opened the ${form} with what you told me.`
@@ -584,16 +258,6 @@ function listOut(items: string[]): string {
   return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }
 
-export interface IntakeValidation {
-  ok: boolean;
-  /** Cleaned answers, safe to hand back to the form. */
-  values: Record<string, string>;
-  /** Field key → the sentence to show under that input. */
-  errors: Record<string, string>;
-  /** Required keys still empty. Drives "you cannot save yet". */
-  missingRequired: string[];
-}
-
 /**
  * Validate a submitted form.
  *
@@ -604,7 +268,7 @@ export interface IntakeValidation {
  *    again, harder.
  * 2. A required field that is FILLED WITH NONSENSE is also an error. "twenty"
  *    in a count field is the most likely thing a farmer types after saying
- *    "twenty birds" out loud, and dropping it would save a flock of nothing.
+ *    "twenty birds" out loud, and dropping it would save a record of nothing.
  */
 export function validateIntake(
   entity: IntakeEntity,
@@ -614,7 +278,7 @@ export function validateIntake(
   const errors: Record<string, string> = {};
   const values: Record<string, string> = {};
   const missingRequired: string[] = [];
-  const supplied = raw && typeof raw === "object" ? raw : {};
+  const supplied = asRecord(raw);
 
   for (const section of source.sections) {
     for (const field of section.fields) {
@@ -654,69 +318,23 @@ function badValueMessage(field: IntakeField, typed: string): string {
 }
 
 /**
- * The typed payload Prisma wants, or the reason it cannot be built.
+ * A typed value for one field, or null when the farmer left it blank.
  *
- * Numbers become numbers, blanks become null, and the two fields the database
- * insists on — a name and a count — are refused here rather than at the
- * database, where the error would be a Prisma message no farmer can read.
+ * Exported so the writers do not each re-invent "empty string is not a number".
  */
-export function toFlockCreateInput(
-  values: Record<string, string>,
-): { ok: true; data: Record<string, unknown> } | { ok: false; error: string } {
-  const name = (values.name ?? "").trim();
-  if (!name) return { ok: false, error: "The flock needs a name before I can save it." };
+export function fieldNumber(values: Record<string, string>, key: string): number | null {
+  const n = toNumber(values[key]);
+  return n === null ? null : n;
+}
 
-  const count = Number(values.initialCount);
-  if (!Number.isInteger(count) || count < 1) {
-    return { ok: false, error: "I need to know how many animals are in this flock." };
-  }
+/** A trimmed string, or null. Blank means "they did not say", not "". */
+export function fieldText(values: Record<string, string>, key: string): string | null {
+  const t = (values[key] ?? "").trim();
+  return t === "" ? null : t;
+}
 
-  const num = (key: string): number | null => {
-    const n = toNumber(values[key]);
-    return n === null ? null : n;
-  };
-  const text = (key: string): string | null => {
-    const t = (values[key] ?? "").trim();
-    return t === "" ? null : t;
-  };
-
-  const costPerAnimal = num("costPerAnimal");
-
-  return {
-    ok: true,
-    data: {
-      name,
-      breed: text("breed"),
-      type: text("type"),
-      status: text("status") ?? "active",
-      initialCount: count,
-      // Mortality is subtracted rather than stored as a separate truth: the
-      // screen shows "Deaths" beside "Current Count", and a group of 200 with
-      // 3 deaths is 197 birds alive today.
-      mortality: Math.max(0, Math.trunc(num("mortality") ?? 0)),
-      purpose: text("purpose"),
-      gender: text("gender"),
-      genderRatio: text("genderRatio"),
-      location: text("location"),
-      hatchDate: text("hatchDate"),
-      source: text("source"),
-      supplierContact: text("supplierContact"),
-      costPerAnimal,
-      targetMarket: text("targetMarket"),
-      feedType: text("feedType"),
-      feedSupplier: text("feedSupplier"),
-      feedCostPerMonth: num("feedCostPerMonth"),
-      vetName: text("vetName"),
-      vetPhone: text("vetPhone"),
-      healthOnArrival: text("healthOnArrival"),
-      insurancePolicy: text("insurancePolicy"),
-      expectedYield: text("expectedYield"),
-      expectedWeight: text("expectedWeight"),
-      expectedRevenue: num("expectedRevenue"),
-      notes: text("notes"),
-      tagFrom: text("tagFrom"),
-      tagTo: text("tagTo"),
-      totalInvestment: costPerAnimal === null ? null : costPerAnimal * count,
-    },
-  };
+/** A date string as a Date, or null. */
+export function fieldDate(values: Record<string, string>, key: string): Date | null {
+  const d = toDateOnly(values[key]);
+  return d ? new Date(d) : null;
 }

@@ -5,7 +5,13 @@ import { authMiddleware } from "../middleware/auth.js";
 import { AI_PROVIDERS, getProvider, type AIProviderConfig } from "../ai-providers.js";import { searchWeb, searchConfigured, searchTierLabel } from "../lib/web-search.js";
 import { nextRetryWait } from "../lib/rate-limit-window.js";
 import { resolveActiveModel, resolveSettings, recordModelOutcome } from "../lib/ai-settings.js";
-import { buildIntake } from "../lib/farm-intake.js";
+import {
+  buildIntake,
+  intakeEntities,
+  intakeModule,
+  isIntakeEntity,
+} from "../lib/farm-intake.js";
+import { primaryModelFor, fetchRecordValues } from "../routes/ai-intake.js";
 
 const router = Router();
 router.use(authMiddleware, requireOwner);
@@ -155,91 +161,116 @@ async function activeConfig(): Promise<AIProviderConfig & { model: string; baseU
  */
 
 // ─── Complete MCP Tool Definitions ────────────────────────
+/**
+ * Every tool Wangari has, after a summer of being told "it only did one thing".
+ *
+ * -- why there is ONE intake tool, not eleven -------------------------
+ * Ask her to add livestock and she called a tool with a name, a breed and a
+ * number: one record out of the twenty-eight columns the livestock screen
+ * holds, with the rest blank because nobody had asked. The same was true of
+ * the other nine records she could write - a worker with no wage, a stock
+ * item with no reorder level, a sale with no date.
+ *
+ * So all of them go through one tool that opens the right form, pre-filled
+ * with what the farmer just said, and saves NOTHING until they confirm it.
+ * Eleven separate tools would be eleven chances to regress into a thin
+ * write, and eleven tool declarations in every request's payload for no
+ * benefit.
+ *
+ * -- and ask_farmer, for the questions a form cannot ask ---------------
+ * "Which breed?" has four right answers and one wrong spelling each. A list
+ * of buttons has no spelling problem and costs the farmer no typing, so
+ * asking costs nothing and comes back as exactly one of the values the form
+ * expects.
+ */
 const mcpTools = [
   { type: "function", function: { name: "list_flocks", description: "List all flocks with bird count, breed, status, and mortality", parameters: { type: "object", properties: {}, required: [] } } },
-  /* Adding animals is a FORM, not a tool call.
-
-     This replaced `create_flock`, which took a name, a breed and a number and
-     wrote a row. Twenty-six columns of the livestock screen stayed empty
-     because nobody asked the farmer about them — and an empty column is a
-     question they were never given. Worse, the farmer was told it was done.
-
-     The intake inverts that: the server owns the questions (lib/farm-intake.ts),
-     the form opens with whatever the farmer already said, and NOTHING is saved
-     until they confirm it. Every detail is optional here on purpose — the form
-     asks for what is missing, and refusing to open because one field is absent
-     would mean the farmer retypes the name they just said out loud.
-
-     So the model's only job here is to hand over what it heard. It does not
-     decide what matters, and it does not ask anything the form will ask again. */
-  { type: "function", function: {
-      name: "start_flock_intake",
-      description: "Open the guided livestock form to ADD animals to the farm. Use this for every request to add, register, record or start a flock or any animals — there is no other way to add them. Pass every detail the farmer already gave you (name, count, breed, species, supplier, cost, pen, vet, feed, tags…) so the form opens already filled and the farmer only fills the gaps. Nothing is saved until they confirm the form, so do not also tell them it is done.",
-      parameters: {
-        type: "object",
-        properties: {
-          name: { type: "string", description: "Flock name" },
-          count: { type: "number", description: "How many animals" },
-          type: { type: "string", description: "Species id: layers, broilers, kienyeji, cattle_dairy, cattle_beef, goats, sheep, pigs, rabbits, fish, bees" },
-          breed: { type: "string" },
-          status: { type: "string", description: "active, inactive, sold, deceased" },
-          mortality: { type: "number", description: "Deaths since they arrived" },
-          purpose: { type: "string", description: "production, breeding, dual_purpose" },
-          gender: { type: "string", description: "female, male, mixed" },
-          genderRatio: { type: "string", description: "e.g. 1:9" },
-          hatchDate: { type: "string", description: "Date they arrived, YYYY-MM-DD" },
-          location: { type: "string", description: "Pen, barn, coop" },
-          source: { type: "string", description: "Supplier or market" },
-          supplierContact: { type: "string", description: "Supplier phone" },
-          costPerAnimal: { type: "number", description: "KES for ONE animal" },
-          targetMarket: { type: "string" },
-          feedType: { type: "string" },
-          feedSupplier: { type: "string" },
-          feedCostPerMonth: { type: "number", description: "KES" },
-          vetName: { type: "string" },
-          vetPhone: { type: "string" },
-          healthOnArrival: { type: "string" },
-          insurancePolicy: { type: "string" },
-          expectedYield: { type: "string" },
-          expectedWeight: { type: "string" },
-          expectedRevenue: { type: "number", description: "KES" },
-          notes: { type: "string" },
-          tagFrom: { type: "string", description: "First ANITRAC tag of the block" },
-          tagTo: { type: "string", description: "Last ANITRAC tag of the block" },
-        },
-        required: [],
-      },
-    } },
   { type: "function", function: { name: "delete_flock", description: "Remove a flock from the farm", parameters: { type: "object", properties: { id: { type: "number", description: "Flock ID" } }, required: ["id"] } } },
   { type: "function", function: { name: "list_production", description: "Get recent egg production data", parameters: { type: "object", properties: { days: { type: "number", description: "Days to retrieve (default 7)" } }, required: [] } } },
-  { type: "function", function: { name: "record_production", description: "Record daily egg production for a flock", parameters: { type: "object", properties: { flockId: { type: "number", description: "Flock ID" }, eggsCollected: { type: "number", description: "Eggs collected" }, mortality: { type: "number", description: "Bird deaths" }, feedUsed: { type: "number", description: "Feed in kg" } }, required: ["flockId", "eggsCollected"] } } },
   { type: "function", function: { name: "list_transactions", description: "Get financial transactions", parameters: { type: "object", properties: { period: { type: "string", description: "week, month, or year", enum: ["week", "month", "year"] } }, required: [] } } },
-  { type: "function", function: { name: "create_transaction", description: "Record a financial transaction", parameters: { type: "object", properties: { type: { type: "string", description: "income or expense", enum: ["income", "expense"] }, amount: { type: "number", description: "Amount in KES" }, category: { type: "string", description: "Category" }, description: { type: "string", description: "Description" } }, required: ["type", "amount", "category", "description"] } } },
   { type: "function", function: { name: "delete_transaction", description: "Delete a transaction", parameters: { type: "object", properties: { id: { type: "number", description: "Transaction ID" } }, required: ["id"] } } },
   { type: "function", function: { name: "list_sales", description: "Get sales records", parameters: { type: "object", properties: { days: { type: "number", description: "Days (default 30)" } }, required: [] } } },
-  { type: "function", function: { name: "create_sale", description: "Record a new sale", parameters: { type: "object", properties: { totalAmount: { type: "number", description: "Total in KES" }, paymentStatus: { type: "string", description: "paid, pending, partial", enum: ["paid", "pending", "partial"] }, amountPaid: { type: "number", description: "Amount paid" }, notes: { type: "string", description: "Notes" } }, required: ["totalAmount"] } } },
   { type: "function", function: { name: "delete_sale", description: "Delete a sale", parameters: { type: "object", properties: { id: { type: "number", description: "Sale ID" } }, required: ["id"] } } },
   { type: "function", function: { name: "list_inventory", description: "Get inventory items", parameters: { type: "object", properties: {}, required: [] } } },
-  { type: "function", function: { name: "create_inventory_item", description: "Add inventory item", parameters: { type: "object", properties: { itemName: { type: "string", description: "Item name" }, category: { type: "string", description: "Category" }, quantity: { type: "number", description: "Quantity" }, unit: { type: "string", description: "Unit" }, unitCost: { type: "number", description: "Cost per unit" }, reorderLevel: { type: "number", description: "Min stock level" } }, required: ["itemName", "category", "quantity", "unit"] } } },
   { type: "function", function: { name: "delete_inventory_item", description: "Remove inventory item", parameters: { type: "object", properties: { id: { type: "number", description: "Item ID" } }, required: ["id"] } } },
   { type: "function", function: { name: "list_workers", description: "Get all workers", parameters: { type: "object", properties: {}, required: [] } } },
-  { type: "function", function: { name: "create_worker", description: "Add a worker", parameters: { type: "object", properties: { name: { type: "string", description: "Name" }, role: { type: "string", description: "Role" }, dailyWage: { type: "number", description: "Daily wage KES" }, phone: { type: "string", description: "Phone" } }, required: ["name", "role", "dailyWage"] } } },
   { type: "function", function: { name: "delete_worker", description: "Remove a worker", parameters: { type: "object", properties: { id: { type: "number", description: "Worker ID" } }, required: ["id"] } } },
   { type: "function", function: { name: "list_customers", description: "Get customers", parameters: { type: "object", properties: {}, required: [] } } },
-  { type: "function", function: { name: "create_customer", description: "Add a customer", parameters: { type: "object", properties: { name: { type: "string", description: "Name" }, phone: { type: "string", description: "Phone" }, email: { type: "string", description: "Email" }, address: { type: "string", description: "Address" } }, required: ["name"] } } },
   { type: "function", function: { name: "delete_customer", description: "Remove a customer", parameters: { type: "object", properties: { id: { type: "number", description: "Customer ID" } }, required: ["id"] } } },
   { type: "function", function: { name: "list_vaccinations", description: "Get vaccination records", parameters: { type: "object", properties: { flockId: { type: "number", description: "Filter by flock" } }, required: [] } } },
-  { type: "function", function: { name: "create_vaccination", description: "Record a vaccination", parameters: { type: "object", properties: { flockId: { type: "number", description: "Flock ID" }, vaccineName: { type: "string", description: "Vaccine name" }, dosage: { type: "string", description: "Dosage" }, administeredBy: { type: "string", description: "Administered by" }, notes: { type: "string", description: "Notes" } }, required: ["flockId", "vaccineName"] } } },
   { type: "function", function: { name: "list_attendance", description: "Get attendance records", parameters: { type: "object", properties: {}, required: [] } } },
-  { type: "function", function: { name: "record_attendance", description: "Record attendance", parameters: { type: "object", properties: { workerId: { type: "number", description: "Worker ID" }, status: { type: "string", description: "Status", enum: ["present", "absent", "late", "half_day"] }, notes: { type: "string", description: "Notes" } }, required: ["workerId", "status"] } } },
   { type: "function", function: { name: "list_crops", description: "List all crops with type, area, and growth stage", parameters: { type: "object", properties: {}, required: [] } } },
-  { type: "function", function: { name: "create_crop", description: "Register a new crop field", parameters: { type: "object", properties: { fieldName: { type: "string", description: "Field name" }, cropType: { type: "string", description: "Crop type" }, variety: { type: "string", description: "Variety" }, areaAcres: { type: "number", description: "Area in ACRES (Kenyan farmers measure in acres; 1 hectare = 2.471 acres)" } }, required: ["fieldName", "cropType"] } } },
   { type: "function", function: { name: "list_invoices", description: "List invoices with customer, totals and payment status", parameters: { type: "object", properties: {}, required: [] } } },
-  { type: "function", function: { name: "create_invoice", description: "Generate an invoice for a customer. Use after recording a sale when the farmer needs a bill.", parameters: { type: "object", properties: { customerId: { type: "number", description: "Customer ID" }, saleId: { type: "number", description: "Optional related sale ID" }, totalAmount: { type: "number", description: "Total in KES" }, amountPaid: { type: "number", description: "Amount already paid" }, paymentStatus: { type: "string", description: "paid, pending, partial", enum: ["paid", "pending", "partial"] }, dueDate: { type: "string", description: "Due date YYYY-MM-DD" }, notes: { type: "string", description: "Notes" } }, required: ["totalAmount"] } } },
-  { type: "function", function: { name: "undo_last_action", description: "Reverse the most recent destructive action if the farmer made a mistake", parameters: { type: "object", properties: {}, required: [] } } },
   { type: "function", function: { name: "get_weather", description: "Get weather forecast", parameters: { type: "object", properties: {}, required: [] } } },
   { type: "function", function: { name: "search_web", description: "Look something up on the internet. Free and always available - no setup, no key. Use for anything the farm records cannot answer: current market and input prices, weather, disease outbreaks, county regulations, feed formulations, veterinary guidance. Covers the open web and Wikipedia. Never answer those from memory - look them up. Say plainly if the search finds nothing.", parameters: { type: "object", properties: { query: { type: "string", description: "What to look up, in plain words" } }, required: ["query"] } } },  { type: "function", function: { name: "get_farm_status", description: "The state of EVERY part of the farm in ONE call: flocks and birds, workers, money in and out, egg production, crops, sales, invoices, stock and customers. Use this FIRST for any question about how the farm is doing, its status, an overview, or what is recorded - it answers all of it at once instead of making you call ten list tools.", parameters: { type: "object", properties: {}, required: [] } } },
   { type: "function", function: { name: "get_dashboard", description: "Get dashboard summary", parameters: { type: "object", properties: {}, required: [] } } },
+  { type: "function", function: { name: "undo_last_action", description: "Reverse the most recent destructive action if the farmer made a mistake. One tap is enough: the farmer does not have to ask for this twice.", parameters: { type: "object", properties: {}, required: [] } } },
+  /* THE form. The only way anything gets written. */
+  {
+    type: "function",
+    function: {
+      name: "start_intake",
+      description:
+        "Open a guided form so the farmer fills in every detail before anything is saved. This is the ONLY way to create or record anything on the farm: livestock, a crop field, a worker, a customer, a stock item, a money record in or out, a sale, an invoice, a production record, a vaccination or attendance. Never write a record directly and never tell the farmer something is saved before they have confirmed the form. Pass every detail they already gave you in `values` so the form opens filled and they only fill the gaps. Nothing is saved until they confirm it, so do not ask them to repeat the request afterwards.",
+      parameters: {
+        type: "object",
+        properties: {
+          entity: {
+            type: "string",
+            enum: ["flock","crop","worker","customer","inventory","transaction","sale","invoice","production","vaccination","attendance"],
+            description: "Which record the farmer wants to add or update.",
+          },
+          id: {
+            type: "number",
+            description:
+              "When updating an existing record, the record's id number. When omitted the form opens for a new record. When set the form opens prefilled with the existing values and saving it will update the record instead of creating a new one.",
+          },
+          values: {
+            type: "object",
+            additionalProperties: true,
+            description:
+              "What the farmer already told you, keyed by field name. Keys: " +
+              "flock: name, count, breed, type, status, mortality, purpose, gender, genderRatio, hatchDate, location, source, supplierContact, costPerAnimal, targetMarket, feedType, feedSupplier, feedCostPerMonth, vetName, vetPhone, healthOnArrival, insurancePolicy, expectedYield, expectedWeight, expectedRevenue, notes, tagFrom, tagTo | " +
+              "crop: name, cropType, variety, areaAcres, plantingDate, expectedHarvest, location, soilType, irrigation, status | " +
+              "worker: name, role, phone, dailyWage, hiredDate, status | " +
+              "customer: name, phone, email, address | " +
+              "inventory: itemName, category, quantity, unit, unitCost, reorderLevel, supplier, expiryDate, notes | " +
+              "transaction: type (income or expense), amount, category, description, date, paymentMethod, reference | " +
+              "sale: totalAmount, amountPaid, paymentStatus, saleDate, customerName, what | " +
+              "invoice: customerName, totalAmount, amountPaid, paymentStatus, dueDate, notes | " +
+              "production: flockId, date, eggsCollected, milkCollected, mortality, feedUsed, avgWeight, weightGain, waterUsed, notes | " +
+              "vaccination: flockId, vaccineName, scheduledDate, status, administeredBy, notes | " +
+              "attendance: workerId, date, status, checkIn, checkOut, notes. " +
+              "Send nothing for anything they did not say. Never invent a number.",
+          },
+        },
+        required: ["entity"],
+      },
+    },
+  },
+  /* The question a farmer can answer with one tap. */
+  {
+    type: "function",
+    function: {
+      name: "ask_farmer",
+      description:
+        "Ask the farmer ONE question with a list of answers they can just tap, instead of making them type. Use it whenever the answer is a choice: which breed, which species, money in or money out, which worker, was it paid, rain-fed or drip, which category. Typing is slower on a phone and comes back spelled four different ways, which then has to be matched to a value the form accepts. Give 2 to 6 SHORT options. Set allowCustom to true when your list is a guide rather than the whole world - a breed you did not think of still exists. Ask ONE question at a time. This is for a choice, never for a record: use start_intake for anything that gets saved.",
+      parameters: {
+        type: "object",
+        properties: {
+          question: { type: "string", description: "The question in plain words, e.g. Which breed are they?" },
+          options: {
+            type: "array",
+            items: { type: "string" },
+            description: "2 to 6 short answers, e.g. Sasso, Kienyeji, Bomet Rhode Red",
+          },
+          allowCustom: { type: "boolean", description: "True when the farmer may answer with something not on your list." },
+          forField: { type: "string", description: "The field this answer fills, so the next form opens with it filled: e.g. breed" },
+        },
+        required: ["question", "options"],
+      },
+    },
+  },
 ];
 
 const SYSTEM_PROMPT = `You are Wangari AI, an intelligent farm management assistant for mixed farms (livestock and crops) in Kenya.
@@ -309,14 +340,26 @@ HONESTY ABOUT SPEED - the one thing you must not hide:
 - Never invent a plan name, a price, or a benefit you were not told about. If you do not know what a subscription includes, say so plainly.
 - A slow answer must not become a fast-sounding one. The free plan is the only excuse you may give.
 
-ADDING ANIMALS TO THE FARM - ask, then save:
-- When the farmer asks to add, register or record animals, call start_flock_intake. It is the ONLY way to add them.
-- Hand over every detail they gave you in the same breath, so the form opens already filled and they only fill the gaps. "Add 200 Sasso layers called Sasso Kenya, 500 each from Mamboeo market" is five facts, and all five belong in that one call.
-- Do NOT interview them yourself, one question at a time. The form asks all of them at once, and every extra question you ask costs the farmer another minute on the free plan.
-- Say in ONE short line what you still need, then stop talking. Do not read the form's questions out as well - they are already on their screen.
-- Nothing is saved until they confirm the form. Until they do, never say it is added, done or saved, and do not ask them to repeat the request.
-- If they answer a detail in chat ("breed is Sasso, in Pen A"), fold it into the next start_flock_intake call. Do not write it yourself.
+BEFORE YOU WRITE ANYTHING - the farmer fills the form, not you:
+- There is exactly ONE way to create or record anything: start_intake. It opens a form holding every question that record has, already filled with whatever the farmer just told you, and saves NOTHING until they confirm it.
+- So hand over everything they said in one call and stop talking. Do not write the record yourself, do not call it done before they confirm, and do not ask them to repeat the request afterwards.
+- Do NOT interview them yourself, one question at a time. The form asks them all at once, and every extra question you ask costs the farmer another minute on the free plan.
+- Say in ONE short line what is still needed, then stop. Do not read the form's questions out as well - they are already on their screen.
+- If they answer a detail in chat ("breed is Sasso, in Pen A"), fold it into the next start_intake call. Do not write it yourself.
 - Leave anything they do not know blank. An empty field they can fill later beats a number you guessed - a wrong bird count is a wrong farm.
+
+ASKING A QUESTION THEY CAN TAP - use ask_farmer:
+- When the answer is a CHOICE, ask it with ask_farmer so they tap instead of typing: which breed, which species, money in or money out, which worker, was it paid, rain-fed or drip, which category.
+- That is faster for them and exact for you. Typing comes back spelled four ways and then has to be matched to a value the form accepts.
+- Give 2 to 6 short options. Keep allowCustom true unless you are certain your list is the whole world - a breed you did not think of still exists.
+- Their tap becomes their next message. Fold the answer into the next start_intake call and carry on. Never write the record before the form is confirmed.
+
+DELETING ANYTHING:
+- Delete tools refuse until the farmer has confirmed. Ask them with ask_farmer ("Yes, remove it" / "No, keep it"), and only call the delete again with confirmed: true after they choose yes.
+- Never pass confirmed: true on your own initiative. It means the farmer said yes, and nobody else gets to say it for them.
+
+READING IS DIFFERENT:
+- Reads are never gated and never need a form. Answer questions from the records as they are - a farmer asking how the farm is doing must never be made to fill in something.
 
 When the user asks you to do something, DO IT. Use the tools to read data, create records, and manage the farm.`;
 
@@ -354,36 +397,55 @@ async function moduleAllowedForUser(userId: number, module: string): Promise<boo
  *  Deliberately exhaustive: a tool missing from here is an UNGATED tool, so a
  *  test asserts every declared tool has an entry. */
 const TOOL_MODULE: Record<string, string> = {
-  start_flock_intake: "flocks", delete_flock: "flocks", list_flocks: "flocks",
+  // start_intake has NO entry here, on purpose: its module depends on the
+  // entity the farmer asked for, and one static entry would be wrong for ten of
+  // the eleven. It resolves its own gate at the top of executeTool, which is
+  // where the lookup below comes from too.
+  ask_farmer: "dashboard",
+  delete_flock: "flocks", list_flocks: "flocks",
   record_production: "production", list_production: "production",
-  create_transaction: "transactions", delete_transaction: "transactions",
-  list_transactions: "transactions",
-  create_sale: "sales", delete_sale: "sales", list_sales: "sales",
-  create_invoice: "invoices", list_invoices: "invoices",
-  create_customer: "customers", delete_customer: "customers",
-  list_customers: "customers",
-  create_inventory_item: "inventory", delete_inventory_item: "inventory",
-  list_inventory: "inventory",
-  create_worker: "workers", delete_worker: "workers", list_workers: "workers",
-  create_vaccination: "vaccinations", list_vaccinations: "vaccinations",
-  record_attendance: "attendance", list_attendance: "attendance",
-  create_crop: "crops", list_crops: "crops",
+  delete_transaction: "transactions", list_transactions: "transactions",
+  delete_sale: "sales", list_sales: "sales",
+  list_invoices: "invoices",
+  delete_customer: "customers", list_customers: "customers",
+  delete_inventory_item: "inventory", list_inventory: "inventory",
+  delete_worker: "workers", list_workers: "workers",
+  list_vaccinations: "vaccinations",
+  list_attendance: "attendance",
+  list_crops: "crops",
   get_dashboard: "dashboard",  get_farm_status: "dashboard",  search_web: "dashboard",
   get_weather: "weather",
   undo_last_action: "dashboard",
 };
 
-/** Tools that change data.
+/** Anything that DESTROYS a record needs the farmer to say yes first.
+
+ *  "Delete it" is one keystroke from "delete", the records are the farmer's
+ *  whole farm, and there is no undo for a flock with a season of production on
+ *  it. So the refusal sits in front of every destructive tool, and the way out
+ *  is the farmer tapping a button — not the model deciding they meant it. */
+const DESTRUCTIVE_TOOLS: ReadonlySet<string> = new Set([
+  "delete_flock",
+  "delete_transaction",
+  "delete_sale",
+  "delete_inventory_item",
+  "delete_worker",
+  "delete_customer",
+]);
+
+/**
+ * Tools that change data, and therefore deserve a plan check.
  *
- *  Only these are worth a plan check. A refusal costs the farmer nothing,
- *  whereas an invisible WRITE costs them their trust in the app - so reads are
- *  always allowed, and the farmer is never blind to their own farm. */
+ * Only start_intake and the deletes are left. Every other write is GONE: the
+ * assistant cannot write a record without opening a form, so there is nothing
+ * else to gate. A refusal costs the farmer nothing, whereas an invisible write
+ * costs them their trust in the app — so reads are always allowed, and the
+ * farmer is never blind to their own farm.
+ */
 const WRITE_TOOLS: ReadonlySet<string> = new Set([
-  "start_flock_intake", "delete_flock", "record_production", "create_transaction",
-  "delete_transaction", "create_sale", "delete_sale", "create_invoice",
-  "create_customer", "delete_customer", "create_inventory_item",
-  "delete_inventory_item", "create_worker", "delete_worker",
-  "create_vaccination", "record_attendance", "create_crop", "undo_last_action",
+  "start_intake", "undo_last_action",
+  "delete_flock", "delete_transaction", "delete_sale", "delete_customer",
+  "delete_inventory_item", "delete_worker",
 ]);
 
 /**
@@ -450,8 +512,24 @@ async function executeTool(
      so instead of writing a record nobody will ever be shown. The wording is
      the farmer's, not a status code: the goal is that they understand what
      happened and can decide what to do about it. */
+  /* ── nothing disappears without a tap ─────────────── */
+  if (DESTRUCTIVE_TOOLS.has(toolName) && args.confirmed !== true) {
+    return {
+      error:
+        "I have not deleted anything. Ask the farmer to confirm using ask_farmer " +
+        "(\"Yes, remove it\" / \"No, keep it\"), and call again with confirmed: true only after they choose yes.",
+    };
+  }
+
   if (WRITE_TOOLS.has(toolName) && userId != null) {
-    const module = TOOL_MODULE[toolName];
+    // start_intake covers eleven entities, so its module comes from the
+    // entity the farmer asked for — NOT from the tool name. Reading the tool
+    // name would gate a crop on the flocks plan, which is how a farmer gets a
+    // refusal for a screen they can open.
+    const module =
+      toolName === "start_intake" && isIntakeEntity(args.entity)
+        ? intakeModule(args.entity)
+        : TOOL_MODULE[toolName];
     if (module) {
       const allowed = await moduleAllowedForUser(userId, module);
       if (!allowed) {
@@ -470,12 +548,67 @@ async function executeTool(
        see every question and answer them; see the note on the tool itself.
        The plan gate above has already run — this is a WRITE as far as the
        gate is concerned, because the farmer's answers become a record. */
+    /* ── the two tools that replaced eleven ─────────────── */
+    case "start_intake": {
+      const wanted = args.entity;
+      if (!isIntakeEntity(wanted)) {
+        return { error: `There is no such form: ${String(wanted)}. Use one of: ${intakeEntities().join(", ")}.` };
+      }
+      // The plan gate has already run against this entity's module — see the
+      // ENTITY_GATED handling above, which is why the gate cannot be skipped
+      // by picking a different tool name.
+      const existingId = typeof args.id === "number" && Number.isInteger(args.id) && args.id > 0 ? args.id : undefined;
+      let prefill = args.values;
+      if (existingId) {
+        // Open the form already filled with what is on the farm, so the
+        // farmer sees the current values and only changes what needs changing.
+        const existing = await buildIntake(wanted, {}, args.values);
+        const fromDb = await fetchRecordValues(wanted, existingId, farmId);
+        if (fromDb) {
+          prefill = { ...fromDb, ...(args.values || {}) };
+        }
+      }
+      const card = buildIntake(wanted, {}, prefill);
+      return {
+        intake: card,
+        status: "waiting_for_farmer",
+        stillNeeded: card.missingRequired,
+        alreadyKnown: Object.keys(card.values),
+        editing: existingId ? { entity: wanted, id: existingId } : undefined,
+      };
+    }
+
+    /* One tap instead of one typo. */
+    case "ask_farmer": {
+      const question = String(args.question || "").trim();
+      const options = Array.isArray(args.options) ? args.options : [];
+      if (!question) return { error: "Write the question you want to ask." };
+      if (options.length < 2) {
+        // One option is not a choice, and a question with no options is just a
+        // slower way of typing. Say so rather than sending an empty card.
+        return { error: "Give me at least two answers to choose from, or ask me in a normal message instead." };
+      }
+      const choice = {
+        id: `q_${Date.now().toString(36)}`,
+        question,
+        options: options.slice(0, 6).map((o: unknown) => {
+          const label = String(o ?? "").trim();
+          return { value: label, label };
+        }).filter((o: { label: string }) => o.label !== ""),
+        // Default TRUE: a list the farmer cannot escape is a wrong answer
+        // waiting to happen. Their breed is not in your list until it is.
+        allowCustom: args.allowCustom !== false,
+        forField: args.forField ? String(args.forField) : undefined,
+      };
+      return { choice, status: "waiting_for_farmer" };
+    }
+
     case "start_flock_intake": {
+      // Retired, and kept only so an older model's tool call cannot crash the
+      // turn: the flock form is now opened with start_intake and entity "flock".
       const card = buildIntake("flock", {}, args);
       return {
         intake: card,
-        // Also in the payload the model reads, so it knows the state of the
-        // form without being told twice in the prompt.
         status: "waiting_for_farmer",
         stillNeeded: card.missingRequired,
         alreadyKnown: Object.keys(card.values),
@@ -483,28 +616,19 @@ async function executeTool(
     }
     case "delete_flock": { const snap = await prisma.flock.findFirst({ where: { id: args.id, farmId } }); if (!snap) return { error: "Flock not found on this farm" }; await prisma.flock.deleteMany({ where: { id: args.id, farmId } }); pushUndo(farmId, { undoId: "undo_flock", tool: "create_flock", args: { name: snap.name, breed: snap.breed, initialCount: snap.initialCount, type: (snap as any).type }, snapshot: snap }); return { deleted: true, undoId: "undo_flock", restored: snap.name }; }
     case "list_production": { const d = (args.days as number) || 7; const s = new Date(); s.setDate(s.getDate() - d); return prisma.dailyProduction.findMany({ where: { farmId, date: { gte: s } }, orderBy: { date: "desc" } }); }
-    case "record_production": return prisma.dailyProduction.create({ data: { flockId: args.flockId, date: new Date(), eggsCollected: args.eggsCollected || 0, mortality: args.mortality || 0, feedUsed: args.feedUsed || 0, farmId } });
     case "list_transactions": { const now = new Date(); let s = new Date(); const p = (args.period as string) || "month"; if (p === "week") s.setDate(now.getDate() - 7); else if (p === "month") s.setMonth(now.getMonth() - 1); else s.setFullYear(now.getFullYear() - 1); return prisma.transaction.findMany({ where: { farmId, date: { gte: s } }, orderBy: { date: "desc" } }); }
-    case "create_transaction": return prisma.transaction.create({ data: { type: args.type, amount: args.amount, category: args.category, description: args.description, date: new Date(), farmId } });
     case "delete_transaction": { const snap = await prisma.transaction.findFirst({ where: { id: args.id, farmId } }); if (!snap) return { error: "Transaction not found on this farm" }; await prisma.transaction.deleteMany({ where: { id: args.id, farmId } }); pushUndo(farmId, { undoId: "undo_transaction", tool: "create_transaction", args: { type: snap.type, amount: Number(snap.amount), category: snap.category, description: snap.description }, snapshot: snap }); return { deleted: true, undoId: "undo_transaction" }; }
     case "list_sales": { const d = (args.days as number) || 30; const s = new Date(); s.setDate(s.getDate() - d); return prisma.sale.findMany({ where: { farmId, saleDate: { gte: s } }, orderBy: { saleDate: "desc" } }); }
-    case "create_sale": return prisma.sale.create({ data: { totalAmount: args.totalAmount, paymentStatus: args.paymentStatus || "paid", amountPaid: args.amountPaid || args.totalAmount || 0, customerId: args.customerId ? Number(args.customerId) : null, items: Array.isArray(args.items) ? args.items : [], farmId } });
     case "delete_sale": return prisma.sale.deleteMany({ where: { id: args.id, farmId } });
     case "list_inventory": return prisma.inventory.findMany({ where: { farmId } });
-    case "create_inventory_item": return prisma.inventory.create({ data: { itemName: args.itemName, category: args.category, quantity: args.quantity, unit: args.unit, unitCost: args.unitCost, reorderLevel: args.reorderLevel, farmId } });
     case "delete_inventory_item": return prisma.inventory.deleteMany({ where: { id: args.id, farmId } });
     case "list_workers": return prisma.worker.findMany({ where: { farmId } });
-    case "create_worker": return prisma.worker.create({ data: { name: args.name, role: args.role, dailyWage: args.dailyWage, phone: args.phone, farmId } });
     case "delete_worker": return prisma.worker.deleteMany({ where: { id: args.id, farmId } });
     case "list_customers": return prisma.customer.findMany({ where: { farmId } });
-    case "create_customer": return prisma.customer.create({ data: { name: args.name, phone: args.phone, email: args.email, address: args.address, farmId } });
     case "delete_customer": return prisma.customer.deleteMany({ where: { id: args.id, farmId } });
     case "list_vaccinations": { const w: any = { flock: { farmId } }; if (args.flockId) w.flockId = args.flockId; return prisma.vaccination.findMany({ where: w, orderBy: { scheduledDate: "desc" } }); }
-    case "create_vaccination": return prisma.vaccination.create({ data: { flockId: args.flockId, vaccineName: args.vaccineName, scheduledDate: new Date().toISOString(), notes: args.notes || null } });
     case "list_attendance": return prisma.attendance.findMany({ where: { farmId }, orderBy: { date: "desc" } });
-    case "record_attendance": return prisma.attendance.create({ data: { workerId: args.workerId, date: new Date(), status: args.status, notes: args.notes || null, farmId } });
     case "list_crops": return prisma.crop.findMany({ where: { farmId }, include: { harvests: true } });
-    case "create_crop": { const raw = args.areaAcres !== undefined && args.areaAcres !== null ? Number(args.areaAcres) : null; if (raw !== null && (!Number.isFinite(raw) || raw <= 0)) return { error: "areaAcres must be a positive number of acres" }; return prisma.crop.create({ data: { name: args.fieldName || args.name, cropType: args.cropType, variety: args.variety, areaAcres: raw, farmId } }); }
     case "get_weather": return { note: "Weather available via /api/weather" };
     /* One call for the whole farm.
 
@@ -617,7 +741,6 @@ async function executeTool(
       };
     }
     case "list_invoices": return prisma.invoice.findMany({ where: { farmId }, orderBy: { createdAt: "desc" }, take: 25, include: { customer: { select: { name: true } } } });
-    case "create_invoice": { const { nextDocCode } = await import("../lib/doc-codes.js"); const invoiceNumber = await prisma.$transaction((tx: any) => nextDocCode(tx, farmId, "invoice")); return prisma.invoice.create({ data: { farmId, invoiceNumber, customerId: args.customerId ? Number(args.customerId) : null, saleId: args.saleId ? Number(args.saleId) : null, totalAmount: Number(args.totalAmount), amountPaid: Number(args.amountPaid || 0), paymentStatus: args.paymentStatus || "pending", dueDate: args.dueDate ? new Date(args.dueDate) : null, notes: args.notes || null, items: [] } }); }
     case "undo_last_action": { const stack = undoStacks.get(farmId) || []; const last = stack[stack.length - 1]; if (!last) return { error: "Nothing to undo" }; stack.pop(); undoStacks.set(farmId, stack); if (last.undoId === "undo_flock") { const s = last.snapshot as any; const restored = await prisma.flock.create({ data: { name: s.name, breed: s.breed, initialCount: s.initialCount, currentCount: s.currentCount, type: (s as any).type || "layer", status: "active", farmId } }); return { undone: "flock_deletion", restored: restored.name }; } if (last.undoId === "undo_transaction") { const restored = await prisma.transaction.create({ data: { farmId, type: last.args.type, amount: last.args.amount, category: last.args.category, description: last.args.description, date: new Date() } }); return { undone: "transaction_deletion", id: restored.id }; } return { error: `Cannot undo ${last.tool}` }; }
     default: return { error: `Unknown tool: ${toolName}` };
   }
@@ -672,7 +795,10 @@ router.post("/stream", async (req: Request, res: Response) => {
     let answered = false;
     /* Set once the form is on the farmer's screen, and the reason this turn
        stops instead of looping for another model call. See the break below. */
-    let intakeAsk = "";
+    /* The sentence that ends this turn, whatever opened it: the form's own ask,
+       or the choice question itself. It is ours to say, not the model's — see
+       the break at the bottom of the loop. */
+    let closingLine = "";
     const actions: { tool: string; ok: boolean; summary: string }[] = [];
     /* Research is metered twice over, and only one of the two is ours to fix.
        The provider allows one request a minute, so a turn that searches three
@@ -756,9 +882,16 @@ router.post("/stream", async (req: Request, res: Response) => {
            text, and what the farmer needs is twenty-eight questions they can
            fill in. So it gets its own event, and the card is drawn in the
            conversation where they are already reading. */
-        if (toolName === "start_flock_intake" && ok && raw && (raw as any).intake) {
+        if (toolName === "start_intake" && ok && raw && (raw as any).intake) {
           send("intake", { intake: (raw as any).intake });
-          intakeAsk = String((raw as any).intake.ask || "");
+          closingLine = String((raw as any).intake.ask || "");
+        }
+        /* A tap-to-answer question. Its text is the farmer's reply from us too,
+           because the option they tap only means something next to the question
+           that produced it. */
+        if (toolName === "ask_farmer" && ok && raw && (raw as any).choice) {
+          send("choice", { choice: (raw as any).choice });
+          closingLine = String((raw as any).choice.question || "");
         }
         actions.push({
           tool: toolName,
@@ -784,7 +917,7 @@ router.post("/stream", async (req: Request, res: Response) => {
            state: what is still missing, what is already known, and that the
            farmer now owns the next move. */
         const modelResult =
-          toolName === "start_flock_intake" && ok && raw && raw.intake
+          toolName === "start_intake" && ok && raw && raw.intake
             ? {
                 ok: true,
                 status: "waiting_for_farmer",
@@ -825,8 +958,8 @@ router.post("/stream", async (req: Request, res: Response) => {
          farm-intake.ts, it is written for farmers, and sending it costs zero
          requests. Half the quota per intake, and no way for this turn to end in
          a rate-limit error after the hard part already succeeded. */
-      if (intakeAsk) {
-        send("message", { content: intakeAsk });
+      if (closingLine) {
+        send("message", { content: closingLine });
         answered = true;
         break;
       }
@@ -894,7 +1027,7 @@ function summariseToolResult(tool: string, result: any): string {
     list_inventory: "items",
     list_workers: "workers",
     list_customers: "customers",
-    list_vaccinations: "vaccinations",
+  list_vaccinations: "vaccinations",
     list_attendance: "attendance records",
     list_crops: "crop fields",
     list_invoices: "invoices",
@@ -907,13 +1040,14 @@ function summariseToolResult(tool: string, result: any): string {
     list_inventory: "item",
     list_workers: "worker",
     list_customers: "customer",
-    list_vaccinations: "vaccination",
+  list_vaccinations: "vaccinations",
     list_attendance: "attendance record",
     list_crops: "crop field",
     list_invoices: "invoice",
   };
   const labels: Record<string, string> = {
-    start_flock_intake: "Opened the livestock form",
+    start_intake: "Opened the form",
+    ask_farmer: "Asked you to choose",
     delete_flock: "Removed flock",
     record_production: "Recorded production",
     create_transaction: "Recorded transaction",
@@ -1173,6 +1307,7 @@ router.post("/chat", async (req: Request, res: Response) => {
     // The guided form, for callers that do not read a stream. Same card, same
     // questions — a farmer must not get a worse assistant by using /chat.
     let intake: any = null;
+    let choice: any = null;
     let intakeAsk = "";
     let steps = 0;
     let message = "";
@@ -1197,6 +1332,10 @@ router.post("/chat", async (req: Request, res: Response) => {
             // The form's own words win over the model's, for the same reason as
             // in the stream: it is written for farmers and costs no request.
             intakeAsk = String((result as any).intake.ask || "");
+          }
+          if (!choice && result && typeof result === "object" && (result as any).choice) {
+            choice = (result as any).choice;
+            intakeAsk = String((result as any).choice.question || "");
           }
           if (result && typeof result === "object" && (result as any).error) {
             step.ok = false;
@@ -1230,6 +1369,7 @@ router.post("/chat", async (req: Request, res: Response) => {
       message: { role: "assistant", content: message },
       steps: allSteps,
       intake,
+      choice,
       truncatedByBudget,
     });
   } catch (error) {

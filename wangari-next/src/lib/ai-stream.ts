@@ -37,6 +37,9 @@ export interface WireMessage {
  * It arrives as its own event rather than as a tool result because it is not a
  * result: nothing has been saved, and what the farmer needs is twenty-eight
  * questions to answer. See components/ai/intake-card.tsx.
+ *
+ * When `editing` is set the form is opening to update an existing record, and
+ * `id` is the record's primary key so the card can save via PUT instead of POST.
  */
 export interface StreamIntake {
   entity: string;
@@ -49,11 +52,22 @@ export interface StreamIntake {
   filled: number;
   total: number;
   ask: string;
+  editing?: { entity: string; id: number };
 }
 
 export interface IntakeOption {
   value: string;
   label: string;
+}
+
+export interface StreamChoice {
+  id: string;
+  question: string;
+  options: { value: string; label: string }[];
+  /** True when the farmer may answer with their own words instead. */
+  allowCustom: boolean;
+  /** The field this answer fills, when Wangari said so. */
+  forField?: string;
 }
 
 export interface IntakeSection {
@@ -89,6 +103,15 @@ export type StreamEvent =
    * died does not wait a minute to find out - they leave.
    */
   | { type: "waiting"; seconds: number; opensAt: number | null }
+  /**
+   * Wangari is asking a question the farmer answers by TAPPING.
+   *
+   * "Which breed is it?" has four right answers and one wrong spelling each.
+   * A list of buttons has no spelling problem, costs the farmer no typing, and
+   * comes back as exactly one of the values the form accepts. The tap becomes
+   * their next message, which is how the answer reaches the conversation.
+   */
+  | { type: "choice"; choice: StreamChoice }
   /**
    * Wangari is collecting the details of a new record before writing it.
    *

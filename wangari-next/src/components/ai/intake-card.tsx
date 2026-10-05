@@ -34,6 +34,7 @@ import {
   savedSummary,
   sectionLabel,
   submitIntake,
+  updateIntake,
   undoIntake,
   type IntakeCard as IntakeCardData,
   type IntakeField,
@@ -43,13 +44,17 @@ export interface IntakeCardProps {
   intake: IntakeCardData;
   /** Called when the farmer abandons the form. */
   onDismiss?: () => void;
-  /** Called after a successful save, with the record that was written. */
-  onSaved?: (flock: { id: number; name: string }) => void;
+  /** Called after a successful save or update, with the record that was written. */
+  onSaved?: (record: { id: number; name: string }) => void;
+  /** Called after a successful update (not a fresh create). */
+  onUpdated?: (record: { id: number; name: string }) => void;
 }
 
 type Phase = "filling" | "saving" | "saved" | "undoing" | "undone";
 
-export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
+export function IntakeCard({ intake, onDismiss, onSaved, onUpdated }: IntakeCardProps) {
+  const editing = Boolean(intake.editing);
+  const recordId = intake.editing?.id ?? null;
   const [values, setValues] = React.useState<Record<string, string>>(() => ({ ...intake.values }));
   // Open on the first section that still needs something — see
   // firstSectionNeedingAnswer: Wangari's prefilled answers must not send the
@@ -58,9 +63,9 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
   const [phase, setPhase] = React.useState<Phase>("filling");
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [notice, setNotice] = React.useState<string | null>(null);
-  const [flock, setFlock] = React.useState<{ id: number; name: string; currentCount?: number; breed?: string | null } | null>(null);
-  /** The purchase expense the save created, so undo can remove it as well. */
-  const [expenseId, setExpenseId] = React.useState<number | null>(null);
+  const [record, setRecord] = React.useState<{ id: number; name: string; currentCount?: number; breed?: string | null } | null>(null);
+  /** The purchase expense the save created, so undo can remove it as well. For updates this is null. */
+  const [expenseId, setExpenseId] = React.useState<number | null>(editing ? null : null);
   /** Set when undo left a money row behind, so the farmer is told rather than surprised. */
   const [expenseKept, setExpenseKept] = React.useState<string | null>(null);
   const headingRef = React.useRef<HTMLParagraphElement>(null);
@@ -93,12 +98,20 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
     if (phase !== "filling") return;
     setPhase("saving");
     setNotice(null);
-    const result = await submitIntake(intake.entity, values);
+    const result = editing && recordId
+      ? await updateIntake(intake.entity, recordId, values)
+      : await submitIntake(intake.entity, values);
     if (result.ok) {
-      setFlock(result.flock);
-      setExpenseId(result.alsoCreated?.expenseTransactionId ?? null);
+      const r = (result.flock ?? result.record ?? { id: recordId ?? 0, name: "", currentCount: undefined, breed: null }) as { id: number; name: string; currentCount?: number; breed?: string | null };
+      setRecord(r);
+      if (!editing) setExpenseId(result.alsoCreated?.expenseTransactionId ?? null);
       setPhase("saved");
-      onSaved?.(result.flock);
+      if (editing) {
+        onUpdated?.(r);
+        onSaved?.(r);
+      } else {
+        onSaved?.(r);
+      }
       return;
     }
     // Back to filling so the button comes back. A form stuck on "saving" after
@@ -115,14 +128,20 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
   };
 
   const undo = async () => {
-    if (!flock || phase !== "saved") return;
+    if (!record || phase !== "saved") return;
     setPhase("undoing");
-    const result = await undoIntake(intake.entity, flock.id, expenseId);
+    const result = await undoIntake(intake.entity, record.id, expenseId);
     if (result.ok) {
       // A kept expense is reported, not buried. Telling a farmer "nothing was
       // saved" while a purchase expense is still in their books teaches them
       // the undo button lies.
       setExpenseKept(result.expenseKeptReason ?? null);
+    if (editing) {
+      // Undo not supported for updates — the record is corrected in place.
+      setNotice("Changes saved. Use the form again to make further edits.");
+      setPhase("filling");
+      return;
+    }
       setPhase("undone");
       return;
     }
@@ -139,7 +158,8 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
      "saved", which meant the moment the farmer tapped undo the card fell
      through to the empty form — the screen they had just filled in vanished
      and reappeared blank, mid-action. The TypeScript narrowing caught it. */
-  if ((phase === "saved" || phase === "undoing") && flock) {
+  if ((phase === "saved" || phase === "undoing") && record) {
+    const isFlock = intake.entity === "flock";
     return (
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -149,27 +169,31 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
         <div className="flex items-start gap-2.5">
           <Check className="mt-0.5 h-5 w-5 shrink-0 text-wangari-green-700" aria-hidden />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-wangari-heading">Saved to your livestock</p>
-            <p className="text-sm text-wangari-muted">{savedSummary(flock)}</p>
+            <p className="text-sm font-bold text-wangari-heading">
+              {editing ? "Updated your record" : isFlock ? "Saved to your livestock" : "Saved your record"}
+            </p>
+            <p className="text-sm text-wangari-muted">{savedSummary(record)}</p>
             <p className="mt-1 text-xs text-wangari-muted">
-              {answered} of {total} details filled. You can add the rest any time from the flock.
+              {answered} of {total} details filled. You can add the rest any time from the {isFlock ? "flock" : "record"}.
             </p>
           </div>
         </div>
         {notice && <p className="mt-2 text-xs text-tone-bad-text">{notice}</p>}
-        <button
-          type="button"
-          onClick={undo}
-          disabled={phase === "undoing"}
-          className="mt-3 flex min-h-[40px] items-center gap-1.5 rounded-xl bg-white px-3.5 text-sm font-bold text-wangari-heading shadow-sm transition-colors hover:bg-wangari-cream disabled:opacity-50"
-        >
-          {phase === "undoing" ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          ) : (
-            <Trash2 className="h-4 w-4" aria-hidden />
-          )}
-          Remove this flock
-        </button>
+        {!editing && (
+          <button
+            type="button"
+            onClick={undo}
+            disabled={phase === "undoing"}
+            className="mt-3 flex min-h-[40px] items-center gap-1.5 rounded-xl bg-white px-3.5 text-sm font-bold text-wangari-heading shadow-sm transition-colors hover:bg-wangari-cream disabled:opacity-50"
+          >
+            {phase === "undoing" ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Trash2 className="h-4 w-4" aria-hidden />
+            )}
+            Remove this {isFlock ? "flock" : "record"}
+          </button>
+        )}
       </motion.div>
     );
   }
@@ -182,7 +206,7 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
         className="rounded-2xl border border-wangari-border bg-wangari-cream/70 p-4"
       >
         <p className="text-sm font-semibold text-wangari-heading">
-          Removed. Nothing was saved for {flock?.name}.
+          Removed. Nothing was saved for {record?.name}.
         </p>
         {expenseKept && <p className="mt-1 text-xs text-tone-bad-text">{expenseKept}</p>}
       </motion.div>
@@ -281,7 +305,7 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
             className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl bg-wangari-green-700 px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-wangari-green-800 disabled:bg-wangari-border disabled:text-wangari-subtle disabled:shadow-none"
           >
             {phase === "saving" && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-            {phase === "saving" ? "Saving…" : "Save this flock"}
+            {phase === "saving" ? "Saving…" : editing ? "Save changes" : "Save this flock"}
           </button>
         )}
 
@@ -299,7 +323,9 @@ export function IntakeCard({ intake, onDismiss, onSaved }: IntakeCardProps) {
 
       {!ready && last && (
         <p className="border-t border-wangari-border px-4 py-2 text-xs text-wangari-muted">
-          I still need the flock name and how many animals. Everything else can wait.
+          {editing
+            ? "I still need the name and count. Everything else can wait."
+            : "I still need the flock name and how many animals. Everything else can wait."}
         </p>
       )}
     </motion.div>
