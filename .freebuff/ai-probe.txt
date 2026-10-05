@@ -1,1 +1,0 @@
-xrw=[XMLHttpRequest] method=POST q=hello

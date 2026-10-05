@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireOwner } from "../middleware/requireOwner.js";
+import { farmDayStart, farmTime, isFarmToday } from "../lib/farm-day.js";
 
 const router = Router();
 router.use(authMiddleware);
@@ -26,21 +27,19 @@ router.post("/", requireOwner, async (req: Request, res: Response) => {
   try {
     const farmId = req.user!.farmId!;
     const workerId = Number(req.body.workerId);
-    // Use ISO date string for consistent comparison (avoids UTC timezone shift)
-    const todayStr = new Date().toISOString().split("T")[0];
-    const today = new Date(todayStr + "T00:00:00");
-    const now = new Date().toTimeString().slice(0, 5);
+    // Kenya's day, not the server's. The server runs UTC and Kenya is UTC+3, so
+    // `toISOString()` filed a 00:30 clock-in under yesterday and
+    // `toTimeString()` recorded the time three hours early — every hour of every
+    // day. See lib/farm-day.ts.
+    const today = farmDayStart();
+    const now = farmTime();
 
-    // Find existing record today using string comparison to avoid timezone issues
     const allToday = await prisma.attendance.findMany({
       where: { workerId, farmId },
       orderBy: { createdAt: "desc" },
       take: 5,
     });
-    const existing = allToday.find((r) => {
-      const recDate = new Date(r.date).toISOString().split("T")[0];
-      return recDate === todayStr;
-    });
+    const existing = allToday.find((r) => isFarmToday(r.date));
 
     if (existing) {
       // Already clocked in today — this is a clock out

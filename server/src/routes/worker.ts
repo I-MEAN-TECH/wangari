@@ -3,6 +3,7 @@ import { prisma } from "../db.js";
 import { authMiddleware, JWT_SECRET } from "../middleware/auth.js";
 import jwt from "jsonwebtoken";
 import { hashPin, verifyPin } from "../lib/pin.js";
+import { farmDayStart, farmTime, isFarmToday } from "../lib/farm-day.js";
 import { requireFarm } from "../middleware/requireOwner.js";
 
 const router = Router();
@@ -445,9 +446,10 @@ router.post("/clock", async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Only workers can clock themselves" });
     }
 
-    const todayStr = new Date().toISOString().split("T")[0];
-    const today = new Date(todayStr + "T00:00:00");
-    const now = new Date().toTimeString().slice(0, 5);
+    // Kenya's day and clock, not the server's — see lib/farm-day.ts. Shared with
+    // the owner's /api/attendance clock-in so both agree on what "today" means.
+    const today = farmDayStart();
+    const now = farmTime();
 
     // Reuse the same logic as the owner endpoint: existing record today = clock out
     const allToday = await db.attendance.findMany({
@@ -455,10 +457,7 @@ router.post("/clock", async (req: Request, res: Response) => {
       orderBy: { createdAt: "desc" },
       take: 5,
     });
-    const existing = allToday.find((r: any) => {
-      const recDate = new Date(r.date).toISOString().split("T")[0];
-      return recDate === todayStr;
-    });
+    const existing = allToday.find((r: any) => isFarmToday(r.date));
 
     if (existing) {
       if (existing.checkOut) {

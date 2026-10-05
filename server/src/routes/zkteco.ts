@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { prisma } from "../db.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { farmDayStart, farmTime } from "../lib/farm-day.js";
 
 const router = Router();
 
@@ -92,9 +93,12 @@ router.post("/push", async (req: Request, res: Response) => {
         },
       });
 
-      // Also create/update attendance record for today
-      const today = new Date(timestamp);
-      today.setHours(0, 0, 0, 0);
+      // The device sends a Unix timestamp — an instant, not a Kenyan wall clock.
+      // It stands on the farm, so a 06:00 scan arrives here as 03:00 UTC. Reading
+      // the server's clock for the day and the time filed both wrong: the shift
+      // landed on the previous day after midnight EAT, and check-in showed 03:00
+      // for every morning. farmDayStart/farmTime read the instant in Kenya's zone.
+      const today = farmDayStart(timestamp);
 
       if (mappedWorker) {
         const existingAttendance = await prisma.attendance.findFirst({
@@ -105,7 +109,7 @@ router.post("/push", async (req: Request, res: Response) => {
           },
         });
 
-        const timeStr = timestamp.toTimeString().slice(0, 5);
+        const timeStr = farmTime(timestamp);
 
         if (existingAttendance) {
           // Update checkout if already clocked in
