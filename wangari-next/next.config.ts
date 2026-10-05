@@ -23,7 +23,14 @@ const nextConfig: NextConfig = {
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         { key: "X-XSS-Protection", value: "1; mode=block" },
-        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        // geolocation=(self) rather than geolocation=(): the weather and
+        // dashboard pages both call navigator.geolocation on load, so denying it
+        // outright left those calls guaranteed to fail — the browser logged a
+        // Permissions Policy violation on every visit and GPS weather could
+        // never work. `(self)` permits it for our own pages only, and the user
+        // still gets the browser's own permission prompt, so nothing is taken
+        // silently. Camera and microphone stay closed: nothing uses them.
+        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
         // Google Sign-In opens a popup and talks to it with window.postMessage
         // from accounts.google.com. `unsafe-none` is nominally "no policy", but
         // the GIS client still refused the message and logged "Cross-Origin-
