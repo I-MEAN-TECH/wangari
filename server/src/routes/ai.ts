@@ -562,10 +562,13 @@ async function executeTool(
       if (existingId) {
         // Open the form already filled with what is on the farm, so the
         // farmer sees the current values and only changes what needs changing.
-        const existing = await buildIntake(wanted, {}, args.values);
-        const fromDb = await fetchRecordValues(wanted, existingId, farmId);
-        if (fromDb) {
-          prefill = { ...fromDb, ...(args.values || {}) };
+        try {
+          const fromDb = await fetchRecordValues(wanted, existingId, farmId);
+          if (fromDb) prefill = { ...fromDb, ...(args.values || {}) };
+        } catch {
+          // DB hiccup: open the form blank rather than failing the turn.
+          // The farmer can still fill it — the DB may recover by the time
+          // they press save.
         }
       }
       const card = buildIntake(wanted, {}, prefill);
@@ -775,7 +778,30 @@ router.post("/stream", async (req: Request, res: Response) => {
     "X-Accel-Buffering": "no",
   });
 
-  const send = (event: string, data: any) => {
+  // The SSE contract: every event name and the shape of its payload. This is
+  // the server half of the protocol the client parses in
+  // wangari-next/src/lib/ai-stream.ts (its StreamEvent union).
+  //
+  // Keyed by event name rather than a `type` field inside the payload, because
+  // the event name travels in the SSE frame header and never in the JSON. The
+  // map means renaming an event, or sending a payload the client cannot read,
+  // is a compile error here rather than a blank panel on a farmer's phone.
+  interface StreamEventPayloads {
+    start: { provider: string; model: string };
+    waiting: { seconds: number; opensAt: number | null };
+    message: { content: string };
+    tool_start: { tool: string; args?: unknown; step: number };
+    tool_end: { tool: string; ok: boolean; result?: string; error?: string };
+    intake: { intake: unknown };
+    choice: { choice: unknown };
+    done: { steps: number; truncatedByBudget: boolean };
+    error: { message: string };
+  }
+
+  const send = <K extends keyof StreamEventPayloads>(
+    event: K,
+    data: StreamEventPayloads[K],
+  ) => {
     res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   };
 
