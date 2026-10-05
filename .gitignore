@@ -68,3 +68,11 @@ agent/
 .vercel
 tmp/
 server/tmp/
+
+# Farmer uploads — live data, served by express.static("uploads") from the app
+# root. NOT ignored before, which meant a single `git add -A` on the server
+# would have committed a customer's flock photo to a public repository. It is
+# the one directory here whose contents belong to a person rather than the
+# codebase.
+uploads/
+server/uploads/
