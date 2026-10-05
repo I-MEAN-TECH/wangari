@@ -75,7 +75,9 @@ const nextId = () => `t${++seq}`;
 
 /** Swahili-first tool labels. A farmer may not read long tool names. */
 const TOOL_LABEL: Record<string, string> = {
-  create_flock: "Added your animals",
+  // Adding animals opens a form the farmer answers; it never writes straight
+  // away, so the line must not read like a completed action.
+  start_flock_intake: "Opened the livestock form",
   delete_flock: "Removed a flock",
   list_flocks: "Read your flocks",
   record_production: "Recorded your production",
@@ -129,6 +131,7 @@ export function ChatPanel({
   wordTick = 0,
   presenceOverride,
   waitSeconds = null,
+  intake = null,
 }: {
   turns: Turn[];
   /** Tool steps currently executing, so progress shows before it lands. */
@@ -165,6 +168,14 @@ export function ChatPanel({
    * time we do not control.
    */
   waitSeconds?: number | null;
+  /**
+   * The guided form Wangari opened, drawn below the tool feed.
+   *
+   * Inside the conversation rather than on its own screen: the farmer asked
+   * for this in the middle of a reply, and a page change would strand them
+   * there with nothing to say about what they asked for.
+   */
+  intake?: React.ReactNode;
 }) {
   const live = useWangariPresence();
   // Server-rendered markup always reads "idle", because the presence store is
@@ -349,6 +360,20 @@ export function ChatPanel({
                     </div>
                   </div>
                 ))}
+              </motion.li>
+            )}
+
+            {/* ── the questions she needs answered ────────
+                Between the tool feed and her reply, because it IS the reply:
+                the tool said "opened the form" and this is what the farmer has
+                to do next. */}
+            {intake && (
+              <motion.li
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full"
+              >
+                {intake}
               </motion.li>
             )}
 

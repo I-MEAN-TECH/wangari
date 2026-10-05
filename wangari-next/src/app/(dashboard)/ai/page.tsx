@@ -14,6 +14,8 @@ import type { QuickAction } from "@/components/ai/quick-actions";
 import { WangariMark } from "@/components/ai/wangari-mark";
 import type { AgentActivity, AgentStep } from "@/components/ai/agent-presence";
 import { streamAI, type WireMessage, type StreamEvent } from "@/lib/ai-stream";
+import IntakeCard from "@/components/ai/intake-card";
+import type { IntakeCard as IntakeCardData } from "@/lib/ai-intake";
 import { setPresence, clearPresence, type Presence } from "@/lib/wangari-presence";
 import { caretGaze } from "@/lib/caret-gaze";
 import { TypingTracker } from "@/lib/typing-signal";
@@ -41,6 +43,14 @@ export default function AIAssistantPage() {
   const [error, setError] = React.useState<string | undefined>();
   const [offline, setOffline] = React.useState(false);
   const [value, setValue] = React.useState("");
+
+  /* ── the form Wangari opened ──────────────────────────────
+     Held here rather than inside the panel because it outlives a single run:
+     the farmer types in it while the stream finishes, and a card stored in
+     stream state would vanish the moment the next event arrived. One card at a
+     time on purpose — two half-filled forms on screen is how a flock gets
+     saved with the wrong numbers. */
+  const [intake, setIntake] = React.useState<IntakeCardData | null>(null);
 
   // Caret gaze and typing pace feed the avatar's eyes. WangariAgent
   // receives them; see components/ai/agent-presence.tsx.
@@ -90,6 +100,7 @@ export default function AIAssistantPage() {
     setPending([]);
     setError(undefined);
     setValue("");
+    setIntake(null);
     setListOpen(false);
   }, []);
 
@@ -100,6 +111,10 @@ export default function AIAssistantPage() {
     setSteps([]);
     setPending([]);
     setError(undefined);
+    // A form belongs to the conversation it was opened in. Carrying it into
+    // another one would show questions about a flock the farmer never asked for
+    // in this thread.
+    setIntake(null);
     setListOpen(false);
   }, []);
 
@@ -137,6 +152,9 @@ export default function AIAssistantPage() {
     setPending([]);
     setActivity("reasoning");
     setWaitSeconds(null);
+    // A new request supersedes any form still open: answering the old one after
+    // asking something else is how a flock gets saved against the wrong request.
+    setIntake(null);
 
     const next = [...history, { role: "user" as const, content: prompt }];
 
@@ -169,6 +187,14 @@ export default function AIAssistantPage() {
                farmers do not wait a minute to find out. */
             setActivity("waiting");
             setWaitSeconds(e.seconds);
+            break;
+
+          case "intake":
+            /* Wangari needs the farmer's answers before she writes anything.
+               The card carries every question, prefilled with whatever she
+               already heard, and nothing is saved until they confirm it. */
+            setIntake(e.intake);
+            setActivity("waiting");
             break;
 
           case "tool_start":
@@ -491,6 +517,29 @@ export default function AIAssistantPage() {
           pace={pace}
           wordTick={wordTick.current}
           waitSeconds={waitSeconds}
+          intake={
+            intake ? (
+              <IntakeCard
+                intake={intake}
+                onDismiss={() => setIntake(null)}
+                onSaved={(flock) =>
+                  /* Her own words say it is saved the moment the server does.
+                     Before that, saying so would be the lie this whole flow
+                     exists to stop. */
+                  setTurns((t) =>
+                    t.map((turn) =>
+                      turn.role === "assistant" && !turn.content.trim()
+                        ? {
+                            ...turn,
+                            content: `Saved ${flock.name} to your livestock. You can add the rest of the details any time.`,
+                          }
+                        : turn,
+                    ),
+                  )
+                }
+              />
+            ) : null
+          }
         />
       </main>
         </div>

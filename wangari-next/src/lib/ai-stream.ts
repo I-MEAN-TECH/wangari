@@ -31,6 +31,48 @@ export interface WireMessage {
   content: string;
 }
 
+/**
+ * The guided form Wangari opens when the farmer asks to add something.
+ *
+ * It arrives as its own event rather than as a tool result because it is not a
+ * result: nothing has been saved, and what the farmer needs is twenty-eight
+ * questions to answer. See components/ai/intake-card.tsx.
+ */
+export interface StreamIntake {
+  entity: string;
+  title: string;
+  intro: string;
+  sections: IntakeSection[];
+  values: Record<string, string>;
+  missingRequired: string[];
+  missingOptional: string[];
+  filled: number;
+  total: number;
+  ask: string;
+}
+
+export interface IntakeOption {
+  value: string;
+  label: string;
+}
+
+export interface IntakeSection {
+  id: string;
+  title: string;
+  blurb?: string;
+  fields: {
+    key: string;
+    label: string;
+    type: "text" | "textarea" | "number" | "money" | "select" | "date";
+    required?: boolean;
+    options?: IntakeOption[];
+    placeholder?: string;
+    hint?: string;
+    integer?: boolean;
+    min?: number;
+  }[];
+}
+
 export type StreamEvent =
   | { type: "start"; provider: string; model: string }
   | { type: "message"; content: string }
@@ -47,6 +89,14 @@ export type StreamEvent =
    * died does not wait a minute to find out - they leave.
    */
   | { type: "waiting"; seconds: number; opensAt: number | null }
+  /**
+   * Wangari is collecting the details of a new record before writing it.
+   *
+   * Nothing is saved when this arrives, and nothing must be shown as saved
+   * until the farmer confirms the form. The old behaviour — a name and a count
+   * written without asking — is what this event exists to replace.
+   */
+  | { type: "intake"; intake: StreamIntake }
   | { type: "error"; message: string };
 
 /**

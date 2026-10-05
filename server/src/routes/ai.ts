@@ -5,6 +5,7 @@ import { authMiddleware } from "../middleware/auth.js";
 import { AI_PROVIDERS, getProvider, type AIProviderConfig } from "../ai-providers.js";import { searchWeb, searchConfigured, searchTierLabel } from "../lib/web-search.js";
 import { nextRetryWait } from "../lib/rate-limit-window.js";
 import { resolveActiveModel, resolveSettings, recordModelOutcome } from "../lib/ai-settings.js";
+import { buildIntake } from "../lib/farm-intake.js";
 
 const router = Router();
 router.use(authMiddleware, requireOwner);
@@ -156,7 +157,59 @@ async function activeConfig(): Promise<AIProviderConfig & { model: string; baseU
 // ─── Complete MCP Tool Definitions ────────────────────────
 const mcpTools = [
   { type: "function", function: { name: "list_flocks", description: "List all flocks with bird count, breed, status, and mortality", parameters: { type: "object", properties: {}, required: [] } } },
-  { type: "function", function: { name: "create_flock", description: "Add a new flock to the farm", parameters: { type: "object", properties: { name: { type: "string", description: "Flock name" }, breed: { type: "string", description: "Bird breed" }, initialCount: { type: "number", description: "Number of birds" }, type: { type: "string", description: "layer, broiler, or breeder", enum: ["layer", "broiler", "breeder"] } }, required: ["name", "initialCount"] } } },
+  /* Adding animals is a FORM, not a tool call.
+
+     This replaced `create_flock`, which took a name, a breed and a number and
+     wrote a row. Twenty-six columns of the livestock screen stayed empty
+     because nobody asked the farmer about them — and an empty column is a
+     question they were never given. Worse, the farmer was told it was done.
+
+     The intake inverts that: the server owns the questions (lib/farm-intake.ts),
+     the form opens with whatever the farmer already said, and NOTHING is saved
+     until they confirm it. Every detail is optional here on purpose — the form
+     asks for what is missing, and refusing to open because one field is absent
+     would mean the farmer retypes the name they just said out loud.
+
+     So the model's only job here is to hand over what it heard. It does not
+     decide what matters, and it does not ask anything the form will ask again. */
+  { type: "function", function: {
+      name: "start_flock_intake",
+      description: "Open the guided livestock form to ADD animals to the farm. Use this for every request to add, register, record or start a flock or any animals — there is no other way to add them. Pass every detail the farmer already gave you (name, count, breed, species, supplier, cost, pen, vet, feed, tags…) so the form opens already filled and the farmer only fills the gaps. Nothing is saved until they confirm the form, so do not also tell them it is done.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Flock name" },
+          count: { type: "number", description: "How many animals" },
+          type: { type: "string", description: "Species id: layers, broilers, kienyeji, cattle_dairy, cattle_beef, goats, sheep, pigs, rabbits, fish, bees" },
+          breed: { type: "string" },
+          status: { type: "string", description: "active, inactive, sold, deceased" },
+          mortality: { type: "number", description: "Deaths since they arrived" },
+          purpose: { type: "string", description: "production, breeding, dual_purpose" },
+          gender: { type: "string", description: "female, male, mixed" },
+          genderRatio: { type: "string", description: "e.g. 1:9" },
+          hatchDate: { type: "string", description: "Date they arrived, YYYY-MM-DD" },
+          location: { type: "string", description: "Pen, barn, coop" },
+          source: { type: "string", description: "Supplier or market" },
+          supplierContact: { type: "string", description: "Supplier phone" },
+          costPerAnimal: { type: "number", description: "KES for ONE animal" },
+          targetMarket: { type: "string" },
+          feedType: { type: "string" },
+          feedSupplier: { type: "string" },
+          feedCostPerMonth: { type: "number", description: "KES" },
+          vetName: { type: "string" },
+          vetPhone: { type: "string" },
+          healthOnArrival: { type: "string" },
+          insurancePolicy: { type: "string" },
+          expectedYield: { type: "string" },
+          expectedWeight: { type: "string" },
+          expectedRevenue: { type: "number", description: "KES" },
+          notes: { type: "string" },
+          tagFrom: { type: "string", description: "First ANITRAC tag of the block" },
+          tagTo: { type: "string", description: "Last ANITRAC tag of the block" },
+        },
+        required: [],
+      },
+    } },
   { type: "function", function: { name: "delete_flock", description: "Remove a flock from the farm", parameters: { type: "object", properties: { id: { type: "number", description: "Flock ID" } }, required: ["id"] } } },
   { type: "function", function: { name: "list_production", description: "Get recent egg production data", parameters: { type: "object", properties: { days: { type: "number", description: "Days to retrieve (default 7)" } }, required: [] } } },
   { type: "function", function: { name: "record_production", description: "Record daily egg production for a flock", parameters: { type: "object", properties: { flockId: { type: "number", description: "Flock ID" }, eggsCollected: { type: "number", description: "Eggs collected" }, mortality: { type: "number", description: "Bird deaths" }, feedUsed: { type: "number", description: "Feed in kg" } }, required: ["flockId", "eggsCollected"] } } },
@@ -256,6 +309,15 @@ HONESTY ABOUT SPEED - the one thing you must not hide:
 - Never invent a plan name, a price, or a benefit you were not told about. If you do not know what a subscription includes, say so plainly.
 - A slow answer must not become a fast-sounding one. The free plan is the only excuse you may give.
 
+ADDING ANIMALS TO THE FARM - ask, then save:
+- When the farmer asks to add, register or record animals, call start_flock_intake. It is the ONLY way to add them.
+- Hand over every detail they gave you in the same breath, so the form opens already filled and they only fill the gaps. "Add 200 Sasso layers called Sasso Kenya, 500 each from Mamboeo market" is five facts, and all five belong in that one call.
+- Do NOT interview them yourself, one question at a time. The form asks all of them at once, and every extra question you ask costs the farmer another minute on the free plan.
+- Say in ONE short line what you still need, then stop talking. Do not read the form's questions out as well - they are already on their screen.
+- Nothing is saved until they confirm the form. Until they do, never say it is added, done or saved, and do not ask them to repeat the request.
+- If they answer a detail in chat ("breed is Sasso, in Pen A"), fold it into the next start_flock_intake call. Do not write it yourself.
+- Leave anything they do not know blank. An empty field they can fill later beats a number you guessed - a wrong bird count is a wrong farm.
+
 When the user asks you to do something, DO IT. Use the tools to read data, create records, and manage the farm.`;
 
 /** Ask the plan gate whether this user may use a module.
@@ -292,7 +354,7 @@ async function moduleAllowedForUser(userId: number, module: string): Promise<boo
  *  Deliberately exhaustive: a tool missing from here is an UNGATED tool, so a
  *  test asserts every declared tool has an entry. */
 const TOOL_MODULE: Record<string, string> = {
-  create_flock: "flocks", delete_flock: "flocks", list_flocks: "flocks",
+  start_flock_intake: "flocks", delete_flock: "flocks", list_flocks: "flocks",
   record_production: "production", list_production: "production",
   create_transaction: "transactions", delete_transaction: "transactions",
   list_transactions: "transactions",
@@ -317,7 +379,7 @@ const TOOL_MODULE: Record<string, string> = {
  *  whereas an invisible WRITE costs them their trust in the app - so reads are
  *  always allowed, and the farmer is never blind to their own farm. */
 const WRITE_TOOLS: ReadonlySet<string> = new Set([
-  "create_flock", "delete_flock", "record_production", "create_transaction",
+  "start_flock_intake", "delete_flock", "record_production", "create_transaction",
   "delete_transaction", "create_sale", "delete_sale", "create_invoice",
   "create_customer", "delete_customer", "create_inventory_item",
   "delete_inventory_item", "create_worker", "delete_worker",
@@ -404,7 +466,21 @@ async function executeTool(
 
   switch (toolName) {
     case "list_flocks": return prisma.flock.findMany({ where: { farmId } });
-    case "create_flock": return prisma.flock.create({ data: { name: args.name, breed: args.breed, currentCount: args.initialCount, initialCount: args.initialCount, type: args.type || "layer", farmId, status: "active" } });
+    /* Opens the form. Returns the card rather than a row, so the farmer can
+       see every question and answer them; see the note on the tool itself.
+       The plan gate above has already run — this is a WRITE as far as the
+       gate is concerned, because the farmer's answers become a record. */
+    case "start_flock_intake": {
+      const card = buildIntake("flock", {}, args);
+      return {
+        intake: card,
+        // Also in the payload the model reads, so it knows the state of the
+        // form without being told twice in the prompt.
+        status: "waiting_for_farmer",
+        stillNeeded: card.missingRequired,
+        alreadyKnown: Object.keys(card.values),
+      };
+    }
     case "delete_flock": { const snap = await prisma.flock.findFirst({ where: { id: args.id, farmId } }); if (!snap) return { error: "Flock not found on this farm" }; await prisma.flock.deleteMany({ where: { id: args.id, farmId } }); pushUndo(farmId, { undoId: "undo_flock", tool: "create_flock", args: { name: snap.name, breed: snap.breed, initialCount: snap.initialCount, type: (snap as any).type }, snapshot: snap }); return { deleted: true, undoId: "undo_flock", restored: snap.name }; }
     case "list_production": { const d = (args.days as number) || 7; const s = new Date(); s.setDate(s.getDate() - d); return prisma.dailyProduction.findMany({ where: { farmId, date: { gte: s } }, orderBy: { date: "desc" } }); }
     case "record_production": return prisma.dailyProduction.create({ data: { flockId: args.flockId, date: new Date(), eggsCollected: args.eggsCollected || 0, mortality: args.mortality || 0, feedUsed: args.feedUsed || 0, farmId } });
@@ -671,6 +747,15 @@ router.post("/stream", async (req: Request, res: Response) => {
 
       for (const { tc, toolName, ok, payload, raw } of settled) {
         send("tool_end", { tool: toolName, ok, ...payload });
+        /* The one tool that answers with a FORM rather than a row.
+
+           It cannot travel as a step result: a step result is one line of
+           text, and what the farmer needs is twenty-eight questions they can
+           fill in. So it gets its own event, and the card is drawn in the
+           conversation where they are already reading. */
+        if (toolName === "start_flock_intake" && ok && raw && (raw as any).intake) {
+          send("intake", { intake: (raw as any).intake });
+        }
         actions.push({
           tool: toolName,
           ok,
@@ -685,12 +770,32 @@ router.post("/stream", async (req: Request, res: Response) => {
 
            The one-line form is right for a farmer scrolling past it and
            useless for the only reader who has to reason about it. */
+        /* What the model reads, which is NOT always the farmer's line.
+
+           The ordinary case is the rows plus the summary. The intake is the
+           exception, and deliberately so: its card is twenty-eight questions,
+           and a model shown the whole form does exactly what the prompt
+           forbids — reads them back to the farmer, so they answer everything
+           twice and wait through extra requests to do it. All it needs is the
+           state: what is still missing, what is already known, and that the
+           farmer now owns the next move. */
+        const modelResult =
+          toolName === "start_flock_intake" && ok && raw && raw.intake
+            ? {
+                ok: true,
+                status: "waiting_for_farmer",
+                say: raw.intake.ask,
+                stillNeeded: raw.intake.missingRequired,
+                alreadyKnown: Object.keys(raw.intake.values ?? {}),
+                note:
+                  "The form is now open on the farmer's screen. Nothing is saved yet. " +
+                  "Do not repeat the questions, do not write anything, and wait for them to confirm.",
+              }
+            : ok ? { ...payload, ok, data: rowsForModel(raw) } : { ...payload, ok };
         toolResults.push({
           tool_call_id: tc.id,
           name: toolName,
-          content: JSON.stringify(
-            ok ? { ...payload, ok, data: rowsForModel(raw) } : { ...payload, ok },
-          ),
+          content: JSON.stringify(modelResult),
         });
       }
 
@@ -784,7 +889,7 @@ function summariseToolResult(tool: string, result: any): string {
     list_invoices: "invoice",
   };
   const labels: Record<string, string> = {
-    create_flock: "Added flock",
+    start_flock_intake: "Opened the livestock form",
     delete_flock: "Removed flock",
     record_production: "Recorded production",
     create_transaction: "Recorded transaction",
@@ -1041,6 +1146,9 @@ router.post("/chat", async (req: Request, res: Response) => {
     // back, repeat while the model keeps asking for tools. Bounded by
     // MAX_AGENT_STEPS so a confused model can never spin indefinitely.
     const allSteps: any[] = [];
+    // The guided form, for callers that do not read a stream. Same card, same
+    // questions — a farmer must not get a worse assistant by using /chat.
+    let intake: any = null;
     let steps = 0;
     let message = "";
     let truncatedByBudget = false;
@@ -1059,6 +1167,9 @@ router.post("/chat", async (req: Request, res: Response) => {
           const args = typeof tc.function.arguments === "string" ? JSON.parse(tc.function.arguments) : tc.function.arguments;
           step.args = args;
           const result = await executeTool(tc.function.name, args, farmId, req.user!.userId);
+          if (!intake && result && typeof result === "object" && (result as any).intake) {
+            intake = (result as any).intake;
+          }
           if (result && typeof result === "object" && (result as any).error) {
             step.ok = false;
             step.result = (result as any).error;
@@ -1086,6 +1197,7 @@ router.post("/chat", async (req: Request, res: Response) => {
     return res.json({
       message: { role: "assistant", content: message },
       steps: allSteps,
+      intake,
       truncatedByBudget,
     });
   } catch (error) {

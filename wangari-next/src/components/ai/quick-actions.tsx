@@ -77,7 +77,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
     id: "flock",
     label: "Add my animals",
     prompt:
-      "Add a new flock to my farm. Ask me the name, the breed, whether they are layers or broilers, and how many birds.",
+      "Add a new flock to my farm. Ask me the name, the breed, whether they are layers or broilers, and how many birds, and anything else you need about them.",
     icon: PawPrint,
   },
   {

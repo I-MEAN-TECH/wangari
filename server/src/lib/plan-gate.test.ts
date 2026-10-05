@@ -107,11 +107,23 @@ describe("every AI tool is gated, and writes are gated hardest", () => {
   });
 
   it("gates every mutating tool", () => {
-    expect(gated.has("create_flock")).toBe(true);
+    // Adding animals goes through the guided intake, and that is a WRITE for
+    // gate purposes: the farmer's answers become a record they may not be able
+    // to open on this plan.
+    expect(gated.has("start_flock_intake")).toBe(true);
     expect(gated.has("create_invoice")).toBe(true);
     expect(gated.has("create_transaction")).toBe(true);
     expect(gated.has("create_sale")).toBe(true);
     expect(gated.has("create_worker")).toBe(true);
+  });
+
+  it("cannot add a flock without going through the intake", () => {
+    // The thin write is gone on purpose: `create_flock` took a name and a number
+    // and left twenty-six columns blank without asking. If it ever comes back,
+    // the assistant is again able to claim a flock is added when the farmer was
+    // never asked for it.
+    expect(declared).not.toContain("create_flock");
+    expect(declared).toContain("start_flock_intake");
   });
 
   it("never gates a read", () => {

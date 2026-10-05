@@ -68,7 +68,10 @@ describe("quick actions", () => {
   it("never names a tool the backend does not have", () => {
     // Guards the quota claim in the file header: a chip must cost exactly one
     // successful request, so its phrasing has to reach a real tool.
-    const declared = [...aiSource.matchAll(/name: "([a-z_]+)", description/g)].map((m) => m[1]);
+    // `\s+`, not a literal space: a tool written across several lines is declared
+    // just as much as a one-liner, and a layout-sensitive pattern would report
+    // a missing tool that is plainly there.
+    const declared = [...aiSource.matchAll(/name: "([a-z_]+)",\s+description/g)].map((m) => m[1]);
     expect(declared.length, "tools are declared").toBeGreaterThan(25);
 
     for (const a of QUICK_ACTIONS) {
@@ -77,7 +80,10 @@ describe("quick actions", () => {
       const subject = a.id === "eggs" ? "record_production"
         : a.id === "sale" ? "create_sale"
         : a.id === "expense" ? "create_transaction"
-        : a.id === "flock" ? "create_flock"
+        // Adding animals opens the guided intake rather than writing a row, so
+        // the chip must reach THAT tool — a chip pointed at a tool that no
+        // longer exists would cost the farmer a whole request to be told no.
+        : a.id === "flock" ? "start_flock_intake"
         : a.id === "invoice" ? "create_invoice"
         : a.id === "stock" ? "create_inventory_item"
         : "get_dashboard";
