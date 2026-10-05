@@ -12,12 +12,12 @@ Four changes in this batch. Local builds pass (server tsc + Next.js build). DB s
 >   git pull --ff-only && \
 >   cd server && npx prisma generate && npm run build && \
 >   cd .. && node server/deploy/verify-build.mjs /home/saasapp/app/server/dist && \
->   PM2_ACTION=reload node server/deploy/reload-with-env.mjs /home/saasapp/app/.env'"
+>   PM2_ACTION=start node server/deploy/reload-with-env.mjs /home/saasapp/app/.env'"
 >
 > npx vercel deploy --prod --yes     # from the REPO ROOT, never from wangari-next/
 > ```
 >
-> Four things in there are not obvious, and each was learned the hard way.
+> Five things in there are not obvious, and each was learned the hard way.
 >
 > **1. `git pull` alone deploys nothing here.** For a while PM2 was running
 > `/home/saasapp/app/dist/index.js` — an orphan directory, gitignored, built by
@@ -47,6 +47,26 @@ Four changes in this batch. Local builds pass (server tsc + Next.js build). DB s
 > a required key is absent. Note the path: the file is at the app ROOT, not in
 > `server/`, and `set -a; . ./.env` cannot read it because one value contains an
 > unquoted space.
+>
+> **5. Use `/home/saasapp/app/deploy/update.sh`, not the command above.** It
+> wraps the whole sequence (including `prisma generate`, `verify-build`, the
+> env-preserving reload, a `/health` wait loop and `pm2 save`), and it refuses
+> to reload if a required secret is missing. `./update.sh --migrate` applies
+> pending Prisma migrations first; without the flag it only builds. Safe to run
+> as root — every build and PM2 command is delegated to `saasapp`, because a
+> root-owned PM2 is a second, invisible app.
+>
+> That script was rewritten on 2026-10-06. The version it replaced ended with a
+> bare `pm2 reload ecosystem.config.cjs --update-env` and so silently stripped
+> `JWT_SECRET`, `ADMIN_JWT_SECRET` and `CRON_SECRET` from the live process on
+> every run — the exact failure described in point 4 above. It also ran
+> `git reset --hard` (discarding real work) and `npm ci --production` (which
+> omits the devDependencies Prisma's CLI needs). The original is kept beside it
+> as `deploy/update.sh~`; **do not restore it.**
+>
+> Canonical copy: `server/deploy/update.sh` (tracked). The installed one lives
+> outside the repository and is root-owned, so no amount of `git pull` will ever
+> update it — that is exactly why the broken version survived every deploy.
 >
 > Current paths: app `/home/saasapp/app`, PM2 app name `wangari-api`,
 > script `server/dist/index.js`, env `/home/saasapp/app/.env`, logs

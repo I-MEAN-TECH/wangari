@@ -1,0 +1,7 @@
+# Shell scripts run on the VPS. autocrlf=true on the authoring
+# checkout would otherwise hand bash a CRLF file, which fails at the
+# first line with ": command not found" — after a green deploy.
+*.sh text eol=lf
+
+# Probes and deploy helpers are executed on the box too.
+server/deploy/*.mjs text eol=lf
