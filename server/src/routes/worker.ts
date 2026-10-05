@@ -3,7 +3,7 @@ import { prisma } from "../db.js";
 import { authMiddleware, JWT_SECRET } from "../middleware/auth.js";
 import jwt from "jsonwebtoken";
 import { hashPin, verifyPin } from "../lib/pin.js";
-import { farmDayStart, farmTime, isFarmToday } from "../lib/farm-day.js";
+import { farmDayStart, farmDayStartInstant, farmTime, isFarmToday } from "../lib/farm-day.js";
 import { requireFarm } from "../middleware/requireOwner.js";
 
 const router = Router();
@@ -108,9 +108,6 @@ router.get("/tasks", async (req: Request, res: Response) => {
   try {
     const farmId = req.user!.farmId || (req.user as any).farmId;
     const workerId = (req.user as any).workerId;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
     const tasks = await db.workerTask.findMany({
       where: {
@@ -218,8 +215,12 @@ router.post("/log-output", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Valid positive quantity is required" });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Kenya's day, not the server's. `setHours(0,0,0,0)` took SERVER midnight —
+    // and the server runs Europe/Berlin, so it produced 22:00 UTC on the PREVIOUS
+    // day, which a `date` column then stored as the day before. Every egg and
+    // milk record a worker logged from the field was filed a day early, every
+    // single time. See lib/farm-day.ts.
+    const today = farmDayStart();
 
     // 1. Record in WorkerLog
     let logRecord: any = null;
@@ -420,9 +421,11 @@ router.get("/my-attendance", async (req: Request, res: Response) => {
     const workerId = (req.user as any).workerId;
     if (!workerId) return res.json([]);
 
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    weekAgo.setHours(0, 0, 0, 0);
+    // "The last 7 days" as the farmer counts them. Server midnight was used here,
+    // and the server is Europe/Berlin, so this reached 8 days back and cut into
+    // a day boundary the farm never agreed to. farmDayStartInstant returns the
+    // instant Kenya's day began; the arithmetic is done on the farm's date.
+    const weekAgo = new Date(farmDayStartInstant().getTime() - 7 * 86_400_000);
 
     const records = await db.attendance.findMany({
       where: { farmId, workerId, date: { gte: weekAgo } },
@@ -492,8 +495,11 @@ router.get("/my-activity", async (req: Request, res: Response) => {
     const farmId = req.user!.farmId!;
     const workerId = (req.user as any).workerId;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // `createdAt` is a timestamp, not a date column, so this needs the instant
+    // Kenya's day began (21:00Z the previous evening) rather than UTC midnight.
+    // Using the date-column value here would hide the first three hours of every
+    // worker's morning.
+    const today = farmDayStartInstant();
 
     const logs = await db.workerLog.findMany({
       where: {

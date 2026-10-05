@@ -93,6 +93,54 @@ export function farmDayStart(now: Date = new Date()): Date {
 }
 
 /**
+ * The instant Kenya's day began, for `gte` comparisons on a TIMESTAMP column.
+ *
+ * This is deliberately NOT the same value as `farmDayStart`, and confusing the
+ * two reintroduces the original bug in a new place:
+ *
+ *   farmDayStart        -> UTC midnight of the farm's DATE. What you WRITE into
+ *                          a Postgres `date` column, which stores a bare day.
+ *   farmDayStartInstant -> the UTC instant whose Kenyan wall clock reads 00:00.
+ *                          What you compare a `createdAt` TIMESTAMP against.
+ *
+ * 00:00 EAT on 2026-10-06 is 2026-10-05T21:00Z. Asking "did this happen today?"
+ * about a worker's log needs the 21:00Z; writing today's production row needs
+ * the 06-06T00:00Z.
+ *
+ * Derived through Intl rather than a hardcoded +3h, so a zone that observes
+ * daylight saving (or Kenya, if it ever did) is handled by the zone database.
+ */
+export function farmDayStartInstant(now: Date = new Date()): Date {
+  const [year, month, day] = farmDate(now).split("-").map(Number);
+  // Start from UTC midnight of that date, then correct by whatever offset the
+  // farm's zone was actually on at that moment. One correction pass is enough
+  // because no zone shifts by more than a couple of hours from its nominal
+  // offset, and we only need the answer to the minute.
+  const nominal = Date.UTC(year, month - 1, day);
+  return new Date(nominal - zoneOffsetMs(new Date(nominal)));
+}
+
+/** How far ahead of UTC the farm's zone is at `at`, in milliseconds. */
+function zoneOffsetMs(at: Date): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: FARM_TIME_ZONE,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(at);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  // Intl renders midnight as hour 24 under hour12:false in some builds; fold it
+  // back to 0 so the reconstructed instant is the same moment, not the next day.
+  const hour = get("hour") % 24;
+  const asIfUtc = Date.UTC(get("year"), get("month") - 1, get("day"), hour, get("minute"), get("second"));
+  return asIfUtc - Math.floor(at.getTime() / 1000) * 1000;
+}
+
+/**
  * Does this stored record belong to today's farm day?
  *
  * Rows come back from Postgres as UTC midnight, so `toISOString().slice(0, 10)`

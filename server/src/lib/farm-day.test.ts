@@ -3,6 +3,7 @@ import {
   farmDate,
   farmTime,
   farmDayStart,
+  farmDayStartInstant,
   isFarmToday,
   FARM_TIME_ZONE,
 } from "./farm-day";
@@ -44,6 +45,131 @@ afterEach(() => {
   if (originalTz === undefined) delete process.env.TZ;
   else process.env.TZ = originalTz;
 });
+
+describe("farmDayStartInstant", () => {
+  it("is the instant Kenya's day begins", () => {
+    expect(farmDayStartInstant(new Date(EAT_NOON)).toISOString()).toBe(
+      "2026-10-05T21:00:00.000Z",
+    );
+    // Read back in Kenya, it is midnight — that is the whole contract.
+    expect(farmTime(farmDayStartInstant(new Date(EAT_NOON)))).toBe("00:00");
+    expect(farmDate(farmDayStartInstant(new Date(EAT_NOON)))).toBe("2026-10-06");
+  });
+
+  it("is NOT the same value as the date-column one", () => {
+    // The two are three hours apart and must never be swapped: one is written
+    // into a Postgres `date` column, the other compared against a `timestamp`.
+    const dateCol = farmDayStart(new Date(EAT_NOON));
+    const instant = farmDayStartInstant(new Date(EAT_NOON));
+    expect(dateCol.toISOString()).not.toBe(instant.toISOString());
+    expect(dateCol.getTime() - instant.getTime()).toBe(3 * 3600_000);
+  });
+
+  it("starts the day Kenya starts it, not the day UTC does", () => {
+    // 00:15 on the 7th in Kenya is 21:15 on the 6th in UTC. Today's activity
+    // begins on the 6th, in UTC terms — and a log written at 22:00 UTC that
+    // evening IS part of the 7th on the farm.
+    expect(farmDayStartInstant(new Date(EAT_0015_NEXT)).toISOString()).toBe(
+      "2026-10-06T21:00:00.000Z",
+    );
+  });
+
+  it("includes the first three hours of the morning", () => {
+    // 01:30 EAT is 22:30Z the previous evening, and a worker logging output at
+    // that moment is logging today's work.
+    const start = farmDayStartInstant(new Date(Date.UTC(2026, 9, 6, 22, 30)));
+    const at0130 = new Date(Date.UTC(2026, 9, 6, 22, 30));
+    expect(at0130.getTime() >= start.getTime()).toBe(true);
+    // The same instant read as a UTC date would have been the 6th, which is why
+    // this cannot reuse farmDayStart.
+    expect(start.toISOString().slice(0, 10)).toBe("2026-10-06");
+    expect(farmDate(start)).toBe("2026-10-07");
+  });
+
+  it("moves forward exactly one day at a time, with no DST drift", () => {
+    // Kenya has no daylight saving. Comparing January to October catches a
+    // helper that quietly baked in whichever offset the author tested with.
+    const october = farmDayStartInstant(new Date(EAT_NOON));
+    const january = farmDayStartInstant(new Date(Date.UTC(2027, 0, 15, 9, 0)));
+    expect(farmDate(january)).toBe("2027-01-15");
+    expect(julyishGapCheck(october, january)).toBe(true);
+  });
+
+  it("is unaffected by the server's timezone", () => {
+    const seen = new Set<string>();
+    for (const tz of ["UTC", "Africa/Nairobi", "America/New_York", "Asia/Tokyo"]) {
+      process.env.TZ = tz;
+      seen.add(farmDayStartInstant(new Date(EAT_NOON)).toISOString());
+    }
+    expect([...seen]).toEqual(["2026-10-05T21:00:00.000Z"]);
+  });
+
+  it("always lands exactly on the day boundary, whatever the input's sub-second part", () => {
+    // Every other instant in this file lands on a round second, which hides a
+    // bug where the offset is computed without the seconds term: the result is
+    // correct to the minute but off by however many seconds it started with.
+    // Real requests arrive at arbitrary milliseconds, so that is the case that
+    // matters and the case a mutation run says nothing about unless it is here.
+    for (const ms of [0, 1, 37, 412, 999]) {
+      const start = farmDayStartInstant(new Date(Date.UTC(2026, 9, 6, 9, 0, 37, ms)));
+      expect(start.toISOString()).toBe("2026-10-05T21:00:00.000Z");
+      expect(start.getMilliseconds()).toBe(0);
+      expect(start.getSeconds()).toBe(0);
+    }
+  });
+
+  it("handles inputs in the last milliseconds before midnight in the farm's zone", () => {
+    // 23:59:59.999 EAT on the 5th — the boundary must belong to the 5th, not
+    // spill into the 6th because a millisecond rounded up.
+    const justBefore = new Date(Date.UTC(2026, 9, 5, 20, 59, 59, 999));
+    const start = farmDayStartInstant(justBefore);
+    expect(farmDate(start)).toBe("2026-10-05");
+    expect(start.toISOString()).toBe("2026-10-04T21:00:00.000Z");
+    // And one millisecond later it is the 6th.
+    expect(farmDate(farmDayStartInstant(new Date(justBefore.getTime() + 1)))).toBe("2026-10-06");
+  });
+
+  it("reads the zone rather than assuming a fixed +3, so DST zones work", () => {
+    // Kenya has no daylight saving, so inside Africa/Nairobi a hardcoded +3 is
+    // indistinguishable from the zone database — a mutation run confirms that,
+    // and this is the check that tells the two apart. Berlin is UTC+2 in summer
+    // and UTC+1 in winter; if farm-day ever serves another farm, this is the
+    // test that fails first.
+    const zoneOffsetAt = (iso: string, timeZone: string) => {
+      const at = new Date(iso);
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        hour12: false,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }).formatToParts(at);
+      const g = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+      const asUtc = Date.UTC(g("year"), g("month") - 1, g("day"), g("hour") % 24, g("minute"), g("second"));
+      return (asUtc - at.getTime()) / 3600_000;
+    };
+    // The offsets a fixed +3h would get wrong.
+    expect(zoneOffsetAt("2026-07-01T00:00:00.000Z", "Europe/Berlin")).toBe(2);
+    expect(zoneOffsetAt("2026-01-15T00:00:00.000Z", "Europe/Berlin")).toBe(1);
+    // Kenya really is a flat +3 — if this ever fails, FARM_TIME_ZONE's
+    // assumption is stale and every offset-derived number needs re-checking.
+    expect(zoneOffsetAt("2026-01-15T00:00:00.000Z", FARM_TIME_ZONE)).toBe(3);
+    expect(zoneOffsetAt("2026-07-01T00:00:00.000Z", FARM_TIME_ZONE)).toBe(3);
+  });
+});
+
+/**
+ * True when the two instants are exactly a whole number of days apart — which is
+ * the property that breaks first if a fixed offset is used instead of the zone
+ * database.
+ */
+function julyishGapCheck(a: Date, b: Date): boolean {
+  const diff = b.getTime() - a.getTime();
+  return diff % 86_400_000 === 0;
+}
 
 describe("independence from the server's timezone", () => {
   it("reports the same farm time whatever the server's clock is set to", () => {
