@@ -2,6 +2,57 @@
 
 Four changes in this batch. Local builds pass (server tsc + Next.js build). DB steps must run on the VPS.
 
+> ## The procedure that actually works (2026-10-06)
+>
+> Everything below this box describes an older layout. **Use this instead.**
+>
+> ```bash
+> # from the repo root, after the change is committed and pushed
+> ssh vps "sudo -u saasapp bash -c 'cd /home/saasapp/app && \
+>   git pull --ff-only && \
+>   cd server && npx prisma generate && npm run build && \
+>   cd .. && node server/deploy/verify-build.mjs /home/saasapp/app/server/dist && \
+>   PM2_ACTION=reload node server/deploy/reload-with-env.mjs /home/saasapp/app/.env'"
+>
+> npx vercel deploy --prod --yes     # from the REPO ROOT, never from wangari-next/
+> ```
+>
+> Four things in there are not obvious, and each was learned the hard way.
+>
+> **1. `git pull` alone deploys nothing here.** For a while PM2 was running
+> `/home/saasapp/app/dist/index.js` — an orphan directory, gitignored, built by
+> a config file that existed only on the box. `git pull` could never refresh it,
+> because it is not in the repository. Every API deploy for about a day reported
+> success, served 200s, and changed nothing at runtime. `verify-build.mjs` exists
+> because that failure is invisible from the outside: the health check passes
+> either way. Run it on every deploy.
+>
+> **2. `tsc --noEmit` verifies a build you never ship.** It type-checks and
+> emits nothing. The old procedure was exactly that, followed by a reload — so
+> the thing that got verified and the thing that ran were different files.
+> `npm run build` is what has to precede a reload.
+>
+> **3. `pm2 reload` does not re-read the app's `script` field.** It recycles the
+> workers of an app PM2 already knows, from the definition PM2 already has. A
+> changed entrypoint is ignored and the process keeps running the old file.
+> `PM2_ACTION=start` re-reads it. If the entrypoint itself changed and `start`
+> still will not move it, `pm2 delete <name>` then `start` — a brief gap, and
+> then `pm2 save` so it survives a reboot.
+>
+> **4. Never reload with a bare `pm2 restart --update-env` from ssh.** PM2 copies
+> the CALLER's environment, so a fresh shell hands it almost nothing and PM2
+> then drops the variables the running process had. That is how `JWT_SECRET`,
+> `ADMIN_JWT_SECRET` and `CRON_SECRET` disappeared from the live process.
+> `reload-with-env.mjs` parses `/home/saasapp/app/.env` and refuses to reload if
+> a required key is absent. Note the path: the file is at the app ROOT, not in
+> `server/`, and `set -a; . ./.env` cannot read it because one value contains an
+> unquoted space.
+>
+> Current paths: app `/home/saasapp/app`, PM2 app name `wangari-api`,
+> script `server/dist/index.js`, env `/home/saasapp/app/.env`, logs
+> `/home/saasapp/.pm2/logs/`. The references to `/var/www/wangari`,
+> `npx tsx src/index.ts` and `wangari-server` further down are all stale.
+
 > **2026-10-04 — timezone is UTC, and must stay UTC.**
 > The PostgreSQL server this app shares with another tenant is configured
 > `Europe/Berlin`. Roughly 50 columns here are `timestamp without time zone`
