@@ -67,6 +67,14 @@ export interface IntakeSection {
 interface IntakeSource {
   entity: IntakeEntity;
   title: string;
+  /**
+   * The bare noun, used in the sentence Wangari says: "the livestock form".
+   *
+   * Derived from `title` it reads "the add your livestock form", which is
+   * grammatical and useless — it was caught by running the bare case live and
+   * reading what she actually said.
+   */
+  formNoun: string;
   intro: string;
   sections: IntakeSection[];
   /**
@@ -106,6 +114,7 @@ const SPECIES: readonly IntakeOption[] = [
 const FLOCK: IntakeSource = {
   entity: "flock",
   title: "Add your livestock",
+  formNoun: "livestock",
   intro:
     "I need a few details before I save this. I have already filled in what you " +
     "told me — check it, fill the gaps, and leave anything you do not know yet.",
@@ -551,15 +560,22 @@ function askLine(
   missingOptional: string[],
   filled: number,
 ): string {
+  const form = `${source.formNoun} form`;
   if (missingRequired.length) {
     const need = listOut(missingRequired.slice(0, 6));
-    return `I need ${need} before I can save this. I have opened the ${source.title.toLowerCase()} form with what you told me.`;
+    // "with what you told me" only when something WAS told. This sentence was
+    // written once, for both cases, and on a bare "add a livestock" it claimed
+    // the farmer had said things they had not — the first thing that sentence
+    // does is establish trust, so it has to be true.
+    return filled > 0
+      ? `I need ${need} before I can save this. I have opened the ${form} with what you told me.`
+      : `I need ${need} before I can save this. I have opened the ${form} so you can fill in the details.`;
   }
   if (!missingOptional.length) {
-    return `I have everything I need, so I have opened the ${source.title.toLowerCase()} form for you to check before I save it.`;
+    return `I have everything I need, so I have opened the ${form} for you to check before I save it.`;
   }
   const some = listOut(missingOptional.slice(0, 4));
-  return `I have the important details. The form is open in case you want to add ${some} — you can leave those blank and save now.`;
+  return `I have the important details. The ${form} is open in case you want to add ${some} — you can leave those blank and save now.`;
 }
 
 function listOut(items: string[]): string {

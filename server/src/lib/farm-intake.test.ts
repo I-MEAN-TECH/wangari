@@ -150,6 +150,24 @@ describe("buildIntake — the card the farmer is shown", () => {
     expect(card.ask).toMatch(/leave those blank and save now/i);
   });
 
+  it("does NOT claim the farmer said things when they said nothing", () => {
+    // Caught by running the bare case live and reading what she actually said:
+    // "I have opened the add your livestock form with what you told me", to a
+    // farmer who had said nothing. The first job of this sentence is to be
+    // believed.
+    const bare = buildIntake("flock", {});
+    expect(bare.ask).not.toMatch(/what you told me/i);
+    expect(bare.ask).toMatch(/so you can fill in the details/i);
+    expect(bare.ask).toMatch(/livestock form/);
+    // And never "the add your livestock form", which is grammatical and useless.
+    expect(bare.ask).not.toMatch(/the add your/i);
+  });
+
+  it("does claim it once the farmer HAS said something", () => {
+    const partial = buildIntake("flock", {}, { breed: "Sasso" });
+    expect(partial.ask).toMatch(/what you told me/i);
+  });
+
   it("says the gaps are optional once the required two are known", () => {
     const card = buildIntake("flock", {}, { name: "Sasso Kenya", count: 200 });
     expect(card.missingOptional.length).toBeGreaterThan(5);
@@ -297,5 +315,6 @@ describe("isIntakeEntity", () => {
 
   it("exposes the source for the entity that exists", () => {
     expect(intakeSource("flock").title).toBe("Add your livestock");
+    expect(intakeSource("flock").formNoun).toBe("livestock");
   });
 });
