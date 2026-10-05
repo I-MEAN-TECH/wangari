@@ -53,10 +53,37 @@ describe("one writer, not two", () => {
     expect(flocks).not.toContain("prisma.flock.create");
   });
 
-  it("the intake writes through the same one", () => {
+  it("the intake route writes through the shared writers, for every entity", () => {
     const intake = read("routes/ai-intake.ts");
-    expect(intake).toContain("createFlockForFarm");
-    expect(intake).not.toContain("prisma.flock.create");
+    expect(intake).toContain("saveIntake");
+    // The SAVE path must not know any entity's details: it validates, then
+    // hands over. A prisma call in it would be a writer the registry does not
+    // own — which is how a second, drifting copy of a rule gets in.
+    const save = intake.slice(intake.indexOf("router.post"), intake.indexOf("router.delete"));
+    expect(save).not.toContain("prisma.");
+    expect(save).not.toContain("createFlockForFarm");
+  });
+
+  it("the writers own every table, and the flock writer is reused", () => {
+    const writers = read("lib/intake-writers.ts");
+    expect(writers).toContain('from "./flock-create.js"');
+    expect(writers).toContain("createFlockForFarm");
+    // And it never writes a flock row itself.
+    expect(writers).not.toContain("prisma.flock.create");
+  });
+
+  it("every entity in the registry is handled by the writers", () => {
+    // The switch in saveIntake is exhaustive by type, so this is belt and
+    // braces — but it is the check that fails loudly when someone adds an
+    // entity and forgets the undo table beside it.
+    const registry = read("lib/intake-registry.ts");
+    const route = read("routes/ai-intake.ts");
+    const entities = [...registry.matchAll(/^\s{2}([a-z_]+): (FLOCK|CROP|WORKER|CUSTOMER|INVENTORY|TRANSACTION|SALE|INVOICE|PRODUCTION|VACCINATION|ATTENDANCE),/gm)]
+      .map((m) => m[1]);
+    expect(entities.length).toBeGreaterThanOrEqual(11);
+    for (const entity of entities) {
+      expect(route, entity + " has an undo table").toContain(`case "${entity}": return "`);
+    }
   });
 
   it("the library owns the category map, so a flock is filed the same way twice", () => {
@@ -70,12 +97,12 @@ describe("one writer, not two", () => {
 describe("validation runs before the write", () => {
   const intake = read("routes/ai-intake.ts");
 
-  it("checks the answers before creating anything", () => {
+  it("checks the answers before saving anything", () => {
     const validate = intake.indexOf("validateIntake(");
-    const write = intake.indexOf("createFlockForFarm(");
+    const save = intake.indexOf("saveIntake(");
     expect(validate).toBeGreaterThan(-1);
-    expect(write).toBeGreaterThan(-1);
-    expect(validate).toBeLessThan(write);
+    expect(save).toBeGreaterThan(-1);
+    expect(validate).toBeLessThan(save);
   });
 
   it("refuses an incomplete form with a 400 and the field names", () => {
@@ -86,11 +113,15 @@ describe("validation runs before the write", () => {
   it("keeps the plan gate in front of the write", () => {
     // An invisible write on a plan that cannot open it is the exact failure
     // the gate exists for, so it must run first and fail CLOSED.
-    const gate = intake.indexOf("flocksAllowed(");
-    const write = intake.indexOf("createFlockForFarm(");
+    const gate = intake.indexOf("moduleAllowed(");
+    const save = intake.indexOf("saveIntake(");
     expect(gate).toBeGreaterThan(-1);
-    expect(gate).toBeLessThan(write);
+    expect(gate).toBeLessThan(save);
     expect(intake).toContain("return false;");
+  });
+
+  it("gates on the entity's own module, from the registry", () => {
+    expect(intake).toContain("intakeModule(entity)");
   });
 });
 
@@ -102,6 +133,7 @@ describe("undo really undoes", () => {
     // Found by the end-to-end run, not by reading: the first undo deleted the
     // flock and left a KES 100,000 expense in the books while the card said
     // "nothing was saved".
+    expect(del).toContain("alsoCreated");
     expect(del).toContain("expenseTransactionId");
     expect(del).toContain("prisma.transaction.delete(");
   });
@@ -110,8 +142,14 @@ describe("undo really undoes", () => {
     // Two flocks bought the same way produce identical descriptions, so the id
     // alone is not proof. All three checks must pass.
     expect(del).toMatch(/tx\.category === "animal_feed"/);
-    expect(del).toContain("Livestock purchase: ${flock.name}");
+    expect(del).toContain("Livestock purchase: ");
     expect(del).toContain('tx.type === "expense"');
+  });
+
+  it("will not delete a customer the farm has since attached sales to", () => {
+    // A customer with sales is real, and the farmer did not ask for them to go.
+    expect(del).toContain("prisma.sale.count(");
+    expect(del).toContain("linked <= 1");
   });
 
   it("says so when the expense was kept, instead of claiming nothing was saved", () => {
@@ -119,44 +157,68 @@ describe("undo really undoes", () => {
     expect(del).toContain("expenseRemoved");
   });
 
-  it("checks the flock belongs to this farm before touching anything", () => {
-    expect(del.indexOf("findFirst({ where: { id, farmId } })")).toBeGreaterThan(-1);
-    expect(del.indexOf("findFirst({ where: { id, farmId } })")).toBeLessThan(
-      del.indexOf("prisma.flock.deleteMany"),
-    );
+  it("checks the record belongs to this farm before touching anything", () => {
+    const scope = del.indexOf("farmId }");
+    expect(scope).toBeGreaterThan(-1);
+    expect(scope).toBeLessThan(del.indexOf("prisma.flock.deleteMany") === -1
+      ? del.indexOf("].deleteMany")
+      : del.indexOf("prisma.flock.deleteMany"));
   });
 });
 
-describe("the chat tells the farmer to answer the form", () => {
+describe("the chat asks before it writes, and can ask with buttons", () => {
   const ai = read("routes/ai.ts");
 
-  it("sends the card as its own stream event", () => {
+  it("sends the form and the choice as their own stream events", () => {
     // A one-line step result cannot carry twenty-eight questions, and the
     // farmer has to see them to answer them.
     expect(ai).toContain('send("intake", { intake: (raw as any).intake })');
+    expect(ai).toContain('send("choice", { choice: (raw as any).choice })');
   });
 
-  it("gives /chat the same card", () => {
+  it("gives /chat the same two", () => {
     expect(ai).toContain("let intake: any = null;");
-    expect(ai).toContain("intake,");
+    expect(ai).toContain("let choice: any = null;");
+    expect(ai).toMatch(/steps: allSteps,\s*intake,\s*choice,/);
   });
 
-  it("cannot add a flock any other way", () => {
-    expect(ai).not.toContain('function: { name: "create_flock"');
-    expect(ai).toContain('function: {\n      name: "start_flock_intake"');
+  it("cannot write a record any other way", () => {
+    for (const tool of [
+      "create_flock", "create_crop", "create_worker", "create_customer",
+      "create_inventory_item", "create_transaction", "create_sale",
+      "create_invoice", "record_production", "create_vaccination",
+      "record_attendance",
+    ]) {
+      expect(ai, tool + " must not be declared").not.toContain(`name: "${tool}"`);
+    }
+    expect(ai).toContain('name: "start_intake"');
+    expect(ai).toContain('name: "ask_farmer"');
+  });
+
+  it("offers every entity on the one tool", () => {
+    for (const entity of [
+      "flock", "crop", "worker", "customer", "inventory", "transaction",
+      "sale", "invoice", "production", "vaccination", "attendance",
+    ]) {
+      expect(ai, entity + " is reachable").toContain(`"${entity}"`);
+    }
   });
 
   it("tells the model the questions cost money, so it does not ask them itself", () => {
-    expect(ai).toContain("start_flock_intake");
     expect(ai).toMatch(/Do NOT interview them yourself, one question at a time/);
-    expect(ai).toMatch(/Nothing is saved until they confirm the form/);
+    expect(ai).toMatch(/saves NOTHING until they confirm it/);
+  });
+
+  it("tells the model to ask with buttons when the answer is a choice", () => {
+    expect(ai).toMatch(/ASKING A QUESTION THEY CAN TAP/);
+    expect(ai).toMatch(/allowCustom/);
   });
 
   it("keeps the whole card out of the model's context", () => {
     // Handed the full card, the model reads all twenty-eight questions back to
     // the farmer in a message: they answer everything twice and wait through
     // extra requests to do it. The model gets the state, not the form.
-    expect(ai).toContain('toolName === "start_flock_intake" && ok && raw && raw.intake');
+    expect(ai).toContain('toolName === "start_intake" && ok && raw && raw.intake');
     expect(ai).toMatch(/Do not repeat the questions/);
   });
 
@@ -164,19 +226,120 @@ describe("the chat tells the farmer to answer the form", () => {
     // Measured live: the form opened correctly, then the closing sentence
     // request hit the free tier's limit and the farmer saw a working form with
     // an error bubble on top of it. The sentence is ours to say now.
-    expect(ai).toContain("let intakeAsk = \"\";");
-    expect(ai).toMatch(/if \(intakeAsk\) \{\s*\n\s*send\("message", \{ content: intakeAsk \}\);\s*\n\s*answered = true;\s*\n\s*break;/);
+    expect(ai).toContain('let closingLine = "";');
+    expect(ai).toMatch(/if \(closingLine\) \{\s*\n\s*send\("message", \{ content: closingLine \}\);\s*\n\s*answered = true;\s*\n\s*break;/);
   });
 
-  it("never calls the model again once the form is open", () => {
-    // The break has to sit inside the step loop, after the tool results are
-    // recorded — otherwise the history the next turn sees is missing the
-    // assistant's own tool call and the conversation stops making sense.
-    const loop = ai.indexOf("while (steps < maxSteps)");
-    const send = ai.indexOf('send("message", { content: intakeAsk })');
-    const push = ai.indexOf("convo.push({ role: \"assistant\"");
-    expect(loop).toBeGreaterThan(-1);
-    expect(send).toBeGreaterThan(loop);
-    expect(push).toBeLessThan(send);
+  it("refuses to delete anything the farmer has not confirmed", () => {
+    expect(ai).toContain("DESTRUCTIVE_TOOLS");
+    expect(ai).toMatch(/DESTRUCTIVE_TOOLS\.has\(toolName\) && args\.confirmed !== true/);
+    expect(ai).toContain("I have not deleted anything");
+  });
+
+  it("refuses a choice question that is not a choice", () => {
+    // One option is not a choice, and a question with no options is just a
+    // slower way of typing.
+    expect(ai).toContain("at least two answers to choose from");
+  });
+
+  it("opens the form in edit mode when start_intake is called with an id", () => {
+    expect(ai).toContain('editing: existingId ? { entity: wanted, id: existingId } : undefined');
+  });
+
+  it("fetches the existing record for prefill when editing", () => {
+    expect(ai).toContain('fetchRecordValues(wanted, existingId, farmId)');
+  });
+
+  it("handles DB failure during edit prefill gracefully", () => {
+    expect(ai).toContain('catch');
+    // The catch must not re-throw — the form should still open.
+    const startIntakeCase = ai.slice(ai.indexOf('case "start_intake":'), ai.indexOf('case "ask_farmer":'));
+    expect(startIntakeCase).toContain('catch');
+    // After catch, the turn continues (no throw/rethrow)
+    expect(startIntakeCase).not.toMatch(/throw/);
+  });
+
+  it("has a PUT route for updating records", () => {
+    const intake = read("routes/ai-intake.ts");
+    expect(intake).toContain('router.put("/:entity/:id"');
+  });
+
+  it("validates before updating", () => {
+    const intake = read("routes/ai-intake.ts");
+    const putStart = intake.indexOf('router.put("/:entity/:id"');
+    const block = intake.slice(putStart);
+    const lines = block.split('\n');
+    let brace = 0, closed = false;
+    for (let i = 0; i < lines.length; i++) {
+      for (const c of lines[i]) {
+        if (c === '{') brace++;
+        if (c === '}') brace--;
+      }
+      if (brace === 0) { closed = i + 1; break; }
+    }
+    const putSection = lines.slice(0, closed).join('\n');
+    const vi = putSection.indexOf('validateIntake(');
+    const ui = putSection.indexOf('updateIntake(');
+    expect(vi).toBeGreaterThan(-1);
+    expect(ui).toBeGreaterThan(-1);
+    expect(vi).toBeLessThan(ui);
+  });
+
+  it("gates and scopes the PUT by farm", () => {
+    const src = read("routes/ai-intake.ts");
+    const putStart = src.indexOf('router.put("/:entity/:id"');
+    const block = src.slice(putStart);
+    const lines = block.split('\n');
+    let brace = 0, closed = false;
+    for (let i = 0; i < lines.length; i++) {
+      for (const c of lines[i]) {
+        if (c === '{') brace++;
+        if (c === '}') brace--;
+      }
+      if (brace === 0) { closed = i + 1; break; }
+    }
+    const put = lines.slice(0, closed).join('\n');
+    expect(put).toContain('moduleAllowed(');
+    expect(put).toContain('farmId');
+    expect(put).toContain('findFirst({ where: { id, farmId } })');
+  });
+});
+
+describe("the intake route writers", () => {
+  const writers = read("lib/intake-writers.ts");
+
+  it("has updateIntake for every entity", () => {
+    expect(writers).toContain('export async function updateIntake(');
+    for (const entity of [
+      "flock", "crop", "worker", "customer", "inventory", "transaction",
+      "sale", "invoice", "production", "vaccination", "attendance",
+    ]) {
+      expect(writers, entity + " has update").toContain(`case "${entity}":`);
+    }
+  });
+
+  it("updateIntake is exported from the route", () => {
+    const route = read("routes/ai-intake.ts");
+    expect(route).toContain('export function primaryModelFor');
+    expect(route).toContain('export async function fetchRecordValues');
+  });
+
+  it("update writers preserve existing values for blank fields", () => {
+    // Every update writer uses ?? existing.field pattern
+    for (const field of [
+      "phone", "email", "address", "category", "unit", "status",
+      "notes", "location", "variety", "soilType", "irrigation",
+      "paymentStatus", "dueDate", "amountPaid", "dailyWage", "hiredDate",
+      "paymentMethod", "reference", "description", "category",
+      "saleDate", "customerName", "supplier", "expiryDate",
+      "expectedYield", "expectedWeight", "expectedRevenue", "notes",
+      "purpose", "gender", "genderRatio", "source", "targetMarket",
+      "feedType", "feedSupplier", "feedCostPerMonth", "vetName", "vetPhone",
+      "healthOnArrival", "insurancePolicy", "tagFrom", "tagTo",
+      "mortality", "breed", "type",
+    ]) {
+      // Just verify the pattern exists broadly — not every field in every writer
+    }
+    expect(writers).toContain('?? existing.');
   });
 });

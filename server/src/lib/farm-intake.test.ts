@@ -1,15 +1,75 @@
 import { describe, it, expect } from "vitest";
 import {
+  asRecord,
   buildIntake,
   cleanField,
+  fieldDate,
+  fieldNumber,
+  fieldText,
+  intakeEntities,
   intakeKeys,
+  intakeModule,
+  intakeSource,
   isIntakeEntity,
   prefillIntake,
-  toFlockCreateInput,
   validateIntake,
-  intakeSource,
+  type IntakeEntity,
   type IntakeField,
 } from "./farm-intake.js";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+const read = (rel: string) =>
+  readFileSync(join(process.cwd(), "src", ...rel.split("/")), "utf8").replace(/\r\n/g, "\n");
+
+const clientIntakeSrc = read("../../wangari-next/src/lib/ai-intake.ts");
+const clientStreamSrc = read("../../wangari-next/src/lib/ai-stream.ts");
+const serverTypesSrc = read("lib/intake-types.ts");
+
+/** Extract field names from a TypeScript interface block. */
+function fieldNames(src: string, typeName: string): string[] {
+  const start = src.indexOf(`interface ${typeName}`);
+  if (start === -1) return [];
+  const openBrace = src.indexOf("{", start);
+  if (openBrace === -1) return [];
+  let depth = 1;
+  let i = openBrace + 1;
+  let lastBrace = openBrace;
+  const lines: string[] = [];
+  while (i < src.length && depth > 0) {
+    if (src[i] === "{") depth++;
+    if (src[i] === "}") depth--;
+    if (depth === 1 && src[i] === "\n") {
+      const line = src.slice(lastBrace + 1, i).trim();
+      if (line) lines.push(line);
+      lastBrace = i;
+    }
+    i++;
+  }
+  return lines.map((l) => l.split("/")[0].trim().split(":")[0].trim()).filter(Boolean);
+}
+
+describe("type drift guard — server and client stay in sync", () => {
+  it("shared IntakeField fields are identical", () => {
+    const server = fieldNames(serverTypesSrc, "IntakeField");
+    const client = fieldNames(clientIntakeSrc, "IntakeField");
+    // Client may have fewer fields (if not re-declared) but shared ones must match
+    for (const f of client) expect(server).toContain(f);
+  });
+
+  it("shared IntakeSection fields are identical", () => {
+    const server = fieldNames(serverTypesSrc, "IntakeSection");
+    const client = fieldNames(clientIntakeSrc, "IntakeSection");
+    for (const f of client) expect(server).toContain(f);
+  });
+
+  it("StreamIntake has the editing field for edit mode", () => {
+    const fields = fieldNames(clientStreamSrc, "StreamIntake");
+    // Strip trailing `?` so `editing?:` becomes `editing`.
+    const cleaned = fields.map((f) => f.replace(/\?$/, ""));
+    expect(cleaned).toContain("editing");
+  });
+});
 
 const countField: IntakeField = {
   key: "initialCount",
@@ -248,66 +308,106 @@ describe("validateIntake — nothing reaches the database unasked for", () => {
   });
 });
 
-describe("toFlockCreateInput — the line between the form and the database", () => {
-  it("turns strings into the types Prisma wants", () => {
-    const result = toFlockCreateInput({
-      name: "Sasso Kenya",
-      initialCount: "200",
-      costPerAnimal: "500",
-      feedCostPerMonth: "24000",
-      expectedRevenue: "600000",
-      mortality: "3",
-    });
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.data).toMatchObject({
-      name: "Sasso Kenya",
-      initialCount: 200,
-      costPerAnimal: 500,
-      feedCostPerMonth: 24000,
-      expectedRevenue: 600000,
-      mortality: 3,
-      totalInvestment: 100000,
-    });
-  });
+describe("the registry covers every record the assistant can write", () => {
+  const ALL = intakeEntities();
 
-  it("writes blanks as null, never as an empty string or a zero", () => {
-    const result = toFlockCreateInput({ name: "Flock A", initialCount: "10" });
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    for (const key of ["breed", "location", "vetName", "feedCostPerMonth", "notes", "tagFrom"]) {
-      expect(result.data[key], `${key} should be null`).toBeNull();
+  it("has a form for each of them, and none of them is empty", () => {
+    // Eleven entities: the ten thin create_* tools this replaced, plus livestock.
+    expect(ALL).toContain("flock");
+    expect(ALL.length).toBeGreaterThanOrEqual(11);
+    for (const entity of ALL) {
+      const source = intakeSource(entity);
+      expect(source.sections.length, entity + " has sections").toBeGreaterThan(0);
+      expect(intakeKeys(entity).length, entity + " has fields").toBeGreaterThan(1);
+      expect(source.formNoun, entity + " can be named in a sentence").toBeTruthy();
+      expect(source.module, entity + " is gated like its screen").toBeTruthy();
+      // Field keys are unique inside a form: a duplicate would make one of them
+      // unreachable and silently drop a farmer's answer.
+      const keys = intakeKeys(entity);
+      expect(new Set(keys).size, entity + " has no duplicate fields").toBe(keys.length);
     }
-    expect(result.data.costPerAnimal).toBeNull();
-    expect(result.data.totalInvestment).toBeNull();
   });
 
-  it("defaults status to active, which is what a new flock is", () => {
-    const result = toFlockCreateInput({ name: "Flock A", initialCount: "10" });
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.data.status).toBe("active");
-  });
-
-  it("refuses without a name, in a sentence rather than a Prisma error", () => {
-    const result = toFlockCreateInput({ initialCount: "10" });
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error).toMatch(/name/i);
-  });
-
-  it("refuses a count of nothing", () => {
-    for (const count of ["0", "-5", "", "abc"]) {
-      const result = toFlockCreateInput({ name: "Flock A", initialCount: count });
-      expect(result.ok, `count "${count}" should be refused`).toBe(false);
+  it("asks for a name on every record that is a THING", () => {
+    // Money records and daily tallies have no name of their own — a
+    // transaction is an amount and a description, a vaccination belongs to a
+    // flock. Everything that IS a thing on the farm has one.
+    const NAMELESS: IntakeEntity[] = ["transaction", "production", "attendance", "sale", "invoice", "vaccination"];
+    for (const entity of ALL.filter((e) => !NAMELESS.includes(e))) {
+      const keys = intakeKeys(entity);
+      expect(keys, entity + " requires a name").toContain(
+        entity === "inventory" ? "itemName" : "name",
+      );
     }
+  });
+
+  it("asks for an amount wherever money is involved", () => {
+    for (const entity of ["transaction", "sale", "invoice"] as IntakeEntity[]) {
+      const card = buildIntake(entity, {});
+      expect(card.missingRequired.join(), entity).toMatch(/KES/);
+    }
+  });
+
+  it("does not demand what a farmer may simply not know", () => {
+    // A form that will not save without a vet's phone number is a form that
+    // gets abandoned, and the record is lost either way.
+    for (const entity of ALL) {
+      const card = buildIntake(entity, {});
+      expect(card.missingRequired.length, entity + " asks only the essentials").toBeLessThanOrEqual(3);
+    }
+  });
+
+  it("gates each entity on the module its own screen uses", () => {
+    expect(intakeModule("flock")).toBe("flocks");
+    expect(intakeModule("crop")).toBe("crops");
+    expect(intakeModule("transaction")).toBe("transactions");
+    expect(intakeModule("inventory")).toBe("inventory");
+    expect(intakeModule("attendance")).toBe("attendance");
+  });
+});
+
+describe("asRecord — whatever shape the model sends", () => {
+  it("takes an object", () => {
+    expect(asRecord({ name: "A" })).toEqual({ name: "A" });
+  });
+
+  it("parses a JSON string rather than opening an EMPTY form", () => {
+    // A model that sends values as a string is not rare, and dropping it opens
+    // a blank form on a farmer who has just said everything — the exact failure
+    // the intake exists to prevent.
+    expect(asRecord('{"name":"Sasso Kenya","count":200}')).toEqual({
+      name: "Sasso Kenya",
+      count: 200,
+    });
+  });
+
+  it("survives rubbish without throwing", () => {
+    expect(asRecord(null)).toEqual({});
+    expect(asRecord("")).toEqual({});
+    expect(asRecord("not json")).toEqual({});
+    expect(asRecord("[1,2]")).toEqual({});
+    expect(asRecord(42)).toEqual({});
+  });
+});
+
+describe("field helpers — empty means absent, never zero", () => {
+  it("reads numbers and text without re-inventing the rules", () => {
+    expect(fieldNumber({ a: "1,200" }, "a")).toBe(1200);
+    expect(fieldNumber({ a: "" }, "a")).toBeNull();
+    expect(fieldText({ a: "  Pen A  " }, "a")).toBe("Pen A");
+    expect(fieldText({ a: "" }, "a")).toBeNull();
+    expect(fieldText({}, "a")).toBeNull();
+    expect(fieldDate({ a: "2026-10-12" }, "a")?.toISOString().slice(0, 10)).toBe("2026-10-12");
+    expect(fieldDate({ a: "" }, "a")).toBeNull();
   });
 });
 
 describe("isIntakeEntity", () => {
   it("knows what it has a form for, and nothing else", () => {
     expect(isIntakeEntity("flock")).toBe(true);
-    expect(isIntakeEntity("crop")).toBe(false);
+    expect(isIntakeEntity("crop")).toBe(true);
+    expect(isIntakeEntity("livestock")).toBe(false);
+    expect(isIntakeEntity("flocks")).toBe(false);
     expect(isIntakeEntity("__proto__")).toBe(false);
     expect(isIntakeEntity("constructor")).toBe(false);
     expect(isIntakeEntity(undefined)).toBe(false);
