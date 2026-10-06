@@ -8,6 +8,8 @@ import {
   CONSISTENCY_TARGET,
 } from "../lib/record-grade.js";
 import { weatherActions, type ForecastDay } from "../lib/weather-rules.js";
+import { saleTiming, BASELINE_DAYS as SALE_TIMING_LOOKBACK } from "../lib/sale-timing.js";
+import { EGGS_PER_TRAY } from "./deliveries.js";
 
 /**
  * Action Engine — turns the farm's own data into a prioritized list of
@@ -415,6 +417,76 @@ router.get("/actions", async (req: Request, res: Response) => {
         href: w.href,
         cta: w.cta,
       });
+    }
+
+    // ─── 11. Sale timing: the market-price × production join (M3) ────────────
+    // The plan's named move: what the county is paying, joined against what
+    // this farm is producing. Both sides were live and never talked. Fires
+    // only when BOTH sides are real — enough recorded offers to see a move,
+    // and output in the last week to put money on it — and stays silent
+    // otherwise, the same rule the weather section above follows.
+    {
+      // Weekly output in each commodity's PRICING unit (trays, litres).
+      const weekly: Record<string, number> = { eggs: 0, milk: 0 };
+      for (const p of recentProd) {
+        const f = flocks.find((x) => x.id === p.flockId);
+        const metric = metricOf(f?.type);
+        if (metric === "eggs") weekly.eggs += Number(p.eggsCollected || 0) / EGGS_PER_TRAY;
+        else if (metric === "milk") weekly.milk += Number(p.milkCollected || 0);
+      }
+      const wanted = (["eggs", "milk"] as const).filter((c) => weekly[c] > 0);
+
+      if (wanted.length > 0) {
+        const [farm, rows] = await Promise.all([
+          prisma.farm.findUnique({ where: { id: farmId }, select: { county: true } }),
+          prisma.marketPrice.findMany({
+            where: {
+              commodity: { in: wanted },
+              effectiveDate: { gte: new Date(now.getTime() - SALE_TIMING_LOOKBACK * 86400000) },
+            },
+            orderBy: { effectiveDate: "asc" },
+            select: { commodity: true, unit: true, priceKes: true, region: true, source: true, effectiveDate: true },
+          }),
+        ]);
+
+        const LABELS: Record<string, string> = { eggs: "Egg", milk: "Milk" };
+        let best: ReturnType<typeof saleTiming> = null;
+        for (const commodity of wanted) {
+          const points = rows
+            .filter((r) => r.commodity === commodity)
+            .map((r) => ({
+              commodity: r.commodity,
+              unit: r.unit,
+              priceKes: Number(r.priceKes),
+              region: r.region,
+              source: r.source,
+              effectiveDate: r.effectiveDate,
+            }));
+          const insight = saleTiming({
+            commodity,
+            label: LABELS[commodity] ?? commodity,
+            points,
+            region: farm?.county ?? null,
+            weeklyUnits: weekly[commodity],
+            now,
+          });
+          // One card, the commodity with the most shillings riding on the move.
+          if (insight && (!best || insight.weeklyStakeKes > best.weeklyStakeKes)) best = insight;
+        }
+
+        if (best) {
+          actions.push({
+            id: `sale-timing-${best.commodity}`,
+            priority: best.changePct >= 0.2 ? "high" : "medium",
+            icon: best.direction === "up" ? "TrendingUp" : "TrendingDown",
+            title: best.title,
+            detail: best.detail,
+            moneyImpact: best.moneyImpact,
+            href: "/market-prices",
+            cta: best.direction === "up" ? "Check your rate" : "Compare an offer",
+          });
+        }
+      }
     }
 
     // Sort: critical first, then high, medium, info; cap at 12

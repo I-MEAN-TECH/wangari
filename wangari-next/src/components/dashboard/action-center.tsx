@@ -4,13 +4,13 @@ import * as React from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  HandCoins, FileWarning, TrendingDown, Wheat, Package, Syringe, Baby,
+  HandCoins, FileWarning, TrendingDown, TrendingUp, Wheat, Package, Syringe, Baby,
   ShieldAlert, CalendarX, ClipboardList, ListTodo, ChevronRight,
   RefreshCw, Sparkles, AlertOctagon, CircleCheck,
 } from "lucide-react";
 
 const ICONS: Record<string, any> = {
-  HandCoins, FileWarning, TrendingDown, Wheat, Package, Syringe, Baby,
+  HandCoins, FileWarning, TrendingDown, TrendingUp, Wheat, Package, Syringe, Baby,
   ShieldAlert, CalendarX, ClipboardList, ListTodo,
 };
 
