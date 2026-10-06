@@ -65,7 +65,7 @@ const SW_MARKERS = /(Hakuna|Wastani|Walialama|Haija|Kisima|Asante|Karibu|Mkulima
 
 try {
   // ── 1. The migration landed with its constraints. ─────────────────────────
-  const movementCount = await prisma.animalMovements.count();
+  const movementCount = await prisma.animalMovement.count();
   check(true, "prisma.animalMovements is queryable", `${movementCount} rows`);
 
   // ── 2. Pick a real owner + farm (the way a farmer actually logs in). ─────
