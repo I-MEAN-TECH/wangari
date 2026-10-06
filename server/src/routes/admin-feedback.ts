@@ -5,6 +5,8 @@ import {
   summariseFeedback,
   BEST_TAGS,
   IMPROVE_TAGS,
+  AUDIENCE_TAGS,
+  FEEDBACK_AUDIENCES,
   type FeedbackRow,
 } from "../lib/feedback.js";
 
@@ -47,6 +49,7 @@ router.get("/", requireAdmin(["super_admin", "support_read", "support"]), async 
         species: true,
         comment: true,
         phone: true,
+        audience: true,
         farmId: true,
         createdAt: true,
       },
@@ -63,6 +66,7 @@ router.get("/", requireAdmin(["super_admin", "support_read", "support"]), async 
       best: asKeys(r.best),
       improve: asKeys(r.improve),
       species: asKeys(r.species),
+      audience: r.audience,
     }));
 
     const summary = summariseFeedback(normalised);
@@ -74,6 +78,8 @@ router.get("/", requireAdmin(["super_admin", "support_read", "support"]), async 
       labels: {
         best: BEST_TAGS,
         improve: IMPROVE_TAGS,
+        audience: AUDIENCE_TAGS,
+        audienceOrder: FEEDBACK_AUDIENCES,
       },
       // The unaggregated rows, newest first. The counts above are the summary;
       // these are what a founder reads when a number surprises him.

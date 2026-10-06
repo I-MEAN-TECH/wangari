@@ -36,6 +36,7 @@ type Instrument = {
   bestTags: TagDef[];
   improveTags: TagDef[];
   species: string[];
+  audiences: TagDef[];
 };
 
 const TONE_CLASS: Record<string, string> = {
@@ -57,6 +58,7 @@ export default function FeedbackPage() {
   const [loadError, setLoadError] = useState(false);
 
   const [rating, setRating] = useState<number | null>(null);
+  const [audience, setAudience] = useState<string | null>(null);
   const [best, setBest] = useState<string | null>(null);
   const [improve, setImprove] = useState<string[]>([]);
   const [species, setSpecies] = useState<string[]>([]);
@@ -89,6 +91,7 @@ export default function FeedbackPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           source: "public_link",
+          audience,
           rating,
           best: best ? [best] : [],
           improve,
@@ -140,8 +143,52 @@ export default function FeedbackPage() {
     );
   }
 
+  // Step 0 — who is answering.
+  //
+  // This gate exists because the link used to accept anyone. A simulation of
+  // an investor did exactly what a real one would: filled in the farmer form,
+  // rated it 1/5 and ticked every species. The number an investor reads off an
+  // open link is *how many people answered*, so an unclassified respondent
+  // inflates the one number this project refuses to inflate.
+  //
+  // It is one tap, it is optional in spirit ("Mengine" is a real answer), and
+  // it is the only screen shown before the questions — R3 still holds at three
+  // taps to a complete response.
+  if (!audience) {
+    return (
+      <Shell>
+        <h1 className="text-2xl font-black text-gray-900">Wewe ni nini?</h1>
+        <p className="mt-1 text-sm text-gray-500">Which of these are you?</p>
+        <div className="mt-6 grid gap-3">
+          {instrument.audiences.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => setAudience(option.key)}
+              className="flex min-h-[72px] items-center gap-4 rounded-2xl border-2 border-gray-200 bg-white px-5 text-left transition active:scale-[0.98]"
+            >
+              <span className="text-3xl">{option.icon}</span>
+              <span className="text-lg font-black text-gray-800">{option.label}</span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-4 text-center text-xs text-gray-400">
+          Hii inatusaidia kuelewa jinsi watu wanavyotumia Wangari.
+        </p>
+      </Shell>
+    );
+  }
+
   return (
     <Shell>
+      <button
+        type="button"
+        onClick={() => setAudience(null)}
+        className="mb-4 min-h-[56px] rounded-2xl border-2 border-gray-200 bg-white px-4 text-sm font-bold text-gray-600"
+      >
+        ← Badilisha jibu lako
+      </button>
+
       <h1 className="text-2xl font-black text-gray-900">Wangari inakusaidia kiasi gani?</h1>
       <p className="mt-1 text-sm text-gray-500">How much does Wangari help you?</p>
 

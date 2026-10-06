@@ -10,6 +10,8 @@ import {
   SPECIES_OPTIONS,
   RATING_SCALE,
   FEEDBACK_SOURCES,
+  FEEDBACK_AUDIENCES,
+  AUDIENCE_TAGS,
   type FeedbackSource,
 } from "../lib/feedback.js";
 
@@ -84,6 +86,7 @@ router.get("/instrument", (_req: Request, res: Response) => {
     improveTags: Object.entries(IMPROVE_TAGS).map(([key, v]) => ({ key, ...v })),
     species: SPECIES_OPTIONS,
     sources: FEEDBACK_SOURCES,
+    audiences: FEEDBACK_AUDIENCES.map((key) => ({ key, ...AUDIENCE_TAGS[key] })),
   });
 });
 
@@ -111,6 +114,7 @@ router.post("/", async (req: Request, res: Response) => {
       species: req.body?.species,
       comment: req.body?.comment,
       phone: req.body?.phone,
+      audience: req.body?.audience,
     });
 
     if (!result.ok) {
@@ -128,6 +132,7 @@ router.post("/", async (req: Request, res: Response) => {
         species: result.value.species,
         comment: result.value.comment,
         phone: result.value.phone,
+        audience: result.value.audience,
         ipHash: hashIp(req.ip ?? req.socket?.remoteAddress),
       },
       select: { id: true },

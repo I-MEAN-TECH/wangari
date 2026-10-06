@@ -103,6 +103,39 @@ export const IMPROVE_TAGS: Readonly<Record<string, TagDef>> = {
 export const SPECIES_OPTIONS = ["kuku", "mifugo", "mazao", "samaki", "nyuki"] as const;
 export type SpeciesOption = (typeof SPECIES_OPTIONS)[number];
 
+/**
+ * Who is answering — and the one field the public link now *requires*.
+ *
+ * ## Why this exists
+ *
+ * The public link shipped on 6 October 2026 with no way to tell a farmer from
+ * a passer-by. A MiroFish simulation then did exactly what a real investor
+ * would do: opened the link, filled in the farmer form, rated it 1/5, and
+ * ticked every species including the five he does not keep.
+ *
+ * That is not a hypothetical annoyance. The single number an investor takes
+ * from an open link is *how many people answered*, and under this project's
+ * first rule — never inflate — a respondent who was never a farmer is worse
+ * than no response at all, because it inflates the one thing we refuse to
+ * inflate.
+ *
+ * So the link asks one extra tap: which of these are you? It is the cheapest
+ * possible gate (one question, three big buttons, no typing) and it converts
+ * an unanswerable poll into a segmented one.
+ *
+ * `other` is a real option, not a dumping ground: a county officer or an
+ * agrovet is a legitimate respondent, and forcing them into "farmer" would
+ * make the farmer segment lie. What we remove is the *unclassified* case.
+ */
+export const FEEDBACK_AUDIENCES = ["farmer", "adviser", "other"] as const;
+export type FeedbackAudience = (typeof FEEDBACK_AUDIENCES)[number];
+
+export const AUDIENCE_TAGS: Readonly<Record<FeedbackAudience, TagDef>> = {
+  farmer: { label: "Mkulima", icon: "🌾" },
+  adviser: { label: "Msaidizi wa kilimo", icon: "🎓" },
+  other: { label: "Mengine", icon: "👥" },
+};
+
 export type FeedbackInput = {
   source?: FeedbackSource | string | null;
   rating?: unknown;
@@ -111,6 +144,7 @@ export type FeedbackInput = {
   species?: unknown;
   comment?: unknown;
   phone?: unknown;
+  audience?: unknown;
 };
 
 export type NormalisedFeedback = {
@@ -121,6 +155,8 @@ export type NormalisedFeedback = {
   species: string[];
   comment: string | null;
   phone: string | null;
+  /** `null` when not required and not given (in_app / booth). */
+  audience: FeedbackAudience | null;
 };
 
 export type ValidationResult =
@@ -184,6 +220,20 @@ export function validateFeedback(input: FeedbackInput): ValidationResult {
   const improve = pickKnown(input.improve, Object.keys(IMPROVE_TAGS));
   const species = pickKnown(input.species, SPECIES_OPTIONS);
 
+  // Who is answering. Required on the open link, optional elsewhere — an
+  // in-app submission comes from a signed-in farmer and a booth response is
+  // recorded by our own staff, so neither can be a random passer-by.
+  let audience: FeedbackAudience | null = null;
+  const rawAudience = input.audience;
+  const audienceIsKnown =
+    typeof rawAudience === "string" &&
+    (FEEDBACK_AUDIENCES as readonly string[]).includes(rawAudience);
+  if (audienceIsKnown) audience = rawAudience as FeedbackAudience;
+
+  if (source === "public_link" && audience === null) {
+    return { ok: false, error: "Tell us who you are before answering." };
+  }
+
   // Species alone is not an opinion — it only segments one. Requiring a real
   // answer keeps the public link from filling with segmentation-only rows.
   if (rating === null && best.length === 0 && improve.length === 0) {
@@ -208,7 +258,7 @@ export function validateFeedback(input: FeedbackInput): ValidationResult {
 
   return {
     ok: true,
-    value: { source, rating, best, improve, species, comment, phone },
+    value: { source, rating, best, improve, species, comment, phone, audience },
   };
 }
 
@@ -218,6 +268,7 @@ export type FeedbackRow = {
   best: string[];
   improve: string[];
   species: string[];
+  audience?: string | null;
 };
 
 export type SegmentSummary = {
@@ -234,6 +285,8 @@ export type FeedbackSummary = SegmentSummary & {
   bestRanked: { tag: string; count: number }[];
   improveRanked: { tag: string; count: number }[];
   bySpecies: Record<string, SegmentSummary>;
+  audienceCounts: Record<string, number>;
+  byAudience: Record<string, SegmentSummary>;
 };
 
 function countInto(target: Record<string, number>, values: readonly string[]) {
@@ -298,11 +351,33 @@ export function summariseFeedback(rows: readonly FeedbackRow[]): FeedbackSummary
     bySpecies[s] = summariseRows(groupRows);
   }
 
+  // Audience is single-choice, so unlike species a row lands in exactly one
+  // bucket and the counts sum to `responses`. Rows predating the gate have no
+  // audience and go to `unspecified` rather than being dropped — dropping them
+  // would quietly shrink the denominator the dashboard shows.
+  const audienceCounts: Record<string, number> = {};
+  const audienceGrouped: Record<string, FeedbackRow[]> = {};
+  for (const row of rows) {
+    const key =
+      row.audience && (FEEDBACK_AUDIENCES as readonly string[]).includes(row.audience)
+        ? row.audience
+        : "unspecified";
+    audienceCounts[key] = (audienceCounts[key] ?? 0) + 1;
+    (audienceGrouped[key] ??= []).push(row);
+  }
+
+  const byAudience: Record<string, SegmentSummary> = {};
+  for (const [key, groupRows] of Object.entries(audienceGrouped)) {
+    byAudience[key] = summariseRows(groupRows);
+  }
+
   return {
     ...base,
     speciesCounts,
     bestRanked: rank(base.bestCounts),
     improveRanked: rank(base.improveCounts),
     bySpecies,
+    audienceCounts,
+    byAudience,
   };
 }

@@ -1001,6 +1001,10 @@ model Feedback {
   species   Json     @default("[]")
   comment   String?
   phone     String?
+  // Which audience answered: farmer | adviser | other. Nullable because
+  // in_app submissions are signed-in farmers and booth rows are entered by
+  // our own staff, so neither is asked; pre-gate rows have no value at all.
+  audience  String?
   // A hash, never the address itself. Enough to throttle one responder on a
   // public form; not enough to become a record of who said what.
   ipHash    String?  @map("ip_hash")

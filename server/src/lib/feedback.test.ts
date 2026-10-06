@@ -28,11 +28,17 @@ import {
   BEST_TAGS,
   IMPROVE_TAGS,
   SPECIES_OPTIONS,
+  FEEDBACK_AUDIENCES,
+  AUDIENCE_TAGS,
   type FeedbackInput,
 } from "./feedback.js";
 
+// `audience` is set here because the public link now REQUIRES it (see the
+// "the public link is gated" block below). Tests that care about a different
+// rule override it — but `base()` must otherwise be a valid public response.
 const base = (over: Partial<FeedbackInput> = {}): FeedbackInput => ({
   source: "public_link",
+  audience: "farmer",
   rating: 4,
   best: ["inafanya_kazi_bila_internet"],
   improve: ["mafunzo"],
@@ -97,6 +103,49 @@ describe("validation rejects nonsense without throwing", () => {
 
   it("rejects an unknown source", () => {
     expect(validateFeedback(base({ source: "carrier_pigeon" as any })).ok).toBe(false);
+  });
+});
+
+describe("the public link is gated by one tap: who are you?", () => {
+  // This is the defect the MiroFish panel found: the open link had no way to
+  // tell a farmer from an investor, and the one number an investor takes from
+  // an open link is how many people answered.
+  it("offers exactly three audiences, each with an icon and a Swahili label", () => {
+    expect(FEEDBACK_AUDIENCES).toHaveLength(3);
+    for (const a of FEEDBACK_AUDIENCES) {
+      expect(AUDIENCE_TAGS[a].icon.length).toBeGreaterThan(0);
+      expect(AUDIENCE_TAGS[a].label.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("refuses a public-link response that does not say who they are", () => {
+    const r = validateFeedback(base({ audience: undefined }));
+    expect(r.ok).toBe(false);
+  });
+
+  it("refuses an invented audience rather than storing it", () => {
+    expect(validateFeedback(base({ audience: "investor" })).ok).toBe(false);
+    expect(validateFeedback(base({ audience: "" })).ok).toBe(false);
+    expect(validateFeedback(base({ audience: 42 })).ok).toBe(false);
+  });
+
+  it("stores the audience it was given", () => {
+    const r = validateFeedback(base({ audience: "adviser" }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.audience).toBe("adviser");
+  });
+
+  it("does not demand an audience from the in-app form, which is already signed in", () => {
+    const r = validateFeedback({ source: "in_app", rating: 4, best: ["ni_rahisi"] });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.audience).toBeNull();
+  });
+
+  it("keeps booth responses valid — our own staff record those", () => {
+    const r = validateFeedback({ source: "booth", rating: 3, best: ["ni_rahisi"] });
+    expect(r.ok).toBe(true);
   });
 });
 
@@ -192,5 +241,38 @@ describe("aggregation never divides by zero", () => {
   it("puts a response with no species in an 'unspecified' segment rather than dropping it", () => {
     const s = summariseFeedback([{ rating: 5, best: [], improve: [], species: [] }]);
     expect(s.bySpecies.unspecified.responses).toBe(1);
+  });
+
+  it("segments by audience so an investor's answer is never read as a farmer's", () => {
+    const s = summariseFeedback([
+      { rating: 1, best: [], improve: ["ugumu"], species: [], audience: "other" },
+      { rating: 5, best: [], improve: [], species: [], audience: "farmer" },
+      { rating: 4, best: [], improve: [], species: [], audience: "farmer" },
+    ]);
+    expect(s.audienceCounts).toEqual({ farmer: 2, other: 1 });
+    expect(s.byAudience.farmer.averageRating).toBe(4.5);
+    expect(s.byAudience.other.averageRating).toBe(1);
+  });
+
+  it("counts each response into exactly one audience bucket", () => {
+    const s = summariseFeedback([
+      { rating: 5, best: [], improve: [], species: [], audience: "farmer" },
+      { rating: 4, best: [], improve: [], species: [], audience: "adviser" },
+    ]);
+    const total = Object.values(s.audienceCounts).reduce((a, b) => a + b, 0);
+    expect(total).toBe(s.responses);
+  });
+
+  it("files a pre-gate response with no audience under 'unspecified' rather than dropping it", () => {
+    const s = summariseFeedback([{ rating: 5, best: [], improve: [], species: [] }]);
+    expect(s.byAudience.unspecified.responses).toBe(1);
+    expect(s.byAudience.farmer).toBeUndefined();
+  });
+
+  it("files an audience it does not recognise under 'unspecified'", () => {
+    const s = summariseFeedback([
+      { rating: 5, best: [], improve: [], species: [], audience: "investor" },
+    ]);
+    expect(s.audienceCounts).toEqual({ unspecified: 1 });
   });
 });
