@@ -70,7 +70,7 @@ router.post("/", async (req: Request, res: Response) => {
       select: { id: true },
     });
     if (dupe)
-      return res.status(409).json({ error: "Kizima kile majina kipo tayari" });
+      return res.status(409).json({ error: "That hive name is already in use" });
 
     const hive = await prisma.hive.create({
       data: {

@@ -42,7 +42,7 @@ function summariseByBuyer(rows: Delivery[]) {
     { deliveries: number; gross: number; deductions: number; paid: number; outstanding: number }
   > = {};
   for (const d of rows) {
-    const key = d.buyer || "Haijulikani";
+    const key = d.buyer || "Unknown";
     const c = (by[key] ??= {
       deliveries: 0,
       gross: 0,
@@ -110,8 +110,8 @@ describe("per-buyer breakdown", () => {
 
   it("groups an unnamed buyer rather than dropping the delivery", () => {
     const by = summariseByBuyer([delivery("", 1000, 0)]);
-    expect(by["Haijulikani"].deliveries).toBe(1);
-    expect(by["Haijulikani"].outstanding).toBe(1000);
+    expect(by["Unknown"].deliveries).toBe(1);
+    expect(by["Unknown"].outstanding).toBe(1000);
   });
 
   it("totals only that buyer's money", () => {

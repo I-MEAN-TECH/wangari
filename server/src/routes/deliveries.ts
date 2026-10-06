@@ -261,7 +261,7 @@ router.get("/statement", async (req: Request, res: Response) => {
     // buyers. "Githunguri owes me KES 45,000" is one line and one question.
     const byBuyer: Record<string, { deliveries: number; quantity: number; gross: number; deductions: number; paid: number; outstanding: number }> = {};
     for (const d of deliveries) {
-      const key = d.buyer || "Haijulikani";
+      const key = d.buyer || "Unknown";
       const c = (byBuyer[key] ??= { deliveries: 0, quantity: 0, gross: 0, deductions: 0, paid: 0, outstanding: 0 });
       const ded = d.deductions.reduce((x, dd) => x + Number(dd.amount), 0);
       c.deliveries += 1;

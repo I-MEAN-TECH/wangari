@@ -3,6 +3,7 @@ import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireFarm } from "../middleware/requireOwner.js";
 import { resolveTagRange, rangeRows } from "../lib/tag-range.js";
+import { buildOwnerRegister, buildCountyExport } from "../lib/animal-register.js";
 
 /**
  * Animal identity — ANITRAC traceability.
@@ -106,6 +107,181 @@ router.get("/", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch animals" });
   }
 });
+
+// NOTE: literal routes (/register, /register.csv, /county-export, /county-export.csv,
+// /traceability/list) MUST stay registered before "/:id" — see lib/route-shadowing.test.ts.
+// GET /api/animals/traceability — the list a buyer or county officer asks for
+//
+// Two sources are merged:
+//
+//  1. Individually-tracked animals (`animals` rows). Only a handful per farm —
+//     the sick one, the insured one, the one being sold.
+//  2. FLOCK TAG RANGES. A herd of 500 costs three columns on the flock; the 500
+//     individual numbers are generated here, on demand, only when someone asks
+//     for the list. We never store rows we would only ever read once.
+//
+// So a farmer with 500 tagged cattle enters three numbers, not five hundred.
+router.get("/traceability/list", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const farm = await prisma.farm.findUnique({
+      where: { id: farmId },
+      select: { name: true, county: true, location: true, code: true },
+    });
+
+    const individuallyTracked = await prisma.animal.findMany({
+      where: { farmId },
+      orderBy: { tagNumber: "asc" },
+      select: {
+        tagNumber: true,
+        species: true,
+        breed: true,
+        sex: true,
+        status: true,
+        birthDate: true,
+        createdAt: true,
+        flock: { select: { name: true, type: true, currentCount: true } },
+        vaccinations: {
+          select: {
+            vaccineName: true,
+            scheduledDate: true,
+            completedDate: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    // Expand flock tag ranges on the fly — no rows stored for these.
+    const taggedFlocks = await prisma.flock.findMany({
+      where: { farmId, NOT: { tagFrom: null } },
+      select: {
+        id: true,
+        name: true,
+        breed: true,
+        type: true,
+        category: true,
+        currentCount: true,
+        tagFrom: true,
+        tagTo: true,
+        taggedCount: true,
+      },
+    });
+
+    const fromRanges: any[] = [];
+    const flockRanges: any[] = [];
+    for (const f of taggedFlocks) {
+      const range = resolveTagRange(f.tagFrom, f.tagTo, f.taggedCount ?? f.currentCount);
+      if (!range.tags.length) {
+        flockRanges.push({
+          flock: f.name,
+          tagFrom: f.tagFrom,
+          tagTo: f.tagTo,
+          span: 0,
+          note: range.note,
+        });
+        continue;
+      }
+      fromRanges.push(...rangeRows(f, range));
+      flockRanges.push({
+        flock: f.name,
+        tagFrom: f.tagFrom,
+        tagTo: f.tagTo,
+        span: range.span,
+        consistent: range.consistent,
+        note: range.note,
+      });
+    }
+
+    const animals = [...individuallyTracked, ...fromRanges].sort((a: any, b: any) =>
+      String(a.tagNumber).localeCompare(String(b.tagNumber))
+    );
+
+    res.json({
+      farm,
+      generatedAt: new Date().toISOString(),
+      count: animals.length,
+      // Breakdown so the farmer understands where the numbers came from.
+      summary: {
+        individuallyTracked: individuallyTracked.length,
+        fromFlockRanges: fromRanges.length,
+        flockRanges,
+      },
+      animals,
+    });
+  } catch (error) {
+    console.error("Traceability export error:", error);
+    res.status(500).json({ error: "Failed to build the traceability list" });
+  }
+});
+
+
+// ─── M2: the owner register (ANITRAC §16) and the county export (§6) ────────
+// §16: every keeper keeps a register of their animals. This is that register,
+// generated from records the farmer already had — no retyping. §6: the same
+// records shaped for the County Director's register. Both are farmer-initiated
+// downloads; nothing is ever auto-shared (belief rule 8).
+//
+// They ride the traceability machinery: individually-tracked animals PLUS
+// flock tag ranges expanded on demand.
+
+// GET /api/animals/register — the printable per-keeper register
+router.get("/register", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const register = await buildOwnerRegister(farmId);
+    res.json(register);
+  } catch (error) {
+    console.error("Owner register error:", error);
+    res.status(500).json({ error: "Failed to build the register" });
+  }
+});
+
+
+// GET /api/animals/register.csv — the same register as a CSV download
+router.get("/register.csv", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const register = await buildOwnerRegister(farmId);
+    const csv = registerCsv(register);
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="animal-register-${register.farm.code || register.farm.name.replace(/\W+/g, "-").toLowerCase()}.csv"`);
+    res.send(csv);
+  } catch (error) {
+    console.error("Owner register CSV error:", error);
+    res.status(500).json({ error: "Failed to build the register" });
+  }
+});
+
+
+// GET /api/animals/county-export — the §6 county-facing export
+router.get("/county-export", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const export_ = await buildCountyExport(farmId);
+    res.json(export_);
+  } catch (error) {
+    console.error("County export error:", error);
+    res.status(500).json({ error: "Failed to build the county export" });
+  }
+});
+
+
+// GET /api/animals/county-export.csv — the §6 export as a CSV download
+router.get("/county-export.csv", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const export_ = await buildCountyExport(farmId);
+    const csv = countyCsv(export_);
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="county-animal-export-${export_.farm.county || "county"}-${export_.farm.code || export_.farm.name.replace(/\W+/g, "-").toLowerCase()}.csv"`);
+    res.send(csv);
+  } catch (error) {
+    console.error("County export CSV error:", error);
+    res.status(500).json({ error: "Failed to build the county export" });
+  }
+});
+
 
 // GET /api/animals/:id — one animal with its full history
 router.get("/:id", async (req: Request, res: Response) => {
@@ -292,110 +468,118 @@ router.delete("/:id", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to remove the animal" });
   }
 });
+// ─── M2: the movement ledger (ANITRAC §20) ─────────────────────────────────
+// A movement is recorded when it happens — sold, transferred, taken to graze,
+// to the vet, into quarantine. The traceability story a buyer or county
+// officer reads is built from these rows, so the record exists BEFORE the
+// question is asked.
 
-// GET /api/animals/traceability — the list a buyer or county officer asks for
-//
-// Two sources are merged:
-//
-//  1. Individually-tracked animals (`animals` rows). Only a handful per farm —
-//     the sick one, the insured one, the one being sold.
-//  2. FLOCK TAG RANGES. A herd of 500 costs three columns on the flock; the 500
-//     individual numbers are generated here, on demand, only when someone asks
-//     for the list. We never store rows we would only ever read once.
-//
-// So a farmer with 500 tagged cattle enters three numbers, not five hundred.
-router.get("/traceability/list", async (req: Request, res: Response) => {
+const MOVEMENT_REASONS = new Set(["sale", "transfer", "grazing", "vet", "quarantine", "other"]);
+
+// POST /api/animals/:id/movements — record one movement for one tagged animal
+router.post("/:id/movements", async (req: Request, res: Response) => {
   try {
     const farmId = req.user!.farmId!;
-    const farm = await prisma.farm.findUnique({
-      where: { id: farmId },
-      select: { name: true, county: true, location: true, code: true },
-    });
+    const animalId = Number(req.params.id);
+    const { fromPremises, toPremises, movedAt, reason, permitRef, notes } = req.body as Record<string, unknown>;
 
-    const individuallyTracked = await prisma.animal.findMany({
-      where: { farmId },
-      orderBy: { tagNumber: "asc" },
-      select: {
-        tagNumber: true,
-        species: true,
-        breed: true,
-        sex: true,
-        status: true,
-        birthDate: true,
-        createdAt: true,
-        flock: { select: { name: true, type: true, currentCount: true } },
-        vaccinations: {
-          select: {
-            vaccineName: true,
-            scheduledDate: true,
-            completedDate: true,
-            status: true,
-          },
-        },
+    // The animal must belong to this farm — IDOR guard first.
+    const animal = await prisma.animal.findFirst({
+      where: { id: animalId, farmId },
+      select: { id: true, tagNumber: true, status: true },
+    });
+    if (!animal) return res.status(404).json({ error: "Animal not found on this farm" });
+
+    if (typeof fromPremises !== "string" || !fromPremises.trim() || typeof toPremises !== "string" || !toPremises.trim())
+      return res.status(400).json({ error: "Both where the animal came from and where it went are required — a movement with one end is a guess." });
+    if (!MOVEMENT_REASONS.has(String(reason)))
+      return res.status(400).json({ error: `Reason must be one of: ${[...MOVEMENT_REASONS].join(", ")}` });
+    const date = movedAt ? new Date(String(movedAt)) : new Date();
+    if (Number.isNaN(date.getTime()))
+      return res.status(400).json({ error: "The movement date could not be read." });
+    if (permitRef !== undefined && permitRef !== null && typeof permitRef !== "string")
+      return res.status(400).json({ error: "The permit reference must be text." });
+
+    const movement = await prisma.animalMovement.create({
+      data: {
+        farmId,
+        animalId,
+        fromPremises: fromPremises.trim(),
+        toPremises: toPremises.trim(),
+        movedAt: date,
+        reason: String(reason),
+        permitRef: typeof permitRef === "string" && permitRef.trim() ? permitRef.trim() : null,
+        notes: typeof notes === "string" && notes.trim() ? notes.trim() : null,
       },
     });
 
-    // Expand flock tag ranges on the fly — no rows stored for these.
-    const taggedFlocks = await prisma.flock.findMany({
-      where: { farmId, NOT: { tagFrom: null } },
-      select: {
-        id: true,
-        name: true,
-        breed: true,
-        type: true,
-        category: true,
-        currentCount: true,
-        tagFrom: true,
-        tagTo: true,
-        taggedCount: true,
-      },
-    });
-
-    const fromRanges: any[] = [];
-    const flockRanges: any[] = [];
-    for (const f of taggedFlocks) {
-      const range = resolveTagRange(f.tagFrom, f.tagTo, f.taggedCount ?? f.currentCount);
-      if (!range.tags.length) {
-        flockRanges.push({
-          flock: f.name,
-          tagFrom: f.tagFrom,
-          tagTo: f.tagTo,
-          span: 0,
-          note: range.note,
-        });
-        continue;
-      }
-      fromRanges.push(...rangeRows(f, range));
-      flockRanges.push({
-        flock: f.name,
-        tagFrom: f.tagFrom,
-        tagTo: f.tagTo,
-        span: range.span,
-        consistent: range.consistent,
-        note: range.note,
-      });
+    // A sale or permanent transfer flips the animal's status, so the herd
+    // list stays truthful. `moved` for anything temporary is wrong — a grazing
+    // trip is not an exit.
+    if (reason === "sale") {
+      await prisma.animal.update({ where: { id: animalId }, data: { status: "sold" } });
+    } else if (reason === "transfer" && animal.status === "active") {
+      await prisma.animal.update({ where: { id: animalId }, data: { status: "moved" } });
     }
 
-    const animals = [...individuallyTracked, ...fromRanges].sort((a: any, b: any) =>
-      String(a.tagNumber).localeCompare(String(b.tagNumber))
-    );
-
-    res.json({
-      farm,
-      generatedAt: new Date().toISOString(),
-      count: animals.length,
-      // Breakdown so the farmer understands where the numbers came from.
-      summary: {
-        individuallyTracked: individuallyTracked.length,
-        fromFlockRanges: fromRanges.length,
-        flockRanges,
-      },
-      animals,
-    });
+    res.status(201).json({ movement });
   } catch (error) {
-    console.error("Traceability export error:", error);
-    res.status(500).json({ error: "Failed to build the traceability list" });
+    console.error("Record movement error:", error);
+    res.status(500).json({ error: "Failed to record the movement" });
   }
 });
+
+// GET /api/animals/:id/movements — the movement history of one animal
+router.get("/:id/movements", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const animalId = Number(req.params.id);
+    const animal = await prisma.animal.findFirst({
+      where: { id: animalId, farmId },
+      select: { id: true, tagNumber: true },
+    });
+    if (!animal) return res.status(404).json({ error: "Animal not found on this farm" });
+    const movements = await prisma.animalMovement.findMany({
+      where: { animalId, farmId },
+      orderBy: { movedAt: "asc" },
+    });
+    res.json({ animal: { id: animal.id, tagNumber: animal.tagNumber }, movements });
+  } catch (error) {
+    console.error("List movements error:", error);
+    res.status(500).json({ error: "Failed to load the movement history" });
+  }
+});
+/** CSV of the owner register: one row per tag, quotable, RFC-4180-safe. */
+function registerCsv(register: Awaited<ReturnType<typeof buildOwnerRegister>>): string {
+  const esc = (v: unknown) => {
+    const s = v === null || v === undefined ? "" : String(v);
+    return /["\n,]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const rows = [
+    ["Tag number", "Species", "Breed", "Sex", "Status", "Flock", "On farm since", "Vaccinations recorded", "Movements recorded", "Last movement"],
+    ...register.animals.map((a) => [
+      a.tagNumber, a.species, a.breed, a.sex, a.status, a.flockName, a.onFarmSince,
+      a.vaccinationCount, a.movementCount, a.lastMovementAt ?? "",
+    ]),
+  ];
+  return rows.map((r) => r.map(esc).join(",")).join("\r\n") + "\r\n";
+}
+
+/** CSV of the county export: the §6 register shape the County Director keeps. */
+function countyCsv(export_: Awaited<ReturnType<typeof buildCountyExport>>): string {
+  const esc = (v: unknown) => {
+    const s = v === null || v === undefined ? "" : String(v);
+    return /["\n,]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const rows = [
+    ["Tag number", "Species", "Status", "Premises registration no", "County", "Movements (from -> to, date, reason)"],
+    ...export_.animals.map((a) => [
+      a.tagNumber, a.species, a.status,
+      export_.farm.premisesRegNo ?? "", export_.farm.county ?? "",
+      a.movementChain,
+    ]),
+  ];
+  return rows.map((r) => r.map(esc).join(",")).join("\r\n") + "\r\n";
+}
 
 export default router;

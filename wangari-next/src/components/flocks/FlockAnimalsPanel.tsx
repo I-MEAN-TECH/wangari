@@ -12,6 +12,7 @@ import {
   Skull,
   CircleHelp,
   CheckCircle2,
+  ArrowRightLeft,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,9 @@ import api from "@/lib/api-client";
  *  - Flocks still get counted as a group, exactly as before. Nothing about the
  *    daily production habit changes.
  *  - Tags are registered ONCE, by tapping digits on a big keypad.
- *  - After that the farmer only ever LOOKS at them.
+ *  - After that the farmer only ever LOOKS at them — plus, since M2, taps a
+ *    tag to record where an animal went (the §20 movement ledger) and
+ *    downloads the §16 register or the §6 county export.
  *
  * Kenya's ANITRAC rollout (2026) makes this worth having: cattle, sheep and
  * goats now carry a 15-digit number starting with 141, and a buyer or county
@@ -46,13 +49,31 @@ interface Animal {
   vaccinations: Array<{ id: number; vaccineName: string; status: string }>;
 }
 
-const STATUS_SW: Record<string, string> = {
-  active: "Farm",
+interface Movement {
+  id: number;
+  fromPremises: string;
+  toPremises: string;
+  movedAt: string;
+  reason: string;
+  permitRef: string | null;
+}
+
+const STATUS_EN: Record<string, string> = {
+  active: "On farm",
   sold: "Sold",
   moved: "Moved",
   died: "Died",
   missing: "Missing",
 };
+
+const MOVEMENT_REASONS = [
+  { value: "sale", label: "Sold" },
+  { value: "transfer", label: "Moved to another farm" },
+  { value: "grazing", label: "Taken to graze" },
+  { value: "vet", label: "Went to the vet" },
+  { value: "quarantine", label: "Quarantine" },
+  { value: "other", label: "Other" },
+];
 
 /**
  * Subject icon per status, so the chip says what happened AND whether it is a
@@ -73,21 +94,30 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
   const [loading, setLoading] = React.useState(true);
   const [adding, setAdding] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [tag, setTag] = React.useState<AnitracTagValue | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
-  const [tag, setTag] = React.useState<AnitracTagValue>({
-    tagNumber: "141",
-    mode: "exact",
+  // Movement ledger state: which animal's form is open, and its inputs.
+  const [movementFor, setMovementFor] = React.useState<number | null>(null);
+  const [movements, setMovements] = React.useState<Movement[]>([]);
+  const [moveForm, setMoveForm] = React.useState({
+    fromPremises: "",
+    toPremises: "",
+    reason: "transfer",
+    movedAt: new Date().toISOString().slice(0, 10),
+    permitRef: "",
   });
+  const [moveSaving, setMoveSaving] = React.useState(false);
 
   const load = React.useCallback(async () => {
+    setLoading(true);
     try {
       const res = await api.get<{ animals: Animal[] }>(
         `/api/animals${flockId ? `?flockId=${flockId}` : ""}`
       );
       setAnimals(res.animals || []);
     } catch {
-      setError("Could not load tags. Try again.");
+      setError("Could not load the tags.");
     } finally {
       setLoading(false);
     }
@@ -98,23 +128,16 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
   }, [load]);
 
   const save = async () => {
+    if (!tag) return;
     setSaving(true);
     setError(null);
     try {
-      const body =
-        tag.mode === "range"
-          ? { tagStart: tag.tagNumber, tagEnd: tag.rangeEnd, flockId: flockId ?? null }
-          : { tagNumber: tag.tagNumber, flockId: flockId ?? null };
-      const res = await api.post<{ created?: number; animal?: Animal }>(
-        "/animals",
-        body
-      );
-      setNotice(
-        tag.mode === "range"
-          ? `${res.created} tags created`
-          : "Tags saved"
-      );
-      setTag({ tagNumber: "141", mode: "exact" });
+      await api.post("/api/animals", {
+        tagNumber: tag.tagNumber,
+        flockId,
+      });
+      setNotice("Tags saved. They now appear on the traceability list.");
+      setTag(null);
       setAdding(false);
       await load();
       setTimeout(() => setNotice(null), 4000);
@@ -131,6 +154,68 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
       await load();
     } catch {
       setError("Could not update the animal status.");
+    }
+  };
+
+  // ─── The §20 movement ledger: open an animal, see its trips, add one. ────
+  const openMovements = async (id: number) => {
+    if (movementFor === id) {
+      setMovementFor(null);
+      return;
+    }
+    setMovementFor(id);
+    setMovements([]);
+    setMoveForm({
+      fromPremises: "",
+      toPremises: "",
+      reason: "transfer",
+      movedAt: new Date().toISOString().slice(0, 10),
+      permitRef: "",
+    });
+    try {
+      const res = await api.get<{ movements: Movement[] }>(`/api/animals/${id}/movements`);
+      setMovements(res.movements || []);
+    } catch {
+      // The form still works without history — never block the farmer on a
+      // read that failed.
+    }
+  };
+
+  const saveMovement = async (animalId: number) => {
+    setMoveSaving(true);
+    setError(null);
+    try {
+      await api.post(`/api/animals/${animalId}/movements`, {
+        fromPremises: moveForm.fromPremises,
+        toPremises: moveForm.toPremises,
+        reason: moveForm.reason,
+        movedAt: moveForm.movedAt,
+        permitRef: moveForm.permitRef || undefined,
+      });
+      setNotice("Movement saved. It is now part of the animal's traceability chain.");
+      setMovementFor(null);
+      await load();
+      setTimeout(() => setNotice(null), 4000);
+    } catch (e: any) {
+      setError(e?.message || "The movement was not saved. Check both places and try again.");
+    } finally {
+      setMoveSaving(false);
+    }
+  };
+
+  /** Server-side CSV download — the server owns the register's shape. */
+  const downloadCsv = async (path: string, label: string) => {
+    try {
+      const text = await api.get<string>(path);
+      const blob = new Blob([String(text)], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${label}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Could not download the file.");
     }
   };
 
@@ -187,12 +272,30 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {animals.length > 0 ? (
-              <Button variant="outline" size="sm" onClick={downloadList}>
-                <Download className="h-4 w-4" aria-hidden />
-                Orodha
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={downloadList}>
+                  <Download className="h-4 w-4" aria-hidden />
+                  Export list
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadCsv("/api/animals/register.csv", "animal-register")}
+                >
+                  <Download className="h-4 w-4" aria-hidden />
+                  My register
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadCsv("/api/animals/county-export.csv", "county-animal-export")}
+                >
+                  <Download className="h-4 w-4" aria-hidden />
+                  County file
+                </Button>
+              </>
             ) : null}
             {!adding ? (
               <Button size="sm" onClick={() => setAdding(true)}>
@@ -223,7 +326,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
         {adding ? (
           <div className="rounded-2xl border border-wangari-green-200 bg-wangari-green-50/40 p-3">
             <AnitracTagInput
-              value={tag}
+              value={tag ?? { tagNumber: "", mode: "exact" }}
               onChange={setTag}
               onConfirm={saving ? undefined : save}
             />
@@ -262,22 +365,102 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
             {animals.map((a) => (
               <li
                 key={a.id}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-wangari-border bg-white px-4 py-3"
+                className="rounded-2xl border border-wangari-border bg-white px-4 py-3"
               >
-                <div className="min-w-0">
-                  <p className="truncate font-mono text-sm font-bold text-wangari-green-900">
-                    {a.tagNumber}
-                  </p>
-                  <p className="truncate text-xs text-wangari-muted">
-                    {a.breed || a.species || "Animal"}
-                    {a.flock ? ` · ${a.flock.name}` : ""}
-                  </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-mono text-sm font-bold text-wangari-green-900">
+                      {a.tagNumber}
+                    </p>
+                    <p className="truncate text-xs text-wangari-muted">
+                      {a.breed || a.species || "Animal"}
+                      {a.flock ? ` · ${a.flock.name}` : ""}
+                    </p>
+                  </div>
+                  <StatusChip
+                    tone={toneForStatus(a.status)}
+                    icon={STATUS_ICON[a.status]}
+                    label={STATUS_EN[a.status] || a.status}
+                  />
                 </div>
-                <StatusChip
-                  tone={toneForStatus(a.status)}
-                  icon={STATUS_ICON[a.status]}
-                  label={STATUS_SW[a.status]}
-                />
+                {/* §20: tap the movement icon to record where this animal went. */}
+                <button
+                  type="button"
+                  onClick={() => openMovements(a.id)}
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-wangari-border px-2 py-2 text-xs font-semibold text-wangari-green-900 hover:bg-wangari-green-50"
+                  aria-expanded={movementFor === a.id}
+                >
+                  <ArrowRightLeft className="h-3.5 w-3.5" aria-hidden />
+                  {movementFor === a.id ? "Close movements" : "Movements"}
+                </button>
+
+                {movementFor === a.id ? (
+                  <div className="mt-3 space-y-3 rounded-xl border border-wangari-green-200 bg-wangari-green-50/40 p-3">
+                    {movements.length > 0 ? (
+                      <ul className="space-y-1.5">
+                        {movements.map((m) => (
+                          <li key={m.id} className="text-xs text-wangari-muted">
+                            {new Date(m.movedAt).toLocaleDateString()} — {m.fromPremises} →{" "}
+                            {m.toPremises} ({MOVEMENT_REASONS.find((r) => r.value === m.reason)?.label || m.reason})
+                            {m.permitRef ? ` · permit ${m.permitRef}` : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-wangari-muted">No movements recorded yet.</p>
+                    )}
+                    <div className="grid gap-2">
+                      <input
+                        className="h-11 rounded-xl border border-wangari-border px-3 text-sm"
+                        placeholder="From (where it was)"
+                        value={moveForm.fromPremises}
+                        onChange={(e) => setMoveForm((f) => ({ ...f, fromPremises: e.target.value }))}
+                      />
+                      <input
+                        className="h-11 rounded-xl border border-wangari-border px-3 text-sm"
+                        placeholder="To (where it went)"
+                        value={moveForm.toPremises}
+                        onChange={(e) => setMoveForm((f) => ({ ...f, toPremises: e.target.value }))}
+                      />
+                      <select
+                        className="h-11 rounded-xl border border-wangari-border bg-white px-3 text-sm"
+                        value={moveForm.reason}
+                        onChange={(e) => setMoveForm((f) => ({ ...f, reason: e.target.value }))}
+                      >
+                        {MOVEMENT_REASONS.map((r) => (
+                          <option key={r.value} value={r.value}>
+                            {r.label}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="date"
+                        className="h-11 rounded-xl border border-wangari-border px-3 text-sm"
+                        value={moveForm.movedAt}
+                        onChange={(e) => setMoveForm((f) => ({ ...f, movedAt: e.target.value }))}
+                      />
+                      <input
+                        className="h-11 rounded-xl border border-wangari-border px-3 text-sm"
+                        placeholder="Permit number (optional)"
+                        value={moveForm.permitRef}
+                        onChange={(e) => setMoveForm((f) => ({ ...f, permitRef: e.target.value }))}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        className="flex-1"
+                        size="sm"
+                        disabled={moveSaving || !moveForm.fromPremises.trim() || !moveForm.toPremises.trim()}
+                        onClick={() => saveMovement(a.id)}
+                      >
+                        {moveSaving ? "Saving..." : "Save movement"}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setMovementFor(null)}>
+                        <X className="h-4 w-4" aria-hidden />
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -286,7 +469,7 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
         {animals.length > 0 ? (
           <p className="text-center text-xs text-wangari-muted">
             Tap the list to download a record of every tag — use it with your buyer
-            au afisa wa wilaya.
+            or the district officer.
           </p>
         ) : null}
       </CardContent>

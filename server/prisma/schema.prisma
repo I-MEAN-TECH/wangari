@@ -272,6 +272,7 @@ model Farm {
   coopMemberships  CoopMembership[]
   coldChainEvents  ColdChainEvent[]
   feedback         Feedback[]
+  animalMovements  AnimalMovement[]
 
   @@map("farms")
 }
@@ -632,6 +633,35 @@ model Vaccination {
 /// flock's `currentCount` stays the daily source of truth; an Animal row is
 /// set up once and thereafter only ever VIEWED. Nothing here is required to
 /// log production — the existing flock flow is untouched.
+/// ANITRAC §20 — every off-farm / between-premises movement of a tagged animal.
+/// The farmer records it when it happens (or the county asks later); the
+/// traceability chain is built from these rows on demand, never pre-computed.
+model AnimalMovement {
+  id          Int      @id @default(autoincrement())
+  farmId      Int      @map("farm_id")
+  animalId    Int      @map("animal_id")
+  // Where from / where to. Free text premises names — the county register's
+  // vocabulary, not ours. Both required: a movement with one end is a guess.
+  fromPremises String  @map("from_premises")
+  toPremises   String  @map("to_premises")
+  movedAt     DateTime @map("moved_at") @db.Date
+  // sale | transfer | grazing | vet | quarantine | other
+  reason      String   @default("transfer")
+  // Movement permit reference, when the county issued one. Optional —
+  // recording a movement must never be blocked on paperwork the farmer
+  // may not have been given.
+  permitRef   String?  @map("permit_ref")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  farm   Farm   @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  animal Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@index([farmId, movedAt])
+  @@index([animalId])
+  @@map("animal_movements")
+}
+
 model Animal {
   id        Int       @id @default(autoincrement())
   farmId    Int       @map("farm_id")
@@ -651,6 +681,7 @@ model Animal {
   flock       Flock?        @relation(fields: [flockId], references: [id], onDelete: SetNull)
   vaccinations Vaccination[]
   healthRecords HealthRecord[]
+  movements   AnimalMovement[]
 
   @@unique([farmId, tagNumber])
   @@index([farmId, status])

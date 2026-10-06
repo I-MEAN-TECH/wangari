@@ -99,7 +99,7 @@ export function StatementCard({
       `${statement.farm?.name || "Farm"} — Delivery & Payment Statement`,
       `Period: ${monthLabel}`,
       ``,
-      `Jumla ya kuchukuliwa: ${money(statement.gross)}`,
+      `Total delivered: ${money(statement.gross)}`,
       `Deductions: ${money(statement.deductions)}`,
       `Paid: ${money(statement.paid)}`,
       `Outstanding: ${money(statement.outstanding)}`,
@@ -234,7 +234,7 @@ export function StatementCard({
         <p className="text-center text-xs leading-relaxed text-muted-foreground">
           <Wallet className="mr-1 inline h-3 w-3" aria-hidden />
           This statement comes from your own records. Show it to your buyer or
-          ushirika wa kijiji.
+          village co-op.
         </p>
 
         {/* Print-only header: the co-op clerk should know whose this is and

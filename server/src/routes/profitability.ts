@@ -363,6 +363,60 @@ router.get("/", async (req: Request, res: Response) => {
       }
     }
 
+    // ── M4: scenario comparison — this period vs the equal-length period before.
+    // The deeper scenario work waits on real history, but THIS comparison is
+    // already real: same rows, same attribution, same rules, one period apart.
+    // A zero on the previous side means "nothing recorded then", and the
+    // frontend says exactly that rather than drawing a fake 0% change.
+    const prevSince = new Date(since.getTime() - periodDays * 86400000);
+    const [prevIncome, prevExpense, prevProd] = await Promise.all([
+      prisma.transaction.findMany({
+        where: { farmId, type: "income", date: { gte: prevSince, lt: since } },
+        select: { amount: true, category: true, description: true, flockId: true, cropId: true, enterpriseKind: true, type: true },
+      }),
+      prisma.transaction.findMany({
+        where: { farmId, type: "expense", date: { gte: prevSince, lt: since } },
+        select: { amount: true, category: true, description: true, flockId: true, cropId: true, costBucket: true },
+      }),
+      prisma.dailyProduction.findMany({
+        where: { farmId, date: { gte: prevSince, lt: since } },
+        select: { flockId: true, feedUsed: true, eggsCollected: true, milkCollected: true },
+      }),
+    ]);
+
+    const prevByKey = new Map<string, { revenue: number; costs: number }>();
+    const prevBucket = (ref: EnterpriseRef) => {
+      const k = keyOf(ref);
+      const b = prevByKey.get(k) ?? { revenue: 0, costs: 0 };
+      prevByKey.set(k, b);
+      return b;
+    };
+    let prevOutputUnits = 0;
+    for (const tx of prevIncome) prevBucket(attributeTransaction(tx, known)).revenue += Number(tx.amount);
+    for (const tx of prevExpense) prevBucket(attributeTransaction(tx, known)).costs += Number(tx.amount);
+    for (const p of prevProd) prevOutputUnits += Number(p.eggsCollected || 0) + Number(p.milkCollected || 0);
+
+    const hadActivity = [...prevByKey.values()].some((b) => b.revenue > 0 || b.costs > 0);
+    const prevSummary = {
+      totalRevenue: [...prevByKey.values()].reduce((s, b) => s + b.revenue, 0),
+      totalCosts: [...prevByKey.values()].reduce((s, b) => s + b.costs, 0),
+      totalProfit: [...prevByKey.values()].reduce((s, b) => s + b.revenue - b.costs, 0),
+      outputUnits: prevOutputUnits,
+      // false = the previous window holds no records at all: the honest
+      // reading is "nothing to compare", never a 0% change.
+      hadActivity,
+    };
+
+    const perEnterprisePrev: Record<string, { revenue: number; costs: number; profit: number }> = {};
+    for (const [k, b] of prevByKey) {
+      if (b.revenue <= 0 && b.costs <= 0) continue;
+      perEnterprisePrev[k] = { revenue: Math.round(b.revenue), costs: Math.round(b.costs), profit: Math.round(b.revenue - b.costs) };
+    }
+    for (const r of rows) {
+      const p = perEnterprisePrev[r.id];
+      if (p) Object.assign(r, { previous: p });
+    }
+
     res.json({
       periodDays,
       rows,
@@ -370,6 +424,13 @@ router.get("/", async (req: Request, res: Response) => {
         totalRevenue: rows.reduce((s, r) => s + r.revenue, 0),
         totalCosts: rows.reduce((s, r) => s + r.costs, 0),
         totalProfit: rows.reduce((s, r) => s + r.profit, 0),
+      },
+      // M4 scenario comparison block.
+      previous: {
+        periodDays,
+        since: prevSince.toISOString(),
+        summary: prevSummary,
+        perEnterprise: perEnterprisePrev,
       },
     });
   } catch (error) {

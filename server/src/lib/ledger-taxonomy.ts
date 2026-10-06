@@ -215,27 +215,29 @@ export function classifyIncome(category: string | null | undefined): EnterpriseK
  */
 export const KG_PER_EGG = 0.06;
 
-/** Farmer-facing labels, Swahili first (module-plan.md §0.1 R5). */
+/** Farmer-facing labels. English while the app is pinned to English; the
+ * Swahili copy ships through the language layer when the founder flips it
+ * (i18n.ts holds the dictionary). */
 export const COST_BUCKET_LABELS: Readonly<Record<CostBucket, string>> = {
-  feed: "Chakula",
-  veterinary: "Dawa",
-  labour: "Wafanyakazi",
-  stock: "Kununua wanyama",
-  seed: "Mbegu",
-  fertiliser: "Mbolea",
-  equipment: "Zana",
-  transport: "Usafiri",
-  utilities: "Maji na umeme",
-  other: "Nyingine",
+  feed: "Feed",
+  veterinary: "Veterinary",
+  labour: "Labour",
+  stock: "Bought animals",
+  seed: "Seed",
+  fertiliser: "Fertiliser",
+  equipment: "Equipment",
+  transport: "Transport",
+  utilities: "Water & electricity",
+  other: "Other",
 };
 
 /** Farmer-facing enterprise labels, Swahili first. */
 export const ENTERPRISE_LABELS: Readonly<Record<EnterpriseKind, string>> = {
-  poultry: "Kuku",
-  dairy: "Maziwa",
-  livestock: "Mifugo",
-  crops: "Mazao",
-  aquaculture: "Samaki",
-  apiculture: "Nyuki",
-  general: "Shamba",
+  poultry: "Poultry",
+  dairy: "Dairy",
+  livestock: "Livestock",
+  crops: "Crops",
+  aquaculture: "Fish",
+  apiculture: "Bees",
+  general: "Whole farm",
 };

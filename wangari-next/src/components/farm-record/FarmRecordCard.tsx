@@ -281,7 +281,7 @@ export function FarmRecordCard({ record }: { record: FarmRecordResponse }) {
         {/* ── The four things a loan officer actually asks for. ───────────── */}
         <div className="space-y-2">
           <h2 className="text-sm font-bold uppercase tracking-wide text-wangari-muted">
-            Ushahidi wa kazi
+            Proof of work
           </h2>
           <ul className="space-y-2">
             {criteria.map((c) => (

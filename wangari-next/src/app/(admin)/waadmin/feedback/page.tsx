@@ -35,23 +35,23 @@ const CHANNEL_UNKNOWN_KEY = "direct";
 const SPECIES_UNSPECIFIED = "unspecified";
 
 function friendlyAudience(aud: string): string {
-  if (aud === "farmer") return "Mkulima";
-  if (aud === "adviser") return "Msaidizi wa kilimo";
-  if (aud === "other") return "Mengine";
-  if (aud === "unspecified") return "Haijawahi kujibiwa";
+  if (aud === "farmer") return "Farmer";
+  if (aud === "adviser") return "Extension adviser";
+  if (aud === "other") return "Other";
+  if (aud === "unspecified") return "Unspecified";
   return aud;
 }
 
 function friendlyChannel(raw: string): { label: string; hint: string | null } {
   if (!raw || raw === CHANNEL_UNKNOWN_KEY) {
-    return { label: "Didomi moja kwa moja", hint: null };
+    return { label: "Direct invite", hint: null };
   }
   const parts = raw.split("|");
   const source = parts[0] || "?";
   const medium = parts[1] || "?";
   const campaign = parts[2] || "?";
   const label = [source, medium, campaign].filter(Boolean).join(" · ") || raw;
-  const hint = campaign === "?" ? null : `Kampeni: ${campaign}`;
+  const hint = campaign === "?" ? null : `Campaign: ${campaign}`;
   return { label, hint };
 }
 
@@ -83,13 +83,13 @@ function SegmentPanel({
   return (
     <Panel title={title}>
       <div className="grid gap-3 sm:grid-cols-3">
-        <StatCard label="Jibu" value={segment.responses} icon={<Users className="h-5 w-5"/>} accent={accent}/>
-        <StatCard label="Walialama" value={segment.ratedCount} icon={<Star className="h-5 w-5"/>} accent={accent}/>
-        <StatCard label="Wastani" value={segment.averageRating != null ? segment.averageRating : "—"} icon={<BarChart3 className="h-5 w-5"/>} accent={segment.averageRating != null ? "blue" : "slate"} hint={segment.averageRating == null ? "Hakuna aliyealama" : null}/>
+        <StatCard label="Responses" value={segment.responses} icon={<Users className="h-5 w-5"/>} accent={accent}/>
+        <StatCard label="Rated" value={segment.ratedCount} icon={<Star className="h-5 w-5"/>} accent={accent}/>
+        <StatCard label="Average" value={segment.averageRating != null ? segment.averageRating : "—"} icon={<BarChart3 className="h-5 w-5"/>} accent={segment.averageRating != null ? "blue" : "slate"} hint={segment.averageRating == null ? "No ratings yet" : null}/>
       </div>
       {rows.length > 0 && (
         <div className="mt-3">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Vitu vinavyofaa zaidi (kwa idadi)</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Most useful features (by count)</p>
           <ul className="mt-2 space-y-1">{rows}</ul>
         </div>
       )}
@@ -112,7 +112,7 @@ export default function FeedbackAdminPage() {
       const s = await feedbackApi.getSummary(days);
       setData(s);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Imeshindikana kupakua maoni");
+      setError(e instanceof Error ? e.message : "Could not load feedback");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -125,11 +125,11 @@ export default function FeedbackAdminPage() {
     return () => clearInterval(t);
   }, [load]);
 
-  if (loading && !data) return <Loading label="Inatunza maoni…"/>;
+  if (loading && !data) return <Loading label="Loading feedback…"/>;
   if (error && !data) return <ErrorState message={error}/>;
   // After the guards above, a missing `data` means the first load has not
   // landed yet — show the spinner rather than dereferencing null.
-  if (!data) return <Loading label="Inatunza maoni…"/>;
+  if (!data) return <Loading label="Loading feedback…"/>;
 
   const total = data.responses;
   const rated = data.ratedCount;
@@ -149,23 +149,23 @@ export default function FeedbackAdminPage() {
   const header = (
     <PageHeader
       icon={<MessageSquare className="h-5 w-5"/>}
-      title="Maoni ya watumiaji"
-      description="Maoni ya wakulima na wengine — ni jibu halisi, si ukweli wa AI"
+      title="User feedback"
+      description="From farmers and everyone else — real answers, not AI smoothing"
       actions={
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 rounded-lg border border-wangari-border bg-white px-3 py-1.5 text-xs font-semibold text-wangari-muted">
-            <span>Tarehe:</span>
+            <span>Date:</span>
             <select value={days} onChange={(e) => setDays(Number(e.target.value))} className="bg-transparent font-bold text-wangari-heading outline-none">
               <option value={7}>7</option>
               <option value={30}>30</option>
               <option value={60}>60</option>
               <option value={90}>90</option>
-              <option value={365}>Miezi 12</option>
+              <option value={365}>12 months</option>
             </select>
           </label>
           <GhostButton onClick={() => load(true)} disabled={refreshing}>
             <RefreshCw className={"mr-1 h-4 w-4" + (refreshing ? " animate-spin" : "")}/>
-            Rudisha
+            Refresh
           </GhostButton>
         </div>
       }
@@ -174,29 +174,29 @@ export default function FeedbackAdminPage() {
 
   const kpiRow = (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <StatCard label="Jibu zote" value={total} icon={<MessageSquare className="h-5 w-5"/>} accent="green" hint={`${rated} yalikuwa na alama`}/>
-      <StatCard label="Waliandikishwa alama" value={rated} icon={<Star className="h-5 w-5"/>} accent="amber"/>
-      <StatCard label="Wastani wa alama" value={average != null ? average : "—"} icon={<BarChart3 className="h-5 w-5"/>} accent={average != null ? "blue" : "slate"} hint={average == null ? "Hakuna jibu lolote halisi" : null}/>
-      <StatCard label="Kitu kinachohaishwa" value={topImprove ? topImprove.count : 0} icon={<TrendingUp className="h-5 w-5"/>} accent="amber" hint={topImprove ? `Zaidi: ${tagLbl(data.labels.improve, topImprove.tag)}` : "Hakuna bado"}/>
+      <StatCard label="All responses" value={total} icon={<MessageSquare className="h-5 w-5"/>} accent="green" hint={`${rated} carried a rating`}/>
+      <StatCard label="Rated" value={rated} icon={<Star className="h-5 w-5"/>} accent="amber"/>
+      <StatCard label="Average rating" value={average != null ? average : "—"} icon={<BarChart3 className="h-5 w-5"/>} accent={average != null ? "blue" : "slate"} hint={average == null ? "No ratings yet" : null}/>
+      <StatCard label="Top improvement ask" value={topImprove ? topImprove.count : 0} icon={<TrendingUp className="h-5 w-5"/>} accent="amber" hint={topImprove ? `Most cited: ${tagLbl(data.labels.improve, topImprove.tag)}` : "None yet"}/>
     </div>
   );
 
   const contradictionPanel = hasContradiction ? (
-    <Panel title="Tofauti: bila mtandao vs inahitaji mtandao" description="Watu walisema Wangari inafanya kazi bila internet, lakini wengine walisema inahitaji mtandao — jibu halisi, si ukweli wa AI." className="border-amber-300 bg-amber-50/40">
+    <Panel title="Works offline vs needs internet" description="Some people said Wangari works without internet, others said it needs a connection — a real answer, not an AI smoothing." className="border-amber-300 bg-amber-50/40">
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-amber-200 bg-white p-4">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700"><span className="inline-flex items-center gap-1.5"><Radio className="h-3.5 w-3.5"/>Inafanya kazi bila internet</span></div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700"><span className="inline-flex items-center gap-1.5"><Radio className="h-3.5 w-3.5"/>Works offline</span></div>
           <div className="mt-2 text-2xl font-extrabold text-wangari-heading">{offlineBest}</div>
-          <div className="text-xs text-wangari-muted">watu waliochagua</div>
+          <div className="text-xs text-wangari-muted">people chose this</div>
         </div>
         <div className="rounded-xl border border-red-200 bg-white p-4">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-red-700"><span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5"/>Inahitaji internet</span></div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-red-700"><span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5"/>Needs internet</span></div>
           <div className="mt-2 text-2xl font-extrabold text-wangari-heading">{internetWants}</div>
-          <div className="text-xs text-wangari-muted">watu waliosema ni muhimu</div>
+          <div className="text-xs text-wangari-muted">people named it essential</div>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-muted">Maana yake</div>
-          <p className="text-sm text-wangari-text">Hii si kinyume — ni tatizo halisi la muunganiko. Wakuulima wanataka matumizi bila mtandao, lakini wanakabiliwa na hitaji la mtandao. Tofauti hii chini ya R8.</p>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-muted">What it means</div>
+          <p className="text-sm text-wangari-text">This is not a contradiction — it is a real connectivity problem. Farmers want to use it without a network, yet they run into the need for one. That gap is the point, per R8.</p>
         </div>
       </div>
     </Panel>
@@ -207,7 +207,7 @@ export default function FeedbackAdminPage() {
       <span className="truncate font-medium text-wangari-heading">{tagLbl(data.labels.best, b.tag)}</span>
       <div className="ml-4 shrink-0 flex items-center gap-2">
         <span className="font-bold text-wangari-green-700">{b.count}</span>
-        <span className="text-xs text-wangari-muted">waliandikisha</span>
+        <span className="text-xs text-wangari-muted">mentioned it</span>
       </div>
     </li>
   ));
@@ -217,7 +217,7 @@ export default function FeedbackAdminPage() {
       <span className="truncate font-medium text-wangari-heading">{tagLbl(data.labels.improve, b.tag)}</span>
       <div className="ml-4 shrink-0 flex items-center gap-2">
         <span className="font-bold text-amber-700">{b.count}</span>
-        <span className="text-xs text-wangari-muted">waliandikisha</span>
+        <span className="text-xs text-wangari-muted">mentioned it</span>
       </div>
     </li>
   ));
@@ -232,7 +232,7 @@ export default function FeedbackAdminPage() {
         </div>
         <div className="ml-4 shrink-0 flex items-center gap-2">
           <span className="font-bold text-wangari-green-700">{count}</span>
-          <span className="text-xs text-wangari-muted">jibu</span>
+          <span className="text-xs text-wangari-muted">responses</span>
         </div>
       </li>
     );
@@ -251,14 +251,14 @@ export default function FeedbackAdminPage() {
     return (
       <div key={sp} className={"rounded-xl border border-wangari-border/60 bg-white p-4" + muted}>
         <div className="flex items-center justify-between">
-          <span className="truncate font-medium text-wangari-heading">{sp === SPECIES_UNSPECIFIED ? "Haijajulikana" : sp}</span>
+          <span className="truncate font-medium text-wangari-heading">{sp === SPECIES_UNSPECIFIED ? "Unspecified" : sp}</span>
           <span className="shrink-0 text-sm font-bold text-wangari-muted">{count}</span>
         </div>
         {seg && (
           <div className="mt-2 text-sm">
-            <span className="text-wangari-muted">Wastani: </span>
+            <span className="text-wangari-muted">Average: </span>
             <span className="font-bold text-wangari-green-700">{avg}</span>
-            <span className="text-wangari-muted"> ({segRated} ya alama)</span>
+            <span className="text-wangari-muted"> ({segRated} rated)</span>
           </div>
         )}
       </div>
@@ -266,8 +266,8 @@ export default function FeedbackAdminPage() {
   });
 
   const recentRows = data.recent.map((r) => {
-    const owner = r.farmId ? `Kisima #${r.farmId}` : r.phone ? r.phone.slice(0, 4) + "…" : "—";
-    const sourceLabel = r.source === "in_app" ? "Kwenye programu" : r.source === "public_link" ? "Ujumbe wa umma" : "Maonyesho";
+    const owner = r.farmId ? `Farm #${r.farmId}` : r.phone ? r.phone.slice(0, 4) + "…" : "—";
+    const sourceLabel = r.source === "in_app" ? "In app" : r.source === "public_link" ? "Public link" : "Demo event";
     const sourceVariant = r.source === "in_app" ? "success" : r.source === "public_link" ? "warning" : "info";
     const bestChips = r.best.slice(0, 2).map((b) => (
       <Badge key={b} variant="default">{tagLbl(data.labels.best, b)}</Badge>
@@ -300,41 +300,41 @@ export default function FeedbackAdminPage() {
       {kpiRow}
       {contradictionPanel}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title="Vyenu vinavyofaa zaidi" description="Idadi ya watu, si wastani">
-          {bestListItems.length > 0 ? <ul className="space-y-2">{bestListItems}</ul> : <EmptyState title="Hakuna jibu bado"/>}
+        <Panel title="Most useful features" description="Count of people, not an average">
+          {bestListItems.length > 0 ? <ul className="space-y-2">{bestListItems}</ul> : <EmptyState title="No responses yet"/>}
         </Panel>
-        <Panel title="Vinavyohitaji kuboreshwa" description="Idadi ya watu, si wastani">
-          {improveListItems.length > 0 ? <ul className="space-y-2">{improveListItems}</ul> : <EmptyState title="Hakuna chatizi bado"/>}
+        <Panel title="Needs improvement" description="Count of people, not an average">
+          {improveListItems.length > 0 ? <ul className="space-y-2">{improveListItems}</ul> : <EmptyState title="No responses yet"/>}
         </Panel>
       </div>
-      <Panel title="Ujumbe ulioleta jibu" description="Kampeni zilizopelekea jibu, sio watumiaji pekee">
-        {channelListItems.length > 0 ? <ul className="space-y-2">{channelListItems}</ul> : <EmptyState title="Hakuna jibu kutoka kampeni"/>}
+      <Panel title="Campaigns that brought answers" description="Campaigns that produced responses, not just signups">
+        {channelListItems.length > 0 ? <ul className="space-y-2">{channelListItems}</ul> : <EmptyState title="No responses from campaigns yet"/>}
       </Panel>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {audiencePanels}
       </div>
       {speciesList.length > 0 && (
-        <Panel title="Aina za mifugo / mazao" description="Wastani kwa kila aina pekee">
+        <Panel title="Livestock / crop types" description="Average per type">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{speciesCards}</div>
         </Panel>
       )}
-      <Panel title="Hivi karibuni" description="Juu ya 50 jibu za karibuni — kila jibu moja kwa moja">
+      <Panel title="Recent" description="Latest 50 responses — every single one">
         {recentRows.length > 0 ? (
           <TableShell minWidth={640}>
             <thead>
               <tr>
-                <Th>Tarehe</Th>
-                <Th>Mfumo</Th>
-                <Th>Chanzo</Th>
-                <Th>Aina</Th>
-                <Th className="text-center">Alama</Th>
-                <Th>Vitu vinavyofaa</Th>
-                <Th>Maoni (hiari)</Th>
+                <Th>Date</Th>
+                <Th>System</Th>
+                <Th>Source</Th>
+                <Th>Type</Th>
+                <Th className="text-center">Rating</Th>
+                <Th>What works well</Th>
+                <Th>Comment (optional)</Th>
               </tr>
             </thead>
             <tbody>{recentRows}</tbody>
           </TableShell>
-        ) : <EmptyState title="Hakuna jibu zilizoona"/>}
+        ) : <EmptyState title="No responses yet"/>}
       </Panel>
     </div>
   );

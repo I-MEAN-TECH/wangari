@@ -47,11 +47,11 @@ const TONE_CLASS: Record<string, string> = {
 };
 
 const SPECIES_LABEL: Record<string, string> = {
-  kuku: "Kuku",
-  mifugo: "Mifugo",
-  mazao: "Mazao",
-  samaki: "Samaki",
-  nyuki: "Nyuki",
+  kuku: "Poultry",
+  mifugo: "Livestock",
+  mazao: "Crops",
+  samaki: "Fish",
+  nyuki: "Bees",
 };
 
 export default function FeedbackPage() {
@@ -155,7 +155,7 @@ export default function FeedbackPage() {
       }
       setDone(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Imeshindikana. Jaribu tena.");
+      setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
     } finally {
       setSubmitting(false);
     }
@@ -165,7 +165,7 @@ export default function FeedbackPage() {
     return (
       <Shell>
         <p className="text-lg font-bold text-red-700">
-          Imeshindikana kupakia maswali. Tafadhali jaribu tena.
+          Could not load the questions. Please try again.
         </p>
       </Shell>
     );
@@ -184,9 +184,9 @@ export default function FeedbackPage() {
       <Shell>
         <div className="text-center">
           <div className="text-6xl">🙏</div>
-          <h1 className="mt-4 text-2xl font-black text-gray-900">Asante sana!</h1>
+          <h1 className="mt-4 text-2xl font-black text-gray-900">Thank you!</h1>
           <p className="mt-2 text-base text-gray-600">
-            Maoni yako yanatusaidia kuboresha Wangari kwa wakulima wote.
+            Your feedback helps us make Wangari better for every farmer.
           </p>
         </div>
       </Shell>
@@ -201,13 +201,13 @@ export default function FeedbackPage() {
   // open link is *how many people answered*, so an unclassified respondent
   // inflates the one number this project refuses to inflate.
   //
-  // It is one tap, it is optional in spirit ("Mengine" is a real answer), and
+  // It is one tap, it is optional in spirit ("Other" is a real answer), and
   // it is the only screen shown before the questions — R3 still holds at three
   // taps to a complete response.
   if (!effectiveAudience) {
     return (
       <Shell>
-        <h1 className="text-2xl font-black text-gray-900">Wewe ni nini?</h1>
+        <h1 className="text-2xl font-black text-gray-900">What are you?</h1>
         <p className="mt-1 text-sm text-gray-500">Which of these are you?</p>
         <div className="mt-6 grid gap-3">
           {instrument.audiences.map((option) => (
@@ -223,7 +223,7 @@ export default function FeedbackPage() {
           ))}
         </div>
         <p className="mt-4 text-center text-xs text-gray-400">
-          Hii inatusaidia kuelewa jinsi watu wanavyotumia Wangari.
+          This helps us understand how people use Wangari.
         </p>
       </Shell>
     );
@@ -237,12 +237,12 @@ export default function FeedbackPage() {
           onClick={() => setAudience(null)}
           className="mb-4 min-h-[56px] rounded-2xl border-2 border-gray-200 bg-white px-4 text-sm font-bold text-gray-600"
         >
-          ← Badilisha jibu lako
+          ← Change your answer
         </button>
       )}
 
-      <h1 className="text-2xl font-black text-gray-900">Wangari inakusaidia kiasi gani?</h1>
-      <p className="mt-1 text-sm text-gray-500">How much does Wangari help you?</p>
+      <h1 className="text-2xl font-black text-gray-900">How much does Wangari help you?</h1>
+      <p className="mt-1 text-sm text-gray-500">Rate it on the scale below.</p>
 
       {/* 1 — rating */}
       <div className="mt-6 grid grid-cols-5 gap-2">
@@ -270,7 +270,7 @@ export default function FeedbackPage() {
       )}
 
       {/* 2 — the best thing, single tap */}
-      <h2 className="mt-8 text-lg font-black text-gray-900">Kitu kizuri zaidi ni kipi?</h2>
+      <h2 className="mt-8 text-lg font-black text-gray-900">What works best for you?</h2>
       <p className="mt-1 text-sm text-gray-500">What is the best thing?</p>
       <div className="mt-4 grid gap-2">
         {instrument.bestTags.map((tag) => (
@@ -292,7 +292,7 @@ export default function FeedbackPage() {
       </div>
 
       {/* 3 — what should improve, multi tap */}
-      <h2 className="mt-8 text-lg font-black text-gray-900">Kitu gani kiboreshwe?</h2>
+      <h2 className="mt-8 text-lg font-black text-gray-900">What should we improve?</h2>
       <p className="mt-1 text-sm text-gray-500">What should improve? (choose any)</p>
       <div className="mt-4 grid gap-2">
         {instrument.improveTags.map((tag) => (
@@ -314,7 +314,7 @@ export default function FeedbackPage() {
       </div>
 
       {/* 4 — segmentation, multi tap, optional */}
-      <h2 className="mt-8 text-lg font-black text-gray-900">Unafuga au unapanda nini?</h2>
+      <h2 className="mt-8 text-lg font-black text-gray-900">What do you keep or grow?</h2>
       <p className="mt-1 text-sm text-gray-500">What do you keep or grow?</p>
       <div className="mt-4 flex flex-wrap gap-2">
         {instrument.species.map((s) => (
@@ -335,7 +335,7 @@ export default function FeedbackPage() {
       </div>
 
       {/* 5 — optional phone. Never required; R1 says no typing as the primary path. */}
-      <h2 className="mt-8 text-lg font-black text-gray-900">Namba ya simu (hiari)</h2>
+      <h2 className="mt-8 text-lg font-black text-gray-900">Phone number (optional)</h2>
       <p className="mt-1 text-sm text-gray-500">
         Optional — only if you would like us to call you back.
       </p>
@@ -358,11 +358,11 @@ export default function FeedbackPage() {
         onClick={submit}
         className="mt-6 min-h-[72px] w-full rounded-2xl bg-emerald-600 text-xl font-black text-white disabled:bg-gray-300"
       >
-        {submitting ? "Inatuma…" : "Tuma maoni"}
+        {submitting ? "Sending…" : "Send feedback"}
       </button>
 
       <p className="mt-4 text-center text-xs text-gray-400">
-        Maoni yako hayaonekani kwa mtu mwingine. Your answer is not shown to anyone else.
+        Your answer is not shown to anyone else.
       </p>
     </Shell>
   );

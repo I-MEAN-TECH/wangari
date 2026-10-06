@@ -43,6 +43,7 @@ import farmRecordRoutes from "./routes/farm-record.js";
 import importRoutes from "./routes/import.js";
 import settingsRoutes from "./routes/settings.js";
 import kiamisRoutes from "./routes/kiamis.js";
+import farmHealthRoutes from "./routes/farm-health.js";
 import zktecoRoutes from "./routes/zkteco.js";
 import workerApiRoutes from "./routes/worker.js";
 import flocksUploadRoutes from "./routes/flocks-upload.js";
@@ -263,6 +264,7 @@ app.use("/api/import", importRoutes);
 app.use("/api/settings", settingsRoutes);
 // M2 groundwork — KIAMIS-shaped registration export, owner-only.
 app.use("/api/kiamis", kiamisRoutes);
+app.use("/api/farm-health", farmHealthRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/zkteco", zktecoRoutes);
 app.use("/api/worker", workerApiRoutes);

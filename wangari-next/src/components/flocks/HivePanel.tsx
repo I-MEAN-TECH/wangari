@@ -63,15 +63,15 @@ interface Inspection {
   actionTaken: string | null;
 }
 
-const HIVE_TYPE_SW: Record<string, string> = {
+const HIVE_TYPE_LABELS: Record<string, string> = {
   langstroth: "Langstroth",
   topbar: "Top bar",
   traditional: "Traditional",
   flow: "Flow",
 };
 
-const STATUS_SW: Record<string, string> = {
-  active: "Inafanya kazi",
+const STATUS_LABELS: Record<string, string> = {
+  active: "Working",
   weak: "Weak",
   swarm: "Swarmed",
   dead: "Dead",
@@ -326,7 +326,7 @@ export function HivePanel() {
                         <p className="truncate font-bold text-wangari-heading">
                           Hive {h.name}
                           {h.hiveType
-                            ? ` · ${HIVE_TYPE_SW[h.hiveType] ?? h.hiveType}`
+                            ? ` · ${HIVE_TYPE_LABELS[h.hiveType] ?? h.hiveType}`
                             : ""}
                         </p>
                         <p className="truncate text-xs text-wangari-muted">
@@ -342,7 +342,7 @@ export function HivePanel() {
                       <StatusChip
                         tone={toneForStatus(h.status)}
                         icon={STATUS_ICON[h.status]}
-                        label={STATUS_SW[h.status]}
+                        label={STATUS_LABELS[h.status]}
                       />
                       <Button
                         size="sm"

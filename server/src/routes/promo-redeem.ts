@@ -105,7 +105,7 @@ router.post("/redeem", async (req: Request, res: Response) => {
         await sendEmail({
           to: user.email,
           subject: `🌿 Your sponsored Wangari subscription is active`,
-          html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;"><h2 style="color:#166534;">Karibu, ${user.name || "Farmer"}! 🌿</h2><p>Your code <strong>${promo.code}</strong> has been applied${promo.partnerName ? ` (sponsor: ${promo.partnerName})` : ""}.</p><p style="font-size:18px;"><strong>${promo.freeMonths} month${promo.freeMonths === 1 ? "" : "s"} of free access</strong> until <strong>${expiresAt.toLocaleDateString("en-KE")}</strong>.</p><p>Happy farming!</p></div>`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;"><h2 style="color:#166534;">Welcome, ${user.name || "Farmer"}! 🌿</h2><p>Your code <strong>${promo.code}</strong> has been applied${promo.partnerName ? ` (sponsor: ${promo.partnerName})` : ""}.</p><p style="font-size:18px;"><strong>${promo.freeMonths} month${promo.freeMonths === 1 ? "" : "s"} of free access</strong> until <strong>${expiresAt.toLocaleDateString("en-KE")}</strong>.</p><p>Happy farming!</p></div>`,
           template: "oneoff",
           userId,
         });

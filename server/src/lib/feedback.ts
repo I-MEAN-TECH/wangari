@@ -54,11 +54,11 @@ export type RatingPoint = {
  * who has never watched a farmer answer a question on a phone in the sun.
  */
 export const RATING_SCALE: readonly RatingPoint[] = [
-  { value: 1, icon: "😞", label: "Haifai kabisa", tone: "red" },
-  { value: 2, icon: "🙁", label: "Inahitaji kuboreshwa", tone: "red" },
-  { value: 3, icon: "😐", label: "Inasaidia kidogo", tone: "amber" },
-  { value: 4, icon: "🙂", label: "Inasaidia", tone: "green" },
-  { value: 5, icon: "😄", label: "Inasaidia sana", tone: "green" },
+  { value: 1, icon: "😞", label: "Not good at all", tone: "red" },
+  { value: 2, icon: "🙁", label: "Needs improvement", tone: "red" },
+  { value: 3, icon: "😐", label: "Helps a little", tone: "amber" },
+  { value: 4, icon: "🙂", label: "It helps", tone: "green" },
+  { value: 5, icon: "😄", label: "It helps a lot", tone: "green" },
 ];
 
 export type TagDef = { label: string; icon: string };
@@ -71,12 +71,12 @@ export type TagDef = { label: string; icon: string };
  * opinions of people who write well.
  */
 export const BEST_TAGS: Readonly<Record<string, TagDef>> = {
-  inafanya_kazi_bila_internet: { label: "Inafanya kazi bila internet", icon: "📴" },
-  ni_rahisi: { label: "Ni rahisi kutumia", icon: "👆" },
-  naona_faida: { label: "Naona faida yangu kwa KES", icon: "💰" },
-  kumbukumbu: { label: "Kumbukumbu zangu ziko sawa", icon: "📒" },
-  bei_na_soko: { label: "Inanisaidia na bei za soko", icon: "🏷️" },
-  mifugo_na_mazao_yote: { label: "Inafuatilia mifugo na mazao yote", icon: "🌾" },
+  inafanya_kazi_bila_internet: { label: "Works without internet", icon: "📴" },
+  ni_rahisi: { label: "It is easy to use", icon: "👆" },
+  naona_faida: { label: "I see my profit in KES", icon: "💰" },
+  kumbukumbu: { label: "My records are in order", icon: "📒" },
+  bei_na_soko: { label: "It helps me with market prices", icon: "🏷️" },
+  mifugo_na_mazao_yote: { label: "It tracks all my livestock and crops", icon: "🌾" },
 };
 
 /**
@@ -88,15 +88,15 @@ export const BEST_TAGS: Readonly<Record<string, TagDef>> = {
  * already suspects exactly that.
  */
 export const IMPROVE_TAGS: Readonly<Record<string, TagDef>> = {
-  mafunzo: { label: "Nahitaji mafunzo", icon: "🎓" },
-  ugumu: { label: "Ni vigumu kutumia", icon: "😕" },
-  usahihi: { label: "Namba zangu si sahihi", icon: "🔢" },
-  kasi: { label: "Ni polepole", icon: "🐢" },
-  lugha: { label: "Lugha haieleweki", icon: "🗣️" },
-  mtandao: { label: "Inahitaji internet", icon: "📶" },
-  kipengele_hakipo: { label: "Kipengele kinakosekana", icon: "➕" },
-  bei_ya_mkopo: { label: "Bei ya mwezi ni juu", icon: "💸" },
-  msaada: { label: "Msaada haupatikani", icon: "🆘" },
+  mafunzo: { label: "I need training", icon: "🎓" },
+  ugumu: { label: "It is hard to use", icon: "😕" },
+  usahihi: { label: "My numbers were not accurate", icon: "🔢" },
+  kasi: { label: "It is slow", icon: "🐢" },
+  lugha: { label: "The language is hard to follow", icon: "🗣️" },
+  mtandao: { label: "Needs internet", icon: "📶" },
+  kipengele_hakipo: { label: "A feature I need is missing", icon: "➕" },
+  bei_ya_mkopo: { label: "The monthly price is high", icon: "💸" },
+  msaada: { label: "Support is hard to reach", icon: "🆘" },
 };
 
 /** What they keep or grow — the segmentation question. */
@@ -131,9 +131,9 @@ export const FEEDBACK_AUDIENCES = ["farmer", "adviser", "other"] as const;
 export type FeedbackAudience = (typeof FEEDBACK_AUDIENCES)[number];
 
 export const AUDIENCE_TAGS: Readonly<Record<FeedbackAudience, TagDef>> = {
-  farmer: { label: "Mkulima", icon: "🌾" },
-  adviser: { label: "Msaidizi wa kilimo", icon: "🎓" },
-  other: { label: "Mengine", icon: "👥" },
+  farmer: { label: "Farmer", icon: "🌾" },
+  adviser: { label: "Extension adviser", icon: "🎓" },
+  other: { label: "Other", icon: "👥" },
 };
 
 export type FeedbackInput = {
