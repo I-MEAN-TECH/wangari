@@ -13,6 +13,10 @@
  *     night sky), brand colours (WhatsApp green), one-off category accents
  *     and the invoice/quote document design palette. Anything NEW fails
  *     until it becomes a token or joins this list deliberately.
+ *  4. Recharts/SVG colour attributes (fill=, stroke=, stopColor=) are not
+ *     Tailwind classes, so 1 and 2 never saw them — which is how the
+ *     revenue chart shipped a near-invisible #E5E7EB expense bar. The
+ *     dashboard chart components must use THEME[...] refs instead.
  */
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -109,6 +113,31 @@ describe("theme palette", () => {
     expect(
       offenders,
       "Use wangari-*/tone-*/badge-* tokens (see scripts/theme-extend.mjs)"
+    ).toEqual([]);
+  });
+
+  it("dashboard charts colour with THEME refs, never raw hex fill/stroke attributes", () => {
+    // Recharts renders series colours as SVG attributes, not classes, so
+    // the two guards above pass right over them. Scope: components/dashboard
+    // (the farmer-facing charts); the same allowlist map still applies.
+    const attrHex = /\b(?:fill|stroke|stopColor)="#([0-9a-fA-F]{6})"/g;
+    // The guard must be able to catch, or it could pass vacuously.
+    expect('<Bar fill="#E5E7EB" />'.match(attrHex)).toHaveLength(1);
+    expect('<Bar fill={THEME["wangari-red-500"]} />'.match(attrHex)).toBeNull();
+
+    const offenders: string[] = [];
+    for (const file of walk(join(SRC, "components/dashboard"))) {
+      const rel = relative(SRC, file).split("\\").join("/");
+      const allowed = new Set(RAW_HEX_ALLOWLIST[rel] ?? []);
+      const src = readFileSync(file, "utf8");
+      for (const hit of src.matchAll(attrHex)) {
+        const hex = `#${hit[1]}`.toUpperCase();
+        if (!allowed.has(hex)) offenders.push(`${rel}: ${hit[0]}`);
+      }
+    }
+    expect(
+      offenders,
+      "Use THEME[...] (lib/theme-palette) or a series from lib/chart-series"
     ).toEqual([]);
   });
 });

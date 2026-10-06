@@ -18,6 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CARD_RAISED } from "@/components/ui/patterns";
 import { flockSeries as FLOCK_COLORS } from "@/lib/chart-series";
+import { THEME } from "@/lib/theme-palette";
 
 // ─── Custom Tooltip ───────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -75,19 +76,19 @@ export function ProductionChart({ data }: ProductionChartProps) {
               <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="eggsFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#16A34A" stopOpacity={0.12} />
-                    <stop offset="95%" stopColor="#16A34A" stopOpacity={0} />
+                    <stop offset="5%" stopColor={THEME["wangari-green-600"]} stopOpacity={0.12} />
+                    <stop offset="95%" stopColor={THEME["wangari-green-600"]} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <CartesianGrid strokeDasharray="3 3" stroke={THEME["wangari-border"]} />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: "#5F6E85" }}
+                  tick={{ fontSize: 11, fill: THEME["wangari-subtle"] }}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#5F6E85" }}
+                  tick={{ fontSize: 11, fill: THEME["wangari-subtle"] }}
                   tickLine={false}
                   axisLine={false}
                 />
@@ -95,14 +96,14 @@ export function ProductionChart({ data }: ProductionChartProps) {
                 <Area
                   type="monotone"
                   dataKey="eggs"
-                  stroke="#16A34A"
+                  stroke={THEME["wangari-green-600"]}
                   strokeWidth={2}
                   fill="url(#eggsFill)"
                 />
                 <Area
                   type="monotone"
                   dataKey="mortality"
-                  stroke="#CBD5E1"
+                  stroke={THEME["wangari-rule"]}
                   strokeWidth={1.5}
                   strokeDasharray="4 4"
                   fill="transparent"
@@ -130,32 +131,44 @@ export function RevenueChart({ data }: RevenueChartProps) {
     >
       <Card>
         <CardHeader className="pb-2">
-          <div>
-            <CardTitle className="text-base font-bold text-wangari-heading">
-              Revenue Overview
-            </CardTitle>
-            <p className="text-xs text-wangari-muted">Monthly income vs expenses</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-bold text-wangari-heading">
+                Revenue Overview
+              </CardTitle>
+              <p className="text-xs text-wangari-muted">Monthly income vs expenses</p>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-wangari-green-600" />
+                <span className="text-[11px] text-wangari-muted">Income</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-wangari-red-500" />
+                <span className="text-[11px] text-wangari-muted">Expenses</span>
+              </div>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <CartesianGrid strokeDasharray="3 3" stroke={THEME["wangari-border"]} />
                 <XAxis
                   dataKey="month"
-                  tick={{ fontSize: 11, fill: "#5F6E85" }}
+                  tick={{ fontSize: 11, fill: THEME["wangari-subtle"] }}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#5F6E85" }}
+                  tick={{ fontSize: 11, fill: THEME["wangari-subtle"] }}
                   tickLine={false}
                   axisLine={false}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="income" fill="#16A34A" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="expenses" fill="#E5E7EB" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="income" fill={THEME["wangari-green-600"]} radius={[6, 6, 0, 0]} />
+                <Bar dataKey="expenses" fill={THEME["wangari-red-500"]} radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -265,20 +278,20 @@ export function HDPTrendChart({ data }: HDPTrendChartProps) {
               <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="hdpFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#16A34A" stopOpacity={0.12} />
-                    <stop offset="95%" stopColor="#16A34A" stopOpacity={0} />
+                    <stop offset="5%" stopColor={THEME["wangari-green-600"]} stopOpacity={0.12} />
+                    <stop offset="95%" stopColor={THEME["wangari-green-600"]} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <CartesianGrid strokeDasharray="3 3" stroke={THEME["wangari-border"]} />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: "#5F6E85" }}
+                  tick={{ fontSize: 11, fill: THEME["wangari-subtle"] }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(val) => new Date(val).toLocaleDateString("en-KE", { weekday: "short" })}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#5F6E85" }}
+                  tick={{ fontSize: 11, fill: THEME["wangari-subtle"] }}
                   tickLine={false}
                   axisLine={false}
                   domain={[0, 100]}
@@ -303,7 +316,7 @@ export function HDPTrendChart({ data }: HDPTrendChartProps) {
                 <Area
                   type="monotone"
                   dataKey="hdp"
-                  stroke="#16A34A"
+                  stroke={THEME["wangari-green-600"]}
                   strokeWidth={2}
                   fill="url(#hdpFill)"
                 />
