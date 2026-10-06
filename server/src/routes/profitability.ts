@@ -119,6 +119,11 @@ router.get("/", async (req: Request, res: Response) => {
       prisma.transaction.findMany({
         where: { farmId, type: "income", date: { gte: since } },
         select: {
+          // `type` is REQUIRED: attributeTransaction's income-inference rule
+          // checks `tx.type === "income"`, and without it every income row
+          // silently fell through to "general" — the milk sale never reached
+          // the dairy flock. The live probe now pins this.
+          type: true,
           amount: true, category: true, description: true,
           flockId: true, cropId: true, enterpriseKind: true,
         },
