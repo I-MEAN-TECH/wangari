@@ -26,6 +26,11 @@ model User {
   phoneVerifiedAt  DateTime? @map("phone_verified_at")
   /// How this account signs in: email_password | phone_pin | google
   authMethod       String?   @map("auth_method")
+  /// KIAMIS identity — the farmer's national ID number, digits only.
+  /// NULL = not given. Sensitive: ordinary profile reads return only a masked
+  /// hint; the full number leaves the server solely through the owner's own
+  /// KIAMIS export (routes/kiamis.ts).
+  nationalId       String?   @map("national_id")
   trialStartsAt    DateTime? @map("trial_starts_at")
   trialEndsAt      DateTime? @map("trial_ends_at")
   selectedHubs     String?   @map("selected_hubs")
@@ -218,6 +223,16 @@ model Farm {
   // never blocked. `areaUnit` is "acre" | "hectare".
   areaValue Decimal? @map("area_value") @db.Decimal(10, 2)
   areaUnit  String?  @map("area_unit")
+
+  // ─── M2: the compliance spine groundwork ───
+  // ANITRAC §18 premises/holding registration number, issued by the county.
+  // NULL = not registered yet; nothing here blocks a farm from working.
+  premisesRegNo String? @map("premises_reg_no")
+  // Plot GPS — serves ANITRAC §18, KIAMIS geo-mapping and EUDR coffee
+  // geo-traceability at once. Captured by the farmer tapping "use my
+  // location", never typed (R1). Captured as a pair or not at all.
+  latitude  Decimal? @map("latitude") @db.Decimal(10, 7)
+  longitude Decimal? @map("longitude") @db.Decimal(10, 7)
 
   owner            User              @relation(fields: [ownerId], references: [id])
   members          FarmMember[]

@@ -3,6 +3,7 @@ import { prisma } from "../db.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware, generateToken } from "../middleware/auth.js";
 import { ensureFarmCode } from "../lib/farm-code.js";
+import { maskNationalId, parseNationalId, parseGps, parsePremisesRegNo } from "../lib/kiamis.js";
 import bcrypt from "bcryptjs";
 
 const router = Router();
@@ -18,12 +19,27 @@ router.get("/", async (req: Request, res: Response) => {
 
     // Also get farm info and user info
     const farm = await prisma.farm.findUnique({ where: { id: farmId } });
-    const user = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { name: true, email: true, phone: true } });
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      select: { name: true, email: true, phone: true, nationalId: true },
+    });
+
+    // The full national ID never rides an ordinary profile read — only a
+    // masked hint. The one full-value exit is the owner's own KIAMIS export.
+    const safeUser = user
+      ? {
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          nationalIdMasked: maskNationalId(user.nationalId),
+          nationalIdSet: user.nationalId != null,
+        }
+      : user;
 
     // Backfill farm connection code for older farms
     const code = await ensureFarmCode(farmId);
 
-    res.json({ settings: map, farm: { ...farm, code }, user });
+    res.json({ settings: map, farm: { ...farm, code }, user: safeUser });
   } catch (error) {
     res.status(500).json({ error: "Failed" });
   }
@@ -64,6 +80,41 @@ router.put("/profile", async (req: Request, res: Response) => {
         county: req.body.county || undefined,
         farmType: req.body.farmType || undefined,
       }});
+    }
+
+    // ── M2 compliance fields (premises number, plot GPS, national ID) ──
+    // Only keys PRESENT in the body are touched: absent = unchanged, blank =
+    // cleared. Every value is parsed by lib/kiamis.ts first — a bad ID or a
+    // half GPS pair is a 400 with the reason, never a silent bad save.
+    const has = (k: string) => Object.prototype.hasOwnProperty.call(req.body, k);
+
+    if (has("premisesRegNo") || has("latitude") || has("longitude")) {
+      const premises = has("premisesRegNo")
+        ? parsePremisesRegNo(req.body.premisesRegNo)
+        : ({ ok: true, value: undefined } as const);
+      if (!premises.ok) return res.status(400).json({ error: premises.error, field: "premisesRegNo" });
+
+      const gps =
+        has("latitude") || has("longitude")
+          ? parseGps(req.body.latitude, req.body.longitude)
+          : ({ ok: true, value: undefined } as const);
+      if (!gps.ok) return res.status(400).json({ error: gps.error, field: "gps" });
+
+      await prisma.farm.update({
+        where: { id: farmId },
+        data: {
+          ...(has("premisesRegNo") ? { premisesRegNo: premises.value } : {}),
+          ...(gps.value !== undefined
+            ? { latitude: gps.value?.latitude ?? null, longitude: gps.value?.longitude ?? null }
+            : {}),
+        },
+      });
+    }
+
+    if (has("nationalId")) {
+      const nationalId = parseNationalId(req.body.nationalId);
+      if (!nationalId.ok) return res.status(400).json({ error: nationalId.error, field: "nationalId" });
+      await prisma.user.update({ where: { id: userId }, data: { nationalId: nationalId.value } });
     }
 
     // Update user

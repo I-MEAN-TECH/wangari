@@ -2,7 +2,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Settings, User, Bell, Palette, Shield, Save, CheckCircle2, Mail, Phone, MapPin, Lock, Eye, EyeOff, Download, Trash2, Leaf, PawPrint, ClipboardList, ShoppingCart, Package, DollarSign, Users, BarChart3, Calculator, Syringe, Heart, CloudSun, ChevronRight, Fingerprint, Building2, CloudUpload } from "lucide-react";
+import { Settings, User, Bell, Palette, Shield, Save, CheckCircle2, Mail, Phone, MapPin, Lock, Eye, EyeOff, Download, Trash2, Leaf, PawPrint, ClipboardList, ShoppingCart, Package, DollarSign, Users, BarChart3, Calculator, Syringe, Heart, CloudSun, ChevronRight, Fingerprint, Building2, CloudUpload, Crosshair } from "lucide-react";
 import { WangariMark } from "@/components/ai/wangari-mark";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -104,6 +104,16 @@ export default function SettingsPage() {
   const [location, setLocation] = React.useState("");
   const [county, setCounty] = React.useState("");
 
+  // M2 registration state — premises number, plot GPS, national ID.
+  // The ID is write-only from here: the server only ever returns a mask.
+  const [premisesRegNo, setPremisesRegNo] = React.useState("");
+  const [nationalIdInput, setNationalIdInput] = React.useState("");
+  const [nationalIdMasked, setNationalIdMasked] = React.useState<string | null>(null);
+  const [nationalIdClear, setNationalIdClear] = React.useState(false);
+  const [gps, setGps] = React.useState<{ lat: string; lng: string } | null>(null);
+  const [gpsCleared, setGpsCleared] = React.useState(false);
+  const [locating, setLocating] = React.useState(false);
+
   // Settings state
   const [settings, setSettings] = React.useState<Record<string, string>>({});
 
@@ -126,6 +136,13 @@ export default function SettingsPage() {
       setPhone(d.user?.phone || "");
       setLocation(d.farm?.location || "");
       setCounty(d.farm?.county || "");
+      setPremisesRegNo(d.farm?.premisesRegNo || "");
+      setNationalIdMasked(d.user?.nationalIdMasked ?? null);
+      setGps(
+        d.farm?.latitude != null && d.farm?.longitude != null
+          ? { lat: String(d.farm.latitude), lng: String(d.farm.longitude) }
+          : null
+      );
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -135,16 +152,73 @@ export default function SettingsPage() {
 
   const handleSaveProfile = async () => {
     try {
-      const res = await api.put("/api/settings/profile", { farmName, name: userName, email, phone, location, county });
+      // The server touches only keys PRESENT in the body: absent = unchanged.
+      const payload: Record<string, unknown> = {
+        farmName, name: userName, email, phone, location, county, premisesRegNo,
+      };
+      const id = nationalIdInput.trim();
+      if (id !== "") payload.nationalId = id;
+      else if (nationalIdClear) payload.nationalId = "";
+      if (gpsCleared) { payload.latitude = ""; payload.longitude = ""; }
+      else if (gps) { payload.latitude = gps.lat; payload.longitude = gps.lng; }
+
+      const res = await api.put("/api/settings/profile", payload);
       // Persist the fresh user (incl. profileComplete) so the dashboard banner clears immediately
       if (res?.user) {
         const { getUser, setUser } = await import("@/lib/auth-client");
         const current = getUser();
         if (current) setUser({ ...current, ...res.user });
       }
+      if (id !== "") {
+        setNationalIdMasked(`••••${id.replace(/[\s-]/g, "").slice(-4)}`);
+        setNationalIdInput("");
+      }
+      setNationalIdClear(false);
       showToast("Profile updated!");
       setSaved(true); setTimeout(() => setSaved(false), 2000);
-    } catch { showToast("Failed to update profile"); }
+    } catch (e: any) {
+      // Validation reasons (bad ID, half GPS pair) come back from the server
+      // and are worth showing verbatim — they say what to fix.
+      showToast(e?.message || "Failed to update profile");
+    }
+  };
+
+  // R1: the farmer never types coordinates. GPS is one tap, and the pair is
+  // either captured together or left untouched.
+  const useMyLocation = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      showToast("Location is not available on this device");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGps({ lat: pos.coords.latitude.toFixed(7), lng: pos.coords.longitude.toFixed(7) });
+        setGpsCleared(false);
+        setLocating(false);
+      },
+      () => { setLocating(false); showToast("Could not get your location — check the permission"); },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
+
+  const clearGps = () => { setGps(null); setGpsCleared(true); };
+
+  // The full national ID only ever leaves the server through this owner's own
+  // export — as a file, straight to their device.
+  const downloadKiamis = async () => {
+    try {
+      const doc = await api.get("/api/kiamis");
+      const blob = new Blob([JSON.stringify(doc, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `kiamis-${(doc as any)?.holding?.farmName?.replace(/\s+/g, "-").toLowerCase() || "registration"}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      const missing = (doc as any)?.missing ?? [];
+      showToast(missing.length > 0 ? `Export ready — ${missing.length} field${missing.length === 1 ? "" : "s"} still missing` : "Export ready — all KIAMIS fields recorded");
+    } catch { showToast("Could not build the export"); }
   };
 
   const handleSaveSettings = async () => {
@@ -212,6 +286,64 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]"><MapPin className="h-3 w-3 inline mr-1" />Location</Label><Input value={location} onChange={e => setLocation(e.target.value)} className="h-11 rounded-xl" /></div>
                   <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">County</Label><Input value={county} onChange={e => setCounty(e.target.value)} className="h-11 rounded-xl" /></div>
+                </div>
+
+                {/* M2 — registration details (ANITRAC premises, KIAMIS ID + GPS) */}
+                <div className="border-t border-gray-100 pt-4 space-y-1">
+                  <p className="text-xs font-black uppercase tracking-wider text-gray-400">Registration details</p>
+                  <p className="text-[11px] text-gray-500">
+                    For county registration (ANITRAC) and the national farmer register (KIAMIS). Optional — your farm works fully without them.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[#64748B]">National ID</Label>
+                    <Input
+                      value={nationalIdInput}
+                      onChange={e => { setNationalIdInput(e.target.value); setNationalIdClear(false); }}
+                      placeholder={nationalIdMasked ?? "Not recorded"}
+                      className="h-11 rounded-xl"
+                      inputMode="numeric"
+                      autoComplete="off"
+                    />
+                    <p className="text-[10px] text-gray-400">
+                      {nationalIdMasked ? `Saved ${nationalIdMasked}` : "Digits only — used for KIAMIS registration"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[#64748B]">Premises registration no.</Label>
+                    <Input value={premisesRegNo} onChange={e => setPremisesRegNo(e.target.value)} placeholder="Issued by the county" className="h-11 rounded-xl" autoComplete="off" />
+                    <p className="text-[10px] text-gray-400">ANITRAC §18 — the holding's registration number</p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-[#64748B]"><Crosshair className="h-3 w-3 inline mr-1" />Plot coordinates</Label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="flex min-h-[44px] items-center rounded-xl bg-gray-50 px-3 text-xs font-bold text-gray-700">
+                      {gps ? `${gps.lat}, ${gps.lng}` : "Not captured"}
+                    </span>
+                    <Button type="button" variant="outline" onClick={useMyLocation} disabled={locating} className="h-11 rounded-xl">
+                      <Crosshair className="h-4 w-4 mr-1.5" /> {locating ? "Locating…" : gps ? "Update from GPS" : "Use my location"}
+                    </Button>
+                    {gps && (
+                      <Button type="button" variant="ghost" onClick={clearGps} className="h-11 rounded-xl text-gray-500">Clear</Button>
+                    )}
+                    <Button type="button" variant="outline" onClick={downloadKiamis} className="h-11 rounded-xl">
+                      <Download className="h-4 w-4 mr-1.5" /> KIAMIS export
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-gray-400">
+                    Captured by GPS, never typed. The export lists exactly which registration fields are still missing.
+                    {nationalIdMasked && (
+                      <button
+                        type="button"
+                        onClick={() => { setNationalIdClear(true); setNationalIdInput(""); }}
+                        className="ml-2 underline text-gray-500 hover:text-red-600 cursor-pointer"
+                      >
+                        {nationalIdClear ? "ID will be removed on save" : "Remove ID"}
+                      </button>
+                    )}
+                  </p>
                 </div>
                 <Button onClick={handleSaveProfile} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer">{saved ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Saved!</> : <><Save className="h-4 w-4 mr-2" /> Save Profile</>}</Button>
               </CardContent>
