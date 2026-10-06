@@ -1,8 +1,22 @@
 # Wangari — Phased Product Plan
 
 **Date:** 2026-10-06
-**Status:** Planning. No build started.
+**Status:** Living document — build state as of 2026-10-06 evening below.
 **Companion docs:** [DEPLOY-HARDENING.md](DEPLOY-HARDENING.md), [ADMIN-BLUEPRINT.md](ADMIN-BLUEPRINT.md)
+
+## Build state (2026-10-06, end of day)
+
+| Phase | State | Evidence |
+|---|---|---|
+| **M1 accountant layer** | ✅ shipped | taxonomy/attribution/feed libs, migration + backfill, `/api/profitability`; live probe (conservation) passes |
+| **M2 compliance spine** | 🟡 groundwork shipped; animal parts correctly still gated | premises registration no. + plot GPS on `Farm`, national ID on owner (masked everywhere, full only in the owner's KIAMIS export), `GET /api/kiamis` with an honest `missing` list, settings UI with tap-to-capture GPS. **Still gated on §7 activation:** `AnimalMovement`, product traceability, owner-register/county export — 0 `Animal` rows makes them empty |
+| **M3 three steps ahead** | 🟡 two of three shipped | sale-timing (market-price × production join) and feed-conversion drift are in the Action Center, both probed live. Flock replacement timing **not built — there is no bird-age data to build it on**. "Your week" is the existing Action Center; renaming it is not a feature |
+| **M4 pride layer** | 🟡 two of four shipped | cost-vs-price band on `/profitability` (+ the three bugs it flushed out); shareable monthly statement at `/statement`. **Farm-health percentile deferred on purpose:** a percentile across 9 farms is a number we would have made up (never inflate). Scenario comparison: period toggles exist; deeper scenarios wait on real history |
+| **M5 AgriWebb borrowings** | ⬜ not started | 0 `Animal` rows — same gate as M2's animal parts |
+| **§8 activation** | Phases 0, 2, 6 ✅ · Phase 1 ❌ | phone+PIN door, delivery-first money moment, funnel instrumentation shipped. **WhatsApp advisory blocked on Meta/WABA setup (founder action)** — the only unbuilt capability in the product |
+| **Swahili switch** | 🔴 founder decision | dictionary + onboarding copy shipped and bundle-verified; `PINNED_LANGUAGE` stays English until you flip it |
+
+The binding constraint remains reach: none of this has touched a real farmer's handset yet, and the funnel cannot report until it does.
 
 ---
 
