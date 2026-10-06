@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { firstRecordAt } from "../lib/first-record.js";
+import { buildRevenueSeries } from "../lib/revenue-series.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
 
@@ -14,6 +15,8 @@ router.get("/", async (req: Request, res: Response) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    // Five months back from the current one = the last six calendar months.
+    const sixMonthsStart = new Date(today.getFullYear(), today.getMonth() - 5, 1);
     const weekAgo = new Date(today.getTime() - 7 * 86400000);
     const nextWeek = new Date(today.getTime() + 7 * 86400000);
 
@@ -48,6 +51,7 @@ router.get("/", async (req: Request, res: Response) => {
       allInventory,
       upcomingVax,
       earliestRecord,
+      halfYearTx,
     ] = await Promise.all([
       // Today's production per flock
       prisma.dailyProduction.findMany({
@@ -130,9 +134,18 @@ router.get("/", async (req: Request, res: Response) => {
       // against exactly the same rows — two definitions of the same word would
       // eventually disagree, and the dashboard would be the one that is wrong.
       firstRecordAt(farmId),
+
+      // Six months of ledger rows for the Revenue Overview chart — bucketed
+      // by lib/revenue-series.ts, keyed YYYY-MM so the device's month labels
+      // can never disagree with these sums.
+      prisma.transaction.findMany({
+        where: { farmId, date: { gte: sixMonthsStart } },
+        select: { date: true, type: true, amount: true },
+      }),
     ]);
 
     const firstRecord: string | null = earliestRecord ?? null;
+    const revenueSeries = buildRevenueSeries(halfYearTx);
 
     // ─── Calculate Total Birds ──────────────────────────────
     const totalBirds = flocks.reduce((s, f) => s + f.currentCount, 0);
@@ -288,6 +301,8 @@ router.get("/", async (req: Request, res: Response) => {
       // Financials
       monthlyRevenue: Number(monthIncome._sum.amount || 0),
       monthlyExpenses,
+      // Last six months of income vs expenses (Revenue Overview chart).
+      revenueSeries,
 
       // Data
       recentTransactions: recentTx,

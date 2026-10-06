@@ -158,6 +158,8 @@ export interface DashboardData {
   mortalityToday: number;
   monthlyRevenue: number;
   monthlyExpenses: number;
+  /** Last six calendar months for the Revenue Overview, keyed YYYY-MM. */
+  revenueSeries?: { key: string; income: number; expenses: number }[];
   pendingVaccinations: number;
   lowStockItems: number;
   recentTransactions: Transaction[];

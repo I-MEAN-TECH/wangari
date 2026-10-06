@@ -297,28 +297,38 @@ function DashboardContent() {
     mortality: r.mortality || 0,
   }));
 
-  // Revenue chart - show last 6 months
-  const revenueChartData = data?.recentProduction?.length > 0
-    ? (() => {
-        const months = [];
-        const now = new Date();
-        for (let i = 5; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          months.push({
-            month: d.toLocaleDateString("en-KE", { month: "short" }),
-            income: i === 0 ? (data?.monthlyRevenue || 0) : 0,
-            expenses: i === 0 ? (data?.monthlyExpenses || 0) : 0,
-          });
-        }
-        return months;
-      })()
-    : [
-        { month: "Jan", income: 0, expenses: 0 },
-        { month: "Feb", income: 0, expenses: 0 },
-        { month: "Mar", income: 0, expenses: 0 },
-        { month: "Apr", income: 0, expenses: 0 },
-        { month: "Jun", income: 0, expenses: 0 },
-      ];
+  // Revenue chart — the last six calendar months, straight from the ledger.
+  // Buckets arrive keyed YYYY-MM (lib/revenue-series.ts on the server) and
+  // the labels are built here, on the device, so a server/client timezone
+  // disagreement can never draw a bar under the wrong month. No production
+  // gate: revenue has nothing to do with egg logs. No hardcoded months
+  // either — the old fallback was five fake months that skipped May.
+  const revenueChartData = (() => {
+    const series = new Map<string, { income: number; expenses: number }>(
+      ((data?.revenueSeries ?? []) as { key: string; income: number; expenses: number }[]).map(
+        (r) => [r.key, r] as const
+      )
+    );
+    const now = new Date();
+    const rows: { month: string; income: number; expenses: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const hit = series.get(key);
+      rows.push({
+        month: d.toLocaleDateString("en-KE", { month: "short" }),
+        income: hit?.income ?? 0,
+        expenses: hit?.expenses ?? 0,
+      });
+    }
+    if (series.size === 0 && data) {
+      // Backend without the series: the current month's totals are still real.
+      const current = rows[rows.length - 1];
+      current.income = data?.monthlyRevenue || 0;
+      current.expenses = data?.monthlyExpenses || 0;
+    }
+    return rows;
+  })();
 
   const flockChartData = data?.flocks?.map((f: any) => ({
     name: f.name,
