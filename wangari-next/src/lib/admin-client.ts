@@ -95,3 +95,81 @@ export const adminApi = {
   put: <T = any>(path: string, json?: unknown) => request<T>(path, { method: "PUT", json }),
   delete: <T = any>(path: string) => request<T>(path, { method: "DELETE" }),
 };
+
+/**
+ * Feedback is a Wangari data flow, not a SaaS feature, so it lives under the
+ * `/api/admin` namespace the existing client already authors — not a separate
+ * `adminApi` helper that would imply a new backend surface.
+ *
+ * Keep every field defensively copied. `Talkback` messages arrive async in the
+ * foreground response based on Moonstone callbacks, so a slow or failing
+ * Talkback webhook can stall or partially fail an otherwise-complete page —
+ * and a `FeedbackRow` that came back once should not be trusted to stay the
+ * same object across re-renders.
+ */
+export const feedbackApi = {
+  /**
+   * Defensive copy — the response may have been assembled under a slow
+   * Talkback round-trip, and React should never hand a server object directly
+   * to a list renderer.
+   */
+  getSummary: (days: number) =>
+    request<FeedbackSummary>("/feedback?days=" + encodeURIComponent(String(days))).then(
+      (s) => ({
+        ...s,
+        bySpecies: { ...s.bySpecies },
+        byAudience: { ...s.byAudience },
+        bestRanked: s.bestRanked.map((r) => ({ ...r })),
+        improveRanked: s.improveRanked.map((r) => ({ ...r })),
+        recent: (s.recent ?? []).map((r) => ({ ...r })),
+      })
+    ),
+};
+
+/** The shape the feedback summary endpoint returns, in the admin client's own words. */
+export interface FeedbackSummary {
+  periodDays: number;
+  responses: number;
+  ratedCount: number;
+  averageRating: number | null;
+  speciesCounts: Record<string, number>;
+  bestRanked: { tag: string; count: number }[];
+  improveRanked: { tag: string; count: number }[];
+  bySpecies: Record<string, FeedbackSegmentSummary>;
+  audienceCounts: Record<string, number>;
+  byAudience: Record<string, FeedbackSegmentSummary>;
+  channelCounts: Record<string, number>;
+  labels: FeedbackLabels;
+  recent: FeedbackRow[];
+}
+
+export interface FeedbackSegmentSummary {
+  responses: number;
+  ratedCount: number;
+  averageRating: number | null;
+  bestCounts: Record<string, number>;
+  improveCounts: Record<string, number>;
+}
+
+export interface FeedbackLabels {
+  best: Record<string, { label: string; icon: string }>;
+  improve: Record<string, { label: string; icon: string }>;
+  audience: Record<string, { label: string; icon: string }>;
+  audienceOrder: string[];
+}
+
+export interface FeedbackRow {
+  id: number;
+  source: string;
+  rating: number | null;
+  best: string[];
+  improve: string[];
+  species: string[];
+  comment: string | null;
+  phone: string | null;
+  audience: string | null;
+  utm: string | null;
+  farmId: number | null;
+  createdAt: string;
+}
+

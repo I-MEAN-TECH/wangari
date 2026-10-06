@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Building2, Users, CreditCard, Tags, Ticket, TicketPercent,
   Megaphone, Handshake, Mail, ShieldCheck, Activity, Lock, ChevronDown, LogOut, X, Menu, Globe,
-  LineChart, Bot,
+  LineChart, Bot, MessageSquare,
 } from "lucide-react";
 import { getAdminToken, getAdminSession, clearAdminSession, AdminSession } from "@/lib/admin-client";
 import { MaintenanceNotice } from "@/components/shared/MaintenanceNotice";
@@ -39,6 +39,7 @@ const NAV = [
     { href: "/waadmin/emails", label: "Email Ops", icon: Mail },
     { href: "/waadmin/audit", label: "Audit Log", icon: ShieldCheck },
     { href: "/waadmin/system", label: "System Health", icon: Activity },
+    { href: "/waadmin/feedback", label: "Feedback", icon: MessageSquare },
   ]},
   { section: "Account", items: [
     { href: "/waadmin/security", label: "Security & MFA", icon: Lock },
