@@ -24,8 +24,8 @@ CREATE TABLE "animal_movements" (
     CONSTRAINT "animal_movements_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "animal_movements_farm_id_fkey" FOREIGN KEY ("farm_id") REFERENCES "farms"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-CREATE TABLE "animal_movements_animal_id_fkey" FOREIGN KEY ("animal_id") REFERENCES "animals"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "animal_movements" ADD CONSTRAINT "animal_movements_farm_id_fkey" FOREIGN KEY ("farm_id") REFERENCES "farms"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "animal_movements" ADD CONSTRAINT "animal_movements_animal_id_fkey" FOREIGN KEY ("animal_id") REFERENCES "animals"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 CREATE INDEX "animal_movements_farm_id_moved_at_idx" ON "animal_movements"("farm_id", "moved_at");
 CREATE INDEX "animal_movements_animal_id_idx" ON "animal_movements"("animal_id");
