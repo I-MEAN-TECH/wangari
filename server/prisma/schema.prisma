@@ -210,6 +210,14 @@ model Farm {
   // NOT back-filled for existing farms — see migrations/16_farm_claimed_at.
   claimedAt DateTime? @map("claimed_at")
 
+  // ─── M1: the accountant layer ───
+  // Farm size, because every per-unit metric (cost per egg, cost per litre,
+  // cost per acre) needs a denominator, and KIAMIS derives subsidy quantities
+  // from declared acreage. One nullable pair; existing farms keep NULL and are
+  // never blocked. `areaUnit` is "acre" | "hectare".
+  areaValue Decimal? @map("area_value") @db.Decimal(10, 2)
+  areaUnit  String?  @map("area_unit")
+
   owner            User              @relation(fields: [ownerId], references: [id])
   members          FarmMember[]
   flocks           Flock[]
@@ -372,6 +380,7 @@ model Flock {
   animals      Animal[]
   healthRecords       HealthRecord[]
   insurancePolicies   InsurancePolicy[]
+  transactions Transaction[]
 
   @@map("flocks")
 }
@@ -451,6 +460,7 @@ model Crop {
   applications CropApplication[]
   postHarvestBatches PostHarvestBatch[]
   soilTests    SoilTest[]
+  transactions Transaction[]
 
   @@map("crops")
 }
@@ -642,12 +652,27 @@ model Transaction {
   date          DateTime @db.Date
   paymentMethod String?  @map("payment_method")
   reference     String?
+  // M1: canonical classification of the free-text `category`, derived by
+  // lib/ledger-taxonomy.ts. Nullable — back-filled for existing rows, and
+  // classified on read while still null.
+  costBucket     String? @map("cost_bucket")
+  enterpriseKind String? @map("enterprise_kind")
+  // M1: explicit enterprise attribution, replacing substring-matching on the
+  // flock's name in profitability.ts. Optional; ON DELETE SET NULL.
+  flockId       Int?     @map("flock_id")
+  cropId        Int?     @map("crop_id")
   createdBy     Int?     @map("created_by")
   createdAt     DateTime @default(now()) @map("created_at")
 
-  farm Farm  @relation(fields: [farmId], references: [id])
-  user User? @relation(fields: [createdBy], references: [id])
+  farm  Farm   @relation(fields: [farmId], references: [id])
+  user  User?  @relation(fields: [createdBy], references: [id])
+  flock Flock? @relation(fields: [flockId], references: [id])
+  crop  Crop?  @relation(fields: [cropId], references: [id])
 
+  @@index([farmId, costBucket])
+  @@index([farmId, enterpriseKind])
+  @@index([farmId, flockId])
+  @@index([farmId, cropId])
   @@map("transactions")
 }
 

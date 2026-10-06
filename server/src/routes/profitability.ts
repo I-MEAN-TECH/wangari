@@ -2,23 +2,79 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { KG_PER_EGG, classifyExpense, type CostBucket } from "../lib/ledger-taxonomy.js";
+import {
+  attributeTransaction,
+  type KnownEnterprises,
+  type EnterpriseRef,
+} from "../lib/ledger-attribution.js";
 
 /**
  * Profitability Scoreboard — which flock/block/pond actually makes money?
  *
  * Ranks every active enterprise by REAL profit computed from data already
  * flowing through the system:
- *   - Revenue: transactions tagged to the enterprise (sales categories)
+ *   - Revenue: transactions attributed to the enterprise
  *   - Costs: expense transactions + recorded inputs (feed used × nothing
  *     unknown; inventory consumption is booked as expense transactions
  *     automatically by the production route)
  *
  * Metric shown: profit margin % and profit per shilling of feed — the
  * "feed efficiency" lens the user asked for.
+ *
+ * ─── What changed in M1 ───────────────────────────────────────────────────
+ *
+ * This route used to decide which enterprise a transaction belonged to by
+ * checking whether a flock's **name** appeared inside `category` or
+ * `description` (`matchEnterprise`). A flock called "Layers" claimed every row
+ * mentioning layers, and `Map` iteration order picked the winner when two
+ * names matched.
+ *
+ * Attribution is now `attributeTransaction` (lib/ledger-attribution.ts):
+ * an explicit `flockId`/`cropId` first, then income-only inference **when
+ * exactly one enterprise can match**, then general. Costs are additionally
+ * split into canonical buckets by `classifyExpense` (lib/ledger-taxonomy.ts),
+ * so `animal_feed` and `Bird Purchase` finally land in the same pile.
+ *
+ * The response shape is unchanged — the dashboard reads every field below.
+ * New fields are additive: `costBreakdown`, `unit`, `outputUnits`, `costPerUnit`.
  */
 
 const router = Router();
 router.use(authMiddleware, requireOwner);
+
+/** Cost buckets, in the order they are worth showing a farmer. */
+const BUCKET_ORDER: CostBucket[] = [
+  "feed",
+  "veterinary",
+  "labour",
+  "stock",
+  "seed",
+  "fertiliser",
+  "equipment",
+  "transport",
+  "utilities",
+  "other",
+];
+
+type Ent = {
+  ref: EnterpriseRef;
+  id: string;
+  kind: "flock" | "crop" | "general";
+  name: string;
+  sub: string;
+  species?: string | null;
+  category?: string | null;
+  cropType?: string | null;
+  revenue: number;
+  costs: number;
+  feedCost: number;
+  outputKg: number;
+  outputUnits: number;
+  /** Which enterprise this row is when the kind is ambiguous. */
+  unit: "egg" | "litre" | "kg" | null;
+  costsByBucket: Map<CostBucket, number>;
+};
 
 // GET /api/profitability
 router.get("/", async (req: Request, res: Response) => {
@@ -28,87 +84,174 @@ router.get("/", async (req: Request, res: Response) => {
     const since = new Date(Date.now() - periodDays * 86400000);
 
     const [flocks, crops, incomeTx, expenseTx, prodRows] = await Promise.all([
-      prisma.flock.findMany({ where: { farmId }, select: { id: true, name: true, type: true, category: true, currentCount: true, status: true } }),
-      prisma.crop.findMany({ where: { farmId }, select: { id: true, name: true, cropType: true, areaAcres: true, status: true } }),
-      prisma.transaction.findMany({ where: { farmId, type: "income", date: { gte: since } }, select: { amount: true, category: true, description: true } }),
-      prisma.transaction.findMany({ where: { farmId, type: "expense", date: { gte: since } }, select: { amount: true, category: true, description: true } }),
-      prisma.dailyProduction.findMany({ where: { farmId, date: { gte: since } }, select: { flockId: true, feedUsed: true, eggsCollected: true, milkCollected: true } }),
+      prisma.flock.findMany({
+        where: { farmId },
+        select: { id: true, name: true, type: true, category: true, currentCount: true, status: true },
+      }),
+      prisma.crop.findMany({
+        where: { farmId },
+        select: { id: true, name: true, cropType: true, areaAcres: true, status: true },
+      }),
+      prisma.transaction.findMany({
+        where: { farmId, type: "income", date: { gte: since } },
+        select: {
+          amount: true, category: true, description: true,
+          flockId: true, cropId: true, enterpriseKind: true,
+        },
+      }),
+      prisma.transaction.findMany({
+        where: { farmId, type: "expense", date: { gte: since } },
+        select: {
+          amount: true, category: true, description: true,
+          flockId: true, cropId: true, costBucket: true,
+        },
+      }),
+      prisma.dailyProduction.findMany({
+        where: { farmId, date: { gte: since } },
+        select: { flockId: true, feedUsed: true, eggsCollected: true, milkCollected: true },
+      }),
     ]);
 
-    // Attribute transactions to enterprises by category/description match
-    const flockByName = new Map(flocks.map(f => [f.name.toLowerCase(), f.id]));
-    const cropByName = new Map(crops.map(c => [c.name.toLowerCase(), c.id]));
-    const typeById = new Map(flocks.map(f => [f.id, f.type || ""]));
-
-    type Ent = {
-      id: string; kind: "flock" | "crop" | "general"; name: string; sub: string;
-      species?: string | null; category?: string | null; cropType?: string | null;
-      revenue: number; costs: number; feedCost: number; outputKg: number;
-    };
-    const ent = new Map<string, Ent>();
-    const get = (id: string, kind: Ent["kind"], name: string, sub: string): Ent => {
-      let e = ent.get(id);
-      if (!e) { e = { id, kind, name, sub, revenue: 0, costs: 0, feedCost: 0, outputKg: 0 }; ent.set(id, e); }
-      return e;
-    };
-    for (const f of flocks) get(`flock-${f.id}`, "flock", f.name, f.type || "livestock");
-    for (const c of crops) get(`crop-${c.id}`, "crop", c.name, c.cropType || "crop");
-    const general = get("general", "general", "General / untagged", "whole farm");
-
-    const matchEnterprise = (text: string): Ent | null => {
-      const t = (text || "").toLowerCase();
-      for (const [name, id] of flockByName) if (t.includes(name)) return get(`flock-${id}`, "flock", name, "");
-      for (const [name, id] of cropByName) if (t.includes(name)) return get(`crop-${id}`, "crop", name, "");
-      return null;
+    // ── Build the enterprise table, keyed by the same refs attribution returns.
+    const known: KnownEnterprises = {
+      flocks: flocks.map((f) => ({ id: f.id, category: f.category, type: f.type })),
+      crops: crops.map((c) => ({ id: c.id })),
     };
 
-    for (const tx of incomeTx) {
-      const category = String(tx.category || "");
-      const description = String(tx.description || "");
-      const e = matchEnterprise(category) || matchEnterprise(description) || general;
-      e.revenue += Number(tx.amount);
-    }
-    for (const tx of expenseTx) {
-      const e = matchEnterprise(tx.category || "") || matchEnterprise(tx.description || "") || general;
-      e.costs += Number(tx.amount);
-      if (/feed/i.test(tx.category || "") || /feed/i.test(tx.description || "")) e.feedCost += Number(tx.amount);
-    }
+    const byKey = new Map<string, Ent>();
+    const keyOf = (ref: EnterpriseRef): string =>
+      ref.kind === "general" ? "general" : `${ref.kind}-${ref.id}`;
 
-    // Feed used per flock from production records (kg) — allocate total feed expense by usage share
-    const feedByFlock = new Map<number, number>();
-    for (const p of prodRows) feedByFlock.set(p.flockId, (feedByFlock.get(p.flockId) || 0) + Number(p.feedUsed || 0));
-    const totalFeedKg = [...feedByFlock.values()].reduce((a, b) => a + b, 0);
-    const totalFeedExpense = [...ent.values()].filter(e => e.kind === "general").reduce((s, e) => s + e.feedCost, 0) ||
-      incomeTx.length === 0 ? [...ent.values()].reduce((s, e) => s + e.feedCost, 0) : 0;
+    const make = (
+      ref: EnterpriseRef,
+      name: string,
+      sub: string,
+      unit: Ent["unit"] = null
+    ): Ent => ({
+      ref, id: keyOf(ref), kind: ref.kind, name, sub, unit,
+      revenue: 0, costs: 0, feedCost: 0, outputKg: 0, outputUnits: 0,
+      costsByBucket: new Map(),
+    });
 
     for (const f of flocks) {
-      const e = get(`flock-${f.id}`, "flock", f.name, f.type || "");
-      const kg = feedByFlock.get(f.id) || 0;
-      if (totalFeedKg > 0 && kg > 0) {
-        e.feedCost = (kg / totalFeedKg) * Math.max(totalFeedExpense, e.feedCost);
-        e.costs = Math.max(e.costs, e.feedCost);
-      }
-      // Output: eggs (≈60g) + milk litres ≈ kg
-      e.outputKg = prodRows.filter(p => p.flockId === f.id).reduce((s, p) => s + Number(p.eggsCollected || 0) * 0.06 + Number(p.milkCollected || 0), 0);
+      // A flock's unit is what it produces, not what it is — a dairy flock
+      // reports litres, a layer flock reports eggs.
+      const ref: EnterpriseRef = { kind: "flock", id: f.id };
+      const e = make(ref, f.name, f.type || "livestock", unitForFlock(f));
+      e.species = f.type;
+      e.category = f.category;
+      byKey.set(e.id, e);
+    }
+    for (const c of crops) {
+      const ref: EnterpriseRef = { kind: "crop", id: c.id };
+      const e = make(ref, c.name, c.cropType || "crop", "kg");
+      e.cropType = c.cropType;
+      byKey.set(e.id, e);
+    }
+    byKey.set("general", make({ kind: "general", id: null }, "General / untagged", "whole farm"));
+
+    const resolve = (tx: { type?: string | null; category?: string | null; flockId?: number | null; cropId?: number | null }): Ent => {
+      const ref = attributeTransaction(tx, known);
+      return byKey.get(keyOf(ref)) ?? byKey.get("general")!;
+    };
+
+    // ── Revenue.
+    for (const tx of incomeTx) {
+      resolve(tx).revenue += Number(tx.amount);
     }
 
-    const rows = [...ent.values()]
-      .map(e => {
+    // ── Costs, bucketed. `costBucket` is preferred but the taxonomy is applied
+    // on the fly when it is null, so a row written before the backfill (or
+    // between the migration and the backfill) is still classified correctly
+    // rather than landing in "other".
+    for (const tx of expenseTx) {
+      const amount = Number(tx.amount);
+      const bucket = (tx.costBucket as CostBucket | null) ?? classifyExpense(tx.category);
+      const e = resolve(tx);
+      e.costs += amount;
+      e.costsByBucket.set(bucket, (e.costsByBucket.get(bucket) ?? 0) + amount);
+      if (bucket === "feed") e.feedCost += amount;
+    }
+
+    // ── Feed used per flock, from production records.
+    const feedByFlock = new Map<number, number>();
+    for (const p of prodRows) {
+      feedByFlock.set(p.flockId, (feedByFlock.get(p.flockId) || 0) + Number(p.feedUsed || 0));
+    }
+    const totalFeedKg = [...feedByFlock.values()].reduce((a, b) => a + b, 0);
+
+    // The pool to allocate is every feed-bucket shilling that is NOT already
+    // pinned to a flock. The old code had a ternary here whose condition
+    // (`incomeTx.length === 0`) had nothing to do with feed; this version has
+    // no such coupling.
+    const unallocatedFeedExpense = [...byKey.values()]
+      .filter((e) => e.kind !== "flock")
+      .reduce((s, e) => s + e.feedCost, 0);
+    const totalFeedExpense = [...byKey.values()].reduce((s, e) => s + e.feedCost, 0);
+
+    for (const f of flocks) {
+      const e = byKey.get(`flock-${f.id}`);
+      if (!e) continue;
+      const kg = feedByFlock.get(f.id) || 0;
+
+      // Physical output first, so cost-per-unit has a denominator.
+      const rows = prodRows.filter((p) => p.flockId === f.id);
+      const eggs = rows.reduce((s, p) => s + Number(p.eggsCollected || 0), 0);
+      const milk = rows.reduce((s, p) => s + Number(p.milkCollected || 0), 0);
+      e.outputUnits = eggs + milk;
+      // Eggs are converted at a named constant rather than a bare 0.06 so the
+      // assumption has one home and can be challenged (see ledger-taxonomy.ts).
+      e.outputKg = eggs * KG_PER_EGG + milk;
+
+      if (totalFeedKg > 0 && kg > 0 && totalFeedExpense > 0) {
+        // Allocate the unpinned feed pool by share of kilos consumed, then hold
+        // the enterprise's own direct feed cost as a floor — allocation must
+        // never make a cost disappear.
+        const allocated = (kg / totalFeedKg) * unallocatedFeedExpense;
+        const total = Math.max(e.feedCost, e.feedCost + allocated);
+        const delta = total - e.feedCost;
+        if (delta > 0) {
+          e.feedCost = total;
+          e.costs += delta;
+          e.costsByBucket.set("feed", (e.costsByBucket.get("feed") ?? 0) + delta);
+        }
+      }
+    }
+
+    const rows = [...byKey.values()]
+      .map((e) => {
         const profit = e.revenue - e.costs;
         const margin = e.revenue > 0 ? Math.round((profit / e.revenue) * 100) : null;
         // Profit per shilling of feed: revenue / feed spend (higher = feed converts better)
         const feedEfficiency = e.feedCost > 0 ? Number((e.revenue / e.feedCost).toFixed(2)) : null;
+        // Cost per unit of output. Null — never Infinity or NaN — when there is
+        // no output to divide by, because a farmer reading "Infinity" stops
+        // trusting every other number on the screen.
+        const costPerUnit =
+          e.outputUnits > 0 ? Number((e.costs / e.outputUnits).toFixed(2)) : null;
+        const costPerKg = e.outputKg > 0 ? Number((e.costs / e.outputKg).toFixed(2)) : null;
+
+        const costBreakdown = BUCKET_ORDER
+          .filter((b) => (e.costsByBucket.get(b) ?? 0) > 0)
+          .map((b) => ({ bucket: b, amount: Math.round(e.costsByBucket.get(b)!) }));
+
         return {
           id: e.id, kind: e.kind, name: e.name, sub: e.sub,
-          species: flocks.find(f => `flock-${f.id}` === e.id)?.type ?? null,
-          category: flocks.find(f => `flock-${f.id}` === e.id)?.category ?? null,
-          cropType: crops.find(c => `crop-${c.id}` === e.id)?.cropType ?? null,
+          species: e.species ?? null,
+          category: e.category ?? null,
+          cropType: e.cropType ?? null,
           revenue: Math.round(e.revenue), costs: Math.round(e.costs),
           feedCost: Math.round(e.feedCost), profit: Math.round(profit),
-          margin, feedEfficiency, outputKg: Math.round(e.outputKg),
+          margin, feedEfficiency,
+          outputKg: Math.round(e.outputKg),
+          outputUnits: Math.round(e.outputUnits),
+          unit: e.unit,
+          costPerUnit,
+          costPerKg,
+          costBreakdown,
         };
       })
-      .filter(e => e.revenue > 0 || e.costs > 0)
+      .filter((e) => e.revenue > 0 || e.costs > 0)
       .sort((a, b) => b.profit - a.profit);
 
     res.json({
@@ -125,5 +268,14 @@ router.get("/", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to compute profitability" });
   }
 });
+
+/** What does this flock sell? Decides the unit a cost is quoted per. */
+function unitForFlock(flock: { category?: string | null; type?: string | null }): Ent["unit"] {
+  const hay = `${flock.category ?? ""} ${flock.type ?? ""}`.toLowerCase();
+  if (/dairy|cattle|milk|maziwa/.test(hay)) return "litre";
+  if (/poultry|layer|broiler|kuku|chick|egg/.test(hay)) return "egg";
+  if (/fish|samaki|pond|aqua/.test(hay)) return "kg";
+  return null;
+}
 
 export default router;
