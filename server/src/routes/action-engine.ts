@@ -9,6 +9,7 @@ import {
 } from "../lib/record-grade.js";
 import { weatherActions, type ForecastDay } from "../lib/weather-rules.js";
 import { saleTiming, BASELINE_DAYS as SALE_TIMING_LOOKBACK } from "../lib/sale-timing.js";
+import { feedTrend, TREND_WINDOW_DAYS as FEED_TREND_WINDOW, type FeedTrend } from "../lib/feed-trend.js";
 import { EGGS_PER_TRAY } from "./deliveries.js";
 
 /**
@@ -48,6 +49,7 @@ router.get("/actions", async (req: Request, res: Response) => {
       flocks, crops, recentProd, lowStock, overdueCredits, unpaidInvoices,
       openTasks, pendingBreedings, recentApplications, todayProd,
       prodInWindow, prodOldest, prodNewest, recentMoney,
+      trendProd, feedBill, feedKg90,
     ] = await Promise.all([
       prisma.flock.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, currentCount: true, type: true, category: true, createdAt: true } }),
       prisma.crop.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, cropType: true, plantingDate: true, expectedHarvest: true } }),
@@ -81,6 +83,21 @@ router.get("/actions", async (req: Request, res: Response) => {
       prisma.transaction.findMany({
         where: { farmId, type: { in: ["income", "expense"] }, date: { gte: new Date(now.getTime() - WINDOW_DAYS * 86400000) } },
         select: { type: true },
+      }),
+      // M3 — feed conversion drift: production rows across the trend window.
+      prisma.dailyProduction.findMany({
+        where: { farmId, date: { gte: new Date(today.getTime() - FEED_TREND_WINDOW * 86400000) } },
+      }),
+      // The farm's own feed price: spend and kilos over the SAME long window,
+      // because feed bills are lumpy — a 90-day window is where both halves
+      // of "KES per kilo" finally exist together.
+      prisma.transaction.aggregate({
+        where: { farmId, type: "expense", costBucket: "feed", date: { gte: new Date(now.getTime() - 90 * 86400000) } },
+        _sum: { amount: true },
+      }),
+      prisma.dailyProduction.aggregate({
+        where: { farmId, date: { gte: new Date(now.getTime() - 90 * 86400000) } },
+        _sum: { feedUsed: true },
       }),
     ]);
 
@@ -486,6 +503,58 @@ router.get("/actions", async (req: Request, res: Response) => {
             cta: best.direction === "up" ? "Check your rate" : "Compare an offer",
           });
         }
+      }
+    }
+
+    // ─── 12. Feed conversion drift (M3) ──────────────────────────────────────
+    // Feed is the cost that gets worse silently: the bill looks the same while
+    // what it buys shrinks. Each flock's feed per unit of output, last week
+    // against the fortnight before, priced in shillings from the farm's own
+    // feed spend. Only a REAL worsening speaks — improvement and thin data are
+    // silence by design (lib/feed-trend.ts).
+    {
+      const feedSpend = Number(feedBill._sum.amount ?? 0);
+      const feedKilos = Number(feedKg90._sum.feedUsed ?? 0);
+      const feedCostPerKg = feedSpend > 0 && feedKilos > 0 ? feedSpend / feedKilos : null;
+
+      const FEED_UNIT: Record<string, string> = { eggs: "egg", milk: "litre", weight: "kg" };
+      let worst: (FeedTrend & { flockId: number }) | null = null;
+
+      for (const f of flocks) {
+        const rows = trendProd.filter((p) => p.flockId === f.id);
+        if (rows.length === 0) continue;
+        const metric = metricOf(f.type);
+        const days = rows.map((p) => ({
+          date: p.date,
+          feedUsed: Number(p.feedUsed || 0),
+          output: outputOf(p, metric),
+        }));
+        const trend = feedTrend({
+          days,
+          unit: FEED_UNIT[metric] ?? "unit",
+          label: f.name,
+          feedCostPerKg,
+          now,
+        });
+        if (!trend) continue;
+        // One card: the flock burning the most. Price is farm-wide, so either
+        // every score is KES or every score is kilos — never a mixed sort.
+        const score = trend.extraKesPerWeek ?? trend.extraKgPerWeek;
+        const worstScore = worst ? (worst.extraKesPerWeek ?? worst.extraKgPerWeek) : -Infinity;
+        if (score > worstScore) worst = { ...trend, flockId: f.id };
+      }
+
+      if (worst) {
+        actions.push({
+          id: `feed-trend-${worst.flockId}`,
+          priority: worst.changePct >= 0.3 ? "high" : "medium",
+          icon: "Wheat",
+          title: worst.title,
+          detail: worst.detail,
+          moneyImpact: worst.moneyImpact,
+          href: "/flocks",
+          cta: "Check the feed",
+        });
       }
     }
 
