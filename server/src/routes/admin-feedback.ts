@@ -50,6 +50,7 @@ router.get("/", requireAdmin(["super_admin", "support_read", "support"]), async 
         comment: true,
         phone: true,
         audience: true,
+        utm: true,
         farmId: true,
         createdAt: true,
       },
@@ -67,6 +68,7 @@ router.get("/", requireAdmin(["super_admin", "support_read", "support"]), async 
       improve: asKeys(r.improve),
       species: asKeys(r.species),
       audience: r.audience,
+      utm: r.utm,
     }));
 
     const summary = summariseFeedback(normalised);

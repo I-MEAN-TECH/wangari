@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE } from "@/lib/api-client";
+import { getToken } from "@/lib/auth-client";
 
 /**
  * The public feedback page — `/feedback`.
@@ -59,6 +60,7 @@ export default function FeedbackPage() {
 
   const [rating, setRating] = useState<number | null>(null);
   const [audience, setAudience] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [best, setBest] = useState<string | null>(null);
   const [improve, setImprove] = useState<string[]>([]);
   const [species, setSpecies] = useState<string[]>([]);
@@ -75,6 +77,50 @@ export default function FeedbackPage() {
       .catch(() => setLoadError(true));
   }, []);
 
+  // Which link brought this person here.
+  //
+  // GAP 1 (reach) is the reason there are 9 users, and the difference between
+  // "the product is wrong" and "nobody was told" is one number we were not
+  // keeping. So the shareable link carries ?utm_source=&utm_medium=&utm_campaign=
+  // and we forward it. A booth QR, a WhatsApp forward and the marketing site
+  // then become three countable things instead of one anonymous total.
+  //
+  // Read once, at mount, from the live URL. Forwarded as three separate parts
+  // because the server owns the sanitising — a URL is untrusted input and the
+  // column is shared storage, not a scratchpad.
+  const utm = useMemo(() => {
+    if (typeof window === "undefined") return {};
+    const p = new URLSearchParams(window.location.search);
+    const out: Record<string, string> = {};
+    for (const key of ["utm_source", "utm_medium", "utm_campaign"]) {
+      const v = p.get(key);
+      if (v) out[key] = v;
+    }
+    return out;
+  }, []);
+
+  // Are we answering as ourselves?
+  //
+  // A signed-in farmer already told us who they are, so asking again would be
+  // an insult to someone holding a phone in the sun. When a token exists we
+  // send it, the server attaches the farm and user, and the answer is filed as
+  // `in_app` — which is the whole point of asking real users rather than only
+  // counting whoever walks past a booth.
+  //
+  // Read in an effect, not during render: `getToken` touches localStorage, and
+  // `token` stays null through the server-rendered pass so we never guess.
+  useEffect(() => {
+    try {
+      setToken(getToken() ?? null);
+    } catch {
+      setToken(null);
+    }
+  }, []);
+
+  const inApp = token !== null;
+  // A signed-in user is a farmer; an anonymous one has to say so.
+  const effectiveAudience = audience ?? (inApp ? "farmer" : null);
+
   const toggle = useCallback((list: string[], setList: (v: string[]) => void, key: string) => {
     setList(list.includes(key) ? list.filter((k) => k !== key) : [...list, key]);
   }, []);
@@ -88,10 +134,14 @@ export default function FeedbackPage() {
     try {
       const res = await fetch(`${API_BASE}/api/feedback`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
-          source: "public_link",
-          audience,
+          source: inApp ? "in_app" : "public_link",
+          audience: effectiveAudience,
+          utm: Object.values(utm).join("|") || null,
           rating,
           best: best ? [best] : [],
           improve,
@@ -154,7 +204,7 @@ export default function FeedbackPage() {
   // It is one tap, it is optional in spirit ("Mengine" is a real answer), and
   // it is the only screen shown before the questions — R3 still holds at three
   // taps to a complete response.
-  if (!audience) {
+  if (!effectiveAudience) {
     return (
       <Shell>
         <h1 className="text-2xl font-black text-gray-900">Wewe ni nini?</h1>
@@ -181,13 +231,15 @@ export default function FeedbackPage() {
 
   return (
     <Shell>
-      <button
-        type="button"
-        onClick={() => setAudience(null)}
-        className="mb-4 min-h-[56px] rounded-2xl border-2 border-gray-200 bg-white px-4 text-sm font-bold text-gray-600"
-      >
-        ← Badilisha jibu lako
-      </button>
+      {audience && (
+        <button
+          type="button"
+          onClick={() => setAudience(null)}
+          className="mb-4 min-h-[56px] rounded-2xl border-2 border-gray-200 bg-white px-4 text-sm font-bold text-gray-600"
+        >
+          ← Badilisha jibu lako
+        </button>
+      )}
 
       <h1 className="text-2xl font-black text-gray-900">Wangari inakusaidia kiasi gani?</h1>
       <p className="mt-1 text-sm text-gray-500">How much does Wangari help you?</p>

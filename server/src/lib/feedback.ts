@@ -145,6 +145,7 @@ export type FeedbackInput = {
   comment?: unknown;
   phone?: unknown;
   audience?: unknown;
+  utm?: unknown;
 };
 
 export type NormalisedFeedback = {
@@ -157,6 +158,8 @@ export type NormalisedFeedback = {
   phone: string | null;
   /** `null` when not required and not given (in_app / booth). */
   audience: FeedbackAudience | null;
+  /** `null` when the link was opened without campaign parameters. */
+  utm: string | null;
 };
 
 export type ValidationResult =
@@ -234,6 +237,10 @@ export function validateFeedback(input: FeedbackInput): ValidationResult {
     return { ok: false, error: "Tell us who you are before answering." };
   }
 
+  // Which link they came from. Always optional — normalising returns null
+  // rather than failing, so a malformed campaign URL cannot block a farmer.
+  const utm = normaliseUtm(input.utm);
+
   // Species alone is not an opinion — it only segments one. Requiring a real
   // answer keeps the public link from filling with segmentation-only rows.
   if (rating === null && best.length === 0 && improve.length === 0) {
@@ -258,7 +265,7 @@ export function validateFeedback(input: FeedbackInput): ValidationResult {
 
   return {
     ok: true,
-    value: { source, rating, best, improve, species, comment, phone, audience },
+    value: { source, rating, best, improve, species, comment, phone, audience, utm },
   };
 }
 
@@ -269,7 +276,48 @@ export type FeedbackRow = {
   improve: string[];
   species: string[];
   audience?: string | null;
+  utm?: string | null;
 };
+
+/**
+ * Which campaign link brought this response.
+ *
+ * ## Why reach has to be measurable before it can be improved
+ *
+ * [gap-analysis.md](gap-analysis.md) ranks reach (GAP 1) above every feature:
+ * 9 users, and nobody knows whether that is because the app is wrong or
+ * because nobody was told. Those two problems have opposite fixes, and the
+ * difference between them is a number we were not keeping.
+ *
+ * So the shareable link carries `?utm_source=…&utm_medium=…&utm_campaign=…`
+ * and stores them joined. A booth QR, a WhatsApp message and the marketing
+ * site then become three separate rows in the admin summary instead of one
+ * anonymous number. This is the only honest way to learn that a booth day
+ * produced 40 responses and a poster produced 40, or neither.
+ *
+ * Not required, because most farmers arrive by typing the link. Stored
+ * strictly: this arrives from a public endpoint, so an unbounded string from
+ * a URL is a card that can be stuffed with megabytes.
+ */
+const UTM_PART = /^[a-z0-9_-]{1,32}$/;
+export const MAX_UTM_LENGTH = 96;
+
+/**
+ * Normalise a UTM string to something storable and groupable.
+ *
+ * Returns `null` — never an error — for anything unusable, because a farmer
+ * who followed a slightly malformed link must still get to answer the form.
+ */
+export function normaliseUtm(input: unknown): string | null {
+  if (typeof input !== "string") return null;
+  const parts = input
+    .split("|")
+    .map((p) => p.trim().toLowerCase())
+    .filter((p) => p.length > 0)
+    .filter((p) => UTM_PART.test(p));
+  if (parts.length === 0) return null;
+  return parts.join("|").slice(0, MAX_UTM_LENGTH);
+}
 
 export type SegmentSummary = {
   responses: number;
@@ -287,6 +335,7 @@ export type FeedbackSummary = SegmentSummary & {
   bySpecies: Record<string, SegmentSummary>;
   audienceCounts: Record<string, number>;
   byAudience: Record<string, SegmentSummary>;
+  channelCounts: Record<string, number>;
 };
 
 function countInto(target: Record<string, number>, values: readonly string[]) {
@@ -371,6 +420,16 @@ export function summariseFeedback(rows: readonly FeedbackRow[]): FeedbackSummary
     byAudience[key] = summariseRows(groupRows);
   }
 
+  // Which link brought them. Single-choice like audience, so the counts sum
+  // to `responses`. `direct` is an honest label, not a bucket for junk: a
+  // farmer who typed the URL by hand is the most valuable kind of respondent
+  // and must not be filed as if something were wrong.
+  const channelCounts: Record<string, number> = {};
+  for (const row of rows) {
+    const key = row.utm ? row.utm : "direct";
+    channelCounts[key] = (channelCounts[key] ?? 0) + 1;
+  }
+
   return {
     ...base,
     speciesCounts,
@@ -379,5 +438,6 @@ export function summariseFeedback(rows: readonly FeedbackRow[]): FeedbackSummary
     bySpecies,
     audienceCounts,
     byAudience,
+    channelCounts,
   };
 }

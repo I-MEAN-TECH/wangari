@@ -115,6 +115,7 @@ router.post("/", async (req: Request, res: Response) => {
       comment: req.body?.comment,
       phone: req.body?.phone,
       audience: req.body?.audience,
+      utm: req.body?.utm,
     });
 
     if (!result.ok) {
@@ -133,6 +134,7 @@ router.post("/", async (req: Request, res: Response) => {
         comment: result.value.comment,
         phone: result.value.phone,
         audience: result.value.audience,
+        utm: result.value.utm,
         ipHash: hashIp(req.ip ?? req.socket?.remoteAddress),
       },
       select: { id: true },

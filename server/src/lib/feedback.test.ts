@@ -24,6 +24,7 @@ import { describe, it, expect } from "vitest";
 import {
   validateFeedback,
   summariseFeedback,
+  normaliseUtm,
   RATING_SCALE,
   BEST_TAGS,
   IMPROVE_TAGS,
@@ -274,5 +275,63 @@ describe("aggregation never divides by zero", () => {
       { rating: 5, best: [], improve: [], species: [], audience: "investor" },
     ]);
     expect(s.audienceCounts).toEqual({ unspecified: 1 });
+  });
+});
+
+describe("reach is measurable, or it is guesswork", () => {
+  // GAP 1 is the reason there are 9 users. A shareable link that does not
+  // remember where it was shared cannot tell us whether the booth worked.
+  it("keeps a clean campaign triple", () => {
+    expect(normaliseUtm("aiae26|booth|qr")).toBe("aiae26|booth|qr");
+  });
+
+  it("lowercases and trims, because these come from a URL a human edited", () => {
+    expect(normaliseUtm("  AIAE26 | Booth |QR ")).toBe("aiae26|booth|qr");
+  });
+
+  it("returns null rather than throwing on junk from a public endpoint", () => {
+    for (const bad of [undefined, null, 42, {}, [], "", "   ", "|||"]) {
+      expect(() => normaliseUtm(bad)).not.toThrow();
+      expect(normaliseUtm(bad)).toBeNull();
+    }
+  });
+
+  it("drops a part that is not a plausible campaign name", () => {
+    expect(normaliseUtm("booth|<script>alert(1)</script>")).toBe("booth");
+    expect(normaliseUtm("a".repeat(500))).toBeNull();
+  });
+
+  it("caps the stored length so a URL cannot stuff the column", () => {
+    const long = Array.from({ length: 10 }, () => "x".repeat(30)).join("|");
+    expect((normaliseUtm(long) ?? "").length).toBeLessThanOrEqual(96);
+  });
+
+  it("never blocks a farmer over a malformed campaign link", () => {
+    const r = validateFeedback(base({ utm: "<script>alert(1)</script>" }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.utm).toBeNull();
+  });
+
+  it("round-trips a campaign on a valid submission", () => {
+    const r = validateFeedback(base({ utm: "aiae26|booth|qr" }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.utm).toBe("aiae26|booth|qr");
+  });
+
+  it("counts each response into exactly one channel, direct included", () => {
+    const s = summariseFeedback([
+      { rating: 5, best: [], improve: [], species: [], utm: "aiae26|booth|qr" },
+      { rating: 4, best: [], improve: [], species: [], utm: "aiae26|booth|qr" },
+      { rating: 3, best: [], improve: [], species: [] },
+    ]);
+    expect(s.channelCounts).toEqual({ "aiae26|booth|qr": 2, direct: 1 });
+    expect(Object.values(s.channelCounts).reduce((a, b) => a + b, 0)).toBe(s.responses);
+  });
+
+  it("calls a typed link 'direct' rather than treating it as broken", () => {
+    const s = summariseFeedback([{ rating: 5, best: [], improve: [], species: [] }]);
+    expect(s.channelCounts.direct).toBe(1);
   });
 });
