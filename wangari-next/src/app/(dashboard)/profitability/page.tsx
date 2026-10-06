@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Trophy, TrendingUp, TrendingDown, Wheat, RefreshCw, Info } from "lucide-react";
+import { Trophy, TrendingUp, TrendingDown, Wheat, RefreshCw, Info, Share2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -129,6 +129,10 @@ export default function ProfitabilityPage() {
                   {d === 30 ? "30d" : d === 90 ? "90d" : "1yr"}
                 </Button>
               ))}
+              {/* M4 — the statement is this screen's screenshot-ready child. */}
+              <Link href="/statement" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-wangari-green-800 px-3 text-xs font-extrabold text-white hover:bg-wangari-green-700 transition-colors">
+                <Share2 className="h-3.5 w-3.5" /> Statement
+              </Link>
             </div>
           }
         />
