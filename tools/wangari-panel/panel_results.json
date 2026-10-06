@@ -1,0 +1,70 @@
+{
+  "panel": [
+    {
+      "user_id": 0,
+      "name": "Grace Wanjiku",
+      "username": "grace_w",
+      "profession": "Poultry farmer",
+      "seconds": 13.7,
+      "error": null,
+      "response": "RATING: 4\nBEST: inafanya_kazi_bila_internet, ni_rahisi, naona_faida, kumbukumbu\nIMPROVE: mtandao, bei_ya_mkopo\nSPECIES: kuku\nCOMMENT: App inayopelekezia sana kwa kuku na kunisaidia kunajua pesa zangu, lakini lazima iweke offline.\n\n- What would have to be true for you to use Wangari every single day? It must work without internet, be easy to tap icons, show my egg sales and profit in KES each day, and cost nothing or very little.\n- What is the single thing you would remove or change first? I would remove the need for internet so the app works fully offline.\n- Who else do you know who would want this? Other poultry farmers in my area, like Mama Njeri and Kamau, who also sell eggs and need to track sales."
+    },
+    {
+      "user_id": 1,
+      "name": "Peter Kamau",
+      "username": "pkamau77",
+      "profession": "Dairy farmer",
+      "seconds": 16.1,
+      "error": null,
+      "response": "RATING: 2\nBEST: naona_faida, ni_rahisi, kumbukumbu, inafanya_kazi_bila_internet\nIMPROVE: usahihi, mtandao, kipengele_hakipo, bei_ya_mkopo\nSPECIES: mifugo\nCOMMENT: App hii inahitaji kuboreshwa so wewe unasahau namba za mapato na gharama.\n\n- To use it daily, it must show my profit clearly, work without internet, and have no hidden costs.\n- I would first remove the monthly fee that is not clear.\n- Other dairy farmers in my cooperative, like my neighbor Juma, would want it."
+    },
+    {
+      "user_id": 2,
+      "name": "Mary Achieng",
+      "username": "mary_achieng",
+      "profession": "Coffee and avocado farmer",
+      "seconds": 12.3,
+      "error": null,
+      "response": "RATING: 2\nBEST: ni_rahisi\nIMPROVE: kipengele_hakipo, usahihi\nSPECIES: kuku, mazao\nCOMMENT: App hakajaulizia kiadii cha ardhi ninapolimae, hivyo hakusaidii sana.\n\nWhat would have to be true for you to use Wangari every single day? It must ask for land area per crop and give accurate yields/profit numbers in KES, and work offline.\n\nWhat is the single thing you would remove or change first? Remove the poultry‑only templates and add a section for tree crops with land‑input fields.\n\nWho else do you know who would want this? Other mixed‑crop farmers in Kisii who grow coffee, avocado, macadamia and need land‑based records."
+    },
+    {
+      "user_id": 3,
+      "name": "Joseph Otieno",
+      "username": "jotieno_coop",
+      "profession": "Cooperative chairperson",
+      "seconds": 11.4,
+      "error": null,
+      "response": "RATING: 3\nBEST: naona_faida,kumbukumbu,bei_na_soko\nIMPROVE: mafunzo,bei_ya_mkopo,msaada,mtandao\nSPECIES: kuku,mifugo\nCOMMENT: App inahitaji kuboreshwa so as to weze kumshiriki wakulima wote bila hatari ya kimya.\n- What would have to be true for you to use Wangari every single day? Must demonstrate reliability with a pilot group, show clear profit increase, and have low cost plus offline capability.\n- What is the single thing you would remove or change first? Remove the need for constant internet; make it work offline.\n- Who else do you know who would want this? Other dairy and poultry cooperatives in Siaya and Kakamega counties."
+    },
+    {
+      "user_id": 4,
+      "name": "Dr. Samuel Kimani",
+      "username": "drskimani",
+      "profession": "Agrovet / input dealer",
+      "seconds": 21.8,
+      "error": null,
+      "response": "RATING: 4\nBEST: naona_faida, ni_rahisi, kumbukumbu\nIMPROVE: kipengele_hakipo, usahihi, mtandao\nSPECIES: mifugo, kuku\nCOMMENT: App linahitaji kuonyesha jinsi kodhi ya sponsor husambatania na mapato yangu so nikipate taarifa sahihi kila siku.\n\n- To use Wangari daily, it must accurately track each sponsor‑code scan to my sales and show my profit in KES instantly, even without internet.\n- I would first remove the crop‑tracking features that I cannot monetise and focus the app on sales attribution and profit visibility.\n- Other agrovet shop owners, feed distributors, and veterinary input suppliers who need to prove the value of their sponsored codes would also want this."
+    },
+    {
+      "user_id": 5,
+      "name": "Esther Wambui",
+      "username": "ewambui_officer",
+      "profession": "County livestock officer",
+      "seconds": 12.3,
+      "error": null,
+      "response": "RATING: 2\nBEST: inafanya_kazi_bila_internet, kumbukumbu, ni_rahisi, mifugo_na_mazao_yote\nIMPROVE: kipengele_hakipo, mtandao, usahihi, mafunzo\nSPECIES: mifugo, mazao\nCOMMENT: App hufanya kazi pekee kwa mtandao na huchukua data za muaanya bila kuomba ruhusa, na hivyo sielewi kwambawezi kutumia rekodi hii kama dhati za rasmi.\n\n- For me to use Wangari every day, it must work completely offline, protect farmer data with clear consent, and produce records that my county office accepts as official evidence.\n- The first thing I would change is removing any automatic data collection without explicit farmer consent and adding a local‑only storage mode with optional, encrypted sync.\n- Other county livestock extension officers, veterinary officers, and farmer‑group leaders who need reliable, verifiable records for vaccinations, subsidies, and market access would also want this."
+    },
+    {
+      "user_id": 6,
+      "name": "Sarah Mutua",
+      "username": "sarah_m",
+      "profession": "Investor",
+      "seconds": 18.0,
+      "error": null,
+      "response": "RATING: 1\nBEST: \nIMPROVE: mtandao, bei_ya_mkopo, usahihi, kasi, lugha, msaada, kipengele_hakipo, mafunzo, ugumu\nSPECIES: kuku, mifugo, mazao, samaki, nyuki\nCOMMENT: Nahitaji kuona data halisi za mapato so as kudhihirisha thamani ya biashara.\n\nI would have to be a farmer actively managing my farm and see clear, verifiable profit increases tracked in KES each day.\nThe single thing I would remove or change first is the requirement for constant internet connectivity (mtandao) because many farmers work offline.\nWho else I know who would want this: fellow farmers, agricultural extension officers, and agritech-focused investors looking for traction data."
+    }
+  ],
+  "started_at": "2026-10-06T07:00:04.341378",
+  "interviews": 7,
+  "updated_at": "2026-10-06T07:13:27.836204"
+}

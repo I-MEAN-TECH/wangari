@@ -17,16 +17,17 @@
 >
 > **How it was produced, stated plainly:** the intended tool was
 > [MiroFish](https://github.com/666ghj/MiroFish), a multi-agent swarm
-> simulation engine. **It was not run.** It requires a paid LLM key and a Zep
-> Cloud key, and simulates *thousands* of agents across many rounds, while this
-> project's entire AI budget is UnoRouter's free tier — roughly **50 requests
-> per day at one request per minute, account-wide** ([AI-PROVIDER-SETUP.md](AI-PROVIDER-SETUP.md)).
-> It would exhaust the day's quota inside the first minute.
+> simulation engine. The first draft of these hypotheses was written by hand,
+> on the argument that MiroFish needed a paid LLM key plus a Zep Cloud key and
+> would simulate thousands of agents against a free tier of roughly 50 requests
+> per day ([AI-PROVIDER-SETUP.md](AI-PROVIDER-SETUP.md)).
 >
-> So these hypotheses were written directly, by the same kind of model MiroFish
-> would have been driving — minus the swarm. That is a real limitation: one
-> model reasoning from documents is not thousands of agents interacting. Treat
-> the output as a **first draft of the questions**, which is all it is used for.
+> **Update, 6 October 2026: MiroFish has since been run for real**, and the
+> panel's answers to this very instrument are in
+> [mirofish-panel.md](mirofish-panel.md). That run killed **H1 and H2**, gave
+> weak support to H3, and could not test H4. The conclusions below are retained
+> because they are still the pre-registered guesses — but two of them are now
+> known to be wrong, and the panel's version is the current one.
 
 ---
 
@@ -95,3 +96,7 @@ genuinely useful and we should say so.
 
 *This document designs a survey. It is not evidence. The evidence is the
 `Feedback` table, after real people have filled it in.*
+
+*MiroFish's simulated panel ([mirofish-panel.md](mirofish-panel.md)) is not
+evidence either — it is the same model answering itself. Its one real output
+was a defect in the public link, not a set of numbers.*
