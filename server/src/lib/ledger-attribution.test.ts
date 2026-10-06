@@ -127,6 +127,21 @@ describe("enterpriseKindForFlock — one vocabulary shared with income categorie
   it("falls back to the type when category is absent", () => {
     expect(enterpriseKindForFlock({ id: 3, category: null, type: "broilers" })).toBe("poultry");
   });
+
+  // The production shape: the flock form only ever writes poultry/livestock/
+  // aquaculture/other as `category`. Reading that bucket first made a dairy
+  // herd "livestock", and milk income (kind "dairy") could never find it —
+  // farm 7's milk sale sat in "general" on the live scoreboard until the
+  // probe caught it.
+  it("prefers the species in type over the generic category bucket", () => {
+    expect(enterpriseKindForFlock({ id: 5, category: "livestock", type: "cattle_dairy" })).toBe("dairy");
+    expect(enterpriseKindForFlock({ id: 6, category: "livestock", type: "goats" })).toBe("livestock");
+  });
+
+  it("still refuses to split 'cattle' into beef or dairy", () => {
+    expect(enterpriseKindForFlock({ id: 7, category: "livestock", type: "cattle" })).toBe("livestock");
+    expect(enterpriseKindForFlock({ id: 8, category: null, type: "cattle" })).toBe("general");
+  });
   it("is general for a flock it cannot classify — never undefined", () => {
     expect(enterpriseKindForFlock({ id: 4, category: null, type: null })).toBe("general");
   });

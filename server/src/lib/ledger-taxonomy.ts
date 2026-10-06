@@ -159,6 +159,14 @@ const INCOME_MAP: Readonly<Record<string, EnterpriseKind>> = {
   milk: "dairy",
   dairy: "dairy",
   maziwa: "dairy",
+  // Flock `type` values that already name their own enterprise — no guessing
+  // involved, so they are safe in a vocabulary that otherwise refuses to
+  // split "cattle" into beef or dairy. A dairy herd is created with
+  // category "livestock" + type "cattle_dairy"; without this key the type
+  // classified as general and the bucket "livestock" won, so milk income
+  // could never find its flock (found by probe-unit-economics.mjs).
+  cattle_dairy: "dairy",
+  cattle_beef: "livestock",
   // livestock (meat + live animal sales)
   meat: "livestock",
   livestock: "livestock",

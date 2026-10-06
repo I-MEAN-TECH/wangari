@@ -77,14 +77,23 @@ export type AttributionInput = {
  * share ONE vocabulary. If `milk` means `dairy` on the income side, it must
  * mean `dairy` on the flock side too, or rule 3 can never match anything.
  *
- * `category` is checked first because it is the field the flock form sets
- * ("poultry", "dairy", "aquaculture"). `type` is the fallback, because a flock
- * created before `category` existed carries only `type` ("layers", "broilers").
+ * `type` is read FIRST because it is the species and therefore the more
+ * specific signal. The flock form's `category` is a bucket — the templates
+ * only ever write "poultry", "livestock", "aquaculture" or "other" — so a
+ * dairy herd is `category: "livestock", type: "cattle_dairy"`. Reading the
+ * bucket first classified it as `livestock`, and "livestock" never equals the
+ * income kind "dairy": the milk sale could never reach its flock and sat in
+ * "general" on the live scoreboard (found by probe-unit-economics.mjs).
+ *
+ * `category` remains the fallback for anything `type` cannot classify —
+ * including `type: "cattle"`, which is deliberately unclassified in
+ * `classifyIncome` because guessing beef vs dairy from "cattle" is exactly
+ * the guess this module exists to refuse.
  */
 export function enterpriseKindForFlock(flock: KnownFlock): EnterpriseKind {
-  const byCategory = classifyIncome(flock.category);
-  if (byCategory !== "general") return byCategory;
-  return classifyIncome(flock.type);
+  const byType = classifyIncome(flock.type);
+  if (byType !== "general") return byType;
+  return classifyIncome(flock.category);
 }
 
 /**
