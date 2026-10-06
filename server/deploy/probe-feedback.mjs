@@ -88,6 +88,12 @@ try {
     Array.isArray(instBody.species) && instBody.species.includes("kuku"),
     "instrument exposes species options"
   );
+  check(
+    Array.isArray(instBody.audiences) &&
+      instBody.audiences.length === 3 &&
+      instBody.audiences.every((a) => a.key && a.label && a.icon),
+    "instrument exposes three labelled audiences for the gate"
+  );
 
   // ── A real submission.
   const okRes = await post({
@@ -111,10 +117,56 @@ try {
   const bad3 = await post({ source: "public_link" });
   check(bad3.status === 400, "an empty submission is refused -> 400", `got ${bad3.status}`);
 
+  // ── The audience gate. This is the defect the MiroFish panel found: the open
+  // link used to accept anyone, and an investor's answer read as a farmer's.
+  const noAudience = await post({
+    source: "public_link",
+    rating: 5,
+    best: ["ni_rahisi"],
+  });
+  check(
+    noAudience.status === 400,
+    "a public-link response that does not say who they are is refused -> 400",
+    `got ${noAudience.status}`
+  );
+
+  const badAudience = await post({
+    source: "public_link",
+    audience: "investor",
+    rating: 5,
+    best: ["ni_rahisi"],
+  });
+  check(
+    badAudience.status === 400,
+    "an invented audience is refused, not stored -> 400",
+    `got ${badAudience.status}`
+  );
+
+  const gated = await post({
+    source: "public_link",
+    audience: "adviser",
+    rating: 4,
+    best: ["ni_rahisi"],
+  });
+  check(gated.status === 201, "a public-link response that answers is accepted -> 201", `got ${gated.status}`);
+  if (gated.status === 201) {
+    const gatedBody = await gated.json();
+    const gatedRow = await prisma.feedback.findUnique({ where: { id: gatedBody.id } });
+    check(gatedRow?.audience === "adviser", "the audience round-trips", `got ${gatedRow?.audience}`);
+  }
+
+  const inApp = await post({ source: "in_app", rating: 3, best: ["naona_faida"] });
+  check(
+    inApp.status === 201,
+    "the in-app form is not made to ask who it already knows -> 201",
+    `got ${inApp.status}`
+  );
+
   // An unknown source is NOT refused: a farmer's opinion must not be thrown
   // away over a metadata field. The invariant is that the unrecognised string
-  // is never what gets stored.
-  const odd = await post({ source: "carrier_pigeon", rating: 4 });
+  // is never what gets stored. It resolves to `public_link` here (no token),
+  // so it must carry an audience like any other open-link response.
+  const odd = await post({ source: "carrier_pigeon", audience: "farmer", rating: 4 });
   check(odd.status === 201, "an unknown source is accepted (lenient by design)", `got ${odd.status}`);
   if (odd.status === 201) {
     const oddBody = await odd.json();
