@@ -19,7 +19,10 @@ set -uo pipefail
 APP=/home/saasapp/app/server
 ENV_FILE=/home/saasapp/app/.env
 DB=wangari_migcheck
-MIGRATION=20261006120000_m1_ledger_taxonomy
+# Which migration to re-apply directly in RUN 3. Overridable so the same script
+# verifies any hand-written migration in this chain:
+#   bash verify-m1-migration.sh 20261006140000_feedback
+MIGRATION="${1:-20261006120000_m1_ledger_taxonomy}"
 
 cd "$APP" || { echo "FATAL: cannot cd $APP"; exit 1; }
 

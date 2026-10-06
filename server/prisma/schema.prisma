@@ -47,6 +47,7 @@ model User {
   workers       Worker[]
   auditLogs     AuditLog[]
   tickets       Ticket[]
+  feedback      Feedback[]
   crops         Crop[]
   verifications VerificationCode[]
   subscriptions Subscription[]
@@ -255,6 +256,7 @@ model Farm {
   insurancePolicies InsurancePolicy[]
   coopMemberships  CoopMembership[]
   coldChainEvents  ColdChainEvent[]
+  feedback         Feedback[]
 
   @@map("farms")
 }
@@ -970,6 +972,46 @@ model ZKTecoLog {
 
   @@unique([deviceId, attendanceId])
   @@map("zkteco_logs")
+}
+
+/// What a farmer told us, in his own taps.
+///
+/// This is the first mechanism Wangari has ever had for asking a user a
+/// question. Before it, every roadmap decision came from usage counts, and a
+/// count cannot say *why*.
+///
+/// `farmId` and `userId` are nullable on purpose: the public, no-login link is
+/// filled in mostly by people who are not users yet, and at a booth that is
+/// almost everyone. A required `farmId` would mean we could only ever hear
+/// from the handful of people already using the app.
+///
+/// `best`, `improve` and `species` are Json arrays of keys from
+/// lib/feedback.ts. Keys, not labels — the label is presentation and the label
+/// will change; the key is the data. Arbitrary strings are rejected before
+/// they reach here, or `"everything"` would top the chart and the report would
+/// become worse than no report, because it would look like evidence.
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  farmId    Int?     @map("farm_id")
+  userId    Int?     @map("user_id")
+  source    String // in_app | public_link | booth
+  rating    Int?
+  best      Json     @default("[]")
+  improve   Json     @default("[]")
+  species   Json     @default("[]")
+  comment   String?
+  phone     String?
+  // A hash, never the address itself. Enough to throttle one responder on a
+  // public form; not enough to become a record of who said what.
+  ipHash    String?  @map("ip_hash")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  farm Farm? @relation(fields: [farmId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([source, createdAt])
+  @@map("feedback")
 }
 
 model Ticket {

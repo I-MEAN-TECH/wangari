@@ -62,6 +62,8 @@ import supportRoutes from "./routes/support.js";
 import promoRedeemRoutes from "./routes/promo-redeem.js";
 import { idempotencyGuard } from "./middleware/idempotency.js";
 import { planGate } from "./middleware/plan-gate.js";
+import feedbackRoutes from "./routes/feedback.js";
+import adminFeedbackRoutes from "./routes/admin-feedback.js";
 import adminCrmRoutes from "./routes/admin-crm.js";
 import adminAiRoutes from "./routes/admin-ai.js";
 import adminIpRoutes from "./routes/admin-ip.js";
@@ -291,6 +293,24 @@ app.use("/api/admin/ai", adminAiRoutes);
 // A sibling prefix, so neither router can shadow the other: /api/admin/ai
 // matches /api/admin/ai/** only, and never /api/admin/ip.
 app.use("/api/admin/ip", adminIpRoutes);
+// What farmers told us. Read-only, so support roles may read it.
+app.use("/api/admin/feedback", adminFeedbackRoutes);
+
+// ─── Feedback (public) ────────────────────────────────────
+// Unauthenticated on purpose: the shareable link is filled in mostly by people
+// who are not users yet, and at an expo booth that is almost everyone. It gets
+// its own tighter limiter because the global /api/ limiter (100/15min) is far
+// too generous for an anonymous write endpoint — one phone on a loop could fill
+// the table and, worse, skew the very numbers we opened the form to measure.
+const feedbackLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 12,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many submissions. Please try again later." },
+});
+app.use("/api/feedback", feedbackLimiter, feedbackRoutes);
+
 app.use("/api", contactRoutes);
 app.use("/api", siteContentRoutes);
 
