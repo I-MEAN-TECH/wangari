@@ -8,6 +8,7 @@ import {
   type KnownEnterprises,
   type EnterpriseRef,
 } from "../lib/ledger-attribution.js";
+import { allocateFeedPool } from "../lib/ledger-feed.js";
 
 /**
  * Profitability Scoreboard — which flock/block/pond actually makes money?
@@ -71,7 +72,7 @@ type Ent = {
   feedCost: number;
   outputKg: number;
   outputUnits: number;
-  /** Which enterprise this row is when the kind is ambiguous. */
+  /** What this enterprise sells. Decides the unit a cost is quoted per. */
   unit: "egg" | "litre" | "kg" | null;
   costsByBucket: Map<CostBucket, number>;
 };
@@ -178,23 +179,11 @@ router.get("/", async (req: Request, res: Response) => {
     for (const p of prodRows) {
       feedByFlock.set(p.flockId, (feedByFlock.get(p.flockId) || 0) + Number(p.feedUsed || 0));
     }
-    const totalFeedKg = [...feedByFlock.values()].reduce((a, b) => a + b, 0);
 
-    // The pool to allocate is every feed-bucket shilling that is NOT already
-    // pinned to a flock. The old code had a ternary here whose condition
-    // (`incomeTx.length === 0`) had nothing to do with feed; this version has
-    // no such coupling.
-    const unallocatedFeedExpense = [...byKey.values()]
-      .filter((e) => e.kind !== "flock")
-      .reduce((s, e) => s + e.feedCost, 0);
-    const totalFeedExpense = [...byKey.values()].reduce((s, e) => s + e.feedCost, 0);
-
+    // ── Physical output per flock, so every cost has a denominator.
     for (const f of flocks) {
       const e = byKey.get(`flock-${f.id}`);
       if (!e) continue;
-      const kg = feedByFlock.get(f.id) || 0;
-
-      // Physical output first, so cost-per-unit has a denominator.
       const rows = prodRows.filter((p) => p.flockId === f.id);
       const eggs = rows.reduce((s, p) => s + Number(p.eggsCollected || 0), 0);
       const milk = rows.reduce((s, p) => s + Number(p.milkCollected || 0), 0);
@@ -202,20 +191,32 @@ router.get("/", async (req: Request, res: Response) => {
       // Eggs are converted at a named constant rather than a bare 0.06 so the
       // assumption has one home and can be challenged (see ledger-taxonomy.ts).
       e.outputKg = eggs * KG_PER_EGG + milk;
+    }
 
-      if (totalFeedKg > 0 && kg > 0 && totalFeedExpense > 0) {
-        // Allocate the unpinned feed pool by share of kilos consumed, then hold
-        // the enterprise's own direct feed cost as a floor — allocation must
-        // never make a cost disappear.
-        const allocated = (kg / totalFeedKg) * unallocatedFeedExpense;
-        const total = Math.max(e.feedCost, e.feedCost + allocated);
-        const delta = total - e.feedCost;
-        if (delta > 0) {
-          e.feedCost = total;
-          e.costs += delta;
-          e.costsByBucket.set("feed", (e.costsByBucket.get("feed") ?? 0) + delta);
-        }
-      }
+    // ── Spread the unattributed feed bill across the flocks that ate it.
+    //
+    // This MOVES cost; it does not create it. The previous version assigned
+    // the allocation to the flock while leaving the original expense on
+    // "general", so a KES 30,000 feed bill made `summary.totalCosts` read
+    // 60,000 — and feed is the largest cost line on most of these farms.
+    // lib/ledger-feed.ts owns the invariant, and its tests defend it.
+    const allocated = allocateFeedPool(
+      [...byKey.values()].map((e) => ({
+        key: e.id,
+        kind: e.kind,
+        feedCost: e.feedCost,
+        kgConsumed: e.ref.kind === "flock" ? feedByFlock.get(e.ref.id) || 0 : 0,
+      }))
+    );
+    for (const e of byKey.values()) {
+      const next = allocated.get(e.id);
+      if (next === undefined || next === e.feedCost) continue;
+      const delta = next - e.feedCost;
+      e.feedCost = next;
+      e.costs += delta;
+      const bucket = (e.costsByBucket.get("feed") ?? 0) + delta;
+      if (bucket > 0) e.costsByBucket.set("feed", bucket);
+      else e.costsByBucket.delete("feed");
     }
 
     const rows = [...byKey.values()]
