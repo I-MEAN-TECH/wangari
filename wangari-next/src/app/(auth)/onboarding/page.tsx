@@ -77,14 +77,14 @@ const FARM_TYPES = [
   // not inherit the text colour, and cannot be sized to match an icon set.
   // Lucide has no goat or bee, so Goats uses Rabbit (small livestock) and
   // Bees uses Birdhouse (the structure, which is how a keeper thinks of it).
-  { id: "poultry", label: "Poultry", sub: "Eggs · meat", icon: Egg },
-  { id: "dairy", label: "Dairy", sub: "Cattle · goats", icon: Milk },
-  { id: "cattle", label: "Cattle", sub: "Beef", icon: Beef },
-  { id: "goats", label: "Goats", sub: "Meat", icon: Rabbit },
-  { id: "crops", label: "Crops", sub: "Maize · vegetables", icon: Wheat },
-  { id: "horticulture", label: "Horticulture", sub: "Flowers · fruit", icon: Flower2 },
-  { id: "fish", label: "Fish", sub: "Ponds", icon: Fish },
-  { id: "bees", label: "Bees", sub: "Honey", icon: Birdhouse },
+  { id: "poultry", label: "Kuku", sub: "Eggs · meat", icon: Egg },
+  { id: "dairy", label: "Mifugo", sub: "Cattle · goats", icon: Milk },
+  { id: "cattle", label: "Wagombe", sub: "Beef", icon: Beef },
+  { id: "goats", label: "Mbuzi", sub: "Meat", icon: Rabbit },
+  { id: "crops", label: "Mazao", sub: "Maize · vegetables", icon: Wheat },
+  { id: "horticulture", label: "Bustani", sub: "Flowers · fruit", icon: Flower2 },
+  { id: "fish", label: "Samaki", sub: "Ponds", icon: Fish },
+  { id: "bees", label: "Nyuki", sub: "Honey", icon: Birdhouse },
 ];
 
 export default function OnboardingPage() {
@@ -186,10 +186,10 @@ export default function OnboardingPage() {
           <>
             <div className="mb-6 text-center">
               <h1 className="text-2xl font-bold leading-tight text-wangari-heading sm:text-3xl">
-                What do you farm?
+                Unafuga nini?
               </h1>
               <p className="mx-auto mt-2 max-w-md text-wangari-muted">
-                Pick one. It helps us show you what matters for your farm.
+                Chagua moja. Inatusaidia kukuonyesha kile kinachokuhusu shamba lako.
               </p>
             </div>
 
@@ -237,29 +237,29 @@ export default function OnboardingPage() {
               onClick={() => setStep(1)}
               disabled={!farmType}
             >
-              Continue
+              Endelea
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Button>
 
             <p className="mt-4 text-center text-xs text-wangari-subtle">
-              You can add more later. We do not need everything today.
+              Unawezaongeza zaidi baadaye. Hatuhitaji kila kitu leo.
             </p>
           </>
         ) : step === 1 ? (
           <>
             <div className="mb-6 text-center">
               <h1 className="text-2xl font-bold leading-tight text-wangari-heading sm:text-3xl">
-                Your farm name
+                Jina la shamba lako
               </h1>
               <p className="mx-auto mt-2 max-w-md text-wangari-muted">
-                This is the name that appears on your statements.
+                Hii ndiyo jina litakalowekwa kwenye risiti zako.
               </p>
             </div>
 
             <div className="space-y-4 rounded-xl border border-wangari-border bg-wangari-card p-6">
               <div>
                 <Label htmlFor="farmName" className="mb-1.5 block">
-                  Farm name
+                  Jina la shamba
                 </Label>
                 <Input
                   id="farmName"
@@ -272,8 +272,8 @@ export default function OnboardingPage() {
 
               <div>
                 <Label htmlFor="county" className="mb-1.5 block">
-                  County{" "}
-                  <span className="font-normal text-wangari-subtle">(optional)</span>
+                  Kaunti{" "}
+                  <span className="font-normal text-wangari-subtle">(hiari)</span>
                 </Label>
                 <div className="relative">
                   <MapPin
@@ -293,8 +293,8 @@ export default function OnboardingPage() {
 
               <div>
                 <Label htmlFor="phone" className="mb-1.5 block">
-                  Phone number{" "}
-                  <span className="font-normal text-wangari-subtle">(optional)</span>
+                  Namba ya simu{" "}
+                  <span className="font-normal text-wangari-subtle">(hiari)</span>
                 </Label>
                 <Input
                   id="phone"
@@ -320,7 +320,7 @@ export default function OnboardingPage() {
                   onClick={() => setStep(0)}
                   disabled={saving}
                 >
-                  Back
+                  Nyuma
                 </Button>
                 <Button
                   type="button"
@@ -357,13 +357,13 @@ export default function OnboardingPage() {
             <div className="mb-6 text-center">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-wangari-green-50 px-4 py-1.5 text-wangari-green-800">
                 <PartyPopper className="h-4 w-4" aria-hidden />
-                <span className="text-sm font-semibold">Farm claimed</span>
+                <span className="text-sm font-semibold">Shamba limepakuliwa</span>
               </div>
               <h1 className="text-2xl font-bold leading-tight text-wangari-heading sm:text-3xl">
-                What did you get today?
+                Uliopata nini leo?
               </h1>
               <p className="mx-auto mt-2 max-w-md text-wangari-muted">
-                Pick one. You will see the number straight away.
+                Chagua moja. Utakuona hesabu mara moja.
               </p>
             </div>
 
@@ -416,7 +416,7 @@ export default function OnboardingPage() {
                 router.refresh();
               }}
             >
-              Do this later
+              Nitafanya baadaye
             </Button>
           </>
         )}
