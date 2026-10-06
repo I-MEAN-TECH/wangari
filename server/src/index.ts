@@ -5,6 +5,7 @@ import compression from "compression";
 import rateLimit from "express-rate-limit";
 import { initSentry, flushTelemetry, captureError } from "./lib/sentry.js";
 import { ipGuard } from "./middleware/ipGuard.js";
+import { metricsMiddleware, snapshot as metricsSnapshot } from "./lib/metrics.js";
 
 // Routes
 import authRoutes from "./routes/auth.js";
@@ -103,6 +104,13 @@ const PORT = process.env.PORT || 3001;
 // Local dev overrides with HOST=0.0.0.0 when it needs LAN access.
 const HOST = process.env.HOST || "127.0.0.1";
 
+// ─── Metrics ───────────────────────────────────────────────
+// Mounted ahead of ipGuard and the rate limiters on purpose: a blocked or
+// throttled request is exactly the traffic an operator wants counted.
+// Aggregates only (no URLs, no tenants) — the endpoint is unauthenticated
+// like /health. See lib/metrics.ts for the payload contract.
+app.use(metricsMiddleware);
+
 // ─── Performance & Compression ──────────────────────────────
 // ─── IP access control ───────────────────────────────────
 // Ahead of the rate limiter and every router on purpose. A block is only worth
@@ -194,6 +202,12 @@ app.use("/uploads", express.static("uploads"));
 // ─── Health Check ─────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Process-level metrics: uptime, memory and request counts by outcome
+// class for THIS cluster worker. bootAt moving between scrapes = restart.
+app.get("/metrics", (_req, res) => {
+  res.json(metricsSnapshot());
 });
 
 // ─── API Routes ───────────────────────────────────────────

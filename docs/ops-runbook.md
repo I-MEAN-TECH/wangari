@@ -1,72 +1,112 @@
 # Wangari — Operations Runbook (VPS)
 
 > **Read this first** if you are a human or an AI agent asked to do anything on
-> the Wangari VPS (`lewis@20.164.18.34`, hostname `sve`, Debian, user `lewis`,
-> passwordless sudo available). Then read [architecture.md](architecture.md)
-> for the full topology and [server/ecosystem.config.cjs](../server/ecosystem.config.cjs)
-> for the PM2 definition.
+> the Wangari VPS. Then read [architecture.md](architecture.md) for the full
+> topology and `server/ecosystem.config.cjs` for the PM2 definition.
+>
+> **Access:** the SSH alias `vps` lands you as **root** on the app host
+> (`vmi3524773`, 169.58.215.146, **Ubuntu 24.04**). The app itself runs as the
+> **`saasapp`** user. *(This file previously described a different host —
+> hostname `sve`, Debian, user `lewis`, `/var/www/wangari`, port 3001,
+> MariaDB. All of that was stale; everything below was re-verified against
+> the live box on 2026-10-06.)*
 
 ## Golden rules
 
-1. **Never `pm2 restart` on production.** Use `pm2 reload` — cluster workers
-   recycle one at a time so the API never goes dark.
+1. **Never `pm2 restart` on production.** The approved deploy script uses
+   `pm2 reload` — cluster workers recycle one at a time so the API never goes
+   dark.
 2. **Never edit files directly on the VPS.** All changes go through git
-   (`main` branch → deploy). The VPS checkout at `/var/www/wangari` must stay
+   (`main` branch → deploy). The checkout at `/home/saasapp/app` must stay
    clean; if it's dirty, stop and reconcile first.
 3. **Never hardcode secrets in commands or logs.** They live in
-   `/var/www/wangari/server/.env` and Vercel env vars.
-4. **Health check after every change:** `curl -s localhost:3001/health` on the
-   VPS, plus `https://api.wangari.imeantech.com/health` from outside.
+   `/home/saasapp/app/.env` and Vercel env vars.
+4. **Health check after every change:**
+   `curl -s -o /dev/null -w '%{http_code}' http://localhost:8010/health` →
+   expect **200**, plus `https://api.wangari.imeantech.com/health` from
+   outside.
 
-## Standard backend deploy (the only approved way)
+## Standard deploys
+
+### Backend (VPS) — the only approved way
 
 ```bash
-cd /var/www/wangari/server && git pull && npm run build && pm2 reload ecosystem.config.cjs --update-env
+ssh vps
+cd /home/saasapp/app && bash deploy/update.sh            # code-only change
+cd /home/saasapp/app && bash deploy/update.sh --migrate  # ONLY when prisma schema.prisma changed
 ```
+
+The script pulls, builds, reloads the PM2 cluster one worker at a time, runs
+`pm2 save`, then waits for the API to answer. It ends with
+`Update complete. <sha>` — confirm that sha is the one you meant to ship.
 
 Then verify:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/health   # expect 200
-pm2 ls                                                                 # 2 online cluster workers
+curl -s -o /dev/null -w '%{http_code}' http://localhost:8010/health   # expect 200
+pm2 ls                                    # 2 online cluster workers (as saasapp)
 ```
 
-Frontend deploys itself: push to `main` → Vercel builds automatically.
-Project root on Vercel is `wangari-next` (if a build says "No Next.js version
-detected", the Vercel root-directory setting was reset — set it back to
-`wangari-next`).
+Gotchas confirmed the hard way:
+
+- If `git pull` refuses because of "detected dubious ownership", run it as
+  `git -c safe.directory=/home/saasapp/app ...` (the script handles this; a
+  manual pull must too).
+- **Untracked probe files block the pull.** Probe scripts are copied to the
+  VPS for live checks — `rm` them before pulling if git complains.
+
+### Frontend (Vercel)
+
+```bash
+# from the REPO ROOT (not wangari-next/) — this is the working invocation
+npx vercel deploy --prod --yes
+```
+
+The repo root uploads the whole tree, so `.vercelignore` must stay in place
+(a 95 MB scratch file once blew the 100 MB upload limit). Build output
+confirms with `▲ Aliased https://wangari.imeantech.com`.
 
 ## Where everything lives
 
 | Thing | Path / location |
 |---|---|
-| App checkout | `/var/www/wangari` (git, branch `main`) |
-| Backend code | `/var/www/wangari/server` (Express, TypeScript → `dist/`) |
-| Backend `.env` | `/var/www/wangari/server/.env` (incl. `JWT_SECRET`, `PAYSTACK_SECRET_KEY`, SMTP) |
-| PM2 config | `/var/www/wangari/server/ecosystem.config.cjs` |
-| PM2 process name | `wangari-api` (cluster, 2 workers, 400MB cap each) |
-| PM2 logs | `/home/lewis/.pm2/logs/wangari-api-{out,error}.log` (pm2-logrotate installed) |
-| Frontend | Vercel project `wangari` (team `lewis-ndungus-projects`), root dir `wangari-next` |
-| nginx sites | `/etc/nginx/sites-available/wangari` (web) and `wangari-api` (API) |
+| App checkout | `/home/saasapp/app` (git, branch `main`, owned by `saasapp`) |
+| Deploy script | `/home/saasapp/app/deploy/update.sh [--migrate]` |
+| Backend code | `/home/saasapp/app/server` (Express, TypeScript → `dist/`) |
+| Backend `.env` | `/home/saasapp/app/.env` (JWT_SECRET, DATABASE_URL, PAYSTACK keys, SMTP, …) |
+| PM2 process | `wangari-api`, cluster mode, 2 workers, **PORT=8010**, runs as `saasapp` |
+| PM2 logs | `/home/saasapp/.pm2/logs/wangari-api-{out,error}.log` (pm2 must run as `saasapp` to see them) |
+| Frontend | Vercel project `wangari`; production https://wangari.imeantech.com |
+| nginx | vhost `api.wangari.imeantech.com` → upstream `wangari_api` → `127.0.0.1:8010`. Other sites on this box (`saas`, `solar` — sveenergy) are **not ours, do not touch** |
 | TLS certs | Let's Encrypt via certbot (`certbot certificates` to list) |
-| Database | MariaDB on same box, Prisma ORM |
-| Database access | `sudo mysql` on the VPS |
+| Database | **PostgreSQL** on the same box: `127.0.0.1:5432`, db `saas_db`, user `saas_app` |
+| Database access | `psql` with `DATABASE_URL` from the app `.env` (see recipe below) |
 
-## Current production topology (as of 2026-09-30)
+Quick DB query (never echoes the password):
 
-- **2 vCPU, 913 MB RAM + 2 GB swap** — swap is active and sized for builds.
-- **PM2 cluster mode**: 2 × Node workers on port 3001 behind nginx.
-  - Zero-downtime reloads, per-worker 400MB memory restart cap.
-  - Boot persistence: systemd unit `pm2-lewis` (enabled). After a VPS reboot
-    PM2 resurrects `wangari-api` automatically (`pm2 save` is current).
-- **Measured capacity**: ~1,350 req/s at 100 concurrent (p95 ≈ 113ms).
-  Comfortable for ~1,000+ daily active users. First scaling lever = VPS RAM.
-- **Rate limiting**: Express `trust proxy 1`; nginx forwards `X-Real-IP` /
-  `X-Forwarded-For` / `X-Forwarded-Proto`. Port 3001 is NOT reachable from
-  the internet — only via nginx.
+```bash
+ssh vps 'cd /home/saasapp/app && U=$(grep -m1 "^DATABASE_URL=" .env | sed "s/^DATABASE_URL=//" | sed "s/?schema=.*//") && psql "$U" -t -A -c "SELECT count(*) FROM users;"'
+```
+
+Table names are snake_case plural (`users`, `farms`, `daily_production`,
+`transactions`, `animal_movements`, …) — Prisma field `@map`s, not the model
+names.
+
+## Current production topology (re-verified 2026-10-06)
+
+- **PM2 cluster mode**: 2 × Node workers on `127.0.0.1:8010`, behind nginx.
+  Zero-downtime reloads, `pm2 save` runs on every deploy.
+  **⚠ There is currently NO boot persistence** (no systemd unit, no lingering
+  user service, no cron) — after a host reboot the API stays down until
+  someone runs `deploy/update.sh` or `pm2 resurrect` as `saasapp`. See open
+  items below.
+- **Rate limiting**: Express `trust proxy 1`; nginx forwards
+  `X-Real-IP` / `X-Forwarded-For` / `X-Forwarded-Proto`. Port 8010 binds
+  loopback only — not reachable from the internet.
 - **Domains**: `wangari.imeantech.com` (Vercel app),
-  `api.wangari.imeantech.com` (primary API, used by frontend),
+  `api.wangari.imeantech.com` (primary API, used by the frontend),
   `api.imeantech.com` (API alias, same cert).
+- The box also serves unrelated sites (`sveenergy`); keep clear of them.
 
 ## Access control model (do not break this)
 
@@ -85,52 +125,77 @@ The trial-status payload MUST include `status: "active"` on active
 subscriptions — the frontend banner keys on it. Regression here shows a false
 "trial expired" paywall to paying users (this bug happened; see git history).
 
-## Known gaps / next moves (agreed roadmap)
+## Live probes (run after deploys that touch these areas)
+
+```bash
+ssh vps "node /home/saasapp/app/server/deploy/probe-revenue-series.mjs"   # dashboard revenue series
+ssh vps "node /home/saasapp/app/server/deploy/probe-m2-m4-live.mjs"       # compliance + pride layer
+```
+
+Both exit 0 on success and print one `OK` line per check.
+
+## Known gaps / next moves
 
 > **The product vision lives in [vision.md](vision.md) (the belief) and
-> [roadmap.md](roadmap.md) (V1 records → V2 AI/automation → V3 IoT + connections).
-> Read both before changing what the product *is*; this section is only ops.**
-> The honest current state and valuation is [valuation-audit.md](valuation-audit.md);
-> the founder's money-and-pitch playbook is [founder-guide.md](founder-guide.md).
+> [roadmap.md](roadmap.md) (V1 records → V2 AI/automation → V3 IoT +
+> connections). Read both before changing what the product *is*; this
+> section is only ops.** Honest current state: [valuation-audit.md](valuation-audit.md);
+> founder playbook: [founder-guide.md](founder-guide.md).
 
-1. **Observability** — pm2-logrotate is in; add a lightweight metrics endpoint
-   or Sentry performance for latency trends + worker restart counts, so growth
-   is visible before it hurts.
-2. **Database tuning** — MariaDB is on defaults; set innodb buffer pool size
-   and enable the slow-query log as user count grows.
-3. **Staging environment** — second PM2 app + `staging.api...` subdomain +
-   separate DB, so deploys can be tested with real data isolation before
+1. **⚠ PM2 boot persistence** — nothing resurrects the API after a host
+   reboot (verified 6 Oct: no systemd unit for root or `saasapp`, no
+   linger, no cron). Needs `pm2 startup` registered for the `saasapp` user
+   and `pm2 save` kept current (the deploy script already saves).
+2. **Observability** — ✅ basic metrics shipped: `GET /metrics` on the API
+   returns per-worker uptime/bootAt, memory and request counts by outcome
+   class (aggregates only — no URLs/tenants, pinned by test). `bootAt`
+   moving between scrapes = a worker restart. Still open: **alerting** —
+   nobody is paged; wire the metrics (or Sentry via `SENTRY_DSN`, which
+   `initSentry()` already supports) to something that notifies.
+3. **PostgreSQL tuning** — `saas_db` is on defaults; as usage grows set
+   `shared_buffers`/`work_mem`, enable `pg_stat_statements` and the slow
+   query log. *(This item used to say "MariaDB / innodb buffer pool" — the
+   database is Postgres.)*
+4. **Staging environment** — second PM2 app + `staging.api...` subdomain +
+   separate DB, so deploys can be tested with real-data isolation before
    hitting production.
-4. **AI module** — `AI_API_KEY` is unset in `/var/www/wangari/server/.env`; AI
-   features fail until a key (e.g. Gemini) is provided. Deliberately deferred.
-5. **Credential rotation** — VPS password and Paystack live key were shared in
-   chat during setup; rotate both (Paystack in dashboard, then update `.env`
-   + Vercel env and redeploy).
+5. **AI module** — `AI_API_KEY` unset in `/home/saasapp/app/.env`; AI
+   features fail until a key is provided. Deliberately deferred.
+6. **Credential rotation** — the VPS password and Paystack live key were
+   shared in chat during setup; rotate both (Paystack in dashboard, then
+   update `.env` + Vercel env and redeploy).
+7. **AGENTS.md is stale too** — it still quotes the old
+   `/var/www/wangari` + port 3001 deploy line; this runbook is the source
+   of truth until AGENTS.md is regenerated.
 
 ## Common tasks
 
 ```bash
-# Tail logs
-pm2 logs wangari-api --lines 50
+# Tail logs (direct file read — works as root, no user switch needed)
+ssh vps "tail -n 50 /home/saasapp/.pm2/logs/wangari-api-out.log"
+ssh vps "tail -n 100 /home/saasapp/.pm2/logs/wangari-api-error.log"
 
-# Live CPU/RAM per worker
-pm2 monit
+# Live CPU/RAM for the app's processes
+ssh vps "ps -u saasapp -o pid,%mem,%cpu,etime,cmd --sort=-%cpu | head -10"
 
-# Check DB quickly
-sudo mysql wangari_db -e "SELECT COUNT(*) FROM User;"
+# Health from outside
+curl -s https://api.wangari.imeantech.com/health
+
+# Per-worker process metrics (uptime, memory, request/error counts)
+curl -s http://localhost:8010/metrics
 
 # Renew TLS manually (normally automatic)
-sudo certbot renew --dry-run
-
-# Restart after catastrophic failure only (drops traffic for ~2s)
-pm2 reload ecosystem.config.cjs --update-env   # NOT restart
+ssh vps "certbot renew --dry-run"
 ```
 
 ## If something is on fire
 
-1. `pm2 ls` — are both workers online? If one is errored: `pm2 reload wangari-api`.
-2. `pm2 logs wangari-api --err --lines 100` — read the actual error.
-3. `curl localhost:3001/health` — is the app itself OK vs. nginx?
+1. `pm2 ls` (run as the `saasapp` owner) — are both workers online? If one
+   is errored: `pm2 reload wangari-api` — **never restart**.
+2. Read the error log
+   `/home/saasapp/.pm2/logs/wangari-api-error.log` — the actual error.
+3. `curl localhost:8010/health` — is the app itself OK vs. nginx?
 4. `free -h && uptime` — OOM or load spike?
-5. Last resort rollback: `cd /var/www/wangari/server && git log --oneline -5`
-   then `git checkout <last-good-sha> && npm run build && pm2 reload ecosystem.config.cjs`.
+5. Last resort rollback: `cd /home/saasapp/app && git log --oneline -5`,
+   then `git checkout <last-good-sha> && bash deploy/update.sh` (the script
+   rebuilds and reloads cleanly).
