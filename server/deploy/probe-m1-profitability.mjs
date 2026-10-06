@@ -127,6 +127,73 @@ try {
   const attributed = body.rows.filter((r) => r.kind !== "general");
   console.log("");
   console.log(`attributed enterprises: ${attributed.length} of ${body.rows.length}`);
+
+  // ── The generalisation: every farm, not just this one.
+  //
+  // The doubled feed bill did not show up in the profit total — it showed up
+  // in `totalCosts` and in each enterprise's margin. So the check that catches
+  // it is a conservation check: the endpoint's cost total must equal the sum of
+  // the expense rows it read, and its revenue total must equal the sum of the
+  // income rows. Neither can drift by a shilling, on any farm.
+  console.log("");
+  console.log("=== conservation check across every farm with transactions ===");
+
+  const farmIds = [
+    ...new Set((await prisma.transaction.findMany({ select: { farmId: true } })).map((t) => t.farmId)),
+  ];
+  const since = new Date(Date.now() - 90 * 86400000);
+  let checked = 0;
+
+  for (const farmId of farmIds) {
+    const farm = await prisma.farm.findUnique({
+      where: { id: farmId },
+      select: { ownerId: true, name: true },
+    });
+    if (!farm) continue;
+    const ownerRow = await prisma.user.findUnique({
+      where: { id: farm.ownerId },
+      select: { id: true, tokenVersion: true },
+    });
+    if (!ownerRow) continue;
+
+    const farmToken = jwt.sign(
+      { userId: ownerRow.id, farmId, tv: ownerRow.tokenVersion ?? 0 },
+      envValue("JWT_SECRET"),
+      { expiresIn: "5m" }
+    );
+    const farmRes = await fetch(`${API}/api/profitability?days=90`, {
+      headers: { Authorization: `Bearer ${farmToken}` },
+    });
+    if (farmRes.status !== 200) {
+      check(false, `farm ${farmId} profitability returns 200`, `got ${farmRes.status}`);
+      continue;
+    }
+    const farmBody = await farmRes.json();
+
+    const agg = await prisma.transaction.groupBy({
+      by: ["type"],
+      where: { farmId, date: { gte: since } },
+      _sum: { amount: true },
+    });
+    const expenseSum = Number(agg.find((a) => a.type === "expense")?._sum.amount ?? 0);
+    const incomeSum = Number(agg.find((a) => a.type === "income")?._sum.amount ?? 0);
+
+    // Rounding in the route is per-row, so allow a shilling per row.
+    const slack = Math.max(1, farmBody.rows.length);
+    const costOK = Math.abs(farmBody.summary.totalCosts - expenseSum) <= slack;
+    const revOK = Math.abs(farmBody.summary.totalRevenue - incomeSum) <= slack;
+
+    check(
+      costOK,
+      `farm ${farmId} (${farm.name}): totalCosts ${farmBody.summary.totalCosts} == expenses ${expenseSum}`
+    );
+    check(
+      revOK,
+      `farm ${farmId} (${farm.name}): totalRevenue ${farmBody.summary.totalRevenue} == income ${incomeSum}`
+    );
+    checked++;
+  }
+  console.log(`\nchecked ${checked} farm(s)`);
 } catch (e) {
   console.error("");
   console.error(`ERROR: ${e.message}`);

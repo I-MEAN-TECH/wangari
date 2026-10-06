@@ -15,12 +15,12 @@
 | Task | State | Evidence |
 |---|---|---|
 | 1. Taxonomy module | **DONE** | `ledger-taxonomy.ts` + 14 tests green. All 9 live categories map, none fall to catch-all. |
-| 2. Schema + migration | **DONE, NOT APPLIED TO PRODUCTION** | `prisma validate` clean; `migrate diff` output matches the hand-written migration exactly; applied cleanly to a throwaway DB on the VPS (27-migration chain, run 3x, all exit 0). |
-| 3. Backfill script | **DONE, NOT RUN** | `scripts/backfill-ledger-taxonomy.ts`. Cannot run until the migration is applied to production — the VPS client is generated from the pre-M1 schema (`Unknown field costBucket`). |
-| 4. Rewire `profitability.ts` | **DONE** | Fuzzy matcher deleted; `attributeTransaction` + 17 tests green; `0.06` replaced by `KG_PER_EGG`; the `incomeTx.length === 0` feed heuristic removed. |
-| 5. End-to-end | **PARTIAL** | `tsc --noEmit` clean; **681/681** server tests pass. Not yet called live — needs the migration deployed. |
+| 2. Schema + migration | **DONE, LIVE IN PRODUCTION** | `migrate diff` matches the hand-written migration exactly; applied to a throwaway DB first (27-migration chain, 3 runs, all exit 0); then deployed — `deploy/update.sh --migrate` exit 0, migration recorded, 4 columns nullable, 4 indexes, both `SET NULL` FKs, 17 transactions intact, `/health` 200. |
+| 3. Backfill script | **DONE AND RUN** | Dry run first (11 expense / 6 income / 9 categories, **none** in the catch-all), then `--apply`: 17 rows updated, 0 unclassified, and a re-run needs 0 — idempotent. |
+| 4. Rewire `profitability.ts` | **DONE, FAILED THEN FIXED** | Fuzzy matcher deleted; `attributeTransaction` + 17 tests; `0.06` → `KG_PER_EGG`; the `incomeTx.length === 0` heuristic removed. The probe then found the feed split **counting the bill twice** (`totalCosts` 60,000 for a 30,000 spend) — fixed by extracting `lib/ledger-feed.ts` (+10 tests). |
+| 5. End-to-end | **DONE, VERIFIED LIVE** | `tsc --noEmit` clean; **691/691** server tests. `probe-m1-profitability.mjs` returns 200 with finite numbers and a cost breakdown, and conserves totals on **all 4 farms with transactions**. |
 
-**Blocked on you:** applying the migration to production (`deploy/update.sh --migrate`) and then running the backfill with `--apply`. Both are production mutations, so neither was done unilaterally.
+**The lesson worth keeping:** the unit tests were green on the doubled-cost bug. Only calling the live endpoint on the real database found it. That is why `probe-m1-profitability.mjs` exists and why it checks conservation rather than just shape.
 
 ---
 
