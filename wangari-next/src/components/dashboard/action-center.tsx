@@ -126,7 +126,7 @@ export function ActionCenter() {
                 key={a.id}
                 initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
                 className={`flex items-start gap-3 px-5 py-3.5 border-l-4 ${style.ring}`}
-                style={{ borderLeftColor: a.priority === "critical" ? "#dc2626" : a.priority === "high" ? "#f59e0b" : a.priority === "medium" ? "#0284c7" : "#a8a29e" }}
+                style={{ borderLeftColor: a.priority === "critical" ? "var(--color-wangari-red-600)" : a.priority === "high" ? "var(--color-wangari-amber-500)" : a.priority === "medium" ? "var(--color-wangari-sky-600)" : "var(--color-wangari-stone-400)" }}
               >
                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm border border-wangari-border/60">
                   <Icon className="h-4.5 w-4.5 text-wangari-heading" />

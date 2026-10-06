@@ -73,7 +73,7 @@ const statAccents = {
   blue: "bg-badge-blue-bg text-badge-blue-text",
   amber: "bg-badge-yellow-bg text-badge-yellow-text",
   red: "bg-badge-red-bg text-badge-red-text",
-  violet: "bg-[#F3E8FF] text-[#7E22CE]",
+  violet: "bg-wangari-purple-100 text-wangari-purple-700",
   slate: "bg-wangari-sunken text-wangari-muted",
 } as const;
 

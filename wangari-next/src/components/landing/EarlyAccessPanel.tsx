@@ -94,10 +94,10 @@ export function EarlyAccessPanel() {
         <div className="flex items-start gap-4">
           <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-tone-warn-text" aria-hidden />
           <div>
-            <h3 className="mb-1.5 text-base font-extrabold text-[#78350F]">
+            <h3 className="mb-1.5 text-base font-extrabold text-wangari-amber-800">
               Where we honestly are
             </h3>
-            <p className="text-sm leading-relaxed text-[#78350F]">
+            <p className="text-sm leading-relaxed text-wangari-amber-800">
               Wangari is live and in early access with Kenyan farmers. We are
               early — a small number of users, no revenue yet, and the AI
               assistant is still being built. We have deliberately not filled this

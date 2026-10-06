@@ -39,7 +39,7 @@ interface CrmSummary {
 const STAGES = [
   { key: "lead", label: "Leads", dot: "bg-wangari-subtle" },
   { key: "contacted", label: "Contacted", dot: "bg-badge-blue-text" },
-  { key: "demo", label: "Demo", dot: "bg-[#7E22CE]" },
+  { key: "demo", label: "Demo", dot: "bg-wangari-purple-700" },
   { key: "trial", label: "Trial", dot: "bg-badge-yellow-text" },
   { key: "customer", label: "Customer", dot: "bg-wangari-green-600" },
   { key: "churned", label: "Churned", dot: "bg-badge-red-text" },

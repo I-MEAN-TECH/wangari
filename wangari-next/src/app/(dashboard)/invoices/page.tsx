@@ -200,12 +200,12 @@ export default function InvoicesPage() {
             {INVOICE_TEMPLATES.find(t => t.id === selectedTemplate)?.name || "Professional"}
           </span>
           {receiptTemplate !== "same" && (
-            <span className="text-[10px] font-bold text-[#1E3A5F] bg-[#EFF6FF] px-2 py-0.5 rounded-full border border-[#BFDBFE]">
+            <span className="text-[10px] font-bold text-[#1E3A5F] bg-wangari-blue-50 px-2 py-0.5 rounded-full border border-wangari-blue-200">
               receipts: {INVOICE_TEMPLATES.find(t => t.id === receiptTemplate)?.name}
             </span>
           )}
           {quoteTemplate !== "same" && (
-            <span className="text-[10px] font-bold text-[#7C2D12] bg-[#FFF7ED] px-2 py-0.5 rounded-full border border-badge-orange-bg">
+            <span className="text-[10px] font-bold text-[#7C2D12] bg-wangari-orange-50 px-2 py-0.5 rounded-full border border-badge-orange-bg">
               quotes: {INVOICE_TEMPLATES.find(t => t.id === quoteTemplate)?.name}
             </span>
           )}

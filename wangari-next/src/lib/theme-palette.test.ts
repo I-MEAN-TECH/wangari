@@ -25,15 +25,12 @@ const CSS = readFileSync(join(SRC, "app/globals.css"), "utf8");
 
 /** file (relative to src/) -> raw hex values deliberately allowed there. */
 const RAW_HEX_ALLOWLIST: Record<string, string[]> = {
-  // Invoice/quote document design palette (template accents, washes).
-  "app/(dashboard)/invoices/page.tsx": ["#1E3A5F", "#EFF6FF", "#BFDBFE", "#7C2D12", "#FFF7ED"],
+  // Invoice/quote document design palette (template accents, washes) — the
+  // document sub-palette, deliberately separate from app chrome.
+  "app/(dashboard)/invoices/page.tsx": ["#1E3A5F", "#7C2D12"],
   "app/(dashboard)/quotes/page.tsx": ["#E7EBD8", "#F1F5E8"],
   // WhatsApp brand green — brand colour, not ours to retheme.
   "app/(dashboard)/whatsapp/page.tsx": ["#25D366"],
-  // Category accents: CRM stage dot, admin badge lilac, early-access amber.
-  "app/(admin)/waadmin/crm/page.tsx": ["#7E22CE"],
-  "components/admin/ui.tsx": ["#F3E8FF", "#7E22CE"],
-  "components/landing/EarlyAccessPanel.tsx": ["#78350F"],
   // WeatherWidget illustration: a 12-step night-sky gradient, artwork.
   "components/dashboard/WeatherWidget.tsx": [
     "#0B1026", "#101B3F", "#1B2A5E", "#0A0F1D", "#141D33", "#22304D",
@@ -98,6 +95,11 @@ describe("theme palette", () => {
         `(?:(?:${families})-\\d{2,3})\\b`,
       "g"
     );
+    // The guard must be able to catch: prove the pattern fires on known
+    // offenders and stays silent on tokens, or this test could pass
+    // vacuously with a broken regex.
+    expect("text-gray-400 hover:bg-emerald-600 border-green-200".match(re)).toHaveLength(3);
+    expect("bg-wangari-green-500 text-tone-bad-bg text-white".match(re)).toBeNull();
     const offenders: string[] = [];
     for (const file of walk(SRC)) {
       const rel = relative(SRC, file).split("\\").join("/");
