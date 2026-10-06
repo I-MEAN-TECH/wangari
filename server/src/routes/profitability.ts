@@ -9,6 +9,29 @@ import {
   type EnterpriseRef,
 } from "../lib/ledger-attribution.js";
 import { allocateFeedPool } from "../lib/ledger-feed.js";
+import {
+  pickBenchmark,
+  describeAge,
+  benchmarkAgeDays,
+  STALE_DAYS,
+  type PricePoint,
+} from "../lib/market-price.js";
+import {
+  unitEconomics,
+  commodityForEnterprise,
+  benchmarkToCostUnit,
+  type CommodityMapping,
+  type UnitEconomics,
+} from "../lib/unit-economics.js";
+
+/** One row's market reference, when a defensible benchmark exists. */
+type MarketRef = {
+  commodity: string;
+  region: string | null;
+  source: string | null;
+  ageLabel: string;
+  stale: boolean;
+};
 
 /**
  * Profitability Scoreboard — which flock/block/pond actually makes money?
@@ -250,10 +273,90 @@ router.get("/", async (req: Request, res: Response) => {
           costPerUnit,
           costPerKg,
           costBreakdown,
+          // M4 — filled below for rows with output; null means "no unit to
+          // quote", not "zero". See lib/unit-economics.ts.
+          economics: null as UnitEconomics | null,
+          marketRef: null as MarketRef | null,
         };
       })
       .filter((e) => e.revenue > 0 || e.costs > 0)
       .sort((a, b) => b.profit - a.profit);
+
+    // ── M4: cost of production vs price, side by side ──────────────────────
+    // Three numbers a farmer can check against each other in one glance:
+    // his cost per unit (above), what his own books say he earns per unit
+    // (attributed revenue ÷ output), and — when recorded offers exist — what
+    // the county pays. A missing side stays null and says it is missing; the
+    // lib never turns a zero into a profit claim.
+    const unitRows = rows.filter((r) => r.unit && r.outputUnits > 0);
+    if (unitRows.length > 0) {
+      const farm = await prisma.farm.findUnique({
+        where: { id: farmId },
+        select: { county: true },
+      });
+
+      const mappings = new Map<string, CommodityMapping>();
+      for (const r of unitRows) {
+        const m = commodityForEnterprise(r);
+        if (m) mappings.set(r.id, m);
+      }
+
+      const commodities = [...new Set([...mappings.values()].map((m) => m.commodity))];
+      const priceRows = commodities.length
+        ? await prisma.marketPrice.findMany({
+            where: {
+              commodity: { in: commodities },
+              effectiveDate: { gte: new Date(Date.now() - 365 * 86400000) },
+            },
+            orderBy: { effectiveDate: "desc" },
+            select: { commodity: true, unit: true, priceKes: true, region: true, source: true, effectiveDate: true },
+          })
+        : [];
+
+      for (const r of unitRows) {
+        const mapping = mappings.get(r.id) ?? null;
+        let marketPricePerUnit: number | null = null;
+        let marketRef: MarketRef | null = null;
+
+        if (mapping) {
+          const points: PricePoint[] = priceRows
+            .filter((p) => p.commodity === mapping.commodity)
+            .map((p): PricePoint => ({
+              commodity: p.commodity,
+              unit: p.unit,
+              priceKes: Number(p.priceKes),
+              region: p.region,
+              source: p.source,
+              effectiveDate: p.effectiveDate,
+            }));
+          const bench = pickBenchmark(points, farm?.county ?? null);
+          const converted =
+            bench !== null ? benchmarkToCostUnit(Number(bench.priceKes), bench.unit, mapping) : null;
+          if (converted !== null && bench !== null) {
+            marketPricePerUnit = converted;
+            marketRef = {
+              commodity: mapping.commodity,
+              region: bench.region,
+              source: bench.source,
+              ageLabel: describeAge(bench.effectiveDate),
+              stale: benchmarkAgeDays(bench.effectiveDate) > STALE_DAYS,
+            };
+          }
+        }
+
+        // What this farm's own records say it earns per unit. Revenue of 0 is
+        // an absence of sales, which the lib reads as "not recorded".
+        const own = r.revenue > 0 ? r.revenue / r.outputUnits : null;
+
+        r.economics = unitEconomics({
+          costPerUnit: r.costPerUnit,
+          ownPricePerUnit: own,
+          marketPricePerUnit,
+          unit: r.unit!,
+        });
+        r.marketRef = marketRef;
+      }
+    }
 
     res.json({
       periodDays,

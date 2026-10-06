@@ -17,6 +17,12 @@ const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } }
 
 const EXPENSE_CATEGORIES = [
   { id: "animal_feed", label: "Animal Feed" },
+  // Buying an animal is capital, not feed. This option was missing, so
+  // KES 1,195,000 of real livestock purchases were filed under Animal Feed
+  // and inflated every cost-per-unit on the scoreboard. The taxonomy has
+  // always known `livestock_purchase` → stock; the form now offers it.
+  { id: "livestock_purchase", label: "Livestock Purchase" },
+  { id: "bird_purchase", label: "Chicks & Birds" },
   { id: "seeds", label: "Seeds" },
   { id: "fertilizer", label: "Fertilizer" },
   { id: "pesticide", label: "Pesticide" },
@@ -24,6 +30,8 @@ const EXPENSE_CATEGORIES = [
   { id: "veterinary", label: "Vet / Medicine" },
   { id: "equipment", label: "Equipment" },
   { id: "transport", label: "Transport" },
+  { id: "water", label: "Water" },
+  { id: "electricity", label: "Electricity" },
   { id: "infrastructure", label: "Building" },
   { id: "other", label: "Other" },
 ];
