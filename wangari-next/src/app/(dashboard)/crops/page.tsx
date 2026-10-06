@@ -56,10 +56,10 @@ function BatchTimeline({ status }: { status: string }) {
       {BATCH_STAGES.map((s, i) => (
         <React.Fragment key={s}>
           <div className="flex flex-col items-center gap-0.5" title={s}>
-            <div className={`h-2.5 w-2.5 rounded-full ${i <= effIdx && effIdx >= 0 ? "bg-[#166534]" : effIdx === -2 ? (i === 0 ? "bg-red-500" : "bg-gray-200") : "bg-gray-200"}`} />
-            <span className={`text-[8px] capitalize ${i <= effIdx && effIdx >= 0 ? "text-[#166534] font-bold" : "text-gray-400"}`}>{s}</span>
+            <div className={`h-2.5 w-2.5 rounded-full ${i <= effIdx && effIdx >= 0 ? "bg-wangari-green-800" : effIdx === -2 ? (i === 0 ? "bg-red-500" : "bg-gray-200") : "bg-gray-200"}`} />
+            <span className={`text-[8px] capitalize ${i <= effIdx && effIdx >= 0 ? "text-wangari-green-800 font-bold" : "text-gray-400"}`}>{s}</span>
           </div>
-          {i < BATCH_STAGES.length - 1 && <div className={`h-0.5 w-3 -mt-3 ${i < effIdx && effIdx >= 0 ? "bg-[#166534]" : "bg-gray-200"}`} />}
+          {i < BATCH_STAGES.length - 1 && <div className={`h-0.5 w-3 -mt-3 ${i < effIdx && effIdx >= 0 ? "bg-wangari-green-800" : "bg-gray-200"}`} />}
         </React.Fragment>
       ))}
     </div>
@@ -155,7 +155,7 @@ export default function CropsPage() {
     } catch (e: any) { showToast(e?.message || "Failed to advance batch"); }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" /></div>;
 
   const totalAcres = crops.reduce((s, c) => s + Number(c.areaAcres || 0), 0);
   const totalHarvest = crops.reduce((s, c) => s + (c.harvests || []).reduce((hs: number, h: any) => hs + Number(h.quantityKg || 0), 0), 0);
@@ -165,7 +165,7 @@ export default function CropsPage() {
     <div className="space-y-6">
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <PageHeader title="Crops & Plantation" description="Register, track growth, record harvests & treatments"
-          action={<Button onClick={() => { setShowForm(true); setStep(0); }} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer"><Plus className="h-4 w-4 mr-2" />Add Crop</Button>}
+          action={<Button onClick={() => { setShowForm(true); setStep(0); }} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer"><Plus className="h-4 w-4 mr-2" />Add Crop</Button>}
         />
       </motion.div>
 
@@ -173,19 +173,19 @@ export default function CropsPage() {
       <AnimatePresence>
         {showForm && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-            <Card className="border border-[#E5E7EB] hover:shadow-lg transition-shadow">
+            <Card className="border border-wangari-border hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-6">
                   {["What crop?", "Field details", "Confirm"].map((label, i) => (
                     <React.Fragment key={label}>
-                      <div className={`flex items-center gap-1.5 text-xs font-semibold ${i <= step ? "text-[#166534]" : "text-gray-300"}`}>
-                        <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${i < step ? "bg-[#166534] text-white" : i === step ? "bg-[#166534] text-white" : "bg-gray-100 text-gray-400"}`}>{i < step ? <Check className="h-3 w-3" /> : i + 1}</div>
+                      <div className={`flex items-center gap-1.5 text-xs font-semibold ${i <= step ? "text-wangari-green-800" : "text-gray-300"}`}>
+                        <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${i < step ? "bg-wangari-green-800 text-white" : i === step ? "bg-wangari-green-800 text-white" : "bg-gray-100 text-gray-400"}`}>{i < step ? <Check className="h-3 w-3" /> : i + 1}</div>
                         {label}
                       </div>
-                      {i < 2 && <div className={`flex-1 h-0.5 rounded ${i < step ? "bg-[#166534]" : "bg-gray-100"}`} />}
+                      {i < 2 && <div className={`flex-1 h-0.5 rounded ${i < step ? "bg-wangari-green-800" : "bg-gray-100"}`} />}
                     </React.Fragment>
                   ))}
-                  <button onClick={resetForm} className="ml-auto text-[#94A3B8] hover:text-[#64748B] cursor-pointer"><X className="h-4 w-4" /></button>
+                  <button onClick={resetForm} className="ml-auto text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
                 </div>
 
                 {step === 0 && (
@@ -194,7 +194,7 @@ export default function CropsPage() {
                     <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                       {CROP_TYPES.map(c => (
                         <button key={c} onClick={() => { setForm({ ...form, cropType: c }); setStep(1); }}
-                          className="rounded-xl border border-gray-200 px-3 py-3 text-center text-sm font-medium hover:border-[#166534] hover:bg-[#F0FDF4] transition-all cursor-pointer">{c}</button>
+                          className="rounded-xl border border-gray-200 px-3 py-3 text-center text-sm font-medium hover:border-wangari-green-800 hover:bg-wangari-green-50 transition-all cursor-pointer">{c}</button>
                       ))}
                     </div>
                   </div>
@@ -202,7 +202,7 @@ export default function CropsPage() {
 
                 {step === 1 && (
                   <div>
-                    <p className="text-sm font-bold text-gray-900 mb-1">Planting <span className="text-[#166534]">{form.cropType}</span></p>
+                    <p className="text-sm font-bold text-gray-900 mb-1">Planting <span className="text-wangari-green-800">{form.cropType}</span></p>
                     <p className="text-xs text-gray-400 mb-4">Give your field a name and set the basics</p>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       <div className="space-y-1"><Label className="text-xs font-semibold text-gray-500">🏷️ Field Name *</Label><Input placeholder="e.g. North Field" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-11 rounded-xl" autoFocus /></div>
@@ -220,7 +220,7 @@ export default function CropsPage() {
                       )}
                     </div>
                     <div className="mt-4 flex gap-2">
-                      <Button onClick={() => setStep(2)} disabled={!form.name} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer disabled:opacity-50">Review <ChevronRight className="h-4 w-4 ml-1" /></Button>
+                      <Button onClick={() => setStep(2)} disabled={!form.name} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer disabled:opacity-50">Review <ChevronRight className="h-4 w-4 ml-1" /></Button>
                       <Button variant="outline" onClick={() => setStep(0)} className="cursor-pointer">Back</Button>
                     </div>
                   </div>
@@ -229,7 +229,7 @@ export default function CropsPage() {
                 {step === 2 && (
                   <div>
                     <p className="text-sm font-bold text-gray-900 mb-4">Confirm</p>
-                    <div className="rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] p-4 space-y-2 text-sm">
+                    <div className="rounded-xl bg-wangari-green-50 border border-wangari-green-200 p-4 space-y-2 text-sm">
                       <div className="flex justify-between"><span className="text-gray-500">Crop:</span><span className="font-bold">{form.cropType}</span></div>
                       <div className="flex justify-between"><span className="text-gray-500">Field:</span><span className="font-bold">{form.name || "Unnamed"}</span></div>
                       {form.areaAcres && <div className="flex justify-between"><span className="text-gray-500">Area:</span><span className="font-bold">{form.areaAcres} acres</span></div>}
@@ -240,7 +240,7 @@ export default function CropsPage() {
                       {form.harvestSeason && <div className="flex justify-between"><span className="text-gray-500">Season:</span><span className="font-bold">{form.harvestSeason}</span></div>}
                     </div>
                     <div className="mt-4 flex gap-2">
-                      <Button onClick={handleCreate} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer">✓ Save Crop</Button>
+                      <Button onClick={handleCreate} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">✓ Save Crop</Button>
                       <Button variant="outline" onClick={() => setStep(1)} className="cursor-pointer">Edit</Button>
                     </div>
                   </div>
@@ -260,11 +260,11 @@ export default function CropsPage() {
           { title: "Crops", value: String(crops.length), icon: <Sprout className="h-5 w-5" /> },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
-            <Card className="border border-[#E5E7EB] hover:shadow-lg transition-all">
+            <Card className="border border-wangari-border hover:shadow-lg transition-all">
               <CardContent className="pt-6 pb-4 px-5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] mb-3">{kpi.icon}</div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B] mb-1">{kpi.title}</p>
-                <p className="text-2xl font-extrabold text-[#0F172A]">{kpi.value}</p>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-tone-good-bg text-wangari-green-800 mb-3">{kpi.icon}</div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-wangari-muted mb-1">{kpi.title}</p>
+                <p className="text-2xl font-extrabold text-wangari-heading">{kpi.value}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -304,10 +304,10 @@ export default function CropsPage() {
       {/* Profitability: inputs vs revenue per crop block */}
       {insights.profitability?.some((p: any) => p.inputCost > 0 || p.revenue > 0) && (
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-[#E5E7EB]">
+          <Card className="border border-wangari-border">
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
-                <Wallet className="h-4 w-4 text-[#166534]" />
+                <Wallet className="h-4 w-4 text-wangari-green-800" />
                 <p className="text-sm font-bold text-gray-900">Crop Profitability</p>
                 <p className="text-[10px] text-gray-400 ml-auto">input costs vs harvest revenue per block</p>
               </div>
@@ -345,8 +345,8 @@ export default function CropsPage() {
       )}
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94A3B8]" />
-        <input placeholder="Search crops..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-11 rounded-xl border border-[#E5E7EB] pl-10 pr-4 text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-wangari-subtle" />
+        <input placeholder="Search crops..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-11 rounded-xl border border-wangari-border pl-10 pr-4 text-sm focus:ring-2 focus:ring-wangari-green-800/20 focus:border-wangari-green-800 transition-all" />
       </motion.div>
 
       {/* Charts */}
@@ -374,10 +374,10 @@ export default function CropsPage() {
           <motion.div initial="hidden" animate="visible" variants={fadeUp}>
             <div className="grid lg:grid-cols-3 gap-4">
               {harvestPie.length > 0 && (
-                <Card className="border border-[#E5E7EB]">
+                <Card className="border border-wangari-border">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <BarChart3 className="h-4 w-4 text-[#166534]" />
+                      <BarChart3 className="h-4 w-4 text-wangari-green-800" />
                       <p className="text-xs font-bold text-gray-900">Harvest by Crop</p>
                     </div>
                     <ResponsiveContainer width="100%" height={160}>
@@ -398,10 +398,10 @@ export default function CropsPage() {
               )}
 
               {costPie.length > 0 && (
-                <Card className="border border-[#E5E7EB]">
+                <Card className="border border-wangari-border">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <Pill className="h-4 w-4 text-[#166534]" />
+                      <Pill className="h-4 w-4 text-wangari-green-800" />
                       <p className="text-xs font-bold text-gray-900">Input Costs</p>
                     </div>
                     <ResponsiveContainer width="100%" height={160}>
@@ -422,7 +422,7 @@ export default function CropsPage() {
               )}
 
               {healthBar.length > 0 && (
-                <Card className="border border-[#E5E7EB]">
+                <Card className="border border-wangari-border">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Bug className="h-4 w-4 text-amber-500" />
@@ -430,7 +430,7 @@ export default function CropsPage() {
                     </div>
                     <ResponsiveContainer width="100%" height={160}>
                       <BarChart data={healthBar} layout="vertical">
-                        <XAxis type="number" tick={{ fontSize: 10, fill: "#94A3B8" }} />
+                        <XAxis type="number" tick={{ fontSize: 10, fill: "#5F6E85" }} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "#64748B" }} width={90} />
                         <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 11 }} />
                         <Bar dataKey="count" fill="#F59E0B" radius={[0, 4, 4, 0]} name="Issues" />
@@ -455,7 +455,7 @@ export default function CropsPage() {
 
             return (
               <motion.div key={crop.id} variants={fadeUp} whileHover={{ y: -4 }}>
-                <Card className="border border-[#E5E7EB] hover:shadow-xl transition-all duration-300">
+                <Card className="border border-wangari-border hover:shadow-xl transition-all duration-300">
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -480,10 +480,10 @@ export default function CropsPage() {
                     <div className="mb-3">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] font-semibold text-gray-400 uppercase">Growth</span>
-                        <span className="text-[10px] font-bold text-[#166534]">{growth.stage}</span>
+                        <span className="text-[10px] font-bold text-wangari-green-800">{growth.stage}</span>
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                        <div className="h-full rounded-full bg-[#166534] transition-all" style={{ width: `${growth.percent}%` }} />
+                        <div className="h-full rounded-full bg-wangari-green-800 transition-all" style={{ width: `${growth.percent}%` }} />
                       </div>
                     </div>
 
@@ -692,7 +692,7 @@ export default function CropsPage() {
                               {b.phytoCertNo ? <span>🧾 Phyto {b.phytoCertNo}</span> : null}
                             </div>
                             {b.status !== "dispatched" && b.status !== "rejected" && (
-                              <button onClick={() => advanceBatch(b)} className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-[#166534] hover:underline cursor-pointer">
+                              <button onClick={() => advanceBatch(b)} className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-wangari-green-800 hover:underline cursor-pointer">
                                 Advance to next stage <ArrowRight className="h-3 w-3" />
                               </button>
                             )}
@@ -721,7 +721,7 @@ export default function CropsPage() {
               <div className="flex gap-2 mt-4">
                 {activeModal !== "batches" && (
                   <Button onClick={activeModal === "harvest" ? handleHarvest : activeModal === "health" ? handleHealth : activeModal === "apply" ? handleApply : activeModal === "postharvest" ? handlePostHarvest : handleSoilTest}
-                    className="flex-1 bg-[#166534] hover:bg-[#14532D] cursor-pointer">Save</Button>
+                    className="flex-1 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">Save</Button>
                 )}
                 <Button variant="outline" onClick={closeModal} className="cursor-pointer">{activeModal === "batches" ? "Close" : "Cancel"}</Button>
               </div>

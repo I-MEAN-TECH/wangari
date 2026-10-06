@@ -91,7 +91,7 @@ export function SignaturePad({
 
   return (
     <div>
-      <div className="relative rounded-xl border-2 border-dashed border-[#E5E7EB] bg-white hover:border-[#BBF7D0] transition-colors">
+      <div className="relative rounded-xl border-2 border-dashed border-wangari-border bg-white hover:border-wangari-green-200 transition-colors">
         <canvas
           ref={canvasRef}
           width={560}
@@ -104,7 +104,7 @@ export function SignaturePad({
           onPointerCancel={end}
         />
         {!value && (
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-[#CBD5E1]">
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-wangari-rule">
             <PenTool className="h-6 w-6 mb-1" />
             <p className="text-sm font-medium">Sign here with finger, pen, or mouse</p>
             <p className="text-xs">Optional — leave blank if you don't need a signature</p>
@@ -112,7 +112,7 @@ export function SignaturePad({
         )}
       </div>
       <div className="mt-2 flex items-center justify-between">
-        <p className="text-xs text-[#94A3B8]">Appears on invoices, quotes & receipts</p>
+        <p className="text-xs text-wangari-subtle">Appears on invoices, quotes & receipts</p>
         <Button type="button" variant="outline" size="sm" onClick={clear} className="cursor-pointer rounded-lg">
           <Eraser className="h-3.5 w-3.5 mr-1.5" /> Clear
         </Button>

@@ -108,11 +108,11 @@ export default function FeedCalculatorPage() {
         {/* Input section */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp} className="space-y-4">
           {/* Flock selector */}
-          <Card className="border border-[#E5E7EB]">
+          <Card className="border border-wangari-border">
             <CardHeader className="pb-3"><CardTitle className="text-sm font-bold text-gray-900">Select your group</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <select value={selectedFlock} onChange={e => { setSelectedFlock(e.target.value); setHeadCount(""); }}
-                className="w-full h-12 rounded-xl border border-gray-200 px-3 text-sm font-medium focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534]">
+                className="w-full h-12 rounded-xl border border-gray-200 px-3 text-sm font-medium focus:ring-2 focus:ring-wangari-green-800/20 focus:border-wangari-green-800">
                 <option value="">Choose a group...</option>
                 {flocks.map(f => <option key={f.id} value={f.id}>{f.name} — {f.currentCount} head ({speciesFor(f)?.name || f.type})</option>)}
               </select>
@@ -127,7 +127,7 @@ export default function FeedCalculatorPage() {
                 </div>
               </div>
               {flockSpecies && (
-                <div className="rounded-lg bg-[#F0FDF4] border border-[#BBF7D0] p-2.5 text-[10px] text-[#64748B]">
+                <div className="rounded-lg bg-wangari-green-50 border border-wangari-green-200 p-2.5 text-[10px] text-wangari-muted">
                   {flockSpecies.name} — {flockSpecies.feedPerDay} • Water: {flockSpecies.waterPerDay}
                 </div>
               )}
@@ -135,11 +135,11 @@ export default function FeedCalculatorPage() {
           </Card>
 
           {/* Feed items — fully editable */}
-          <Card className="border border-[#E5E7EB]">
+          <Card className="border border-wangari-border">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-bold text-gray-900">Feed items</CardTitle>
-                <button onClick={addFeedItem} className="flex items-center gap-1 text-[11px] font-bold text-[#166534] hover:underline cursor-pointer">
+                <button onClick={addFeedItem} className="flex items-center gap-1 text-[11px] font-bold text-wangari-green-800 hover:underline cursor-pointer">
                   <Plus className="h-3.5 w-3.5" />Add item
                 </button>
               </div>
@@ -179,7 +179,7 @@ export default function FeedCalculatorPage() {
 
         {/* Results section */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp} className="space-y-4">
-          <Card className="border border-[#E5E7EB]">
+          <Card className="border border-wangari-border">
             <CardHeader className="pb-3"><CardTitle className="text-sm font-bold text-gray-900">Results</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {/* Per-item breakdown */}
@@ -188,12 +188,12 @@ export default function FeedCalculatorPage() {
                   <p className="text-xs font-bold text-gray-900 mb-2">{r.name}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="rounded-lg bg-white p-2 text-center border border-gray-100">
-                      <Wheat className="h-4 w-4 text-[#166534] mx-auto mb-0.5" />
+                      <Wheat className="h-4 w-4 text-wangari-green-800 mx-auto mb-0.5" />
                       <p className="text-[9px] text-gray-400 uppercase">Total kg</p>
                       <p className="text-sm font-bold">{r.totalKg.toLocaleString()} kg</p>
                     </div>
                     <div className="rounded-lg bg-white p-2 text-center border border-gray-100">
-                      <Calculator className="h-4 w-4 text-[#166534] mx-auto mb-0.5" />
+                      <Calculator className="h-4 w-4 text-wangari-green-800 mx-auto mb-0.5" />
                       <p className="text-[9px] text-gray-400 uppercase">Bags × Price</p>
                       <p className="text-sm font-bold">{r.numberOfBags} × KES {r.pricePerBag.toLocaleString()}</p>
                     </div>
@@ -207,7 +207,7 @@ export default function FeedCalculatorPage() {
 
               {/* Grand totals */}
               {grandTotalCost > 0 && (
-                <div className="rounded-xl bg-[#166534] text-white p-4 space-y-2">
+                <div className="rounded-xl bg-wangari-green-800 text-white p-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-white/70">Total feed needed</span>
                     <span className="font-bold">{grandTotalKg.toLocaleString()} kg</span>
@@ -245,7 +245,7 @@ export default function FeedCalculatorPage() {
               {/* Purchase button */}
               {grandTotalCost > 0 && (
                 <button onClick={handlePurchase} disabled={purchased}
-                  className={`w-full py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${purchased ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-white text-[#166534] border-2 border-[#166534] hover:bg-[#F0FDF4]"}`}>
+                  className={`w-full py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${purchased ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-white text-wangari-green-800 border-2 border-wangari-green-800 hover:bg-wangari-green-50"}`}>
                   {purchased ? "✅ Added to Finances!" : <><ShoppingCart className="h-4 w-4 inline mr-2" />Record Purchase — KES {grandTotalCost.toLocaleString()}</>}
                 </button>
               )}

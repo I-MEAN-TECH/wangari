@@ -21,8 +21,8 @@ export function Logo({ size = "md", showText = true }: LogoProps) {
       />
       {showText && (
         <div>
-          <p className="text-base font-bold text-[#0F172A] tracking-tight">Wangari</p>
-          {size === "lg" && <p className="text-[10px] font-semibold uppercase tracking-widest text-[#64748B]">Farm OS</p>}
+          <p className="text-base font-bold text-wangari-heading tracking-tight">Wangari</p>
+          {size === "lg" && <p className="text-[10px] font-semibold uppercase tracking-widest text-wangari-muted">Farm OS</p>}
         </div>
       )}
     </div>

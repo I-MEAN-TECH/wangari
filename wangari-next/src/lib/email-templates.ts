@@ -1,15 +1,19 @@
 /**
  * HTML email templates for Wangari.
  * All templates use inline styles for maximum email client compatibility.
+ * Email clients cannot resolve CSS variables, so the palette comes from the
+ * JS mirror of @theme (enforced by theme-palette.test.ts).
  */
+
+import { THEME } from "./theme-palette";
 
 const BRAND = {
   name: "Wangari",
-  color: "#166534",       // forest green
-  bgColor: "#f0fdf4",    // light green tint
-  textColor: "#334155",
-  mutedColor: "#64748b",
-  borderColor: "#e2e8f0",
+  color: THEME["wangari-green-800"],
+  bgColor: THEME["wangari-green-50"],
+  textColor: THEME["wangari-text"],
+  mutedColor: THEME["wangari-muted"],
+  borderColor: THEME["wangari-border"],
   logoUrl: "https://wangari.imeantech.com/logo.png",
 };
 
@@ -153,7 +157,7 @@ export function passwordResetEmail(resetUrl: string): string {
     <p style="margin:0 0 8px;font-size:13px;color:${BRAND.mutedColor};">
       This link expires in <strong>1 hour</strong>. If you didn't request a reset, you can safely ignore this email — your password will remain unchanged.
     </p>
-    <p style="margin:0;font-size:12px;color:#94a3b8;word-break:break-all;">
+    <p style="margin:0;font-size:12px;color:#5F6E85;word-break:break-all;">
       Button not working? Paste this URL into your browser:<br/>
       <a href="${resetUrl}" style="color:${BRAND.color};">${resetUrl}</a>
     </p>

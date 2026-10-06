@@ -178,41 +178,41 @@ export default function SalesPage() {
     .filter((c: any) => c.owed > 0)
     .sort((a: any, b: any) => b.owed - a.owed);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" /></div>;
 
   return (
     <div className="space-y-6">
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <PageHeader title="Sales" description="Track product sales and payments"
-          action={<Button onClick={() => setShowForm(!showForm)} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer"><Plus className="h-4 w-4 mr-2" />Record Sale</Button>} />
+          action={<Button onClick={() => setShowForm(!showForm)} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer"><Plus className="h-4 w-4 mr-2" />Record Sale</Button>} />
       </motion.div>
 
       {/* Form */}
       {showForm && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
-          <Card className="border border-[#E5E7EB]">
+          <Card className="border border-wangari-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-[#0F172A]">Record Sale</h3>
-                <button onClick={() => setShowForm(false)} className="text-[#94A3B8] hover:text-[#64748B] cursor-pointer"><X className="h-4 w-4" /></button>
+                <h3 className="text-sm font-bold text-wangari-heading">Record Sale</h3>
+                <button onClick={() => setShowForm(false)} className="text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
               </div>
               <div className="space-y-3">
-                <Label className="text-xs font-semibold text-[#64748B]">What did you sell?</Label>
+                <Label className="text-xs font-semibold text-wangari-muted">What did you sell?</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[{ v: "eggs", l: "Eggs" }, { v: "milk", l: "Milk" }, { v: "meat", l: "Meat" }, { v: "crops", l: "Crops" }, { v: "livestock", l: "Livestock" }, { v: "general", l: "Other" }].map(item => (
                     <button key={item.v} onClick={() => setForm({ ...form, productType: item.v })}
-                      className={`py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${form.productType === item.v ? "bg-[#166534] text-white shadow-md" : "bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]"}`}>{item.l}</button>
+                      className={`py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${form.productType === item.v ? "bg-wangari-green-800 text-white shadow-md" : "bg-wangari-sunken text-wangari-muted hover:bg-tone-neutral-border"}`}>{item.l}</button>
                   ))}
                 </div>
               </div>
               <div className="space-y-1 mt-4">
-                <Label className="text-xs font-semibold text-[#64748B]">Amount (KES)</Label>
+                <Label className="text-xs font-semibold text-wangari-muted">Amount (KES)</Label>
                 <Input type="number" placeholder="0" value={form.totalAmount} onChange={e => setForm({ ...form, totalAmount: e.target.value })} className="h-12 rounded-xl text-lg font-bold text-center" />
               </div>
               
               {/* Buyer selection */}
               <div className="space-y-2 mt-4">
-                <Label className="text-xs font-semibold text-[#64748B]">Buyer Category / Type</Label>
+                <Label className="text-xs font-semibold text-wangari-muted">Buyer Category / Type</Label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {[
                     { v: "walk_in", l: "Walk-in Customer" },
@@ -228,8 +228,8 @@ export default function SalesPage() {
                       onClick={() => setForm({ ...form, buyerCategory: b.v })}
                       className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border min-h-[44px] ${
                         form.buyerCategory === b.v
-                          ? "bg-[#166534] text-white border-[#166534] shadow-sm"
-                          : "bg-[#F8FAFC] text-[#64748B] border-[#E5E7EB] hover:bg-[#F1F5F9]"
+                          ? "bg-wangari-green-800 text-white border-wangari-green-800 shadow-sm"
+                          : "bg-tone-neutral-bg text-wangari-muted border-wangari-border hover:bg-wangari-sunken"
                       }`}
                     >
                       {b.l}
@@ -239,11 +239,11 @@ export default function SalesPage() {
 
                 {form.buyerCategory === "customer" && (
                   <div className="mt-2">
-                    <Label className="text-xs text-[#64748B]">Select Customer</Label>
+                    <Label className="text-xs text-wangari-muted">Select Customer</Label>
                     <select
                       value={form.customerId}
                       onChange={e => setForm({ ...form, customerId: e.target.value })}
-                      className="w-full h-11 rounded-xl border border-[#E5E7EB] px-3 text-sm font-semibold bg-white mt-1"
+                      className="w-full h-11 rounded-xl border border-wangari-border px-3 text-sm font-semibold bg-white mt-1"
                     >
                       <option value="">Choose registered customer...</option>
                       {customers.map((c: any) => (
@@ -255,7 +255,7 @@ export default function SalesPage() {
 
                 {form.buyerCategory === "other" && (
                   <div className="mt-2 space-y-1">
-                    <Label className="text-xs text-[#64748B]">Describe Buyer / Buyer Name</Label>
+                    <Label className="text-xs text-wangari-muted">Describe Buyer / Buyer Name</Label>
                     <Input
                       type="text"
                       placeholder="e.g. Mama Mboga Jane, St. Jude School, County Hotel..."
@@ -267,7 +267,7 @@ export default function SalesPage() {
                 )}
               </div>
 
-              <Button onClick={handleSubmit} disabled={!form.totalAmount} className="w-full mt-5 bg-[#166534] hover:bg-[#14532D] cursor-pointer disabled:opacity-50 h-12 text-base font-bold">Save Sale</Button>
+              <Button onClick={handleSubmit} disabled={!form.totalAmount} className="w-full mt-5 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer disabled:opacity-50 h-12 text-base font-bold">Save Sale</Button>
             </CardContent>
           </Card>
         </motion.div>
@@ -276,17 +276,17 @@ export default function SalesPage() {
       {/* KPIs */}
       <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { title: "Total Revenue", value: `KES ${totalRevenue.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-[#166534]" },
+          { title: "Total Revenue", value: `KES ${totalRevenue.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-wangari-green-800" },
           { title: "Paid", value: `KES ${totalPaid.toLocaleString()}`, icon: <CheckCircle className="h-5 w-5" />, color: "bg-emerald-500" },
           { title: "Pending", value: `KES ${pending.toLocaleString()}`, icon: <Clock className="h-5 w-5" />, color: "bg-amber-500" },
           { title: "Customers Owing", value: customerDebt.length.toString(), icon: <Users className="h-5 w-5" />, color: "bg-red-500" },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
-            <Card className="border border-[#E5E7EB]">
+            <Card className="border border-wangari-border">
               <CardContent className="pt-4 pb-3 px-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] mb-2">{kpi.icon}</div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">{kpi.title}</p>
-                <p className="text-xl font-extrabold text-[#0F172A]">{kpi.value}</p>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-tone-good-bg text-wangari-green-800 mb-2">{kpi.icon}</div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-wangari-muted">{kpi.title}</p>
+                <p className="text-xl font-extrabold text-wangari-heading">{kpi.value}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -298,11 +298,11 @@ export default function SalesPage() {
         {/* Product breakdown */}
         {typeData.length > 0 && (
           <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-            <Card className="border border-[#E5E7EB]">
+            <Card className="border border-wangari-border">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp className="h-4 w-4 text-[#166534]" />
-                  <p className="text-xs font-bold text-[#0F172A]">Sales by Product</p>
+                  <TrendingUp className="h-4 w-4 text-wangari-green-800" />
+                  <p className="text-xs font-bold text-wangari-heading">Sales by Product</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <ResponsiveContainer width="45%" height={140}>
@@ -317,8 +317,8 @@ export default function SalesPage() {
                     {typeData.sort((a, b) => b.value - a.value).map((e, i) => (
                       <div key={e.name} className="flex items-center gap-2">
                         <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
-                        <span className="text-[10px] text-[#64748B] capitalize flex-1">{e.name}</span>
-                        <span className="text-[10px] font-bold text-[#0F172A]">KES {e.value.toLocaleString()}</span>
+                        <span className="text-[10px] text-wangari-muted capitalize flex-1">{e.name}</span>
+                        <span className="text-[10px] font-bold text-wangari-heading">KES {e.value.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -330,21 +330,21 @@ export default function SalesPage() {
 
         {/* Customer balances */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-[#E5E7EB]">
+          <Card className="border border-wangari-border">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <AlertCircle className="h-4 w-4 text-amber-500" />
-                <p className="text-xs font-bold text-[#0F172A]">Outstanding Balances</p>
+                <p className="text-xs font-bold text-wangari-heading">Outstanding Balances</p>
               </div>
               {customerDebt.length === 0 ? (
-                <p className="text-xs text-[#94A3B8] py-4 text-center">No outstanding balances</p>
+                <p className="text-xs text-wangari-subtle py-4 text-center">No outstanding balances</p>
               ) : (
                 <div className="space-y-2">
                   {customerDebt.slice(0, 5).map((c: any) => (
                     <div key={c.id} className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-100 px-3 py-2.5">
                       <div>
-                        <p className="text-xs font-bold text-[#0F172A]">{c.name}</p>
-                        {c.phone && <p className="text-[10px] text-[#94A3B8]">{c.phone}</p>}
+                        <p className="text-xs font-bold text-wangari-heading">{c.name}</p>
+                        {c.phone && <p className="text-[10px] text-wangari-subtle">{c.phone}</p>}
                       </div>
                       <p className="text-sm font-extrabold text-amber-600">KES {c.owed.toLocaleString()}</p>
                     </div>
@@ -360,11 +360,11 @@ export default function SalesPage() {
       <div className="flex gap-2">
         {(["all", "paid", "pending"] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer capitalize ${filter === f ? "bg-[#166534] text-white" : "bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]"}`}>{f}</button>
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer capitalize ${filter === f ? "bg-wangari-green-800 text-white" : "bg-wangari-sunken text-wangari-muted hover:bg-tone-neutral-border"}`}>{f}</button>
         ))}
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94A3B8]" />
-          <input placeholder="Search buyer..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-10 rounded-xl border border-[#E5E7EB] pl-9 pr-3 text-sm" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-wangari-subtle" />
+          <input placeholder="Search buyer..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-10 rounded-xl border border-wangari-border pl-9 pr-3 text-sm" />
         </div>
       </div>
 
@@ -377,19 +377,19 @@ export default function SalesPage() {
             const balance = Number(s.totalAmount) - Number(s.amountPaid);
             return (
               <motion.div key={s.id} variants={fadeUp}>
-                <Card className="border border-[#E5E7EB]">
+                <Card className="border border-wangari-border">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <Badge className={s.paymentStatus === "paid" ? "bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]" : "bg-amber-50 text-amber-700 border-amber-200"}>{s.paymentStatus}</Badge>
-                          <span className="text-[10px] text-[#94A3B8]">{new Date(s.saleDate).toLocaleDateString()}</span>
+                          <Badge className={s.paymentStatus === "paid" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-amber-50 text-amber-700 border-amber-200"}>{s.paymentStatus}</Badge>
+                          <span className="text-[10px] text-wangari-subtle">{new Date(s.saleDate).toLocaleDateString()}</span>
                         </div>
-                        <p className="text-xs text-[#64748B]">{productNames}</p>
-                        <p className="text-[10px] font-medium text-[#64748B] mt-0.5">{getBuyerLabel(s)}</p>
+                        <p className="text-xs text-wangari-muted">{productNames}</p>
+                        <p className="text-[10px] font-medium text-wangari-muted mt-0.5">{getBuyerLabel(s)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-extrabold text-[#0F172A]">KES {Number(s.totalAmount).toLocaleString()}</p>
+                        <p className="text-lg font-extrabold text-wangari-heading">KES {Number(s.totalAmount).toLocaleString()}</p>
                         {balance > 0 && <p className="text-[10px] text-amber-600 font-bold">KES {balance.toLocaleString()} owing</p>}
                       </div>
                     </div>
@@ -399,7 +399,7 @@ export default function SalesPage() {
                           className="flex-1 py-2 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200 hover:bg-amber-100 cursor-pointer">Record Payment</button>
                       )}
                       <button onClick={() => handlePrintReceipt(s)} title={`Print receipt (${INVOICE_TEMPLATES.find(t => t.id === (receiptTemplate === "same" ? invoiceTemplate : receiptTemplate))?.name || "Professional"})`}
-                        className="py-2 px-3 rounded-xl bg-[#F1F5F9] text-[#64748B] text-xs font-bold hover:bg-[#E2E8F0] cursor-pointer"><Printer className="h-3.5 w-3.5" /></button>
+                        className="py-2 px-3 rounded-xl bg-wangari-sunken text-wangari-muted text-xs font-bold hover:bg-tone-neutral-border cursor-pointer"><Printer className="h-3.5 w-3.5" /></button>
                       <button onClick={() => handleDelete(s.id)} className="py-2 px-3 rounded-xl bg-red-50 text-red-500 text-xs font-bold border border-red-200 hover:bg-red-100 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                   </CardContent>
@@ -414,13 +414,13 @@ export default function SalesPage() {
       {showPayModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-            <Card className="w-80 border border-[#E5E7EB]">
+            <Card className="w-80 border border-wangari-border">
               <CardContent className="p-6 space-y-4">
-                <h3 className="text-sm font-bold text-[#0F172A]">Record Payment</h3>
+                <h3 className="text-sm font-bold text-wangari-heading">Record Payment</h3>
                 <Input type="number" placeholder="Amount" value={payAmount} onChange={e => setPayAmount(e.target.value)} className="h-12 rounded-xl text-lg font-bold text-center" />
                 <div className="flex gap-2">
                   <Button onClick={() => setShowPayModal(null)} variant="outline" className="flex-1 cursor-pointer">Cancel</Button>
-                  <Button onClick={() => handlePartialPay(showPayModal)} className="flex-1 bg-[#166534] hover:bg-[#14532D] cursor-pointer">Save</Button>
+                  <Button onClick={() => handlePartialPay(showPayModal)} className="flex-1 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">Save</Button>
                 </div>
               </CardContent>
             </Card>

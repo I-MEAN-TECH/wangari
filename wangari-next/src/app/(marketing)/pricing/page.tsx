@@ -133,31 +133,31 @@ export default function PricingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#FAFBFC]">
+    <div className="min-h-screen bg-wangari-cream">
       {/* Hero */}
       <section className="pt-24 pb-16 px-6">
         <motion.div initial="hidden" animate="visible" variants={stagger} className="mx-auto max-w-4xl text-center">
           <motion.p variants={fadeUp} className="text-sm font-bold uppercase tracking-widest text-wangari-green-800 mb-3">{content.heroKicker}</motion.p>
-          <motion.h1 variants={fadeUp} className="text-4xl md:text-5xl font-extrabold text-[#0F172A] tracking-tight">
+          <motion.h1 variants={fadeUp} className="text-4xl md:text-5xl font-extrabold text-wangari-heading tracking-tight">
             {content.heroTitle}
           </motion.h1>
-          <motion.p variants={fadeUp} className="mt-5 text-lg text-[#64748B] max-w-2xl mx-auto">
+          <motion.p variants={fadeUp} className="mt-5 text-lg text-wangari-muted max-w-2xl mx-auto">
             {content.heroSubtitle}
           </motion.p>
 
           {/* Toggle */}
-          <motion.div variants={fadeUp} className="mt-8 inline-flex items-center gap-3 bg-white rounded-full p-1.5 border border-[#E5E7EB]">
+          <motion.div variants={fadeUp} className="mt-8 inline-flex items-center gap-3 bg-white rounded-full p-1.5 border border-wangari-border">
             <button
               onClick={() => setAnnual(false)}
-              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${!annual ? "bg-[#166534] text-white shadow-md" : "text-[#64748B] hover:text-[#0F172A]"}`}
+              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${!annual ? "bg-wangari-green-800 text-white shadow-md" : "text-wangari-muted hover:text-wangari-heading"}`}
             >
               Monthly
             </button>
             <button
               onClick={() => setAnnual(true)}
-              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${annual ? "bg-[#166534] text-white shadow-md" : "text-[#64748B] hover:text-[#0F172A]"}`}
+              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${annual ? "bg-wangari-green-800 text-white shadow-md" : "text-wangari-muted hover:text-wangari-heading"}`}
             >
-              Annual <span className="text-[#22C55E] font-bold">{content.annualBadge}</span>
+              Annual <span className="text-wangari-green-500 font-bold">{content.annualBadge}</span>
             </button>
           </motion.div>
         </motion.div>
@@ -176,41 +176,41 @@ export default function PricingPage() {
                 whileHover={{ y: -8 }}
                 className={`relative rounded-2xl border-2 p-8 transition-all duration-300 ${
                   plan.popular
-                    ? "border-[#166534] bg-white shadow-2xl shadow-[#166534]/10"
-                    : "border-[#E5E7EB] bg-white hover:border-[#BBF7D0] hover:shadow-xl"
+                    ? "border-wangari-green-800 bg-white shadow-2xl shadow-wangari-green-800/10"
+                    : "border-wangari-border bg-white hover:border-wangari-green-200 hover:shadow-xl"
                 }`}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-[#166534] text-white text-xs font-bold uppercase tracking-wider">
+                    <span className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-wangari-green-800 text-white text-xs font-bold uppercase tracking-wider">
                       Most Popular
                     </span>
                   </div>
                 )}
 
                 <div className="mb-6">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-4 ${plan.popular ? "bg-[#166534] text-white" : "bg-[#F0FDF4] text-[#166534]"}`}>
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-4 ${plan.popular ? "bg-wangari-green-800 text-white" : "bg-wangari-green-50 text-wangari-green-800"}`}>
                     <Icon className="h-6 w-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#0F172A]">{plan.name}</h3>
+                  <h3 className="text-xl font-bold text-wangari-heading">{plan.name}</h3>
                   <div className="mt-3 flex items-baseline gap-1">
-                    <span className="text-sm text-[#64748B]">KES</span>
-                    <span className="text-4xl font-extrabold text-[#0F172A]">{monthlyPrice.toLocaleString()}</span>
-                    <span className="text-sm text-[#64748B]">{plan.period}</span>
+                    <span className="text-sm text-wangari-muted">KES</span>
+                    <span className="text-4xl font-extrabold text-wangari-heading">{monthlyPrice.toLocaleString()}</span>
+                    <span className="text-sm text-wangari-muted">{plan.period}</span>
                   </div>
                   {annual && plan.annualPrice && (
-                    <p className="text-xs text-[#22C55E] font-semibold mt-1">
+                    <p className="text-xs text-wangari-green-500 font-semibold mt-1">
                       KES {plan.annualPrice.toLocaleString()}/year — save KES {((plan.price * 12) - plan.annualPrice).toLocaleString()}
                     </p>
                   )}
-                  <p className="mt-3 text-sm text-[#64748B] leading-relaxed">{plan.description}</p>
+                  <p className="mt-3 text-sm text-wangari-muted leading-relaxed">{plan.description}</p>
                 </div>
 
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-[#22C55E] shrink-0 mt-0.5" />
-                      <span className="text-sm text-[#334155]">{feature}</span>
+                      <Check className="h-5 w-5 text-wangari-green-500 shrink-0 mt-0.5" />
+                      <span className="text-sm text-wangari-text">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -225,8 +225,8 @@ export default function PricingPage() {
                   }
                   className={`flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
                     plan.popular
-                      ? "bg-[#166534] text-white hover:bg-[#14532D] hover:shadow-lg hover:shadow-[#166534]/25"
-                      : "border-2 border-[#E5E7EB] text-[#0F172A] hover:border-[#166534] hover:text-[#166534] hover:bg-[#F0FDF4]"
+                      ? "bg-wangari-green-800 text-white hover:bg-wangari-green-900 hover:shadow-lg hover:shadow-wangari-green-800/25"
+                      : "border-2 border-wangari-border text-wangari-heading hover:border-wangari-green-800 hover:text-wangari-green-800 hover:bg-wangari-green-50"
                   }`}
                 >
                   {plan.ctaHref.startsWith("mailto:")
@@ -243,14 +243,14 @@ export default function PricingPage() {
 
         {/* FAQ */}
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="mx-auto max-w-3xl mt-16">
-          <motion.h2 variants={fadeUp} className="text-2xl font-extrabold text-[#0F172A] text-center mb-10">
+          <motion.h2 variants={fadeUp} className="text-2xl font-extrabold text-wangari-heading text-center mb-10">
             Frequently Asked Questions
           </motion.h2>
           <div className="space-y-6">
             {content.faqs.map((faq) => (
-              <motion.div key={faq.q} variants={fadeUp} className="rounded-xl border border-[#E5E7EB] bg-white p-6">
-                <h3 className="font-bold text-[#0F172A] mb-2">{faq.q}</h3>
-                <p className="text-sm text-[#64748B] leading-relaxed">{faq.a}</p>
+              <motion.div key={faq.q} variants={fadeUp} className="rounded-xl border border-wangari-border bg-white p-6">
+                <h3 className="font-bold text-wangari-heading mb-2">{faq.q}</h3>
+                <p className="text-sm text-wangari-muted leading-relaxed">{faq.a}</p>
               </motion.div>
             ))}
           </div>

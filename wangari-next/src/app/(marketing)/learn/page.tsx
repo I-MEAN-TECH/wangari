@@ -17,7 +17,7 @@ export const metadata: Metadata = {
  */
 export default function PublicLearnPage() {
   return (
-    <main className="min-h-screen bg-[#FAFAF7]">
+    <main className="min-h-screen bg-wangari-paper">
       {/* Hero */}
       <section className="border-b border-stone-200 bg-gradient-to-b from-emerald-50/60 to-transparent">
         <div className="mx-auto max-w-6xl px-6 py-16 md:py-20">

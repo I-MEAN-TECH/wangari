@@ -107,7 +107,7 @@ export function DemoVideoShowcase() {
                 viewBox="0 0 120 90"
                 className={`absolute h-[90px] w-[120px] ${
                   c.side === "left" ? "-right-[100px]" : "-left-[100px] -scale-x-100"
-                } top-1/2 -translate-y-1/2 text-[#22C55E]`}
+                } top-1/2 -translate-y-1/2 text-wangari-green-500`}
                 fill="none"
               >
                 <path
@@ -125,12 +125,12 @@ export function DemoVideoShowcase() {
                 />
               </svg>
 
-              <div className="w-64 rounded-2xl border border-[#E5E7EB] bg-white/95 p-5 shadow-xl shadow-[#0B1220]/10 backdrop-blur">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] text-white mb-3">
+              <div className="w-64 rounded-2xl border border-wangari-border bg-white/95 p-5 shadow-xl shadow-wangari-ink/10 backdrop-blur">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-wangari-green-800 text-white mb-3">
                   <c.icon className="h-5 w-5" />
                 </div>
-                <h3 className="text-sm font-bold text-[#0F172A]">{c.title}</h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-[#64748B]">{c.desc}</p>
+                <h3 className="text-sm font-bold text-wangari-heading">{c.title}</h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-wangari-muted">{c.desc}</p>
               </div>
             </div>
           </div>
@@ -138,7 +138,7 @@ export function DemoVideoShowcase() {
 
         {/* ── Video panel — stands alone, no mock-up chrome ── */}
         <div ref={panelRef} className="relative z-10">
-          <div className="relative overflow-hidden rounded-2xl shadow-2xl shadow-[#0B1220]/30 ring-1 ring-black/10">
+          <div className="relative overflow-hidden rounded-2xl shadow-2xl shadow-wangari-ink/30 ring-1 ring-black/10">
             <video
               src="/demo.mp4"
               autoPlay
@@ -159,13 +159,13 @@ export function DemoVideoShowcase() {
           {callouts.map((c, i) => (
             <div
               key={c.title}
-              className="rounded-2xl border border-[#E5E7EB] bg-white p-5"
+              className="rounded-2xl border border-wangari-border bg-white p-5"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] text-white mb-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-wangari-green-800 text-white mb-3">
                 <c.icon className="h-5 w-5" />
               </div>
-              <h3 className="text-sm font-bold text-[#0F172A]">{c.title}</h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-[#64748B]">{c.desc}</p>
+              <h3 className="text-sm font-bold text-wangari-heading">{c.title}</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-wangari-muted">{c.desc}</p>
             </div>
           ))}
         </div>
@@ -190,8 +190,8 @@ function ScrollCue() {
         gone ? "opacity-0" : "opacity-100"
       }`}
     >
-      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[#0B1220]/80 px-4 py-2 backdrop-blur">
-        <Package className="h-3.5 w-3.5 text-[#22C55E]" />
+      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-wangari-ink/80 px-4 py-2 backdrop-blur">
+        <Package className="h-3.5 w-3.5 text-wangari-green-500" />
         <span className="text-xs font-medium text-white/70">Scroll to explore the demo</span>
         <span className="animate-bounce">
           <Smartphone className="h-3.5 w-3.5 text-white/50" />

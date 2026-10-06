@@ -158,7 +158,7 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
         </div>
         <Link
           href="/subscription"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-[#166534] text-xs sm:text-sm font-extrabold hover:bg-emerald-50 transition-all shadow-md shrink-0 cursor-pointer"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-wangari-green-800 text-xs sm:text-sm font-extrabold hover:bg-emerald-50 transition-all shadow-md shrink-0 cursor-pointer"
         >
           <CreditCard className="h-4 w-4 text-emerald-600" />
           Manage Subscription
@@ -204,7 +204,7 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
 
         <Link
           href="/subscription"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-[#166534] text-xs sm:text-sm font-extrabold hover:bg-emerald-50 transition-all shadow-md shrink-0 cursor-pointer"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-wangari-green-800 text-xs sm:text-sm font-extrabold hover:bg-emerald-50 transition-all shadow-md shrink-0 cursor-pointer"
         >
           <Sparkles className="h-4 w-4 text-emerald-600" />
           Subscribe Now

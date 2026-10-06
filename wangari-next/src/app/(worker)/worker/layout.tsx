@@ -59,7 +59,7 @@ export default function WorkerLayout({ children }: { children: React.ReactNode }
   if (!checked) {
     return (
       <div className="min-h-screen bg-wangari-cream flex items-center justify-center">
-        <RefreshCw className="h-8 w-8 text-[#166534] animate-spin" />
+        <RefreshCw className="h-8 w-8 text-wangari-green-800 animate-spin" />
       </div>
     );
   }

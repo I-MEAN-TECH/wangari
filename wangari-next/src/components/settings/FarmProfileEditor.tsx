@@ -108,29 +108,29 @@ export function FarmProfileEditor() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-32"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#166534]" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-32"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-wangari-green-800" /></div>;
 
   const update = (field: keyof FarmProfile, value: string) => setProfile({ ...profile, [field]: value });
 
   return (
     <motion.div initial="hidden" animate="visible" variants={fadeUp} className="space-y-6">
       {/* Logo + Business Name */}
-      <Card className="border border-[#E5E7EB]">
+      <Card className="border border-wangari-border">
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Building2 className="h-4 w-4 text-[#166534]" />
-            <h3 className="text-sm font-bold text-[#0F172A]">Farm Identity</h3>
+            <Building2 className="h-4 w-4 text-wangari-green-800" />
+            <h3 className="text-sm font-bold text-wangari-heading">Farm Identity</h3>
           </div>
-          <p className="text-xs text-[#94A3B8] mb-4">This appears on your invoices, reports, and printed documents.</p>
+          <p className="text-xs text-wangari-subtle mb-4">This appears on your invoices, reports, and printed documents.</p>
 
           <div className="flex items-start gap-6">
             {/* Logo upload */}
             <div className="flex flex-col items-center gap-2">
-              <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-[#E5E7EB] flex items-center justify-center overflow-hidden bg-[#F8FAFC] hover:border-[#166534] transition-colors">
+              <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-wangari-border flex items-center justify-center overflow-hidden bg-tone-neutral-bg hover:border-wangari-green-800 transition-colors">
                 {logoUploading ? (
                   <div className="flex flex-col items-center gap-1">
-                    <div className="h-6 w-6 rounded-full border-2 border-[#166534]/30 border-t-[#166534] animate-spin" />
-                    <span className="text-[10px] text-[#94A3B8]">Uploading...</span>
+                    <div className="h-6 w-6 rounded-full border-2 border-wangari-green-800/30 border-t-wangari-green-800 animate-spin" />
+                    <span className="text-[10px] text-wangari-subtle">Uploading...</span>
                   </div>
                 ) : profile.logoUrl ? (
                   <div className="relative w-full h-full">
@@ -139,23 +139,23 @@ export function FarmProfileEditor() {
                   </div>
                 ) : (
                   <label className="flex flex-col items-center gap-1 cursor-pointer">
-                    <Upload className="h-6 w-6 text-[#94A3B8]" />
-                    <span className="text-[10px] text-[#94A3B8]">Logo</span>
+                    <Upload className="h-6 w-6 text-wangari-subtle" />
+                    <span className="text-[10px] text-wangari-subtle">Logo</span>
                     <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
                   </label>
                 )}
               </div>
-              <p className="text-[10px] text-[#94A3B8]">Farm logo</p>
+              <p className="text-[10px] text-wangari-subtle">Farm logo</p>
             </div>
 
             {/* Business details */}
             <div className="flex-1 space-y-3">
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[#64748B]">Business / Farm Name *</Label>
+                <Label className="text-xs font-semibold text-wangari-muted">Business / Farm Name *</Label>
                 <Input placeholder="e.g. Green Valley Farm" value={profile.businessName} onChange={e => update("businessName", e.target.value)} className="h-11 rounded-xl" />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[#64748B]">Slogan / Tagline</Label>
+                <Label className="text-xs font-semibold text-wangari-muted">Slogan / Tagline</Label>
                 <Input placeholder="e.g. Fresh milk, eggs and produce from happy animals" value={profile.slogan} onChange={e => update("slogan", e.target.value)} className="h-10 rounded-xl" />
               </div>
             </div>
@@ -164,27 +164,27 @@ export function FarmProfileEditor() {
       </Card>
 
       {/* Contact Details */}
-      <Card className="border border-[#E5E7EB]">
+      <Card className="border border-wangari-border">
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Phone className="h-4 w-4 text-[#166534]" />
-            <h3 className="text-sm font-bold text-[#0F172A]">Contact Details</h3>
+            <Phone className="h-4 w-4 text-wangari-green-800" />
+            <h3 className="text-sm font-bold text-wangari-heading">Contact Details</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[#64748B]">📞 Business Phone</Label>
+              <Label className="text-xs font-semibold text-wangari-muted">📞 Business Phone</Label>
               <Input placeholder="+254 7XX XXX XXX" value={profile.phone} onChange={e => update("phone", e.target.value)} className="h-10 rounded-xl" />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[#64748B]">✉️ Business Email</Label>
+              <Label className="text-xs font-semibold text-wangari-muted">✉️ Business Email</Label>
               <Input placeholder="info@myfarm.co.ke" value={profile.email} onChange={e => update("email", e.target.value)} className="h-10 rounded-xl" />
             </div>
             <div className="space-y-1 md:col-span-2">
-              <Label className="text-xs font-semibold text-[#64748B]">📍 Farm / Business Address</Label>
+              <Label className="text-xs font-semibold text-wangari-muted">📍 Farm / Business Address</Label>
               <Input placeholder="e.g. Nakuru-Kericho Road, Near Tarire Market" value={profile.address} onChange={e => update("address", e.target.value)} className="h-10 rounded-xl" />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[#64748B]">🏛️ TIN / PIN Number</Label>
+              <Label className="text-xs font-semibold text-wangari-muted">🏛️ TIN / PIN Number</Label>
               <Input placeholder="e.g. A001234567B" value={profile.tinNumber} onChange={e => update("tinNumber", e.target.value)} className="h-10 rounded-xl" />
             </div>
           </div>
@@ -192,24 +192,24 @@ export function FarmProfileEditor() {
       </Card>
 
       {/* Bank Details */}
-      <Card className="border border-[#E5E7EB]">
+      <Card className="border border-wangari-border">
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <CreditCard className="h-4 w-4 text-[#166534]" />
-            <h3 className="text-sm font-bold text-[#0F172A]">Bank / Payment Details</h3>
+            <CreditCard className="h-4 w-4 text-wangari-green-800" />
+            <h3 className="text-sm font-bold text-wangari-heading">Bank / Payment Details</h3>
           </div>
-          <p className="text-xs text-[#94A3B8] mb-4">Shown on invoices so customers know where to pay.</p>
+          <p className="text-xs text-wangari-subtle mb-4">Shown on invoices so customers know where to pay.</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[#64748B]">Bank Name</Label>
+              <Label className="text-xs font-semibold text-wangari-muted">Bank Name</Label>
               <Input placeholder="e.g. KCB Bank" value={profile.bankName} onChange={e => update("bankName", e.target.value)} className="h-10 rounded-xl" />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[#64748B]">Account Number</Label>
+              <Label className="text-xs font-semibold text-wangari-muted">Account Number</Label>
               <Input placeholder="e.g. 1234567890" value={profile.bankAccount} onChange={e => update("bankAccount", e.target.value)} className="h-10 rounded-xl" />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[#64748B]">Branch</Label>
+              <Label className="text-xs font-semibold text-wangari-muted">Branch</Label>
               <Input placeholder="e.g. Nakuru Main" value={profile.bankBranch} onChange={e => update("bankBranch", e.target.value)} className="h-10 rounded-xl" />
             </div>
           </div>
@@ -217,54 +217,54 @@ export function FarmProfileEditor() {
       </Card>
 
       {/* Invoice Notes & Terms */}
-      <Card className="border border-[#E5E7EB]">
+      <Card className="border border-wangari-border">
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <FileText className="h-4 w-4 text-[#166534]" />
-            <h3 className="text-sm font-bold text-[#0F172A]">Invoice Defaults</h3>
+            <FileText className="h-4 w-4 text-wangari-green-800" />
+            <h3 className="text-sm font-bold text-wangari-heading">Invoice Defaults</h3>
           </div>
           <div className="space-y-4">
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[#64748B]">Default Notes (appear on every invoice)</Label>
-              <textarea placeholder="e.g. Thank you for supporting local farming!" value={profile.invoiceNotes} onChange={e => update("invoiceNotes", e.target.value)} className="w-full h-20 rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534]" />
+              <Label className="text-xs font-semibold text-wangari-muted">Default Notes (appear on every invoice)</Label>
+              <textarea placeholder="e.g. Thank you for supporting local farming!" value={profile.invoiceNotes} onChange={e => update("invoiceNotes", e.target.value)} className="w-full h-20 rounded-xl border border-wangari-border px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-wangari-green-800/20 focus:border-wangari-green-800" />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[#64748B]">Terms & Conditions</Label>
-              <textarea placeholder="e.g. Payment due within 30 days. Goods once sold are not returnable." value={profile.invoiceTerms} onChange={e => update("invoiceTerms", e.target.value)} className="w-full h-24 rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534]" />
+              <Label className="text-xs font-semibold text-wangari-muted">Terms & Conditions</Label>
+              <textarea placeholder="e.g. Payment due within 30 days. Goods once sold are not returnable." value={profile.invoiceTerms} onChange={e => update("invoiceTerms", e.target.value)} className="w-full h-24 rounded-xl border border-wangari-border px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-wangari-green-800/20 focus:border-wangari-green-800" />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[#64748B]">Call-to-Action Line (optional)</Label>
+              <Label className="text-xs font-semibold text-wangari-muted">Call-to-Action Line (optional)</Label>
               <Input placeholder="e.g. Order today — call or WhatsApp +254 7XX XXX XXX" value={profile.ctaText || ""} onChange={e => update("ctaText", e.target.value)} className="h-10 rounded-xl" />
-              <p className="text-[11px] text-[#94A3B8]">Printed near the signature on every document.</p>
+              <p className="text-[11px] text-wangari-subtle">Printed near the signature on every document.</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Template Gallery — browse designs before selecting */}
-      <Card className="border border-[#E5E7EB]">
+      <Card className="border border-wangari-border">
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-1">
-            <LayoutTemplate className="h-4 w-4 text-[#166534]" />
-            <h3 className="text-sm font-bold text-[#0F172A]">Document Design Gallery</h3>
-            <span className="ml-1 text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wide">Preview before you choose</span>
+            <LayoutTemplate className="h-4 w-4 text-wangari-green-800" />
+            <h3 className="text-sm font-bold text-wangari-heading">Document Design Gallery</h3>
+            <span className="ml-1 text-[10px] font-semibold text-wangari-subtle uppercase tracking-wide">Preview before you choose</span>
           </div>
-          <p className="text-xs text-[#94A3B8] mb-4">Every design rendered with your own logo and details. Click any template to see it full-size or test-print it — then pick your favourite from the Templates panel below or on the Invoices page.</p>
+          <p className="text-xs text-wangari-subtle mb-4">Every design rendered with your own logo and details. Click any template to see it full-size or test-print it — then pick your favourite from the Templates panel below or on the Invoices page.</p>
           <TemplateGallery profile={profile} currentSelection={templateSelection} onSelect={handleGallerySelect} />
         </CardContent>
       </Card>
 
       {/* Signature (optional) */}
-      <Card className="border border-[#E5E7EB]">
+      <Card className="border border-wangari-border">
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-1">
-            <PenTool className="h-4 w-4 text-[#166534]" />
-            <h3 className="text-sm font-bold text-[#0F172A]">Your Signature <span className="ml-1 text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wide">Optional</span></h3>
+            <PenTool className="h-4 w-4 text-wangari-green-800" />
+            <h3 className="text-sm font-bold text-wangari-heading">Your Signature <span className="ml-1 text-[10px] font-semibold text-wangari-subtle uppercase tracking-wide">Optional</span></h3>
           </div>
-          <p className="text-xs text-[#94A3B8] mb-4">Draw it once with your finger or pen on a touch screen — it then prints on invoices, quotes, and receipts. Completely optional.</p>
+          <p className="text-xs text-wangari-subtle mb-4">Draw it once with your finger or pen on a touch screen — it then prints on invoices, quotes, and receipts. Completely optional.</p>
           <SignaturePad value={profile.signatureDataUrl || ""} onChange={(v) => update("signatureDataUrl", v)} />
           <div className="mt-4 space-y-1">
-            <Label className="text-xs font-semibold text-[#64748B]">Name Under Signature</Label>
+            <Label className="text-xs font-semibold text-wangari-muted">Name Under Signature</Label>
             <Input placeholder="e.g. Wangari Njeri, Farm Owner" value={profile.signatureName || ""} onChange={e => update("signatureName", e.target.value)} className="h-10 rounded-xl max-w-sm" />
           </div>
         </CardContent>
@@ -272,7 +272,7 @@ export function FarmProfileEditor() {
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving || !profile.businessName} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer px-8 h-12 text-base font-bold disabled:opacity-50">
+        <Button onClick={handleSave} disabled={saving || !profile.businessName} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer px-8 h-12 text-base font-bold disabled:opacity-50">
           <Save className="h-4 w-4 mr-2" />{saving ? "Saving..." : "Save Farm Profile"}
         </Button>
       </div>

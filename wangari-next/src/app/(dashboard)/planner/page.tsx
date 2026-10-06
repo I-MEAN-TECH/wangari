@@ -57,7 +57,7 @@ export default function PlannerPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" />
       </div>
     );
   }
@@ -153,7 +153,7 @@ export default function PlannerPage() {
                       <Button
                         onClick={() => createReminders(plan.cropId)}
                         disabled={reminding === plan.cropId || done.has(plan.cropId)}
-                        className="bg-[#166534] hover:bg-[#14532D] cursor-pointer gap-1.5"
+                        className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer gap-1.5"
                         size="sm"
                       >
                         {done.has(plan.cropId) ? <><Check className="h-4 w-4" /> Reminders created</> : <><BellPlus className="h-4 w-4" /> {reminding === plan.cropId ? "Creating..." : "Create reminders for upcoming stages"}</>}

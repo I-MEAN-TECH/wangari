@@ -125,7 +125,7 @@ export default function ProfitabilityPage() {
             <div className="flex gap-1.5">
               {[30, 90, 365].map(d => (
                 <Button key={d} size="sm" variant={days === d ? "default" : "outline"} onClick={() => setDays(d)}
-                  className={`cursor-pointer ${days === d ? "bg-[#166534] hover:bg-[#14532D]" : ""}`}>
+                  className={`cursor-pointer ${days === d ? "bg-wangari-green-800 hover:bg-wangari-green-900" : ""}`}>
                   {d === 30 ? "30d" : d === 90 ? "90d" : "1yr"}
                 </Button>
               ))}
@@ -236,7 +236,7 @@ export default function ProfitabilityPage() {
               <p className="flex items-center gap-1 text-[10px] text-gray-400"><Info className="h-3 w-3" /> From your own sales & expense records</p>
             </div>
             {loading ? (
-              <div className="p-10 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534] mx-auto" /></div>
+              <div className="p-10 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800 mx-auto" /></div>
             ) : enterprises.length === 0 ? (
               <div className="p-10 text-center">
                 <TrendingUp className="h-10 w-10 mx-auto text-gray-300 mb-2" />

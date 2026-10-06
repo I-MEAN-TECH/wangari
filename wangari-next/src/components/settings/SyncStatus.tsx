@@ -84,20 +84,20 @@ export function SyncStatus() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-bold">
-            <CloudUpload className="h-4 w-4 text-[#166534]" /> Offline Sync
+            <CloudUpload className="h-4 w-4 text-wangari-green-800" /> Offline Sync
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${online ? "bg-[#F0FDF4]" : "bg-amber-50"}`}>
-                {online ? <CheckCircle2 className="h-5 w-5 text-[#16A34A]" /> : <CloudOff className="h-5 w-5 text-amber-600" />}
+              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${online ? "bg-wangari-green-50" : "bg-amber-50"}`}>
+                {online ? <CheckCircle2 className="h-5 w-5 text-wangari-green-600" /> : <CloudOff className="h-5 w-5 text-amber-600" />}
               </div>
               <div>
-                <p className="text-sm font-bold text-[#0F172A]">
+                <p className="text-sm font-bold text-wangari-heading">
                   {online ? "Connected" : "Offline"}
                 </p>
-                <p className="text-xs text-[#64748B]">
+                <p className="text-xs text-wangari-muted">
                   {items.length === 0
                     ? "All records are synced to the cloud"
                     : `${items.length} record${items.length === 1 ? "" : "s"} saved on this device, waiting to sync`}
@@ -107,7 +107,7 @@ export function SyncStatus() {
             <Button
               onClick={syncNow}
               disabled={syncing || items.length === 0 || !online}
-              className="gap-2 bg-[#166534] hover:bg-[#14532D]"
+              className="gap-2 bg-wangari-green-800 hover:bg-wangari-green-900"
             >
               {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               {syncing ? "Syncing…" : "Sync now"}
@@ -119,25 +119,25 @@ export function SyncStatus() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-bold">
-            <FileText className="h-4 w-4 text-[#166534]" /> Pending records
+            <FileText className="h-4 w-4 text-wangari-green-800" /> Pending records
           </CardTitle>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
-              <CheckCircle2 className="h-10 w-10 text-[#16A34A]" />
-              <p className="text-sm font-semibold text-[#0F172A]">Nothing pending</p>
-              <p className="max-w-xs text-xs text-[#64748B]">
+              <CheckCircle2 className="h-10 w-10 text-wangari-green-600" />
+              <p className="text-sm font-semibold text-wangari-heading">Nothing pending</p>
+              <p className="max-w-xs text-xs text-wangari-muted">
                 Records you create while offline appear here and sync automatically when you&apos;re back online.
               </p>
             </div>
           ) : (
             <ul className="space-y-2">
               {items.map((item) => (
-                <li key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-[#E2E8F0] px-4 py-3">
+                <li key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-tone-neutral-border px-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[#0F172A]">{item.label}</p>
-                    <p className="flex items-center gap-1 text-xs text-[#64748B]">
+                    <p className="truncate text-sm font-semibold text-wangari-heading">{item.label}</p>
+                    <p className="flex items-center gap-1 text-xs text-wangari-muted">
                       <Clock className="h-3 w-3" /> {ageLabel(item.queuedAt)}
                     </p>
                   </div>

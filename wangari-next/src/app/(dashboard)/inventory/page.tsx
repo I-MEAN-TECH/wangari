@@ -142,42 +142,42 @@ export default function InventoryPage() {
   items.forEach(i => { const cat = i.category || "other"; valueByCategory[cat] = (valueByCategory[cat] || 0) + Number(i.quantity) * Number(i.unitCost); });
   const valuePie = Object.entries(valueByCategory).map(([name, value]) => ({ name: name.replace(/_/g, " "), value })).filter(v => v.value > 0);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" /></div>;
 
   return (
     <div className="space-y-6">
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <PageHeader title="Inventory" description="Track feed, seeds, fertilizer and farm supplies"
-          action={<Button onClick={() => { resetForm(); setShowForm(!showForm); setStep(1); }} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer"><Plus className="h-4 w-4 mr-2" />Add Item</Button>} />
+          action={<Button onClick={() => { resetForm(); setShowForm(!showForm); setStep(1); }} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer"><Plus className="h-4 w-4 mr-2" />Add Item</Button>} />
       </motion.div>
 
       {/* Add/Edit form — step by step */}
       <AnimatePresence>
         {showForm && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-            <Card className="border border-[#E5E7EB]">
+            <Card className="border border-wangari-border">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-sm font-bold text-[#0F172A]">{editingItem ? "Edit Item" : "Add Item"}</h3>
-                    <div className="flex gap-1">{[1, 2, 3].map(s => <div key={s} className={`h-1.5 w-8 rounded-full ${step >= s ? "bg-[#166534]" : "bg-gray-200"}`} />)}</div>
+                    <h3 className="text-sm font-bold text-wangari-heading">{editingItem ? "Edit Item" : "Add Item"}</h3>
+                    <div className="flex gap-1">{[1, 2, 3].map(s => <div key={s} className={`h-1.5 w-8 rounded-full ${step >= s ? "bg-wangari-green-800" : "bg-gray-200"}`} />)}</div>
                   </div>
-                  <button onClick={() => { setShowForm(false); resetForm(); }} className="text-[#94A3B8] hover:text-[#64748B] cursor-pointer"><X className="h-4 w-4" /></button>
+                  <button onClick={() => { setShowForm(false); resetForm(); }} className="text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
                 </div>
 
                 {step === 1 && (
                   <div className="space-y-3">
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-[#64748B]">What is the item? *</Label>
+                      <Label className="text-xs font-semibold text-wangari-muted">What is the item? *</Label>
                       <Input placeholder="e.g. Layer Mash, NPK 17:17:17, vaccines, diesel..." value={form.itemName} onChange={e => setForm({ ...form, itemName: e.target.value })} className="h-12 rounded-xl text-base" autoFocus />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-[#64748B]">Category</Label>
+                      <Label className="text-xs font-semibold text-wangari-muted">Category</Label>
                       {/* Quick-pick suggestions */}
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {SUGGESTED_CATEGORIES.slice(0, 6).map(c => (
                           <button key={c} onClick={() => setForm({ ...form, category: c })}
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${form.category === c ? "bg-[#166534] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{c}</button>
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${form.category === c ? "bg-wangari-green-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{c}</button>
                         ))}
                       </div>
                       {/* Or type custom */}
@@ -191,15 +191,15 @@ export default function InventoryPage() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-[#64748B]">Quantity *</Label>
+                        <Label className="text-xs font-semibold text-wangari-muted">Quantity *</Label>
                         <Input type="number" placeholder="0" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} className="h-12 rounded-xl text-lg font-bold text-center" />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-[#64748B]">Unit</Label>
+                        <Label className="text-xs font-semibold text-wangari-muted">Unit</Label>
                         <div className="flex flex-wrap gap-1 mb-1">
                           {SUGGESTED_UNITS.slice(0, 5).map(u => (
                             <button key={u} onClick={() => setForm({ ...form, unit: u })}
-                              className={`px-2 py-0.5 rounded text-[9px] font-bold cursor-pointer ${form.unit === u ? "bg-[#166534] text-white" : "bg-gray-100 text-gray-500"}`}>{u}</button>
+                              className={`px-2 py-0.5 rounded text-[9px] font-bold cursor-pointer ${form.unit === u ? "bg-wangari-green-800 text-white" : "bg-gray-100 text-gray-500"}`}>{u}</button>
                           ))}
                         </div>
                         <Input placeholder="Or type custom unit" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} className="h-9 rounded-lg text-sm" />
@@ -207,18 +207,18 @@ export default function InventoryPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-[#64748B]">Cost per unit (KES) *</Label>
+                        <Label className="text-xs font-semibold text-wangari-muted">Cost per unit (KES) *</Label>
                         <Input type="number" placeholder="0" value={form.unitCost} onChange={e => setForm({ ...form, unitCost: e.target.value })} className="h-12 rounded-xl text-lg font-bold text-center" />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-[#64748B]">Alert when below</Label>
+                        <Label className="text-xs font-semibold text-wangari-muted">Alert when below</Label>
                         <Input type="number" placeholder="0" value={form.reorderLevel} onChange={e => setForm({ ...form, reorderLevel: e.target.value })} className="h-12 rounded-xl text-lg font-bold text-center" />
                       </div>
                     </div>
                     {form.quantity && form.unitCost && (
-                      <div className="rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] p-3 text-center">
-                        <p className="text-xs text-[#64748B]">Total value</p>
-                        <p className="text-xl font-extrabold text-[#166534]">KES {(Number(form.quantity) * Number(form.unitCost)).toLocaleString()}</p>
+                      <div className="rounded-xl bg-wangari-green-50 border border-wangari-green-200 p-3 text-center">
+                        <p className="text-xs text-wangari-muted">Total value</p>
+                        <p className="text-xl font-extrabold text-wangari-green-800">KES {(Number(form.quantity) * Number(form.unitCost)).toLocaleString()}</p>
                       </div>
                     )}
                     <div className="flex gap-2">
@@ -232,29 +232,29 @@ export default function InventoryPage() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-[#64748B]">Supplier (optional)</Label>
+                        <Label className="text-xs font-semibold text-wangari-muted">Supplier (optional)</Label>
                         <Input placeholder="e.g. Kenchic, Double F" value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} className="h-10 rounded-xl" />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-[#64748B]"><Clock className="h-3 w-3 inline" />Expiry date (optional)</Label>
+                        <Label className="text-xs font-semibold text-wangari-muted"><Clock className="h-3 w-3 inline" />Expiry date (optional)</Label>
                         <Input type="date" value={form.expiryDate} onChange={e => setForm({ ...form, expiryDate: e.target.value })} className="h-10 rounded-xl" />
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-[#64748B]">Notes (optional)</Label>
+                      <Label className="text-xs font-semibold text-wangari-muted">Notes (optional)</Label>
                       <Input placeholder="e.g. Store in cool dry place, batch #12345..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="h-10 rounded-xl" />
                     </div>
-                    <div className="rounded-xl bg-[#F8FAFC] border border-[#E5E7EB] p-4 space-y-2">
-                      <div className="flex justify-between text-xs"><span className="text-[#64748B]">Item</span><span className="font-bold text-[#0F172A]">{form.itemName}</span></div>
-                      <div className="flex justify-between text-xs"><span className="text-[#64748B]">Category</span><span className="font-bold text-[#0F172A]">{form.category || "—"}</span></div>
-                      <div className="flex justify-between text-xs"><span className="text-[#64748B]">Quantity</span><span className="font-bold text-[#0F172A]">{form.quantity} {form.unit}</span></div>
-                      <div className="flex justify-between text-xs"><span className="text-[#64748B]">Unit cost</span><span className="font-bold text-[#0F172A]">KES {Number(form.unitCost || 0).toLocaleString()}</span></div>
-                      {form.expiryDate && <div className="flex justify-between text-xs"><span className="text-[#64748B]">Expires</span><span className="font-bold text-[#0F172A]">{new Date(form.expiryDate).toLocaleDateString()}</span></div>}
-                      <div className="flex justify-between text-xs border-t border-[#E5E7EB] pt-2"><span className="text-[#64748B]">Total value</span><span className="font-extrabold text-[#166534]">KES {(Number(form.quantity) * Number(form.unitCost)).toLocaleString()}</span></div>
+                    <div className="rounded-xl bg-tone-neutral-bg border border-wangari-border p-4 space-y-2">
+                      <div className="flex justify-between text-xs"><span className="text-wangari-muted">Item</span><span className="font-bold text-wangari-heading">{form.itemName}</span></div>
+                      <div className="flex justify-between text-xs"><span className="text-wangari-muted">Category</span><span className="font-bold text-wangari-heading">{form.category || "—"}</span></div>
+                      <div className="flex justify-between text-xs"><span className="text-wangari-muted">Quantity</span><span className="font-bold text-wangari-heading">{form.quantity} {form.unit}</span></div>
+                      <div className="flex justify-between text-xs"><span className="text-wangari-muted">Unit cost</span><span className="font-bold text-wangari-heading">KES {Number(form.unitCost || 0).toLocaleString()}</span></div>
+                      {form.expiryDate && <div className="flex justify-between text-xs"><span className="text-wangari-muted">Expires</span><span className="font-bold text-wangari-heading">{new Date(form.expiryDate).toLocaleDateString()}</span></div>}
+                      <div className="flex justify-between text-xs border-t border-wangari-border pt-2"><span className="text-wangari-muted">Total value</span><span className="font-extrabold text-wangari-green-800">KES {(Number(form.quantity) * Number(form.unitCost)).toLocaleString()}</span></div>
                     </div>
                     <div className="flex gap-2">
                       <Button onClick={() => setStep(2)} variant="outline" className="flex-1 cursor-pointer">Back</Button>
-                      <Button onClick={handleSubmit} disabled={!form.itemName || !form.quantity} className="flex-1 h-11 bg-[#166534] hover:bg-[#14532D] cursor-pointer">{editingItem ? "Update Item" : "Save Item"}</Button>
+                      <Button onClick={handleSubmit} disabled={!form.itemName || !form.quantity} className="flex-1 h-11 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">{editingItem ? "Update Item" : "Save Item"}</Button>
                     </div>
                   </div>
                 )}
@@ -306,17 +306,17 @@ export default function InventoryPage() {
       {/* KPIs */}
       <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { title: "Total Items", value: items.length.toString(), icon: <Package className="h-5 w-5" />, color: "bg-[#166534]" },
+          { title: "Total Items", value: items.length.toString(), icon: <Package className="h-5 w-5" />, color: "bg-wangari-green-800" },
           { title: "Total Value", value: `KES ${totalValue.toLocaleString()}`, icon: <CircleDollarSign className="h-5 w-5" />, color: "bg-emerald-500" },
-          { title: "Low Stock", value: lowStock.length.toString(), icon: <AlertTriangle className="h-5 w-5" />, color: lowStock.length > 0 ? "bg-amber-500" : "bg-[#166534]" },
-          { title: "Expiring", value: String(expiredItems.length + expiringSoon.length), icon: <Clock className="h-5 w-5" />, color: (expiredItems.length + expiringSoon.length) > 0 ? "bg-red-500" : "bg-[#166534]" },
+          { title: "Low Stock", value: lowStock.length.toString(), icon: <AlertTriangle className="h-5 w-5" />, color: lowStock.length > 0 ? "bg-amber-500" : "bg-wangari-green-800" },
+          { title: "Expiring", value: String(expiredItems.length + expiringSoon.length), icon: <Clock className="h-5 w-5" />, color: (expiredItems.length + expiringSoon.length) > 0 ? "bg-red-500" : "bg-wangari-green-800" },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
-            <Card className="border border-[#E5E7EB]">
+            <Card className="border border-wangari-border">
               <CardContent className="pt-4 pb-3 px-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] mb-2">{kpi.icon}</div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">{kpi.title}</p>
-                <p className="text-xl font-extrabold text-[#0F172A]">{kpi.value}</p>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-tone-good-bg text-wangari-green-800 mb-2">{kpi.icon}</div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-wangari-muted">{kpi.title}</p>
+                <p className="text-xl font-extrabold text-wangari-heading">{kpi.value}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -326,7 +326,7 @@ export default function InventoryPage() {
       {/* Category tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         <button onClick={() => setActiveCategory("all")}
-          className={`px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeCategory === "all" ? "bg-[#166534] text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+          className={`px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeCategory === "all" ? "bg-wangari-green-800 text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
           All ({items.length})
         </button>
         {allCategories.map(cat => {
@@ -334,7 +334,7 @@ export default function InventoryPage() {
           if (count === 0) return null;
           return (
             <button key={cat} onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeCategory === cat ? "bg-[#166534] text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+              className={`px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeCategory === cat ? "bg-wangari-green-800 text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
               {cat} ({count})
             </button>
           );
@@ -343,8 +343,8 @@ export default function InventoryPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94A3B8]" />
-        <input placeholder="Search inventory..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-10 rounded-xl border border-[#E5E7EB] pl-9 pr-3 text-sm" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-wangari-subtle" />
+        <input placeholder="Search inventory..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-10 rounded-xl border border-wangari-border pl-9 pr-3 text-sm" />
       </div>
 
       {/* Items */}
@@ -356,7 +356,7 @@ export default function InventoryPage() {
             const isExpiringSoon = item.expiryDate && !isExpired && Math.ceil((new Date(item.expiryDate).getTime() - now.getTime()) / 86400000) <= 30;
             return (
               <motion.div key={item.id} variants={fadeUp}>
-                <Card className={`border ${isExpired ? "border-red-300 bg-red-50/30" : isLow ? "border-amber-300 bg-amber-50/30" : "border-[#E5E7EB]"}`}>
+                <Card className={`border ${isExpired ? "border-red-300 bg-red-50/30" : isLow ? "border-amber-300 bg-amber-50/30" : "border-wangari-border"}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
@@ -364,47 +364,47 @@ export default function InventoryPage() {
                           <Package className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-bold text-[#0F172A]">{item.itemName}</h3>
-                          <p className="text-[10px] text-[#94A3B8]">{item.category || "No category"}{item.supplier ? ` • ${item.supplier}` : ""}</p>
+                          <h3 className="text-sm font-bold text-wangari-heading">{item.itemName}</h3>
+                          <p className="text-[10px] text-wangari-subtle">{item.category || "No category"}{item.supplier ? ` • ${item.supplier}` : ""}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {isExpired && <Badge className="bg-red-100 text-red-700 text-[9px] border-red-200">Expired</Badge>}
                         {isExpiringSoon && !isExpired && <Badge className="bg-amber-100 text-amber-700 text-[9px] border-amber-200">Expiring</Badge>}
                         {isLow && !isExpired && <Badge className="bg-amber-100 text-amber-700 text-[9px] border-amber-200">Low</Badge>}
-                        <p className="text-lg font-extrabold text-[#0F172A]">{Number(item.quantity).toLocaleString()}<span className="text-xs font-normal text-[#94A3B8] ml-1">{item.unit}</span></p>
+                        <p className="text-lg font-extrabold text-wangari-heading">{Number(item.quantity).toLocaleString()}<span className="text-xs font-normal text-wangari-subtle ml-1">{item.unit}</span></p>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2 mt-3">
-                      <div className="rounded-lg bg-[#F8FAFC] p-2 text-center"><p className="text-[9px] text-[#94A3B8]">Unit cost</p><p className="text-xs font-bold text-[#0F172A]">KES {Number(item.unitCost).toLocaleString()}</p></div>
-                      <div className="rounded-lg bg-[#F8FAFC] p-2 text-center"><p className="text-[9px] text-[#94A3B8]">Value</p><p className="text-xs font-bold text-[#166534]">KES {(Number(item.quantity) * Number(item.unitCost)).toLocaleString()}</p></div>
-                      <div className="rounded-lg bg-[#F8FAFC] p-2 text-center">
-                        <p className="text-[9px] text-[#94A3B8]">Reorder</p>
-                        <p className="text-xs font-bold text-[#0F172A]">{item.reorderLevel} {item.unit}</p>
+                      <div className="rounded-lg bg-tone-neutral-bg p-2 text-center"><p className="text-[9px] text-wangari-subtle">Unit cost</p><p className="text-xs font-bold text-wangari-heading">KES {Number(item.unitCost).toLocaleString()}</p></div>
+                      <div className="rounded-lg bg-tone-neutral-bg p-2 text-center"><p className="text-[9px] text-wangari-subtle">Value</p><p className="text-xs font-bold text-wangari-green-800">KES {(Number(item.quantity) * Number(item.unitCost)).toLocaleString()}</p></div>
+                      <div className="rounded-lg bg-tone-neutral-bg p-2 text-center">
+                        <p className="text-[9px] text-wangari-subtle">Reorder</p>
+                        <p className="text-xs font-bold text-wangari-heading">{item.reorderLevel} {item.unit}</p>
                       </div>
                     </div>
                     {item.expiryDate && (
-                      <div className="mt-2 text-[10px] text-[#94A3B8]">
+                      <div className="mt-2 text-[10px] text-wangari-subtle">
                         Expires: {new Date(item.expiryDate).toLocaleDateString()}
                         {isExpired && <span className="text-red-600 font-bold ml-1">(EXPIRED)</span>}
                         {isExpiringSoon && !isExpired && <span className="text-amber-600 font-bold ml-1">(expiring soon)</span>}
                       </div>
                     )}
-                    {item.notes && <p className="mt-1 text-[10px] text-[#94A3B8] italic">{item.notes}</p>}
+                    {item.notes && <p className="mt-1 text-[10px] text-wangari-subtle italic">{item.notes}</p>}
                     {/* Actions */}
                     <div className="flex gap-2 mt-3">
                       <button onClick={() => { setAdjustItem(item.id); setAdjustQty(""); }}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#F0FDF4] text-[#166534] text-xs font-bold border border-[#BBF7D0] hover:bg-[#DCFCE7] cursor-pointer">
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-wangari-green-50 text-wangari-green-800 text-xs font-bold border border-wangari-green-200 hover:bg-wangari-green-100 cursor-pointer">
                         <ArrowUp className="h-3.5 w-3.5" />Restock
                       </button>
                       <button onClick={() => { setAdjustItem(item.id); setAdjustQty(""); }}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-red-50 text-red-600 text-xs font-bold border border-red-200 hover:bg-red-100 cursor-pointer">
                         <ArrowDown className="h-3.5 w-3.5" />Use Stock
                       </button>
-                      <button onClick={() => openEdit(item)} className="py-2.5 px-3 rounded-xl bg-gray-50 text-[#94A3B8] hover:text-[#64748B] border border-gray-200 cursor-pointer">
+                      <button onClick={() => openEdit(item)} className="py-2.5 px-3 rounded-xl bg-gray-50 text-wangari-subtle hover:text-wangari-muted border border-gray-200 cursor-pointer">
                         <Edit3 className="h-3.5 w-3.5" />
                       </button>
-                      <button onClick={() => handleDelete(item.id)} className="py-2.5 px-3 rounded-xl bg-gray-50 text-[#94A3B8] hover:text-red-500 border border-gray-200 cursor-pointer">
+                      <button onClick={() => handleDelete(item.id)} className="py-2.5 px-3 rounded-xl bg-gray-50 text-wangari-subtle hover:text-red-500 border border-gray-200 cursor-pointer">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -420,15 +420,15 @@ export default function InventoryPage() {
       {adjustItem && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-            <Card className="w-80 border border-[#E5E7EB]">
+            <Card className="w-80 border border-wangari-border">
               <CardContent className="p-6 space-y-4">
-                <h3 className="text-sm font-bold text-[#0F172A]">Adjust Stock</h3>
-                <p className="text-xs text-[#64748B]">How many {items.find(i => i.id === adjustItem)?.unit || "units"}?</p>
+                <h3 className="text-sm font-bold text-wangari-heading">Adjust Stock</h3>
+                <p className="text-xs text-wangari-muted">How many {items.find(i => i.id === adjustItem)?.unit || "units"}?</p>
                 <Input type="number" placeholder="0" value={adjustQty} onChange={e => setAdjustQty(e.target.value)} className="h-12 rounded-xl text-lg font-bold text-center" />
                 <Input placeholder="Reason (optional)" value={adjustReason} onChange={e => setAdjustReason(e.target.value)} className="h-10 rounded-xl text-sm" />
                 <div className="flex gap-2">
                   <Button onClick={() => setAdjustItem(null)} variant="outline" className="flex-1 cursor-pointer">Cancel</Button>
-                  <Button onClick={() => handleAdjust(adjustItem, 1)} disabled={!adjustQty} className="flex-1 bg-[#166534] hover:bg-[#14532D] cursor-pointer">Add</Button>
+                  <Button onClick={() => handleAdjust(adjustItem, 1)} disabled={!adjustQty} className="flex-1 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">Add</Button>
                   <Button onClick={() => handleAdjust(adjustItem, -1)} disabled={!adjustQty} className="flex-1 bg-red-500 hover:bg-red-600 text-white cursor-pointer">Use</Button>
                 </div>
               </CardContent>

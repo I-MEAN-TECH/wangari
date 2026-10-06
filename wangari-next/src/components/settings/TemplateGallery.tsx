@@ -74,7 +74,7 @@ function MiniPreview({ html, onClick }: { html: string; onClick: () => void }) {
   }, [html]);
 
   return (
-    <button onClick={onClick} className="group relative block w-full overflow-hidden rounded-xl border border-[#E5E7EB] bg-white transition hover:border-[#166534] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#166534]/40" style={{ aspectRatio: "210/297" }} aria-label="Open full template preview">
+    <button onClick={onClick} className="group relative block w-full overflow-hidden rounded-xl border border-wangari-border bg-white transition hover:border-wangari-green-800 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-wangari-green-800/40" style={{ aspectRatio: "210/297" }} aria-label="Open full template preview">
       <div ref={ref} className="relative h-full w-full overflow-hidden">
         {/* iframe is scaled to thumbnail width by CSS below */}
         <style>{`.tpl-scale{transform:scale(var(--s,0.34));}`}</style>
@@ -82,7 +82,7 @@ function MiniPreview({ html, onClick }: { html: string; onClick: () => void }) {
       </div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition group-hover:opacity-100" />
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100">
-        <span className="flex items-center gap-1.5 rounded-full bg-[#166534] px-3 py-1.5 text-xs font-semibold text-white shadow-lg"><Eye className="h-3.5 w-3.5" /> Preview</span>
+        <span className="flex items-center gap-1.5 rounded-full bg-wangari-green-800 px-3 py-1.5 text-xs font-semibold text-white shadow-lg"><Eye className="h-3.5 w-3.5" /> Preview</span>
       </div>
     </button>
   );
@@ -145,11 +145,11 @@ export function TemplateGallery({ profile, currentSelection, onSelect }: { profi
       <div className="mb-4 flex flex-wrap gap-2">
         {DOC_TYPES.map((d) => (
           <button key={d.id} onClick={() => setDocType(d.id)}
-            className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition ${docType === d.id ? "bg-[#166534] text-white border-[#166534]" : "bg-white text-[#64748B] border-[#E5E7EB] hover:border-[#BBF7D0]"}`}>
+            className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition ${docType === d.id ? "bg-wangari-green-800 text-white border-wangari-green-800" : "bg-white text-wangari-muted border-wangari-border hover:border-wangari-green-200"}`}>
             {d.label}
           </button>
         ))}
-        <span className="ml-auto self-center text-[11px] text-[#94A3B8]">Shown with your branding — one design per row, click any preview to open it full-size</span>
+        <span className="ml-auto self-center text-[11px] text-wangari-subtle">Shown with your branding — one design per row, click any preview to open it full-size</span>
       </div>
 
       {/* Gallery — one large template per row: big preview left, details column right */}
@@ -159,7 +159,7 @@ export function TemplateGallery({ profile, currentSelection, onSelect }: { profi
           return (
             <motion.div key={t.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
               <div
-                className={`flex flex-col gap-5 rounded-2xl border bg-white p-4 transition sm:p-5 md:flex-row md:items-center ${inUse ? "border-[#166534] ring-1 ring-[#166534]/25" : "border-[#E5E7EB] hover:border-[#BBF7D0] hover:shadow-md"}`}
+                className={`flex flex-col gap-5 rounded-2xl border bg-white p-4 transition sm:p-5 md:flex-row md:items-center ${inUse ? "border-wangari-green-800 ring-1 ring-wangari-green-800/25" : "border-wangari-border hover:border-wangari-green-200 hover:shadow-md"}`}
               >
                 {/* Large preview — scales itself to the column width */}
                 <div className="mx-auto w-full max-w-[340px] shrink-0 md:w-[300px]">
@@ -169,20 +169,20 @@ export function TemplateGallery({ profile, currentSelection, onSelect }: { profi
                 {/* Details column */}
                 <div className="flex min-w-0 flex-1 flex-col">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-base font-bold text-[#0F172A]">{t.name}</p>
+                    <p className="text-base font-bold text-wangari-heading">{t.name}</p>
                     {inUse && (
-                      <span className="rounded-full bg-[#F0FDF4] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#166534]">In use</span>
+                      <span className="rounded-full bg-wangari-green-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-wangari-green-800">In use</span>
                     )}
                   </div>
-                  <p className="mt-1 text-sm leading-relaxed text-[#64748B]">{t.description}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-wangari-muted">{t.description}</p>
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <Button size="sm" variant="outline" onClick={() => openFull(t)}
-                      className="gap-1.5 rounded-lg border-[#E5E7EB] text-xs font-semibold text-[#334155] hover:border-[#166534] hover:text-[#166534]">
+                      className="gap-1.5 rounded-lg border-wangari-border text-xs font-semibold text-wangari-text hover:border-wangari-green-800 hover:text-wangari-green-800">
                       <Eye className="h-3.5 w-3.5" /> Preview full-size
                     </Button>
                     {onSelect && !inUse && (
                       <Button size="sm" onClick={() => onSelect(docType, t.id)}
-                        className="gap-1.5 rounded-lg bg-[#166534] text-xs font-semibold text-white hover:bg-[#14532d]">
+                        className="gap-1.5 rounded-lg bg-wangari-green-800 text-xs font-semibold text-white hover:bg-wangari-green-900">
                         <Check className="h-3.5 w-3.5" /> Use this design
                       </Button>
                     )}
@@ -203,13 +203,13 @@ export function TemplateGallery({ profile, currentSelection, onSelect }: { profi
             <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }}
               className="flex max-h-[95vh] w-full max-w-4xl flex-col rounded-2xl bg-white"
               onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between border-b border-[#E5E7EB] px-5 py-3">
+              <div className="flex items-center justify-between border-b border-wangari-border px-5 py-3">
                 <div>
-                  <h3 className="text-sm font-bold text-[#0F172A]">
+                  <h3 className="text-sm font-bold text-wangari-heading">
                     {INVOICE_TEMPLATES.find((t) => t.id === fullPreview.templateId)?.name}
-                    <span className="ml-2 text-xs font-medium text-[#94A3B8] capitalize">· {fullPreview.type} preview</span>
+                    <span className="ml-2 text-xs font-medium text-wangari-subtle capitalize">· {fullPreview.type} preview</span>
                   </h3>
-                  <p className="text-[11px] text-[#94A3B8]">Rendered live with your logo, colors and details</p>
+                  <p className="text-[11px] text-wangari-subtle">Rendered live with your logo, colors and details</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {onSelect && fullPreview.type !== "invoice" && (
@@ -218,7 +218,7 @@ export function TemplateGallery({ profile, currentSelection, onSelect }: { profi
                   )}
                   {onSelect && (
                     <Button size="sm" onClick={useThisTemplate} disabled={inUseForPreview}
-                      className={`gap-1.5 rounded-lg ${inUseForPreview ? "bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0]" : "bg-[#166534] hover:bg-[#14532d]"}`}>
+                      className={`gap-1.5 rounded-lg ${inUseForPreview ? "bg-wangari-green-50 text-wangari-green-800 border border-wangari-green-200" : "bg-wangari-green-800 hover:bg-wangari-green-900"}`}>
                       {inUseForPreview ? <><Check className="h-3.5 w-3.5" /> In use</> : <><Check className="h-3.5 w-3.5" /> Use for {fullPreview.type}s</>}
                     </Button>
                   )}
@@ -226,7 +226,7 @@ export function TemplateGallery({ profile, currentSelection, onSelect }: { profi
                   <button onClick={() => setFullPreview(null)} className="rounded-lg p-1.5 hover:bg-slate-100"><X className="h-5 w-5 text-slate-500" /></button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto bg-[#F1F5F9] p-4">
+              <div className="flex-1 overflow-y-auto bg-wangari-sunken p-4">
                 <FullDocFrame html={renderDoc(fullPreview.type, fullPreview.templateId, profile)} />
               </div>
             </motion.div>

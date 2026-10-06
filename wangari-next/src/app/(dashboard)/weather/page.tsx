@@ -84,8 +84,8 @@ export default function WeatherPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 text-[#166534] animate-spin mx-auto mb-3" />
-          <p className="text-sm text-[#64748B]">{gpsStatus === "requesting" ? "Getting your location..." : "Loading live weather..."}</p>
+          <RefreshCw className="h-8 w-8 text-wangari-green-800 animate-spin mx-auto mb-3" />
+          <p className="text-sm text-wangari-muted">{gpsStatus === "requesting" ? "Getting your location..." : "Loading live weather..."}</p>
         </div>
       </div>
     );
@@ -111,9 +111,9 @@ export default function WeatherPage() {
       {/* Header */}
       <motion.div variants={fadeUp} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight">Weather</h1>
-          <div className="flex items-center gap-1.5 mt-1 text-sm text-[#64748B] font-medium">
-            <MapPin className="h-4 w-4 text-[#166534]" />
+          <h1 className="text-2xl font-extrabold text-wangari-heading tracking-tight">Weather</h1>
+          <div className="flex items-center gap-1.5 mt-1 text-sm text-wangari-muted font-medium">
+            <MapPin className="h-4 w-4 text-wangari-green-800" />
             <span>{location || "Nairobi, Kenya"}</span>
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function WeatherPage() {
                 );
               }
             }}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#166534] bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl hover:bg-[#DCFCE7] active:scale-95 transition-all cursor-pointer min-h-[44px]"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-wangari-green-800 bg-wangari-green-50 border border-wangari-green-200 rounded-xl hover:bg-wangari-green-100 active:scale-95 transition-all cursor-pointer min-h-[44px]"
           >
             <MapPin className="h-3.5 w-3.5" />
             {gpsStatus === "requesting" ? "Locating..." : "Use GPS"}
@@ -144,7 +144,7 @@ export default function WeatherPage() {
           <button
             type="button"
             onClick={() => fetchWeather()}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#64748B] border border-[#E5E7EB] rounded-xl hover:bg-gray-50 active:scale-95 transition-all cursor-pointer min-h-[44px]"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-wangari-muted border border-wangari-border rounded-xl hover:bg-gray-50 active:scale-95 transition-all cursor-pointer min-h-[44px]"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -153,34 +153,34 @@ export default function WeatherPage() {
       </motion.div>
 
       {/* Location Search Bar & Quick Chips */}
-      <motion.div variants={fadeUp} className="bg-white p-3.5 rounded-2xl border border-[#E5E7EB] shadow-xs space-y-2.5">
+      <motion.div variants={fadeUp} className="bg-white p-3.5 rounded-2xl border border-wangari-border shadow-xs space-y-2.5">
         <form onSubmit={handleLocationSubmit} className="flex gap-2">
           <div className="relative flex-1">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94A3B8]" />
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-wangari-subtle" />
             <input
               type="text"
               value={searchLocation}
               onChange={(e) => setSearchLocation(e.target.value)}
               placeholder="Search town/county (e.g. Nakuru, Eldoret, Kiambu)..."
-              className="w-full pl-9 pr-3 py-2.5 bg-[#F8FAFC] border border-[#E5E7EB] rounded-xl text-xs font-medium text-[#0F172A] focus:outline-hidden focus:ring-2 focus:ring-[#166534] min-h-[44px]"
+              className="w-full pl-9 pr-3 py-2.5 bg-tone-neutral-bg border border-wangari-border rounded-xl text-xs font-medium text-wangari-heading focus:outline-hidden focus:ring-2 focus:ring-wangari-green-800 min-h-[44px]"
             />
           </div>
           <button
             type="submit"
             disabled={isSearching || !searchLocation.trim()}
-            className="px-4 py-2.5 bg-[#166534] text-white rounded-xl text-xs font-bold hover:bg-[#14532D] disabled:opacity-50 transition-all cursor-pointer min-h-[44px]"
+            className="px-4 py-2.5 bg-wangari-green-800 text-white rounded-xl text-xs font-bold hover:bg-wangari-green-900 disabled:opacity-50 transition-all cursor-pointer min-h-[44px]"
           >
             {isSearching ? "Searching..." : "Set Location"}
           </button>
         </form>
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs text-[#64748B]">
-          <span className="font-semibold text-[10px] uppercase tracking-wider text-[#94A3B8] whitespace-nowrap">Quick:</span>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs text-wangari-muted">
+          <span className="font-semibold text-[10px] uppercase tracking-wider text-wangari-subtle whitespace-nowrap">Quick:</span>
           {["Nairobi", "Nakuru", "Eldoret", "Kiambu", "Nyeri", "Machakos", "Meru", "Mombasa"].map((town) => (
             <button
               key={town}
               type="button"
               onClick={() => handleQuickLocation(town)}
-              className="px-2.5 py-1 bg-[#F1F5F9] hover:bg-[#E2E8F0] active:scale-95 text-[#334155] font-medium rounded-lg text-[11px] whitespace-nowrap cursor-pointer transition-all"
+              className="px-2.5 py-1 bg-wangari-sunken hover:bg-tone-neutral-border active:scale-95 text-wangari-text font-medium rounded-lg text-[11px] whitespace-nowrap cursor-pointer transition-all"
             >
               {town}
             </button>
@@ -189,7 +189,7 @@ export default function WeatherPage() {
       </motion.div>
 
       {/* Current weather hero */}
-      <motion.div variants={fadeUp} className="rounded-2xl bg-gradient-to-br from-[#0B1220] via-[#14532D] to-[#166534] p-6 text-white">
+      <motion.div variants={fadeUp} className="rounded-2xl bg-gradient-to-br from-wangari-ink via-wangari-green-900 to-wangari-green-800 p-6 text-white">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-white/50 text-xs font-semibold uppercase tracking-wider">Now</p>
@@ -247,18 +247,18 @@ export default function WeatherPage() {
 
       {/* Sunrise/Sunset */}
       <motion.div variants={fadeUp}>
-        <Card className="border border-[#E5E7EB]">
+        <Card className="border border-wangari-border">
           <CardContent className="flex items-center justify-around p-4">
             <div className="text-center">
               <Sun className="h-5 w-5 text-amber-500 mx-auto mb-1" />
-              <p className="text-xs text-[#94A3B8]">Sunrise</p>
-              <p className="text-sm font-bold text-[#0F172A]">{sunrise || "06:30"}</p>
+              <p className="text-xs text-wangari-subtle">Sunrise</p>
+              <p className="text-sm font-bold text-wangari-heading">{sunrise || "06:30"}</p>
             </div>
-            <div className="h-8 w-px bg-[#E5E7EB]" />
+            <div className="h-8 w-px bg-wangari-border" />
             <div className="text-center">
               <Sun className="h-5 w-5 text-orange-500 mx-auto mb-1" />
-              <p className="text-xs text-[#94A3B8]">Sunset</p>
-              <p className="text-sm font-bold text-[#0F172A]">{sunset || "18:45"}</p>
+              <p className="text-xs text-wangari-subtle">Sunset</p>
+              <p className="text-sm font-bold text-wangari-heading">{sunset || "18:45"}</p>
             </div>
           </CardContent>
         </Card>
@@ -266,22 +266,22 @@ export default function WeatherPage() {
 
       {/* Forecast — scrollable on mobile */}
       <motion.div variants={fadeUp}>
-        <Card className="border border-[#E5E7EB]">
+        <Card className="border border-wangari-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Calendar className="h-4 w-4 text-[#166534]" />
-              <p className="text-xs font-bold text-[#0F172A]">Forecast</p>
+              <Calendar className="h-4 w-4 text-wangari-green-800" />
+              <p className="text-xs font-bold text-wangari-heading">Forecast</p>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
               {forecast?.map((day: any, i: number) => {
                 const d = new Date(day.date || day.day);
                 const dayName = i === 0 ? "Today" : d.toLocaleDateString("en-US", { weekday: "short" });
                 return (
-                  <div key={i} className={`flex-shrink-0 w-20 text-center p-3 rounded-xl ${i === 0 ? "bg-[#F0FDF4] border border-[#BBF7D0]" : "bg-[#F8FAFC]"}`}>
-                    <p className="text-[10px] font-semibold text-[#64748B]">{dayName}</p>
-                    <WeatherIcon condition={day.condition} className="h-5 w-5 text-[#64748B] mx-auto my-2" />
-                    <p className="text-sm font-bold text-[#0F172A]">{day.tempMax || day.maxTemp}°</p>
-                    <p className="text-[10px] text-[#94A3B8]">{day.tempMin || day.minTemp}°</p>
+                  <div key={i} className={`flex-shrink-0 w-20 text-center p-3 rounded-xl ${i === 0 ? "bg-wangari-green-50 border border-wangari-green-200" : "bg-tone-neutral-bg"}`}>
+                    <p className="text-[10px] font-semibold text-wangari-muted">{dayName}</p>
+                    <WeatherIcon condition={day.condition} className="h-5 w-5 text-wangari-muted mx-auto my-2" />
+                    <p className="text-sm font-bold text-wangari-heading">{day.tempMax || day.maxTemp}°</p>
+                    <p className="text-[10px] text-wangari-subtle">{day.tempMin || day.minTemp}°</p>
                     {day.rain > 0 && <p className="text-[9px] text-blue-500 font-bold mt-1">{day.rain}mm</p>}
                   </div>
                 );
@@ -294,11 +294,11 @@ export default function WeatherPage() {
       {/* Temperature trend */}
       {forecast && forecast.length > 0 && (
         <motion.div variants={fadeUp}>
-          <Card className="border border-[#E5E7EB]">
+          <Card className="border border-wangari-border">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Thermometer className="h-4 w-4 text-[#166534]" />
-                <p className="text-xs font-bold text-[#0F172A]">Temperature Range</p>
+                <Thermometer className="h-4 w-4 text-wangari-green-800" />
+                <p className="text-xs font-bold text-wangari-heading">Temperature Range</p>
               </div>
               <div className="flex items-end gap-2 h-32">
                 {forecast.map((day: any, i: number) => {
@@ -309,13 +309,13 @@ export default function WeatherPage() {
                   const d = new Date(day.date || day.day);
                   return (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <p className="text-[9px] font-bold text-[#0F172A]">{maxT}°</p>
+                      <p className="text-[9px] font-bold text-wangari-heading">{maxT}°</p>
                       <div className="w-full relative" style={{ height: "60px" }}>
-                        <div className="absolute bottom-0 w-full rounded-t-md bg-[#166534]/20" style={{ height: `${maxH}%` }} />
-                        <div className="absolute bottom-0 w-full rounded-t-md bg-[#166534]" style={{ height: `${minH}%` }} />
+                        <div className="absolute bottom-0 w-full rounded-t-md bg-wangari-green-800/20" style={{ height: `${maxH}%` }} />
+                        <div className="absolute bottom-0 w-full rounded-t-md bg-wangari-green-800" style={{ height: `${minH}%` }} />
                       </div>
-                      <p className="text-[9px] text-[#94A3B8]">{minT}°</p>
-                      <p className="text-[8px] text-[#94A3B8]">{i === 0 ? "Now" : d.toLocaleDateString("en-US", { weekday: "short" })}</p>
+                      <p className="text-[9px] text-wangari-subtle">{minT}°</p>
+                      <p className="text-[8px] text-wangari-subtle">{i === 0 ? "Now" : d.toLocaleDateString("en-US", { weekday: "short" })}</p>
                     </div>
                   );
                 })}

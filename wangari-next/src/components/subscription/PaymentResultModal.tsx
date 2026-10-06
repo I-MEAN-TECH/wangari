@@ -78,7 +78,7 @@ export function PaymentResultModal({
           <div className="mt-6 flex flex-col sm:flex-row items-center gap-3">
             <Button
               onClick={onRetry || onClose}
-              className="w-full bg-[#166534] hover:bg-[#14532D] text-white font-bold gap-2 cursor-pointer py-3 rounded-xl shadow-md"
+              className="w-full bg-wangari-green-800 hover:bg-wangari-green-900 text-white font-bold gap-2 cursor-pointer py-3 rounded-xl shadow-md"
             >
               <RefreshCw className="h-4 w-4" /> Try Payment Again
             </Button>
@@ -103,7 +103,7 @@ export function PaymentResultModal({
         {/* Screen Only Success Header */}
         <div className="text-center print:hidden mb-6">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 mb-3 border border-emerald-100">
-            <CheckCircle2 className="h-10 w-10 text-[#166534]" />
+            <CheckCircle2 className="h-10 w-10 text-wangari-green-800" />
           </div>
           <h2 className="text-2xl font-extrabold text-gray-900">Payment Successful!</h2>
           <p className="text-xs text-gray-500 mt-1">
@@ -117,14 +117,14 @@ export function PaymentResultModal({
           <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
             <div>
               <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-[#166534] text-white flex items-center justify-center font-black text-xs">W</div>
-                <span className="text-lg font-black text-[#0F172A] tracking-tight">WANGARI</span>
+                <div className="h-7 w-7 rounded-lg bg-wangari-green-800 text-white flex items-center justify-center font-black text-xs">W</div>
+                <span className="text-lg font-black text-wangari-heading tracking-tight">WANGARI</span>
               </div>
               <p className="text-[10px] text-gray-400 mt-0.5">IMEAN TECH LIMITED • Nairobi, Kenya</p>
               <p className="text-[10px] text-gray-400">support@imeantech.com</p>
             </div>
             <div className="text-right">
-              <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 text-[#166534] text-xs font-black uppercase tracking-wider">
+              <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 text-wangari-green-800 text-xs font-black uppercase tracking-wider">
                 PAID RECEIPT
               </span>
               <p className="text-xs font-mono font-bold text-gray-700 mt-1">Ref: {refCode}</p>
@@ -162,8 +162,8 @@ export function PaymentResultModal({
               </div>
             </div>
             <div className="grid grid-cols-12 p-3 text-xs bg-emerald-50/50 border-t border-gray-200">
-              <div className="col-span-8 font-extrabold text-[#0F172A]">TOTAL PAID</div>
-              <div className="col-span-4 text-right font-black text-lg text-[#166534]">
+              <div className="col-span-8 font-extrabold text-wangari-heading">TOTAL PAID</div>
+              <div className="col-span-4 text-right font-black text-lg text-wangari-green-800">
                 KES {amount ? (amount / 100).toLocaleString() : "—"}
               </div>
             </div>
@@ -187,7 +187,7 @@ export function PaymentResultModal({
           <Link href="/dashboard" className="w-full">
             <Button
               onClick={onClose}
-              className="w-full bg-[#166534] hover:bg-[#14532D] text-white font-extrabold gap-2 cursor-pointer py-3 rounded-xl shadow-md"
+              className="w-full bg-wangari-green-800 hover:bg-wangari-green-900 text-white font-extrabold gap-2 cursor-pointer py-3 rounded-xl shadow-md"
             >
               Go to Dashboard →
             </Button>

@@ -80,12 +80,12 @@ export function ProductionChart({ data }: ProductionChartProps) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: "#94A3B8" }}
+                  tick={{ fontSize: 11, fill: "#5F6E85" }}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#94A3B8" }}
+                  tick={{ fontSize: 11, fill: "#5F6E85" }}
                   tickLine={false}
                   axisLine={false}
                 />
@@ -142,12 +142,12 @@ export function RevenueChart({ data }: RevenueChartProps) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis
                   dataKey="month"
-                  tick={{ fontSize: 11, fill: "#94A3B8" }}
+                  tick={{ fontSize: 11, fill: "#5F6E85" }}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#94A3B8" }}
+                  tick={{ fontSize: 11, fill: "#5F6E85" }}
                   tickLine={false}
                   axisLine={false}
                 />
@@ -271,13 +271,13 @@ export function HDPTrendChart({ data }: HDPTrendChartProps) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: "#94A3B8" }}
+                  tick={{ fontSize: 11, fill: "#5F6E85" }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(val) => new Date(val).toLocaleDateString("en-KE", { weekday: "short" })}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#94A3B8" }}
+                  tick={{ fontSize: 11, fill: "#5F6E85" }}
                   tickLine={false}
                   axisLine={false}
                   domain={[0, 100]}

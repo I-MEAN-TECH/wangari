@@ -81,12 +81,12 @@ export function TrendAreaChart({
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: "#94A3B8" }}
+            tick={{ fontSize: 11, fill: "#5F6E85" }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v: string) => labelFormatter ? labelFormatter(v) : v.slice(5)}
           />
-          <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+          <YAxis tick={{ fontSize: 11, fill: "#5F6E85" }} axisLine={false} tickLine={false} allowDecimals={false} />
           <Tooltip {...tooltipStyle} />
           <Area type="monotone" dataKey={dataKey} stroke={GREEN} strokeWidth={2.5} fill="url(#adminAreaFill)" />
         </AreaChart>
@@ -116,7 +116,7 @@ export function ComparisonBarChart({
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" horizontal={false} />
-          <XAxis type="number" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+          <XAxis type="number" tick={{ fontSize: 11, fill: "#5F6E85" }} axisLine={false} tickLine={false} allowDecimals={false} />
           <YAxis
             type="category"
             dataKey={nameKey}
@@ -154,12 +154,12 @@ export function DailyBarChart({
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: "#94A3B8" }}
+            tick={{ fontSize: 11, fill: "#5F6E85" }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v: string) => v.slice(5)}
           />
-          <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+          <YAxis tick={{ fontSize: 11, fill: "#5F6E85" }} axisLine={false} tickLine={false} allowDecimals={false} />
           <Tooltip {...tooltipStyle} cursor={{ fill: "rgba(22,163,74,0.04)" }} />
           <Bar dataKey={dataKey} fill={GREEN_LIGHT} radius={[6, 6, 0, 0]} barSize={22} />
         </BarChart>

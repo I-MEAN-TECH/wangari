@@ -13,13 +13,13 @@ export default function MarketingLayout({
   const isHome = pathname === "/";
 
   return (
-    <div className="min-h-screen bg-[#FAFBFC] overflow-x-hidden">
+    <div className="min-h-screen bg-wangari-cream overflow-x-hidden">
       <MegaMenuNavbar
         variant={isHome ? "transparent" : "light"}
         logo={
           <div className="flex items-center gap-2.5">
             <img src="/images/wangari-real-logo.png" alt="Wangari" className="h-8 w-8 rounded-full object-cover" />
-            <span className={`text-base font-bold tracking-tight ${isHome ? "text-white" : "text-[#0F172A]"}`}>Wangari</span>
+            <span className={`text-base font-bold tracking-tight ${isHome ? "text-white" : "text-wangari-heading"}`}>Wangari</span>
           </div>
         }
       />

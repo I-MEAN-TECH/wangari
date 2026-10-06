@@ -15,7 +15,7 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body style={{ fontFamily: "system-ui, sans-serif", background: "#F8FAFC" }}>
+      <body style={{ fontFamily: "system-ui, sans-serif", background: "var(--color-tone-neutral-bg)" }}>
         <div
           style={{
             display: "flex",
@@ -29,8 +29,8 @@ export default function GlobalError({
           }}
         >
           <div style={{ fontSize: 48 }}>🌱</div>
-          <h1 style={{ fontSize: 20, color: "#0F172A", margin: 0 }}>Wangari hit a problem</h1>
-          <p style={{ fontSize: 14, color: "#64748B", margin: 0 }}>
+          <h1 style={{ fontSize: 20, color: "var(--color-wangari-heading)", margin: 0 }}>Wangari hit a problem</h1>
+          <p style={{ fontSize: 14, color: "var(--color-wangari-muted)", margin: 0 }}>
             An unexpected error occurred. Please try again.
           </p>
           <button
@@ -38,7 +38,7 @@ export default function GlobalError({
             style={{
               padding: "10px 20px",
               borderRadius: 12,
-              background: "#166534",
+              background: "var(--color-wangari-green-800)",
               color: "#fff",
               border: "none",
               fontWeight: 700,

@@ -84,7 +84,7 @@ export default function CustomersPage() {
   const totalRevenue = customerStats.reduce((s, c) => s + c.totalSpent, 0);
   const totalOwed = customerStats.reduce((s, c) => s + c.totalOwed, 0);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" /></div>;
 
   // Customer detail view
   if (detailCustomer) {
@@ -92,21 +92,21 @@ export default function CustomersPage() {
     return (
       <div className="space-y-6">
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <button onClick={() => setDetailCustomer(null)} className="text-xs font-bold text-[#166534] mb-3 cursor-pointer">&larr; Back to customers</button>
+          <button onClick={() => setDetailCustomer(null)} className="text-xs font-bold text-wangari-green-800 mb-3 cursor-pointer">&larr; Back to customers</button>
           <div className="flex items-center gap-4">
             <Avatar name={cust.name} size="lg" />
             <div>
-              <h1 className="text-xl font-extrabold text-[#0F172A]">{cust.name}</h1>
-              {cust.phone && <p className="text-sm text-[#64748B] flex items-center gap-1"><Phone className="h-3 w-3" />{cust.phone}</p>}
-              {cust.email && <p className="text-sm text-[#64748B] flex items-center gap-1"><Mail className="h-3 w-3" />{cust.email}</p>}
-              {cust.address && <p className="text-sm text-[#64748B] flex items-center gap-1"><MapPin className="h-3 w-3" />{cust.address}</p>}
+              <h1 className="text-xl font-extrabold text-wangari-heading">{cust.name}</h1>
+              {cust.phone && <p className="text-sm text-wangari-muted flex items-center gap-1"><Phone className="h-3 w-3" />{cust.phone}</p>}
+              {cust.email && <p className="text-sm text-wangari-muted flex items-center gap-1"><Mail className="h-3 w-3" />{cust.email}</p>}
+              {cust.address && <p className="text-sm text-wangari-muted flex items-center gap-1"><MapPin className="h-3 w-3" />{cust.address}</p>}
             </div>
           </div>
         </motion.div>
 
         <div className="grid grid-cols-3 gap-3">
-          <Card className="border border-[#E5E7EB]"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-[#64748B] uppercase">Orders</p><p className="text-xl font-extrabold text-[#0F172A]">{cust.salesCount}</p></CardContent></Card>
-          <Card className="border border-[#E5E7EB]"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-[#64748B] uppercase">Total spent</p><p className="text-xl font-extrabold text-[#166534]">KES {cust.totalSpent.toLocaleString()}</p></CardContent></Card>
+          <Card className="border border-wangari-border"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-wangari-muted uppercase">Orders</p><p className="text-xl font-extrabold text-wangari-heading">{cust.salesCount}</p></CardContent></Card>
+          <Card className="border border-wangari-border"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-wangari-muted uppercase">Total spent</p><p className="text-xl font-extrabold text-wangari-green-800">KES {cust.totalSpent.toLocaleString()}</p></CardContent></Card>
           <Card className="border border-amber-200 bg-amber-50"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-amber-600 uppercase">Owed</p><p className="text-xl font-extrabold text-amber-600">KES {cust.totalOwed.toLocaleString()}</p></CardContent></Card>
         </div>
 
@@ -115,19 +115,19 @@ export default function CustomersPage() {
         )}
 
         <div>
-          <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Recent Sales</p>
-          {cust.recentSales.length === 0 ? <p className="text-xs text-[#94A3B8] text-center py-4">No sales yet</p> : (
+          <p className="text-xs font-bold text-wangari-muted uppercase tracking-wider mb-3">Recent Sales</p>
+          {cust.recentSales.length === 0 ? <p className="text-xs text-wangari-subtle text-center py-4">No sales yet</p> : (
             <div className="space-y-2">
               {cust.recentSales.map((s: any) => (
-                <Card key={s.id} className="border border-[#E5E7EB]">
+                <Card key={s.id} className="border border-wangari-border">
                   <CardContent className="p-3 flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-bold text-[#0F172A]">{new Date(s.saleDate).toLocaleDateString()}</p>
-                      <p className="text-[10px] text-[#94A3B8]">{Array.isArray(s.items) ? s.items.map((it: any) => it.name).join(", ") || "General" : "General"}</p>
+                      <p className="text-xs font-bold text-wangari-heading">{new Date(s.saleDate).toLocaleDateString()}</p>
+                      <p className="text-[10px] text-wangari-subtle">{Array.isArray(s.items) ? s.items.map((it: any) => it.name).join(", ") || "General" : "General"}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-extrabold text-[#0F172A]">KES {Number(s.totalAmount).toLocaleString()}</p>
-                      <Badge className={s.paymentStatus === "paid" ? "bg-[#F0FDF4] text-[#166534] border-[#BBF7D0] text-[9px]" : "bg-amber-50 text-amber-700 border-amber-200 text-[9px]"}>{s.paymentStatus}</Badge>
+                      <p className="text-sm font-extrabold text-wangari-heading">KES {Number(s.totalAmount).toLocaleString()}</p>
+                      <Badge className={s.paymentStatus === "paid" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200 text-[9px]" : "bg-amber-50 text-amber-700 border-amber-200 text-[9px]"}>{s.paymentStatus}</Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -140,13 +140,13 @@ export default function CustomersPage() {
         {showPayModal && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-              <Card className="w-80 border border-[#E5E7EB]">
+              <Card className="w-80 border border-wangari-border">
                 <CardContent className="p-6 space-y-4">
-                  <h3 className="text-sm font-bold text-[#0F172A]">Record Payment</h3>
+                  <h3 className="text-sm font-bold text-wangari-heading">Record Payment</h3>
                   <Input type="number" placeholder="Amount" value={payAmount} onChange={e => setPayAmount(e.target.value)} className="h-12 rounded-xl text-lg font-bold text-center" />
                   <div className="flex gap-2">
                     <Button onClick={() => setShowPayModal(null)} variant="outline" className="flex-1 cursor-pointer">Cancel</Button>
-                    <Button onClick={() => handleRecordPayment(showPayModal)} className="flex-1 bg-[#166534] hover:bg-[#14532D] cursor-pointer">Save</Button>
+                    <Button onClick={() => handleRecordPayment(showPayModal)} className="flex-1 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">Save</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -163,41 +163,41 @@ export default function CustomersPage() {
     <div className="space-y-6">
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <PageHeader title="Customers" description="Manage customer profiles and purchase history"
-          action={<Button onClick={() => { setShowForm(!showForm); setStep(1); }} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer"><Plus className="h-4 w-4 mr-2" />Add Customer</Button>} />
+          action={<Button onClick={() => { setShowForm(!showForm); setStep(1); }} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer"><Plus className="h-4 w-4 mr-2" />Add Customer</Button>} />
       </motion.div>
 
       {/* Form — step by step */}
       {showForm && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
-          <Card className="border border-[#E5E7EB]">
+          <Card className="border border-wangari-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-sm font-bold text-[#0F172A]">Add Customer</h3>
-                  <div className="flex gap-1">{[1, 2].map(s => <div key={s} className={`h-1.5 w-8 rounded-full ${step >= s ? "bg-[#166534]" : "bg-gray-200"}`} />)}</div>
+                  <h3 className="text-sm font-bold text-wangari-heading">Add Customer</h3>
+                  <div className="flex gap-1">{[1, 2].map(s => <div key={s} className={`h-1.5 w-8 rounded-full ${step >= s ? "bg-wangari-green-800" : "bg-gray-200"}`} />)}</div>
                 </div>
-                <button onClick={() => setShowForm(false)} className="text-[#94A3B8] hover:text-[#64748B] cursor-pointer"><X className="h-4 w-4" /></button>
+                <button onClick={() => setShowForm(false)} className="text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
               </div>
 
               {step === 1 && (
                 <div className="space-y-3">
-                  <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Customer name</Label><Input placeholder="e.g. Grace Wanjiku" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl text-base" autoFocus /></div>
-                  <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Phone number</Label><Input placeholder="+254 7XX XXX XXX" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="h-11 rounded-xl" /></div>
+                  <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Customer name</Label><Input placeholder="e.g. Grace Wanjiku" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl text-base" autoFocus /></div>
+                  <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Phone number</Label><Input placeholder="+254 7XX XXX XXX" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="h-11 rounded-xl" /></div>
                   <Button onClick={() => form.name && setStep(2)} disabled={!form.name} className="w-full h-11 cursor-pointer">Next</Button>
                 </div>
               )}
 
               {step === 2 && (
                 <div className="space-y-3">
-                  <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Email (optional)</Label><Input placeholder="customer@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="h-11 rounded-xl" /></div>
-                  <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Address (optional)</Label><Input placeholder="e.g. Nairobi, Kenya" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="h-11 rounded-xl" /></div>
-                  <div className="rounded-xl bg-[#F8FAFC] border border-[#E5E7EB] p-3 space-y-1">
-                    <p className="text-xs text-[#64748B]">Name: <span className="font-bold text-[#0F172A]">{form.name}</span></p>
-                    {form.phone && <p className="text-xs text-[#64748B]">Phone: <span className="font-bold text-[#0F172A]">{form.phone}</span></p>}
+                  <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Email (optional)</Label><Input placeholder="customer@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="h-11 rounded-xl" /></div>
+                  <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Address (optional)</Label><Input placeholder="e.g. Nairobi, Kenya" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="h-11 rounded-xl" /></div>
+                  <div className="rounded-xl bg-tone-neutral-bg border border-wangari-border p-3 space-y-1">
+                    <p className="text-xs text-wangari-muted">Name: <span className="font-bold text-wangari-heading">{form.name}</span></p>
+                    {form.phone && <p className="text-xs text-wangari-muted">Phone: <span className="font-bold text-wangari-heading">{form.phone}</span></p>}
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={() => setStep(1)} variant="outline" className="flex-1 cursor-pointer">Back</Button>
-                    <Button onClick={handleSubmit} disabled={!form.name} className="flex-1 h-11 bg-[#166534] hover:bg-[#14532D] cursor-pointer">Save</Button>
+                    <Button onClick={handleSubmit} disabled={!form.name} className="flex-1 h-11 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">Save</Button>
                   </div>
                 </div>
               )}
@@ -209,16 +209,16 @@ export default function CustomersPage() {
       {/* KPIs */}
       <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-3 gap-3">
         {[
-          { title: "Customers", value: String(customers.length), icon: <Users className="h-5 w-5" />, color: "bg-[#166534]" },
+          { title: "Customers", value: String(customers.length), icon: <Users className="h-5 w-5" />, color: "bg-wangari-green-800" },
           { title: "Revenue", value: `KES ${totalRevenue.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-emerald-500" },
-          { title: "Outstanding", value: `KES ${totalOwed.toLocaleString()}`, icon: <ShoppingCart className="h-5 w-5" />, color: totalOwed > 0 ? "bg-amber-500" : "bg-[#166534]" },
+          { title: "Outstanding", value: `KES ${totalOwed.toLocaleString()}`, icon: <ShoppingCart className="h-5 w-5" />, color: totalOwed > 0 ? "bg-amber-500" : "bg-wangari-green-800" },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
-            <Card className="border border-[#E5E7EB]">
+            <Card className="border border-wangari-border">
               <CardContent className="pt-4 pb-3 px-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] mb-2">{kpi.icon}</div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">{kpi.title}</p>
-                <p className="text-xl font-extrabold text-[#0F172A]">{kpi.value}</p>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-tone-good-bg text-wangari-green-800 mb-2">{kpi.icon}</div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-wangari-muted">{kpi.title}</p>
+                <p className="text-xl font-extrabold text-wangari-heading">{kpi.value}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -227,8 +227,8 @@ export default function CustomersPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94A3B8]" />
-        <input placeholder="Search by name or phone..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-10 rounded-xl border border-[#E5E7EB] pl-9 pr-3 text-sm" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-wangari-subtle" />
+        <input placeholder="Search by name or phone..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-10 rounded-xl border border-wangari-border pl-9 pr-3 text-sm" />
       </div>
 
       {/* Customer cards */}
@@ -236,23 +236,23 @@ export default function CustomersPage() {
         <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-2">
           {filtered.map(c => (
             <motion.div key={c.id} variants={fadeUp}>
-              <Card className="border border-[#E5E7EB]">
+              <Card className="border border-wangari-border">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between" onClick={() => setDetailCustomer(c)} role="button">
                     <div className="flex items-center gap-3">
                       <Avatar name={c.name} size="md" />
                       <div>
-                        <h3 className="text-sm font-bold text-[#0F172A]">{c.name}</h3>
-                        <p className="text-[10px] text-[#94A3B8]">{c.salesCount} orders</p>
-                        {c.phone && <p className="text-[10px] text-[#94A3B8]">{c.phone}</p>}
+                        <h3 className="text-sm font-bold text-wangari-heading">{c.name}</h3>
+                        <p className="text-[10px] text-wangari-subtle">{c.salesCount} orders</p>
+                        {c.phone && <p className="text-[10px] text-wangari-subtle">{c.phone}</p>}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="text-sm font-extrabold text-[#0F172A]">KES {c.totalSpent.toLocaleString()}</p>
+                        <p className="text-sm font-extrabold text-wangari-heading">KES {c.totalSpent.toLocaleString()}</p>
                         {c.totalOwed > 0 && <p className="text-[10px] font-bold text-amber-600">KES {c.totalOwed.toLocaleString()} owed</p>}
                       </div>
-                      <ChevronRight className="h-4 w-4 text-[#94A3B8]" />
+                      <ChevronRight className="h-4 w-4 text-wangari-subtle" />
                     </div>
                   </div>
                 </CardContent>

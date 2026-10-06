@@ -32,10 +32,10 @@ export function KpiCard({
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-wangari-muted">
             {title}
           </p>
-          <p className="mt-2 text-2xl sm:text-3xl font-extrabold text-[#0F172A] font-serif tracking-tight truncate">
+          <p className="mt-2 text-2xl sm:text-3xl font-extrabold text-wangari-heading font-serif tracking-tight truncate">
             {value}
           </p>
           {change && (
@@ -49,7 +49,7 @@ export function KpiCard({
             </p>
           )}
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] shrink-0 ml-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-tone-good-bg text-wangari-green-800 shrink-0 ml-3">
           {icon}
         </div>
       </div>

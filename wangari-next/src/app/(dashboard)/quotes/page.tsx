@@ -176,7 +176,7 @@ export default function QuotesPage() {
     { label: "Accepted", value: stats.accepted + stats.converted, color: "text-green-600" },
     { label: "Declined", value: stats.declined, color: "text-red-500" },
     { label: "Accepted value", value: `KES ${Number(stats.acceptedValue || 0).toLocaleString()}`, color: "text-amber-600" },
-    { label: "Conversion rate", value: `${stats.conversionRate}%`, color: "text-[#166534]" },
+    { label: "Conversion rate", value: `${stats.conversionRate}%`, color: "text-wangari-green-800" },
   ] : [];
 
   return (
@@ -185,7 +185,7 @@ export default function QuotesPage() {
         title="Quotes"
         description="Send price quotes, track responses, and turn accepted quotes into invoices in one tap"
         action={
-          <Button onClick={() => setShowCreate(true)} className="gap-2 rounded-xl bg-[#166534] hover:bg-[#14532d]">
+          <Button onClick={() => setShowCreate(true)} className="gap-2 rounded-xl bg-wangari-green-800 hover:bg-wangari-green-900">
             <Plus className="h-4 w-4" /> New quote
           </Button>
         }
@@ -197,7 +197,7 @@ export default function QuotesPage() {
             <motion.div key={c.label} variants={fadeUp}>
               <Card className="rounded-2xl border-[#E7EBD8]">
                 <CardContent className="p-4">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-[#94A3B8]">{c.label}</p>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-wangari-subtle">{c.label}</p>
                   <p className={`mt-1 text-xl font-bold ${c.color}`}>{c.value}</p>
                 </CardContent>
               </Card>
@@ -211,7 +211,7 @@ export default function QuotesPage() {
           <Input placeholder="Search by quote number, customer or amount…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-10 flex-1 rounded-xl" />
           <div className="flex flex-wrap gap-2">
             {["all", "draft", "sent", "accepted", "declined", "expired", "converted"].map((f) => (
-              <button key={f} onClick={() => setFilter(f)} className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition ${filter === f ? "bg-[#166534] text-white border-[#166534]" : "bg-white text-[#64748B] border-[#E5E7EB] hover:border-[#BBF7D0]"}`}>{f}</button>
+              <button key={f} onClick={() => setFilter(f)} className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition ${filter === f ? "bg-wangari-green-800 text-white border-wangari-green-800" : "bg-white text-wangari-muted border-wangari-border hover:border-wangari-green-200"}`}>{f}</button>
             ))}
           </div>
         </CardContent>
@@ -230,30 +230,30 @@ export default function QuotesPage() {
         <div className="space-y-3">
           {filtered.map((q) => (
             <motion.div key={q.id} initial="hidden" animate="visible" variants={fadeUp}>
-              <Card className="rounded-2xl border-[#E7EBD8] transition hover:border-[#BBF7D0]">
+              <Card className="rounded-2xl border-[#E7EBD8] transition hover:border-wangari-green-200">
                 <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-sm font-semibold text-[#166534]">{q.quoteNumber}</span>
+                      <span className="font-mono text-sm font-semibold text-wangari-green-800">{q.quoteNumber}</span>
                       <Badge variant="outline" className={`capitalize ${STATUS_STYLES[q.status] || ""}`}>{q.status}</Badge>
-                      {q.convertedInvoiceId && <span className="text-[11px] text-[#94A3B8]">→ invoice created</span>}
+                      {q.convertedInvoiceId && <span className="text-[11px] text-wangari-subtle">→ invoice created</span>}
                     </div>
-                    <p className="mt-1 truncate text-sm text-[#334155]">{q.customer?.name || "Walk-in customer"} · {new Date(q.createdAt).toLocaleDateString()} · {(q.items || []).length} item{(q.items || []).length === 1 ? "" : "s"}{q.validUntil ? ` · valid to ${new Date(q.validUntil).toLocaleDateString()}` : ""}</p>
+                    <p className="mt-1 truncate text-sm text-wangari-text">{q.customer?.name || "Walk-in customer"} · {new Date(q.createdAt).toLocaleDateString()} · {(q.items || []).length} item{(q.items || []).length === 1 ? "" : "s"}{q.validUntil ? ` · valid to ${new Date(q.validUntil).toLocaleDateString()}` : ""}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-[#0F172A]">KES {Number(q.totalAmount).toLocaleString()}</p>
+                    <p className="text-lg font-bold text-wangari-heading">KES {Number(q.totalAmount).toLocaleString()}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {q.status === "draft" && (
                       <>
-                        <Button size="sm" disabled={busy} onClick={() => action(q.id, "mark-sent", "Marked as sent")} className="gap-1 rounded-lg bg-[#166534] hover:bg-[#14532d]"><Send className="h-3.5 w-3.5" /> Send</Button>
+                        <Button size="sm" disabled={busy} onClick={() => action(q.id, "mark-sent", "Marked as sent")} className="gap-1 rounded-lg bg-wangari-green-800 hover:bg-wangari-green-900"><Send className="h-3.5 w-3.5" /> Send</Button>
                         <Button size="sm" variant="outline" disabled={busy} onClick={() => printQuote(q)} className="gap-1 rounded-lg"><Printer className="h-3.5 w-3.5" /> Print</Button>
                         <Button size="sm" variant="outline" disabled={busy} onClick={() => removeQuote(q.id)} className="gap-1 rounded-lg text-red-500 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></Button>
                       </>
                     )}
                     {q.status === "sent" && (
                       <>
-                        <Button size="sm" disabled={busy} onClick={() => action(q.id, "accept", "Quote accepted 🎉")} className="gap-1 rounded-lg bg-[#166534] hover:bg-[#14532d]"><CheckCircle2 className="h-3.5 w-3.5" /> Accepted</Button>
+                        <Button size="sm" disabled={busy} onClick={() => action(q.id, "accept", "Quote accepted 🎉")} className="gap-1 rounded-lg bg-wangari-green-800 hover:bg-wangari-green-900"><CheckCircle2 className="h-3.5 w-3.5" /> Accepted</Button>
                         <Button size="sm" variant="outline" disabled={busy} onClick={() => action(q.id, "decline", "Quote marked declined")} className="gap-1 rounded-lg text-red-500 hover:text-red-600"><XCircle className="h-3.5 w-3.5" /> Declined</Button>
                         <Button size="sm" variant="outline" disabled={busy} onClick={() => openWhatsApp(q)} className="gap-1 rounded-lg"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</Button>
                         <Button size="sm" variant="outline" disabled={busy} onClick={() => printQuote(q)} className="gap-1 rounded-lg"><Printer className="h-3.5 w-3.5" /></Button>
@@ -278,13 +278,13 @@ export default function QuotesPage() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={() => setShowCreate(false)}>
           <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-white p-6 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-[#0F172A]">New quote</h3>
+              <h3 className="text-lg font-bold text-wangari-heading">New quote</h3>
               <button onClick={() => setShowCreate(false)} className="rounded-lg p-1.5 hover:bg-slate-100"><X className="h-5 w-5 text-slate-500" /></button>
             </div>
             <div className="space-y-4">
               <div>
                 <Label className="mb-1.5 block text-sm">Customer</Label>
-                <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="h-10 w-full rounded-xl border border-[#E5E7EB] bg-white px-3 text-sm">
+                <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="h-10 w-full rounded-xl border border-wangari-border bg-white px-3 text-sm">
                   <option value="">Walk-in customer (no name)</option>
                   {customers.map((c) => <option key={c.id} value={c.id}>{c.name}{c.phone ? ` · ${c.phone}` : ""}</option>)}
                 </select>
@@ -292,7 +292,7 @@ export default function QuotesPage() {
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
                   <Label className="text-sm">Line items</Label>
-                  <button onClick={() => setItems([...items, { description: "", qty: 1, unitPrice: 0 }])} className="text-xs font-medium text-[#166534] hover:underline">+ Add item</button>
+                  <button onClick={() => setItems([...items, { description: "", qty: 1, unitPrice: 0 }])} className="text-xs font-medium text-wangari-green-800 hover:underline">+ Add item</button>
                 </div>
                 <div className="space-y-2">
                   {items.map((it, i) => (
@@ -316,12 +316,12 @@ export default function QuotesPage() {
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-xl bg-[#F1F5E8] px-4 py-3">
-                <span className="text-sm font-medium text-[#475569]">Quote total</span>
-                <span className="text-xl font-bold text-[#166534]">KES {total.toLocaleString()}</span>
+                <span className="text-sm font-medium text-tone-neutral-text">Quote total</span>
+                <span className="text-xl font-bold text-wangari-green-800">KES {total.toLocaleString()}</span>
               </div>
               <div className="flex gap-3">
                 <Button variant="outline" disabled={busy} onClick={() => createQuote(false)} className="h-11 flex-1 rounded-xl">Save as draft</Button>
-                <Button disabled={busy} onClick={() => createQuote(true)} className="h-11 flex-1 rounded-xl gap-2 bg-[#166534] hover:bg-[#14532d]"><Send className="h-4 w-4" /> Save &amp; send</Button>
+                <Button disabled={busy} onClick={() => createQuote(true)} className="h-11 flex-1 rounded-xl gap-2 bg-wangari-green-800 hover:bg-wangari-green-900"><Send className="h-4 w-4" /> Save &amp; send</Button>
               </div>
             </div>
           </div>
@@ -334,13 +334,13 @@ export default function QuotesPage() {
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="font-mono text-lg font-bold text-[#166534]">{viewQuote.quoteNumber}</h3>
+                <h3 className="font-mono text-lg font-bold text-wangari-green-800">{viewQuote.quoteNumber}</h3>
                 <Badge variant="outline" className={`mt-1 capitalize ${STATUS_STYLES[viewQuote.status] || ""}`}>{viewQuote.status}</Badge>
               </div>
               <button onClick={() => setViewQuote(null)} className="rounded-lg p-1.5 hover:bg-slate-100"><X className="h-5 w-5 text-slate-500" /></button>
             </div>
             <div className="space-y-3 text-sm">
-              <p><span className="text-[#94A3B8]">Customer:</span> {viewQuote.customer?.name || "Walk-in customer"}</p>
+              <p><span className="text-wangari-subtle">Customer:</span> {viewQuote.customer?.name || "Walk-in customer"}</p>
               <div className="rounded-xl border border-[#E7EBD8]">
                 {(viewQuote.items || []).map((it: any, i: number) => (
                   <div key={i} className="flex justify-between border-b border-[#E7EBD8] px-4 py-2 last:border-0">
@@ -350,8 +350,8 @@ export default function QuotesPage() {
                 ))}
               </div>
               <p className="text-right text-lg font-bold">Total: KES {Number(viewQuote.totalAmount).toLocaleString()}</p>
-              {viewQuote.notes && <p className="text-[#64748B]">{viewQuote.notes}</p>}
-              {viewQuote.sentAt && <p className="text-xs text-[#94A3B8]">Sent {new Date(viewQuote.sentAt).toLocaleString()}{viewQuote.respondedAt ? ` · responded ${new Date(viewQuote.respondedAt).toLocaleString()}` : ""}</p>}
+              {viewQuote.notes && <p className="text-wangari-muted">{viewQuote.notes}</p>}
+              {viewQuote.sentAt && <p className="text-xs text-wangari-subtle">Sent {new Date(viewQuote.sentAt).toLocaleString()}{viewQuote.respondedAt ? ` · responded ${new Date(viewQuote.respondedAt).toLocaleString()}` : ""}</p>}
               {viewQuote.convertedInvoiceId && <p className="flex items-center gap-1.5 text-xs text-amber-600"><TrendingUp className="h-3.5 w-3.5" /> Converted to invoice #{viewQuote.convertedInvoiceId}</p>}
             </div>
           </div>

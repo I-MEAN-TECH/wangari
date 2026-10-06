@@ -67,10 +67,10 @@ export default function DocumentsPage() {
 
       {/* Search box */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <Card className="border border-[#E5E7EB]">
+        <Card className="border border-wangari-border">
           <CardContent className="p-5">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94A3B8]" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-wangari-subtle" />
               <Input
                 autoFocus
                 value={q}
@@ -79,7 +79,7 @@ export default function DocumentsPage() {
                 className="h-12 pl-11 pr-10 rounded-xl text-base"
               />
               {q && (
-                <button onClick={() => setQ("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B] cursor-pointer">
+                <button onClick={() => setQ("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-wangari-subtle hover:text-wangari-muted cursor-pointer">
                   <X className="h-4 w-4" />
                 </button>
               )}
@@ -90,7 +90,7 @@ export default function DocumentsPage() {
                   key={f.id}
                   onClick={() => setType(f.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-                    type === f.id ? "bg-[#166534] text-white border-[#166534]" : "bg-white text-[#64748B] border-[#E5E7EB] hover:border-[#BBF7D0]"
+                    type === f.id ? "bg-wangari-green-800 text-white border-wangari-green-800" : "bg-white text-wangari-muted border-wangari-border hover:border-wangari-green-200"
                   }`}
                 >
                   {f.label}
@@ -104,7 +104,7 @@ export default function DocumentsPage() {
       {/* Results */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#166534]" />
+          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-wangari-green-800" />
         </div>
       ) : !searched && !q ? (
         <EmptyState
@@ -120,7 +120,7 @@ export default function DocumentsPage() {
         />
       ) : (
         <motion.div initial="hidden" animate="visible" variants={fadeUp} className="space-y-2">
-          <p className="text-xs font-semibold text-[#94A3B8] px-1">
+          <p className="text-xs font-semibold text-wangari-subtle px-1">
             {results.length} document{results.length === 1 ? "" : "s"} found
           </p>
           {results.map((r) => {
@@ -129,7 +129,7 @@ export default function DocumentsPage() {
               <a
                 key={`${r.kind}-${r.id}`}
                 href={r.link}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-[#E5E7EB] hover:border-[#BBF7D0] hover:shadow-sm transition-all cursor-pointer"
+                className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-wangari-border hover:border-wangari-green-200 hover:shadow-sm transition-all cursor-pointer"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0" style={{ background: meta.bg, color: meta.color }}>
                   {meta.icon}
@@ -139,17 +139,17 @@ export default function DocumentsPage() {
                     <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md" style={{ background: meta.bg, color: meta.color }}>
                       {r.code}
                     </span>
-                    <span className="text-sm font-bold text-[#0F172A] truncate">{r.title}</span>
-                    <span className="text-xs text-[#94A3B8] capitalize">{meta.label}</span>
+                    <span className="text-sm font-bold text-wangari-heading truncate">{r.title}</span>
+                    <span className="text-xs text-wangari-subtle capitalize">{meta.label}</span>
                   </div>
-                  <p className="text-xs text-[#64748B] mt-1 truncate">
+                  <p className="text-xs text-wangari-muted mt-1 truncate">
                     {r.party} · {fmtDate(r.date)} · <span className="capitalize">{String(r.status)}</span>
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-extrabold text-[#0F172A]">{formatKES(r.amount)}</p>
+                  <p className="text-sm font-extrabold text-wangari-heading">{formatKES(r.amount)}</p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-[#CBD5E1] shrink-0" />
+                <ArrowRight className="h-4 w-4 text-wangari-rule shrink-0" />
               </a>
             );
           })}

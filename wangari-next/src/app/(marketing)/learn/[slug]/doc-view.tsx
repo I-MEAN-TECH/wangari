@@ -36,7 +36,7 @@ export function PublicDocGate({ doc }: { doc: LearnDoc }) {
   const headings = doc.sections.slice(0, FREE_SECTIONS);
 
   return (
-    <div className="min-h-screen bg-[#FAFAF7]">
+    <div className="min-h-screen bg-wangari-paper">
       <div className="mx-auto max-w-3xl px-4 pb-24 pt-8 md:px-8">
         <header className="mb-8 border-b border-stone-200 pb-6">
           <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700">

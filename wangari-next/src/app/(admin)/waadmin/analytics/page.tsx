@@ -281,8 +281,8 @@ export default function PostHogAnalyticsPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={(v: string) => v.slice(5)} />
-                <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#5F6E85" }} axisLine={false} tickLine={false} tickFormatter={(v: string) => v.slice(5)} />
+                <YAxis tick={{ fontSize: 11, fill: "#5F6E85" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #E5E7EB", fontSize: 12 }} />
                 <Area type="monotone" dataKey="pageviews" name="Pageviews" stroke="#16A34A" strokeWidth={2.5} fill="url(#pvFill)" />
                 <Area type="monotone" dataKey="visitors" name="Visitors" stroke="#0EA5E9" strokeWidth={2} fill="url(#uvFill)" />
@@ -302,7 +302,7 @@ export default function PostHogAnalyticsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topEvents} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 30 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: "#5F6E85" }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: "#334155" }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #E5E7EB", fontSize: 12 }} cursor={{ fill: "rgba(22,163,74,0.05)" }} />
                   <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={16}>
@@ -393,7 +393,7 @@ export default function PostHogAnalyticsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topPages} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: "#5F6E85" }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <YAxis type="category" dataKey="page" width={140} tick={{ fontSize: 11, fill: "#334155" }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #E5E7EB", fontSize: 12 }} cursor={{ fill: "rgba(14,165,233,0.05)" }} />
                   <Bar dataKey="views" fill="#0EA5E9" radius={[0, 6, 6, 0]} barSize={16} />

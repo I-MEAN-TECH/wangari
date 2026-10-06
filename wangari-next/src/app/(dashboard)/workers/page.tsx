@@ -138,23 +138,23 @@ export default function WorkersPage() {
 
         {/* Worker login PIN */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-[#166534]/20 bg-[#F0FDF4]">
+          <Card className="border border-wangari-green-800/20 bg-wangari-green-50">
             <CardContent className="p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] text-white"><KeyRound className="h-5 w-5" /></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-wangari-green-800 text-white"><KeyRound className="h-5 w-5" /></div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-[#166534]">Login PIN</p>
-                    <p className="text-sm text-[#334155]">Worker logs in with <span className="font-bold">{farmCode || "Farm Code"}</span> + this PIN</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-wangari-green-800">Login PIN</p>
+                    <p className="text-sm text-wangari-text">Worker logs in with <span className="font-bold">{farmCode || "Farm Code"}</span> + this PIN</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* PINs are hashed at rest — the plaintext is only shown once
                       at create/regenerate time, so here we show a masked state. */}
-                  <div className="bg-white border-2 border-[#166534] px-4 py-1.5 rounded-xl text-center">
-                    <p className="text-xl font-black text-[#166534] tracking-[0.3em]">••••</p>
+                  <div className="bg-white border-2 border-wangari-green-800 px-4 py-1.5 rounded-xl text-center">
+                    <p className="text-xl font-black text-wangari-green-800 tracking-[0.3em]">••••</p>
                   </div>
-                  <Button onClick={() => regeneratePin(w)} variant="outline" size="sm" className="gap-1 text-[#166534] cursor-pointer"><RefreshCw className="h-4 w-4" />Regenerate PIN</Button>
+                  <Button onClick={() => regeneratePin(w)} variant="outline" size="sm" className="gap-1 text-wangari-green-800 cursor-pointer"><RefreshCw className="h-4 w-4" />Regenerate PIN</Button>
                 </div>
               </div>
             </CardContent>
@@ -164,7 +164,7 @@ export default function WorkersPage() {
         {/* Worker stats */}
         <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { title: "Daily Wage", value: `KES ${Number(w.dailyWage || 0).toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-[#166534]" },
+            { title: "Daily Wage", value: `KES ${Number(w.dailyWage || 0).toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-wangari-green-800" },
             { title: "Days Worked", value: String(totalDaysWorked), icon: <Calendar className="h-5 w-5" />, color: "bg-blue-500" },
             { title: "Total Earned", value: `KES ${totalWages.toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, color: "bg-emerald-500" },
             { title: "Monthly Est.", value: `KES ${(Number(w.dailyWage || 0) * 30).toLocaleString()}`, icon: <Clock className="h-5 w-5" />, color: "bg-amber-500" },
@@ -172,7 +172,7 @@ export default function WorkersPage() {
             <motion.div key={kpi.title} variants={fadeUp}>
               <Card className="border border-gray-100">
                 <CardContent className="pt-4 pb-3 px-4">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] mb-2">{kpi.icon}</div>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-tone-good-bg text-wangari-green-800 mb-2">{kpi.icon}</div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{kpi.title}</p>
                   <p className="text-xl font-extrabold text-gray-900">{kpi.value}</p>
                 </CardContent>
@@ -232,57 +232,57 @@ export default function WorkersPage() {
     );
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" /></div>;
 
   return (
     <div className="space-y-6">
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <PageHeader title="Workers" description="Manage farm workers, wages, and attendance"
-          action={<Button onClick={() => { resetForm(); setShowForm(!showForm); setStep(1); }} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer"><Plus className="h-4 w-4 mr-2" />Add Worker</Button>} />
+          action={<Button onClick={() => { resetForm(); setShowForm(!showForm); setStep(1); }} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer"><Plus className="h-4 w-4 mr-2" />Add Worker</Button>} />
       </motion.div>
 
       {/* Form */}
       <AnimatePresence>
         {showForm && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-            <Card className="border border-[#E5E7EB]">
+            <Card className="border border-wangari-border">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-sm font-bold text-[#0F172A]">{editingId ? "Edit Worker" : "Add Worker"}</h3>
-                    <div className="flex gap-1">{[1, 2].map(s => <div key={s} className={`h-1.5 w-8 rounded-full ${step >= s ? "bg-[#166534]" : "bg-gray-200"}`} />)}</div>
+                    <h3 className="text-sm font-bold text-wangari-heading">{editingId ? "Edit Worker" : "Add Worker"}</h3>
+                    <div className="flex gap-1">{[1, 2].map(s => <div key={s} className={`h-1.5 w-8 rounded-full ${step >= s ? "bg-wangari-green-800" : "bg-gray-200"}`} />)}</div>
                   </div>
-                  <button onClick={() => { setShowForm(false); resetForm(); }} className="text-[#94A3B8] hover:text-[#64748B] cursor-pointer"><X className="h-4 w-4" /></button>
+                  <button onClick={() => { setShowForm(false); resetForm(); }} className="text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
                 </div>
 
                 {step === 1 && (
                   <div className="space-y-3">
-                    <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Full name *</Label><Input placeholder="e.g. Peter Ochieng" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl text-base" autoFocus /></div>
-                    <Label className="text-xs font-semibold text-[#64748B]">Role</Label>
+                    <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Full name *</Label><Input placeholder="e.g. Peter Ochieng" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl text-base" autoFocus /></div>
+                    <Label className="text-xs font-semibold text-wangari-muted">Role</Label>
                     <div className="flex flex-wrap gap-2">
                       {ROLES.map(r => (
                         <button key={r} onClick={() => setForm({ ...form, role: r })}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${form.role === r ? "bg-[#166534] text-white" : "bg-[#F1F5F9] text-[#64748B]"}`}>{r}</button>
+                          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${form.role === r ? "bg-wangari-green-800 text-white" : "bg-wangari-sunken text-wangari-muted"}`}>{r}</button>
                       ))}
                     </div>
-                    <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Phone</Label><Input placeholder="+254 7XX XXX XXX" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Phone</Label><Input placeholder="+254 7XX XXX XXX" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="h-11 rounded-xl" /></div>
                     <Button onClick={() => form.name && setStep(2)} disabled={!form.name} className="w-full h-11 cursor-pointer">Next</Button>
                   </div>
                 )}
 
                 {step === 2 && (
                   <div className="space-y-3">
-                    <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Daily wage (KES) *</Label><Input type="number" placeholder="e.g. 500" value={form.dailyWage} onChange={e => setForm({ ...form, dailyWage: e.target.value })} className="h-12 rounded-xl text-lg font-bold text-center" /></div>
-                    <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Login PIN (4 digits)</Label><div className="flex gap-2"><Input type="number" inputMode="numeric" placeholder="Leave blank to auto-generate" value={form.pin} onChange={e => setForm({ ...form, pin: e.target.value.replace(/\D/g, "").slice(0, 4) })} className="h-12 rounded-xl text-base" /></div><p className="text-[10px] text-[#94A3B8]">Worker uses this PIN + your Farm Code to log in from their phone.</p></div>
+                    <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Daily wage (KES) *</Label><Input type="number" placeholder="e.g. 500" value={form.dailyWage} onChange={e => setForm({ ...form, dailyWage: e.target.value })} className="h-12 rounded-xl text-lg font-bold text-center" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Login PIN (4 digits)</Label><div className="flex gap-2"><Input type="number" inputMode="numeric" placeholder="Leave blank to auto-generate" value={form.pin} onChange={e => setForm({ ...form, pin: e.target.value.replace(/\D/g, "").slice(0, 4) })} className="h-12 rounded-xl text-base" /></div><p className="text-[10px] text-wangari-subtle">Worker uses this PIN + your Farm Code to log in from their phone.</p></div>
                     {form.dailyWage && (
-                      <div className="rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] p-3 text-center">
-                        <p className="text-xs text-[#64748B]">Monthly estimate (30 days)</p>
-                        <p className="text-lg font-extrabold text-[#166534]">KES {(Number(form.dailyWage) * 30).toLocaleString()}</p>
+                      <div className="rounded-xl bg-wangari-green-50 border border-wangari-green-200 p-3 text-center">
+                        <p className="text-xs text-wangari-muted">Monthly estimate (30 days)</p>
+                        <p className="text-lg font-extrabold text-wangari-green-800">KES {(Number(form.dailyWage) * 30).toLocaleString()}</p>
                       </div>
                     )}
                     <div className="flex gap-2">
                       <Button onClick={() => setStep(1)} variant="outline" className="flex-1 cursor-pointer">Back</Button>
-                      <Button onClick={handleSubmit} disabled={!form.name} className="flex-1 h-11 bg-[#166534] hover:bg-[#14532D] cursor-pointer">{editingId ? "Update" : "Save"}</Button>
+                      <Button onClick={handleSubmit} disabled={!form.name} className="flex-1 h-11 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">{editingId ? "Update" : "Save"}</Button>
                     </div>
                   </div>
                 )}
@@ -297,19 +297,19 @@ export default function WorkersPage() {
         <Card className="border-2 border-emerald-300 bg-emerald-50/80 p-5 rounded-2xl shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-xl bg-[#166534] text-white flex items-center justify-center font-bold shrink-0">
+              <div className="h-10 w-10 rounded-xl bg-wangari-green-800 text-white flex items-center justify-center font-bold shrink-0">
                 <Building2 className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Farm Connection Code</p>
-                <p className="text-sm text-[#0F172A] font-semibold mt-0.5">Share this code with your farm workers to log in from their phones:</p>
+                <p className="text-sm text-wangari-heading font-semibold mt-0.5">Share this code with your farm workers to log in from their phones:</p>
               </div>
             </div>
             <div className="bg-white border-2 border-emerald-400 px-4 py-2 rounded-xl text-center shadow-xs shrink-0">
               <p className="text-xs text-gray-400 font-bold uppercase">Farm Code</p>
               <div className="flex items-center gap-2">
-                <p className="text-xl font-black text-[#166534] tracking-widest">{farmCode || "…"}</p>
-                <button onClick={copyCode} className="text-[#166534] hover:text-[#14532D] cursor-pointer" title="Copy farm code"><Copy className="h-4 w-4" /></button>
+                <p className="text-xl font-black text-wangari-green-800 tracking-widest">{farmCode || "…"}</p>
+                <button onClick={copyCode} className="text-wangari-green-800 hover:text-wangari-green-900 cursor-pointer" title="Copy farm code"><Copy className="h-4 w-4" /></button>
               </div>
             </div>
           </div>
@@ -319,16 +319,16 @@ export default function WorkersPage() {
       {/* Form */}
       <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {[
-          { title: "Active Workers", value: String(activeWorkers.length), icon: <Users className="h-5 w-5" />, color: "bg-[#166534]" },
+          { title: "Active Workers", value: String(activeWorkers.length), icon: <Users className="h-5 w-5" />, color: "bg-wangari-green-800" },
           { title: "Daily Wages", value: `KES ${totalDailyWages.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-emerald-500" },
           { title: "Monthly Estimate", value: `KES ${monthlyCost.toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, color: "bg-amber-500" },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
-            <Card className="border border-[#E5E7EB]">
+            <Card className="border border-wangari-border">
               <CardContent className="pt-4 pb-3 px-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] mb-2">{kpi.icon}</div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">{kpi.title}</p>
-                <p className="text-xl font-extrabold text-[#0F172A]">{kpi.value}</p>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-tone-good-bg text-wangari-green-800 mb-2">{kpi.icon}</div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-wangari-muted">{kpi.title}</p>
+                <p className="text-xl font-extrabold text-wangari-heading">{kpi.value}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -339,7 +339,7 @@ export default function WorkersPage() {
       <div className="flex gap-2">
         {(["all", "active", "inactive"] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer capitalize ${filter === f ? "bg-[#166534] text-white" : "bg-[#F1F5F9] text-[#64748B]"}`}>{f}</button>
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer capitalize ${filter === f ? "bg-wangari-green-800 text-white" : "bg-wangari-sunken text-wangari-muted"}`}>{f}</button>
         ))}
       </div>
 
@@ -351,25 +351,25 @@ export default function WorkersPage() {
             const daysWorked = wAtts.length;
             return (
               <motion.div key={w.id} variants={fadeUp}>
-                <Card className="border border-[#E5E7EB] hover:shadow-md transition-all cursor-pointer" onClick={() => setSelectedWorker(w)}>
+                <Card className="border border-wangari-border hover:shadow-md transition-all cursor-pointer" onClick={() => setSelectedWorker(w)}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <Avatar name={w.name} size="md" />
                         <div>
-                          <h3 className="text-sm font-bold text-[#0F172A]">{w.name}</h3>
-                          <p className="text-[10px] text-[#94A3B8]">{w.role || "No role"}{w.phone ? ` • ${w.phone}` : ""}</p>
+                          <h3 className="text-sm font-bold text-wangari-heading">{w.name}</h3>
+                          <p className="text-[10px] text-wangari-subtle">{w.role || "No role"}{w.phone ? ` • ${w.phone}` : ""}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-extrabold text-[#0F172A]">KES {Number(w.dailyWage || 0).toLocaleString()}</p>
-                        <p className="text-[9px] text-[#94A3B8]">per day</p>
+                        <p className="text-lg font-extrabold text-wangari-heading">KES {Number(w.dailyWage || 0).toLocaleString()}</p>
+                        <p className="text-[9px] text-wangari-subtle">per day</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 mt-3 text-[10px] text-[#94A3B8]">
-                      <Badge className={w.status === "active" ? "bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]" : "bg-gray-100 text-[#64748B] border-gray-200"}>{w.status}</Badge>
+                    <div className="flex items-center gap-3 mt-3 text-[10px] text-wangari-subtle">
+                      <Badge className={w.status === "active" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-gray-100 text-wangari-muted border-gray-200"}>{w.status}</Badge>
                       <span>{daysWorked} days worked</span>
-                      <span className="ml-auto text-[#94A3B8]">→</span>
+                      <span className="ml-auto text-wangari-subtle">→</span>
                     </div>
                   </CardContent>
                 </Card>

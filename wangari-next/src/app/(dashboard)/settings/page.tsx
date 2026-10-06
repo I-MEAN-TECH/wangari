@@ -245,23 +245,23 @@ export default function SettingsPage() {
     showToast("Opening farm data export...");
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" /></div>;
 
   return (
     <div className="space-y-6">
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight">Settings</h1>
-        <p className="text-sm text-[#64748B] mt-1">Manage your farm, modules, and account</p>
+        <h1 className="text-2xl font-extrabold text-wangari-heading tracking-tight">Settings</h1>
+        <p className="text-sm text-wangari-muted mt-1">Manage your farm, modules, and account</p>
       </motion.div>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar Tabs */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp} className="lg:w-56 shrink-0">
-          <Card className="border border-[#E5E7EB]">
+          <Card className="border border-wangari-border">
             <CardContent className="p-2">
               {tabs.map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${activeTab === tab.id ? "bg-[#F0FDF4] text-[#166534] font-bold" : "text-[#64748B] hover:bg-[#FAFBFC]"}`}>
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${activeTab === tab.id ? "bg-wangari-green-50 text-wangari-green-800 font-bold" : "text-wangari-muted hover:bg-wangari-cream"}`}>
                   {tab.icon}{tab.label}
                 </button>
               ))}
@@ -274,18 +274,18 @@ export default function SettingsPage() {
 
           {/* Profile */}
           {activeTab === "profile" && (
-            <Card className="border border-[#E5E7EB]">
-              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><User className="h-4 w-4 text-[#166534]" /> Farm Profile</CardTitle></CardHeader>
+            <Card className="border border-wangari-border">
+              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><User className="h-4 w-4 text-wangari-green-800" /> Farm Profile</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Farm Name</Label><Input value={farmName} onChange={e => setFarmName(e.target.value)} className="h-11 rounded-xl" /></div>
-                <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Your Name</Label><Input value={userName} onChange={e => setUserName(e.target.value)} className="h-11 rounded-xl" /></div>
+                <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Farm Name</Label><Input value={farmName} onChange={e => setFarmName(e.target.value)} className="h-11 rounded-xl" /></div>
+                <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Your Name</Label><Input value={userName} onChange={e => setUserName(e.target.value)} className="h-11 rounded-xl" /></div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]"><Mail className="h-3 w-3 inline mr-1" />Email</Label><Input value={email} onChange={e => setEmail(e.target.value)} className="h-11 rounded-xl" /></div>
-                  <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]"><Phone className="h-3 w-3 inline mr-1" />Phone</Label><Input value={phone} onChange={e => setPhone(e.target.value)} className="h-11 rounded-xl" /></div>
+                  <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted"><Mail className="h-3 w-3 inline mr-1" />Email</Label><Input value={email} onChange={e => setEmail(e.target.value)} className="h-11 rounded-xl" /></div>
+                  <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted"><Phone className="h-3 w-3 inline mr-1" />Phone</Label><Input value={phone} onChange={e => setPhone(e.target.value)} className="h-11 rounded-xl" /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]"><MapPin className="h-3 w-3 inline mr-1" />Location</Label><Input value={location} onChange={e => setLocation(e.target.value)} className="h-11 rounded-xl" /></div>
-                  <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">County</Label><Input value={county} onChange={e => setCounty(e.target.value)} className="h-11 rounded-xl" /></div>
+                  <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted"><MapPin className="h-3 w-3 inline mr-1" />Location</Label><Input value={location} onChange={e => setLocation(e.target.value)} className="h-11 rounded-xl" /></div>
+                  <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">County</Label><Input value={county} onChange={e => setCounty(e.target.value)} className="h-11 rounded-xl" /></div>
                 </div>
 
                 {/* M2 — registration details (ANITRAC premises, KIAMIS ID + GPS) */}
@@ -297,7 +297,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-[#64748B]">National ID</Label>
+                    <Label className="text-xs font-semibold text-wangari-muted">National ID</Label>
                     <Input
                       value={nationalIdInput}
                       onChange={e => { setNationalIdInput(e.target.value); setNationalIdClear(false); }}
@@ -311,13 +311,13 @@ export default function SettingsPage() {
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-[#64748B]">Premises registration no.</Label>
+                    <Label className="text-xs font-semibold text-wangari-muted">Premises registration no.</Label>
                     <Input value={premisesRegNo} onChange={e => setPremisesRegNo(e.target.value)} placeholder="Issued by the county" className="h-11 rounded-xl" autoComplete="off" />
                     <p className="text-[10px] text-gray-400">ANITRAC §18 — the holding's registration number</p>
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-[#64748B]"><Crosshair className="h-3 w-3 inline mr-1" />Plot coordinates</Label>
+                  <Label className="text-xs font-semibold text-wangari-muted"><Crosshair className="h-3 w-3 inline mr-1" />Plot coordinates</Label>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="flex min-h-[44px] items-center rounded-xl bg-gray-50 px-3 text-xs font-bold text-gray-700">
                       {gps ? `${gps.lat}, ${gps.lng}` : "Not captured"}
@@ -345,7 +345,7 @@ export default function SettingsPage() {
                     )}
                   </p>
                 </div>
-                <Button onClick={handleSaveProfile} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer">{saved ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Saved!</> : <><Save className="h-4 w-4 mr-2" /> Save Profile</>}</Button>
+                <Button onClick={handleSaveProfile} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">{saved ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Saved!</> : <><Save className="h-4 w-4 mr-2" /> Save Profile</>}</Button>
               </CardContent>
             </Card>
           )}
@@ -357,12 +357,12 @@ export default function SettingsPage() {
 
           {/* Wangari */}
           {activeTab === "ai" && (
-            <Card className="border border-[#E5E7EB]">
+            <Card className="border border-wangari-border">
               <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><WangariMark size={22} /> Wangari</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="rounded-xl bg-wangari-green-50 border border-wangari-green-200 p-5">
-                  <p className="text-sm font-bold text-[#0F172A]">Wangari works on your farm records</p>
-                  <p className="text-xs text-[#64748B] mt-1">
+                  <p className="text-sm font-bold text-wangari-heading">Wangari works on your farm records</p>
+                  <p className="text-xs text-wangari-muted mt-1">
                     Ask her a question and she reads your flocks, production, sales and money — and she can
                     record things for you, not just answer about them. Tell her things like
                     &ldquo;Record 200 eggs from flock 1 today&rdquo; or &ldquo;How is my farm doing this month?&rdquo;
@@ -385,89 +385,89 @@ export default function SettingsPage() {
 
           {/* Modules */}
           {activeTab === "modules" && (
-            <Card className="border border-[#E5E7EB]">
-              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Settings className="h-4 w-4 text-[#166534]" /> Module Control</CardTitle></CardHeader>
+            <Card className="border border-wangari-border">
+              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Settings className="h-4 w-4 text-wangari-green-800" /> Module Control</CardTitle></CardHeader>
               <CardContent className="space-y-2">
-                <p className="text-xs text-[#94A3B8] mb-3">Toggle modules on or off. Disabled modules hide from the sidebar.</p>
+                <p className="text-xs text-wangari-subtle mb-3">Toggle modules on or off. Disabled modules hide from the sidebar.</p>
                 {MODULES.map(m => {
                   const enabled = getSetting(m.key, "true") === "true";
                   return (
-                    <div key={m.key} className="flex items-center justify-between p-3 rounded-xl border border-[#E5E7EB] hover:bg-[#FAFBFC] transition-colors">
+                    <div key={m.key} className="flex items-center justify-between p-3 rounded-xl border border-wangari-border hover:bg-wangari-cream transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className={enabled ? "flex h-9 w-9 items-center justify-center rounded-xl bg-[#F0FDF4] text-[#166534]" : "flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-400"}>{MODULE_ICONS[m.icon as string]}</div>
-                        <div><p className="text-sm font-bold text-[#0F172A]">{m.label}</p><p className="text-[10px] text-[#94A3B8]">{m.desc}</p></div>
+                        <div className={enabled ? "flex h-9 w-9 items-center justify-center rounded-xl bg-wangari-green-50 text-wangari-green-800" : "flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-400"}>{MODULE_ICONS[m.icon as string]}</div>
+                        <div><p className="text-sm font-bold text-wangari-heading">{m.label}</p><p className="text-[10px] text-wangari-subtle">{m.desc}</p></div>
                       </div>
                       <button onClick={() => setSetting(m.key, enabled ? "false" : "true")}
-                        className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${enabled ? "bg-[#166534]" : "bg-gray-300"}`}>
+                        className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${enabled ? "bg-wangari-green-800" : "bg-gray-300"}`}>
                         <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-5" : ""}`} />
                       </button>
                     </div>
                   );
                 })}
-                <Button onClick={handleSaveSettings} className="w-full mt-3 bg-[#166534] hover:bg-[#14532D] cursor-pointer">{saved ? "Saved!" : "Save Module Settings"}</Button>
+                <Button onClick={handleSaveSettings} className="w-full mt-3 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">{saved ? "Saved!" : "Save Module Settings"}</Button>
               </CardContent>
             </Card>
           )}
 
           {/* Notifications */}
           {activeTab === "notifications" && (
-            <Card className="border border-[#E5E7EB]">
-              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Bell className="h-4 w-4 text-[#166534]" /> Notifications</CardTitle></CardHeader>
+            <Card className="border border-wangari-border">
+              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Bell className="h-4 w-4 text-wangari-green-800" /> Notifications</CardTitle></CardHeader>
               <CardContent className="space-y-2">
                 {NOTIFICATIONS.map(n => {
                   const enabled = getSetting(n.key, String(n.default)) === "true";
                   return (
-                    <div key={n.key} className="flex items-center justify-between p-3 rounded-xl border border-[#E5E7EB] hover:bg-[#FAFBFC] transition-colors">
-                      <div><p className="text-sm font-bold text-[#0F172A]">{n.label}</p><p className="text-[10px] text-[#94A3B8]">{n.desc}</p></div>
+                    <div key={n.key} className="flex items-center justify-between p-3 rounded-xl border border-wangari-border hover:bg-wangari-cream transition-colors">
+                      <div><p className="text-sm font-bold text-wangari-heading">{n.label}</p><p className="text-[10px] text-wangari-subtle">{n.desc}</p></div>
                       <button onClick={() => setSetting(n.key, enabled ? "false" : "true")}
-                        className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${enabled ? "bg-[#166534]" : "bg-gray-300"}`}>
+                        className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${enabled ? "bg-wangari-green-800" : "bg-gray-300"}`}>
                         <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-5" : ""}`} />
                       </button>
                     </div>
                   );
                 })}
-                <Button onClick={handleSaveSettings} className="w-full mt-3 bg-[#166534] hover:bg-[#14532D] cursor-pointer">{saved ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Saved!</> : <><Save className="h-4 w-4 mr-2" /> Save Notifications</>}</Button>
+                <Button onClick={handleSaveSettings} className="w-full mt-3 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">{saved ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Saved!</> : <><Save className="h-4 w-4 mr-2" /> Save Notifications</>}</Button>
               </CardContent>
             </Card>
           )}
 
           {/* Preferences */}
           {activeTab === "preferences" && (
-            <Card className="border border-[#E5E7EB]">
-              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Palette className="h-4 w-4 text-[#166534]" /> Preferences</CardTitle></CardHeader>
+            <Card className="border border-wangari-border">
+              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Palette className="h-4 w-4 text-wangari-green-800" /> Preferences</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Currency</Label>
-                  <select value={getSetting("currency", "KES")} onChange={e => setSetting("currency", e.target.value)} className="w-full h-11 rounded-xl border border-[#E5E7EB] px-3 text-sm">
+                <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Currency</Label>
+                  <select value={getSetting("currency", "KES")} onChange={e => setSetting("currency", e.target.value)} className="w-full h-11 rounded-xl border border-wangari-border px-3 text-sm">
                     <option value="KES">KES — Kenyan Shilling</option><option value="USD">USD — US Dollar</option><option value="UGX">UGX — Ugandan Shilling</option><option value="TZS">TZS — Tanzanian Shilling</option>
                   </select></div>
-                <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Language</Label>
-                  <select value={getSetting("language", "en")} onChange={e => setSetting("language", e.target.value)} className="w-full h-11 rounded-xl border border-[#E5E7EB] px-3 text-sm">
+                <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Language</Label>
+                  <select value={getSetting("language", "en")} onChange={e => setSetting("language", e.target.value)} className="w-full h-11 rounded-xl border border-wangari-border px-3 text-sm">
                     <option value="en">English</option><option value="sw">Swahili</option>
                   </select></div>
-                <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Date Format</Label>
-                  <select value={getSetting("date_format", "DD/MM/YYYY")} onChange={e => setSetting("date_format", e.target.value)} className="w-full h-11 rounded-xl border border-[#E5E7EB] px-3 text-sm">
+                <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Date Format</Label>
+                  <select value={getSetting("date_format", "DD/MM/YYYY")} onChange={e => setSetting("date_format", e.target.value)} className="w-full h-11 rounded-xl border border-wangari-border px-3 text-sm">
                     <option>DD/MM/YYYY</option><option>MM/DD/YYYY</option><option>YYYY-MM-DD</option>
                   </select></div>
-                <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Timezone</Label>
-                  <select value={getSetting("timezone", "EAT")} onChange={e => setSetting("timezone", e.target.value)} className="w-full h-11 rounded-xl border border-[#E5E7EB] px-3 text-sm">
+                <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Timezone</Label>
+                  <select value={getSetting("timezone", "EAT")} onChange={e => setSetting("timezone", e.target.value)} className="w-full h-11 rounded-xl border border-wangari-border px-3 text-sm">
                     <option value="EAT">East Africa Time (EAT, UTC+3)</option><option value="UTC">Coordinated Universal Time (UTC)</option>
                   </select></div>
-                <Button onClick={handleSaveSettings} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer">{saved ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Saved!</> : <><Save className="h-4 w-4 mr-2" /> Save Preferences</>}</Button>
+                <Button onClick={handleSaveSettings} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">{saved ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Saved!</> : <><Save className="h-4 w-4 mr-2" /> Save Preferences</>}</Button>
               </CardContent>
             </Card>
           )}
 
           {/* Security */}
           {activeTab === "security" && (
-            <Card className="border border-[#E5E7EB]">
-              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Shield className="h-4 w-4 text-[#166534]" /> Security</CardTitle></CardHeader>
+            <Card className="border border-wangari-border">
+              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Shield className="h-4 w-4 text-wangari-green-800" /> Security</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Current Password</Label>
+                <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Current Password</Label>
                   <div className="relative"><Input type={showPassword ? "text" : "password"} value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="Current password" className="h-11 rounded-xl pr-10" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] cursor-pointer">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
-                <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">New Password</Label><Input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="New password" className="h-11 rounded-xl" /></div>
-                <div className="space-y-1"><Label className="text-xs font-semibold text-[#64748B]">Confirm New Password</Label><Input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Confirm password" className="h-11 rounded-xl" /></div>
-                <Button onClick={handleChangePassword} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer"><Lock className="h-4 w-4 mr-2" /> Update Password</Button>
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-wangari-subtle cursor-pointer">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
+                <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">New Password</Label><Input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="New password" className="h-11 rounded-xl" /></div>
+                <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-muted">Confirm New Password</Label><Input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Confirm password" className="h-11 rounded-xl" /></div>
+                <Button onClick={handleChangePassword} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer"><Lock className="h-4 w-4 mr-2" /> Update Password</Button>
 
                 {/* One-time recovery codes display */}
                 {recoveryCodes && (
@@ -493,16 +493,16 @@ export default function SettingsPage() {
                 )}
 
                 {/* Two-Factor Authentication — authenticator app */}
-                <div className="border-t border-[#E5E7EB] pt-4 mt-4">
+                <div className="border-t border-wangari-border pt-4 mt-4">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-bold text-[#0F172A]">Two-Factor Authentication</p>
+                    <p className="text-sm font-bold text-wangari-heading">Two-Factor Authentication</p>
                     {mfaEnabled !== null && (
-                      <Badge className={mfaEnabled ? "bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]" : "bg-gray-100 text-gray-500 border-gray-200"}>
+                      <Badge className={mfaEnabled ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}>
                         {mfaEnabled ? "Enabled" : "Off"}
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-[#94A3B8] mb-3">
+                  <p className="text-xs text-wangari-subtle mb-3">
                     Add an extra lock on your account: after entering your password,
                     you&apos;ll type the 6-digit code from your authenticator app
                     (Google Authenticator, Authy, 1Password…). Even if someone steals
@@ -510,7 +510,7 @@ export default function SettingsPage() {
                   </p>
 
                   {mfaEnabled === null ? (
-                    <p className="text-xs text-[#94A3B8]">Checking…</p>
+                    <p className="text-xs text-wangari-subtle">Checking…</p>
                   ) : !mfaEnabled ? (
                     !mfaUri ? (
                       <Button
@@ -530,24 +530,24 @@ export default function SettingsPage() {
                         }}
                         disabled={mfaBusy}
                         variant="outline"
-                        className="border-[#166534] text-[#166534] hover:bg-[#F0FDF4] cursor-pointer"
+                        className="border-wangari-green-800 text-wangari-green-800 hover:bg-wangari-green-50 cursor-pointer"
                       >
                         <Shield className="h-4 w-4 mr-2" /> {mfaBusy ? "Preparing…" : "Enable Authenticator App"}
                       </Button>
                     ) : (
                       <div className="space-y-3">
                         <div className="flex flex-col sm:flex-row gap-4 items-start">
-                          {mfaQr && <img src={mfaQr} alt="Scan this QR code with your authenticator app" className="rounded-xl border border-[#E5E7EB]" />}
-                          <div className="text-xs text-[#64748B] space-y-2">
-                            <p className="font-bold text-[#0F172A]">1. Scan with your authenticator app</p>
+                          {mfaQr && <img src={mfaQr} alt="Scan this QR code with your authenticator app" className="rounded-xl border border-wangari-border" />}
+                          <div className="text-xs text-wangari-muted space-y-2">
+                            <p className="font-bold text-wangari-heading">1. Scan with your authenticator app</p>
                             <p>Can&apos;t scan? Enter this key manually:</p>
-                            <code className="block bg-[#F8FAFC] border border-[#E5E7EB] rounded-lg px-3 py-2 font-mono text-[11px] break-all select-all">
+                            <code className="block bg-tone-neutral-bg border border-wangari-border rounded-lg px-3 py-2 font-mono text-[11px] break-all select-all">
                               {mfaUri.match(/secret=([^&]+)/)?.[1] || ""}
                             </code>
                           </div>
                         </div>
                         <div>
-                          <Label className="text-xs font-semibold text-[#64748B]">2. Enter the 6-digit code to confirm</Label>
+                          <Label className="text-xs font-semibold text-wangari-muted">2. Enter the 6-digit code to confirm</Label>
                           <div className="flex gap-2 mt-1">
                             <Input
                               value={mfaCode}
@@ -574,7 +574,7 @@ export default function SettingsPage() {
                                 }
                               }}
                               disabled={mfaBusy || mfaCode.length !== 6}
-                              className="bg-[#166534] hover:bg-[#14532D] cursor-pointer"
+                              className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer"
                             >
                               {mfaBusy ? "Verifying…" : "Confirm & Enable"}
                             </Button>
@@ -584,11 +584,11 @@ export default function SettingsPage() {
                     )
                   ) : (
                     <div className="space-y-3">
-                      <div className="p-3 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] text-xs font-bold text-[#166534]">
+                      <div className="p-3 rounded-xl bg-wangari-green-50 border border-wangari-green-200 text-xs font-bold text-wangari-green-800">
                         ✓ Your account requires an authenticator code at every sign-in
                       </div>
                       <details className="text-xs">
-                        <summary className="font-bold text-[#0F172A] cursor-pointer">Disable two-factor</summary>
+                        <summary className="font-bold text-wangari-heading cursor-pointer">Disable two-factor</summary>
                         <div className="mt-3 space-y-2">
                           <Input type="password" value={disablePw} onChange={(e) => setDisablePw(e.target.value)} placeholder="Current password" className="h-11 rounded-xl" />
                           <div className="flex gap-2">
@@ -622,15 +622,15 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Google Account Linking */}
-                <div className="border-t border-[#E5E7EB] pt-4 mt-4">
-                  <p className="text-sm font-bold text-[#0F172A] mb-1">Connected Accounts</p>
-                  <p className="text-xs text-[#94A3B8] mb-3">Link your Google account for one-click sign-in and profile sync.</p>
+                <div className="border-t border-wangari-border pt-4 mt-4">
+                  <p className="text-sm font-bold text-wangari-heading mb-1">Connected Accounts</p>
+                  <p className="text-xs text-wangari-subtle mb-3">Link your Google account for one-click sign-in and profile sync.</p>
                   {user?.googleId ? (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0]">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-wangari-green-50 border border-wangari-green-200">
                       <svg className="h-5 w-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                       <div>
-                        <p className="text-xs font-bold text-[#166534]">✓ Google Connected</p>
-                        <p className="text-[10px] text-[#64748B]">You can sign in with Google</p>
+                        <p className="text-xs font-bold text-wangari-green-800">✓ Google Connected</p>
+                        <p className="text-[10px] text-wangari-muted">You can sign in with Google</p>
                       </div>
                     </div>
                   ) : (
@@ -654,12 +654,12 @@ export default function SettingsPage() {
                         });
                         window.google.accounts.id.prompt();
                       }}
-                      className="flex items-center gap-3 w-full p-3 rounded-xl border border-[#E5E7EB] hover:bg-gray-50 transition-colors cursor-pointer"
+                      className="flex items-center gap-3 w-full p-3 rounded-xl border border-wangari-border hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       <svg className="h-5 w-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                       <div className="text-left">
-                        <p className="text-xs font-bold text-[#0F172A]">Connect Google Account</p>
-                        <p className="text-[10px] text-[#94A3B8]">One-click sign-in with your Gmail</p>
+                        <p className="text-xs font-bold text-wangari-heading">Connect Google Account</p>
+                        <p className="text-[10px] text-wangari-subtle">One-click sign-in with your Gmail</p>
                       </div>
                     </button>
                   )}
@@ -673,18 +673,18 @@ export default function SettingsPage() {
 
           {/* Data Management */}
           {activeTab === "data" && (
-            <Card className="border border-[#E5E7EB]">
-              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Download className="h-4 w-4 text-[#166534]" /> Data Management</CardTitle></CardHeader>
+            <Card className="border border-wangari-border">
+              <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Download className="h-4 w-4 text-wangari-green-800" /> Data Management</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-xl border border-[#E5E7EB] p-4">
-                  <p className="text-sm font-bold text-[#0F172A]">Export All Farm Data</p>
-                  <p className="text-xs text-[#94A3B8] mt-1">Download a complete backup of your farm data for loan applications or records.</p>
-                  <Button onClick={handleExportAll} variant="outline" className="mt-3 border-[#166534] text-[#166534] hover:bg-[#F0FDF4] cursor-pointer"><Download className="h-4 w-4 mr-2" />Export Data</Button>
+                <div className="rounded-xl border border-wangari-border p-4">
+                  <p className="text-sm font-bold text-wangari-heading">Export All Farm Data</p>
+                  <p className="text-xs text-wangari-subtle mt-1">Download a complete backup of your farm data for loan applications or records.</p>
+                  <Button onClick={handleExportAll} variant="outline" className="mt-3 border-wangari-green-800 text-wangari-green-800 hover:bg-wangari-green-50 cursor-pointer"><Download className="h-4 w-4 mr-2" />Export Data</Button>
                 </div>
-                <div className="rounded-xl border border-[#E5E7EB] p-4">
-                  <p className="text-sm font-bold text-[#0F172A]">Import Data</p>
-                  <p className="text-xs text-[#94A3B8] mt-1">Upload CSV files to import livestock, production, sales, and more.</p>
-                  <Button onClick={() => window.location.href = "/import"} variant="outline" className="mt-3 border-[#166534] text-[#166534] hover:bg-[#F0FDF4] cursor-pointer"><Download className="h-4 w-4 mr-2" />Import Data</Button>
+                <div className="rounded-xl border border-wangari-border p-4">
+                  <p className="text-sm font-bold text-wangari-heading">Import Data</p>
+                  <p className="text-xs text-wangari-subtle mt-1">Upload CSV files to import livestock, production, sales, and more.</p>
+                  <Button onClick={() => window.location.href = "/import"} variant="outline" className="mt-3 border-wangari-green-800 text-wangari-green-800 hover:bg-wangari-green-50 cursor-pointer"><Download className="h-4 w-4 mr-2" />Import Data</Button>
                 </div>
                 <div className="rounded-xl border border-red-200 bg-red-50 p-4">
                   <p className="text-sm font-bold text-red-700">Danger Zone</p>

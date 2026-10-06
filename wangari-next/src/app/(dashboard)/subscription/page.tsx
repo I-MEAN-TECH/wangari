@@ -151,7 +151,7 @@ function SubscriptionContent() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" />
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" />
     </div>
   );
 
@@ -167,33 +167,33 @@ function SubscriptionContent() {
 
       {/* Current status */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <Card className="border border-[#E5E7EB]">
+        <Card className="border border-wangari-border">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#166534] text-white">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-wangari-green-800 text-white">
                 <CreditCard className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-bold text-[#0F172A]">Current Plan</p>
-                <p className="text-xs text-[#64748B]">
+                <p className="text-sm font-bold text-wangari-heading">Current Plan</p>
+                <p className="text-xs text-wangari-muted">
                   {isActive ? sub.planName || sub.plan_name || "Active plan" : isPending ? "Pending — starts after trial" : isTrial ? "Free trial" : "No active plan"}
                 </p>
               </div>
             </div>
 
             {isActive && (
-              <div className="rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] p-4 space-y-2">
+              <div className="rounded-xl bg-wangari-green-50 border border-wangari-green-200 p-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#64748B]">Plan</span>
-                  <span className="font-bold text-[#0F172A]">{sub.planName || sub.plan_name || "Active plan"}</span>
+                  <span className="text-wangari-muted">Plan</span>
+                  <span className="font-bold text-wangari-heading">{sub.planName || sub.plan_name || "Active plan"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#64748B]">Status</span>
-                  <Badge className="bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]">✅ Active</Badge>
+                  <span className="text-wangari-muted">Status</span>
+                  <Badge className="bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200">✅ Active</Badge>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#64748B]">Valid until</span>
-                  <span className="font-bold text-[#0F172A]">{new Date(sub.expiresAt || sub.expires_at).toLocaleDateString()}</span>
+                  <span className="text-wangari-muted">Valid until</span>
+                  <span className="font-bold text-wangari-heading">{new Date(sub.expiresAt || sub.expires_at).toLocaleDateString()}</span>
                 </div>
               </div>
             )}
@@ -234,7 +234,7 @@ function SubscriptionContent() {
       {/* Available plans */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-          <h3 className="text-sm font-bold text-[#0F172A]">Available Plans</h3>
+          <h3 className="text-sm font-bold text-wangari-heading">Available Plans</h3>
           {/* Promo code — validated server-side at checkout init; applied by the webhook on payment. Sponsorship/partner codes can be redeemed directly for free months. */}
           <div className="flex items-center gap-2">
             <input
@@ -244,13 +244,13 @@ function SubscriptionContent() {
                 setPromoNote(null);
               }}
               placeholder="Promo / sponsor code"
-              className="h-9 w-40 rounded-lg border border-[#E5E7EB] px-3 text-xs font-semibold tracking-wide uppercase placeholder:font-normal placeholder:normal-case focus:border-[#166534] focus:outline-none"
+              className="h-9 w-40 rounded-lg border border-wangari-border px-3 text-xs font-semibold tracking-wide uppercase placeholder:font-normal placeholder:normal-case focus:border-wangari-green-800 focus:outline-none"
             />
             {promoCode && (
               <button
                 onClick={redeemFreeCode}
                 disabled={redeeming}
-                className="h-9 whitespace-nowrap rounded-lg bg-[#166534] px-3 text-xs font-bold text-white hover:bg-[#14532D] disabled:opacity-60"
+                className="h-9 whitespace-nowrap rounded-lg bg-wangari-green-800 px-3 text-xs font-bold text-white hover:bg-wangari-green-900 disabled:opacity-60"
               >
                 {redeeming ? "Checking…" : "Redeem"}
               </button>
@@ -258,7 +258,7 @@ function SubscriptionContent() {
             {promoCode && (
               <button
                 onClick={() => { setPromoCode(""); setPromoNote(null); }}
-                className="text-xs text-[#64748B] hover:text-[#0F172A]"
+                className="text-xs text-wangari-muted hover:text-wangari-heading"
               >
                 Clear
               </button>
@@ -277,21 +277,21 @@ function SubscriptionContent() {
           </div>
         )}
         {!promoCode && (
-          <p className="mb-3 text-[11px] text-[#94A3B8]">Have a promo or sponsor code? Discount codes apply to your payment. Sponsorship/partner codes — tap <span className="font-semibold">Redeem</span> for free months, no payment needed.</p>
+          <p className="mb-3 text-[11px] text-wangari-subtle">Have a promo or sponsor code? Discount codes apply to your payment. Sponsorship/partner codes — tap <span className="font-semibold">Redeem</span> for free months, no payment needed.</p>
         )}
         <div className="grid gap-4">
           {plans.map(plan => (
-            <Card key={plan.id} className="border border-[#E5E7EB] hover:border-[#166534] transition-colors">
+            <Card key={plan.id} className="border border-wangari-border hover:border-wangari-green-800 transition-colors">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-bold text-[#0F172A]">{plan.name}</p>
-                    <p className="text-lg font-extrabold text-[#166534] mt-1">{formatPrice(plan)}</p>
-                    {plan.description && <p className="text-xs text-[#64748B] mt-0.5">{plan.description}</p>}
+                    <p className="text-sm font-bold text-wangari-heading">{plan.name}</p>
+                    <p className="text-lg font-extrabold text-wangari-green-800 mt-1">{formatPrice(plan)}</p>
+                    {plan.description && <p className="text-xs text-wangari-muted mt-0.5">{plan.description}</p>}
                   </div>
                   <Button
                     onClick={() => handleSubscribe(plan.id)}                     disabled={purchasing === plan.id || (isActive && (sub?.planName || sub?.plan_name) === plan.name)}
-                    className="bg-[#166534] hover:bg-[#14532D] cursor-pointer shrink-0"
+                    className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer shrink-0"
                     size="sm"
                   >
                     {purchasing === plan.id ? "Loading..." : "Subscribe"}
@@ -305,11 +305,11 @@ function SubscriptionContent() {
 
       {/* Enterprise CTA */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <Card className="border border-[#E5E7EB] bg-[#F8FAFC]">
+        <Card className="border border-wangari-border bg-tone-neutral-bg">
           <CardContent className="p-5 text-center">
-            <p className="text-sm font-bold text-[#0F172A]">Need Enterprise?</p>
-            <p className="text-xs text-[#64748B] mt-1">Custom hosting, installation, and dedicated support for large farms.</p>
-            <a href="mailto:sales@imeantech.com" className="inline-flex items-center gap-1 mt-3 text-sm font-bold text-[#166534] hover:underline">
+            <p className="text-sm font-bold text-wangari-heading">Need Enterprise?</p>
+            <p className="text-xs text-wangari-muted mt-1">Custom hosting, installation, and dedicated support for large farms.</p>
+            <a href="mailto:sales@imeantech.com" className="inline-flex items-center gap-1 mt-3 text-sm font-bold text-wangari-green-800 hover:underline">
               Contact Sales <ExternalLink className="h-3.5 w-3.5" />
             </a>
           </CardContent>
@@ -341,7 +341,7 @@ export default function SubscriptionPage() {
     <React.Suspense
       fallback={
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" />
         </div>
       }
     >

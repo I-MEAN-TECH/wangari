@@ -145,8 +145,8 @@ export function WorkerQuickLogModal({
                 <div className="h-20 w-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
                   <Check className="h-10 w-10 stroke-[3]" />
                 </div>
-                <h4 className="text-2xl font-black text-[#0F172A]">Saved!</h4>
-                <p className="text-sm font-semibold text-[#64748B]">
+                <h4 className="text-2xl font-black text-wangari-heading">Saved!</h4>
+                <p className="text-sm font-semibold text-wangari-muted">
                   Logged {quantity} {config.unit} successfully
                 </p>
               </motion.div>
@@ -155,7 +155,7 @@ export function WorkerQuickLogModal({
                 {/* Group / Animal selector if available */}
                 {flocks.length > 0 && (
                   <div>
-                    <label className="block text-xs font-bold text-[#64748B] mb-2 uppercase tracking-wider">
+                    <label className="block text-xs font-bold text-wangari-muted mb-2 uppercase tracking-wider">
                       Select Group / Animal
                     </label>
                     <div className="flex gap-2 overflow-x-auto pb-1">
@@ -165,8 +165,8 @@ export function WorkerQuickLogModal({
                           onClick={() => setSelectedFlockId(f.id)}
                           className={`px-4 py-2.5 rounded-xl text-sm font-extrabold whitespace-nowrap cursor-pointer transition-all border-2 ${
                             selectedFlockId === f.id
-                              ? "bg-[#166534] text-white border-[#166534] shadow-sm"
-                              : "bg-gray-50 text-[#0F172A] border-gray-200 hover:border-gray-300"
+                              ? "bg-wangari-green-800 text-white border-wangari-green-800 shadow-sm"
+                              : "bg-gray-50 text-wangari-heading border-gray-200 hover:border-gray-300"
                           }`}
                         >
                           {f.name}
@@ -178,20 +178,20 @@ export function WorkerQuickLogModal({
 
                 {/* Giant Stepper Control */}
                 <div className="bg-gray-50 p-6 rounded-3xl border-2 border-gray-100 flex flex-col items-center">
-                  <span className="text-xs font-bold text-[#94A3B8] uppercase mb-1">Quantity ({config.unit})</span>
+                  <span className="text-xs font-bold text-wangari-subtle uppercase mb-1">Quantity ({config.unit})</span>
                   <div className="flex items-center justify-center gap-6 my-2">
                     <button
                       onClick={() => handleIncrement(-1)}
-                      className="h-16 w-16 rounded-2xl bg-white border-2 border-gray-200 text-[#0F172A] flex items-center justify-center shadow-sm hover:bg-gray-100 active:scale-95 cursor-pointer text-2xl font-black"
+                      className="h-16 w-16 rounded-2xl bg-white border-2 border-gray-200 text-wangari-heading flex items-center justify-center shadow-sm hover:bg-gray-100 active:scale-95 cursor-pointer text-2xl font-black"
                     >
                       <Minus className="h-8 w-8 stroke-[3]" />
                     </button>
                     <div className="min-w-[120px] text-center">
-                      <span className="text-6xl font-black text-[#0F172A] tracking-tight">{quantity}</span>
+                      <span className="text-6xl font-black text-wangari-heading tracking-tight">{quantity}</span>
                     </div>
                     <button
                       onClick={() => handleIncrement(1)}
-                      className="h-16 w-16 rounded-2xl bg-white border-2 border-gray-200 text-[#0F172A] flex items-center justify-center shadow-sm hover:bg-gray-100 active:scale-95 cursor-pointer text-2xl font-black"
+                      className="h-16 w-16 rounded-2xl bg-white border-2 border-gray-200 text-wangari-heading flex items-center justify-center shadow-sm hover:bg-gray-100 active:scale-95 cursor-pointer text-2xl font-black"
                     >
                       <Plus className="h-8 w-8 stroke-[3]" />
                     </button>
@@ -203,7 +203,7 @@ export function WorkerQuickLogModal({
                       <button
                         key={val}
                         onClick={() => handleIncrement(val)}
-                        className="px-4 py-2 bg-white border-2 border-gray-200 hover:border-[#166534] text-[#0F172A] rounded-xl text-sm font-black shadow-2xs active:scale-95 cursor-pointer"
+                        className="px-4 py-2 bg-white border-2 border-gray-200 hover:border-wangari-green-800 text-wangari-heading rounded-xl text-sm font-black shadow-2xs active:scale-95 cursor-pointer"
                       >
                         +{val}
                       </button>
@@ -218,7 +218,7 @@ export function WorkerQuickLogModal({
                     placeholder="Add a simple note (Optional)..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl text-sm font-semibold text-[#0F172A] focus:outline-none focus:border-[#166534]"
+                    className="w-full p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl text-sm font-semibold text-wangari-heading focus:outline-none focus:border-wangari-green-800"
                   />
                 </div>
 

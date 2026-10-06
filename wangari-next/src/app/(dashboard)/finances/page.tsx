@@ -126,20 +126,20 @@ export default function FinancesPage() {
   const monthIncome = thisMonth.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const monthExpenses = thisMonth.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" /></div>;
 
   return (
     <div className="space-y-6">
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <PageHeader title="Income & Expenses" description="Track money coming in and going out of your farm"
-          action={<Button onClick={() => setShowForm(!showForm)} className="bg-[#166534] hover:bg-[#14532D] cursor-pointer h-12 text-base font-bold"><Plus className="h-4 w-4 mr-2" />Record Money</Button>}
+          action={<Button onClick={() => setShowForm(!showForm)} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer h-12 text-base font-bold"><Plus className="h-4 w-4 mr-2" />Record Money</Button>}
         />
       </motion.div>
 
       {/* Add form */}
       {showForm && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
-          <Card className="border border-[#E5E7EB] hover:shadow-lg transition-shadow">
+          <Card className="border border-wangari-border hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold text-gray-900">{editingTx ? "Edit Entry" : "Record Money"}</h3>
@@ -179,14 +179,14 @@ export default function FinancesPage() {
                   {categories.map(c => (
                     <button key={c.id} onClick={() => setForm({ ...form, category: c.id })}
                       className={`py-3 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                        form.category === c.id ? "bg-[#166534] text-white shadow-md" : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
+                        form.category === c.id ? "bg-wangari-green-800 text-white shadow-md" : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
                       }`}>
                       <span className="text-center leading-tight">{c.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
-              <Button onClick={handleSubmit} disabled={!form.amount} className="w-full mt-4 bg-[#166534] hover:bg-[#14532D] cursor-pointer disabled:opacity-50 h-14 text-base font-bold">
+              <Button onClick={handleSubmit} disabled={!form.amount} className="w-full mt-4 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer disabled:opacity-50 h-14 text-base font-bold">
                 {form.type === "income" ? "Save Income" : "Save Expense"}
               </Button>
             </CardContent>
@@ -199,13 +199,13 @@ export default function FinancesPage() {
         {[
           { title: "Money IN (This Month)", value: `KES ${monthIncome.toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, color: "bg-emerald-500" },
           { title: "Money OUT (This Month)", value: `KES ${monthExpenses.toLocaleString()}`, icon: <TrendingDown className="h-5 w-5" />, color: "bg-red-500" },
-          { title: "Total Income (All Time)", value: `KES ${income.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-[#166534]" },
-          { title: profit >= 0 ? "Net Profit" : "Net Loss", value: `KES ${profit.toLocaleString()}`, icon: <Wallet className="h-5 w-5" />, color: profit >= 0 ? "bg-[#166534]" : "bg-red-500" },
+          { title: "Total Income (All Time)", value: `KES ${income.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-wangari-green-800" },
+          { title: profit >= 0 ? "Net Profit" : "Net Loss", value: `KES ${profit.toLocaleString()}`, icon: <Wallet className="h-5 w-5" />, color: profit >= 0 ? "bg-wangari-green-800" : "bg-red-500" },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
             <Card className="border border-gray-100 hover:shadow-lg transition-all">
               <CardContent className="pt-5 pb-4 px-5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] mb-3">{kpi.icon}</div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-tone-good-bg text-wangari-green-800 mb-3">{kpi.icon}</div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1">{kpi.title}</p>
                 <p className="text-2xl font-extrabold text-gray-900">{kpi.value}</p>
               </CardContent>
@@ -221,14 +221,14 @@ export default function FinancesPage() {
           <Card className="border border-gray-100">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
-                <BarChart3 className="h-4 w-4 text-[#166534]" />
+                <BarChart3 className="h-4 w-4 text-wangari-green-800" />
                 <p className="text-xs font-bold text-gray-900">Monthly Trend</p>
               </div>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={monthlyChart}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94A3B8" }} />
-                  <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#5F6E85" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "#5F6E85" }} />
                   <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #E5E7EB", fontSize: 12 }} formatter={(v: any) => `KES ${Number(v).toLocaleString()}`} />
                   <Bar dataKey="income" fill="#166534" radius={[4, 4, 0, 0]} name="Income" />
                   <Bar dataKey="expense" fill="#EF4444" radius={[4, 4, 0, 0]} name="Expenses" />
@@ -300,7 +300,7 @@ export default function FinancesPage() {
       {/* Transactions list */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <Card className="border border-gray-100">
-          <CardHeader className="pb-2"><div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-[#166534]" /><CardTitle className="text-base font-bold">Recent Transactions</CardTitle></div></CardHeader>
+          <CardHeader className="pb-2"><div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-wangari-green-800" /><CardTitle className="text-base font-bold">Recent Transactions</CardTitle></div></CardHeader>
           <CardContent className="p-3 space-y-2">
             {txs.slice(0, 25).map((t: any) => {
               const isIncome = t.type === "income";
@@ -314,7 +314,7 @@ export default function FinancesPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <p className={`text-sm font-extrabold ${isIncome ? "text-emerald-700" : "text-gray-600"}`}>{isIncome ? "+" : "-"}KES {Number(t.amount).toLocaleString()}</p>
-                    <button onClick={() => handleEdit(t)} className="text-gray-400 hover:text-[#166534] cursor-pointer"><Pencil className="h-3 w-3" /></button>
+                    <button onClick={() => handleEdit(t)} className="text-gray-400 hover:text-wangari-green-800 cursor-pointer"><Pencil className="h-3 w-3" /></button>
                     <button onClick={() => handleDelete(t.id)} className="text-gray-400 hover:text-red-500 cursor-pointer"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 </div>

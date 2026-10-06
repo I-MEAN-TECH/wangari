@@ -313,7 +313,7 @@ function itemsTableHtml(items: any[], accent: string, cols: Array<{ key: string;
       ${cols
         .map((c) => {
           const align = `text-align:${c.align};`;
-          if (c.key === "i") return `<td style="padding:12px 16px;font-size:13px;color:#94A3B8;${align}${bg}">${i + 1}</td>`;
+          if (c.key === "i") return `<td style="padding:12px 16px;font-size:13px;color:#5F6E85;${align}${bg}">${i + 1}</td>`;
           if (c.key === "name") return `<td style="padding:12px 16px;font-size:13px;color:#0F172A;font-weight:600;${align}${bg}">${escapeHtml(item.name || "Item")}</td>`;
           if (c.key === "qty") return `<td style="padding:12px 16px;font-size:13px;color:#64748B;${align}${bg}">${item.quantity || 1}</td>`;
           if (c.key === "price") return `<td style="padding:12px 16px;font-size:13px;color:#64748B;${align}${bg}">${formatKES(Number(item.price || 0))}</td>`;
@@ -325,7 +325,7 @@ function itemsTableHtml(items: any[], accent: string, cols: Array<{ key: string;
     .join("");
   return `<table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
     <thead><tr style="background:${headerBg};">${headRow}</tr></thead>
-    <tbody>${rows || `<tr><td colspan="${cols.length}" style="padding:24px;text-align:center;color:#94A3B8;font-size:13px;">No items</td></tr>`}</tbody>
+    <tbody>${rows || `<tr><td colspan="${cols.length}" style="padding:24px;text-align:center;color:#5F6E85;font-size:13px;">No items</td></tr>`}</tbody>
   </table>`;
 }
 
@@ -346,19 +346,19 @@ function balancedPanelHtml(profile: FarmProfile, layout: Required<DocLayout>, do
     const payload = `Bank:${profile.bankName || ""}|Acct:${profile.bankAccount}|Ref:${docCode}`;
     const qr = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(payload)}" alt="Payment QR" width="120" height="120" style="display:block;image-rendering:pixelated;" onerror="this.style.display='none'" />`;
     return `<div style="min-width:260px;max-width:300px;background:#F8FAFC;border:1px solid #E5E7EB;border-radius:12px;padding:16px;text-align:center;">
-      <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94A3B8;margin-bottom:8px;">Scan to Pay</p>
+      <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#5F6E85;margin-bottom:8px;">Scan to Pay</p>
       <div style="display:flex;justify-content:center;">${qr}</div>
       ${profile.bankName ? `<p style="font-size:11px;color:#0F172A;font-weight:700;margin-top:8px;">${escapeHtml(profile.bankName)}</p>` : ""}
       ${profile.bankAccount ? `<p style="font-size:11px;color:#64748B;margin-top:2px;">A/C ${escapeHtml(profile.bankAccount)}</p>` : ""}
-      <p style="font-size:10px;color:#94A3B8;margin-top:6px;">Reference: <span style="font-weight:700;color:#0F172A;">${escapeHtml(docCode)}</span></p>
+      <p style="font-size:10px;color:#5F6E85;margin-top:6px;">Reference: <span style="font-weight:700;color:#0F172A;">${escapeHtml(docCode)}</span></p>
     </div>`;
   }
   if (mode === "notes" && (profile.invoiceNotes || profile.invoiceTerms)) {
     return `<div style="min-width:260px;max-width:320px;background:#F8FAFC;border:1px solid #E5E7EB;border-radius:12px;padding:16px;">
-      ${profile.invoiceNotes ? `<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94A3B8;margin-bottom:4px;">Notes</p>
+      ${profile.invoiceNotes ? `<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#5F6E85;margin-bottom:4px;">Notes</p>
       <p style="font-size:11px;color:#64748B;line-height:1.6;">${escapeHtml(profile.invoiceNotes)}</p>` : ""}
-      ${profile.invoiceTerms ? `<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94A3B8;margin:10px 0 4px;">Terms</p>
-      <p style="font-size:10px;color:#94A3B8;line-height:1.6;">${escapeHtml(profile.invoiceTerms)}</p>` : ""}
+      ${profile.invoiceTerms ? `<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#5F6E85;margin:10px 0 4px;">Terms</p>
+      <p style="font-size:10px;color:#5F6E85;line-height:1.6;">${escapeHtml(profile.invoiceTerms)}</p>` : ""}
     </div>`;
   }
   return "";
@@ -400,7 +400,7 @@ function totalsHtml(total: number, paid: number, layout: Required<DocLayout>, co
 function bankDetailsHtml(profile: FarmProfile, accent: string): string {
   if (!profile.bankName) return "";
   return `<div style="background:#F8FAFC;border:1px solid #E5E7EB;border-radius:12px;padding:20px;margin-bottom:24px;">
-    <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94A3B8;margin-bottom:12px;">Payment Details</p>
+    <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#5F6E85;margin-bottom:12px;">Payment Details</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
       <div><span style="color:#64748B;">Bank:</span> <span style="font-weight:600;color:#0F172A;">${escapeHtml(profile.bankName)}</span></div>
       ${profile.bankAccount ? `<div><span style="color:#64748B;">Account:</span> <span style="font-weight:600;color:#0F172A;">${escapeHtml(profile.bankAccount)}</span></div>` : ""}
@@ -411,12 +411,12 @@ function bankDetailsHtml(profile: FarmProfile, accent: string): string {
 
 function notesTermsHtml(profile: FarmProfile): string {
   return `${profile.invoiceNotes ? `<div style="margin-bottom:24px;">
-    <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94A3B8;margin-bottom:6px;">Notes</p>
+    <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#5F6E85;margin-bottom:6px;">Notes</p>
     <p style="font-size:12px;color:#64748B;line-height:1.6;">${escapeHtml(profile.invoiceNotes)}</p>
   </div>` : ""}
   ${profile.invoiceTerms ? `<div style="margin-bottom:32px;">
-    <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94A3B8;margin-bottom:6px;">Terms &amp; Conditions</p>
-    <p style="font-size:11px;color:#94A3B8;line-height:1.6;">${escapeHtml(profile.invoiceTerms)}</p>
+    <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#5F6E85;margin-bottom:6px;">Terms &amp; Conditions</p>
+    <p style="font-size:11px;color:#5F6E85;line-height:1.6;">${escapeHtml(profile.invoiceTerms)}</p>
   </div>` : ""}`;
 }
 
@@ -460,21 +460,21 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
         <div>
           <h1 style="font-size:22px;font-weight:800;color:${accent};letter-spacing:-0.5px;">${escapeHtml(farmName)}</h1>
           ${profile.slogan ? `<p style="font-size:12px;color:#64748B;margin-top:2px;font-style:italic;">${escapeHtml(profile.slogan)}</p>` : ""}
-          <div style="margin-top:8px;font-size:11px;color:#94A3B8;line-height:1.6;">${contactLines.map((l) => `<span style="display:block;">${l}</span>`).join("")}</div>
+          <div style="margin-top:8px;font-size:11px;color:#5F6E85;line-height:1.6;">${contactLines.map((l) => `<span style="display:block;">${l}</span>`).join("")}</div>
         </div>
       </div>
       <div style="text-align:${layout.headerPosition};${layout.logoPosition === "right" ? "order:-1;" : ""}">
         <div style="background:${accent};color:white;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:700;letter-spacing:1px;">${escapeHtml(docTitle)}</div>
         <p style="margin-top:12px;font-size:14px;font-weight:700;color:#0F172A;">${escapeHtml(invoice.invoiceNumber)}</p>
-        <p style="font-size:12px;color:#94A3B8;margin-top:4px;">Date: ${invoiceDate}</p>
-        ${dueDate ? `<p style="font-size:12px;color:#94A3B8;">Due: ${dueDate}</p>` : ""}
-        ${validUntil ? `<p style="font-size:12px;color:#94A3B8;">Valid until: ${validUntil}</p>` : ""}
+        <p style="font-size:12px;color:#5F6E85;margin-top:4px;">Date: ${invoiceDate}</p>
+        ${dueDate ? `<p style="font-size:12px;color:#5F6E85;">Due: ${dueDate}</p>` : ""}
+        ${validUntil ? `<p style="font-size:12px;color:#5F6E85;">Valid until: ${validUntil}</p>` : ""}
         <div style="margin-top:8px;">${statusBadgeHtml(invoice.paymentStatus, accent)}</div>
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;margin-bottom:32px;flex-direction:${layout.customerPosition === "right" ? "row-reverse" : "row"};">
       <div style="background:#F8FAFC;border-radius:12px;padding:20px;min-width:280px;text-align:${layout.customerPosition === "right" ? "right" : "left"};">
-        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94A3B8;margin-bottom:8px;">Bill To</p>
+        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#5F6E85;margin-bottom:8px;">Bill To</p>
         <p style="font-size:16px;font-weight:700;color:#0F172A;">${customerName}</p>
         ${customerPhone ? `<p style="font-size:13px;color:#64748B;margin-top:4px;">${customerPhone}</p>` : ""}
       </div>
@@ -498,7 +498,7 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
     ${signatureFooterHtml(profile, accent)}
     <div style="text-align:center;padding-top:24px;border-top:2px solid ${accent};">
       <p style="font-size:12px;color:${accent};font-weight:600;">Thank you for your business!</p>
-      <p style="font-size:10px;color:#94A3B8;margin-top:4px;">${escapeHtml(farmName)} · Generated by Wangari Farm OS</p>
+      <p style="font-size:10px;color:#5F6E85;margin-top:4px;">${escapeHtml(farmName)} · Generated by Wangari Farm OS</p>
     </div>`;
     return baseDoc(invoice.invoiceNumber, body);
   }
@@ -511,7 +511,7 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
         ${logoHtml}
         <div>
           <h1 style="font-size:20px;font-weight:700;color:#0F172A;">${escapeHtml(farmName)}</h1>
-          ${contactLines.length > 0 ? `<p style="font-size:11px;color:#94A3B8;margin-top:2px;">${contactLines.join(" · ")}</p>` : ""}
+          ${contactLines.length > 0 ? `<p style="font-size:11px;color:#5F6E85;margin-top:2px;">${contactLines.join(" · ")}</p>` : ""}
         </div>
       </div>
       <div style="text-align:${layout.headerPosition};${layout.logoPosition === "right" ? "order:-1;" : ""}">
@@ -521,14 +521,14 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
     </div>
     <div style="display:flex;justify-content:space-between;margin-bottom:32px;padding:16px 0;border-top:1px solid #E5E7EB;border-bottom:1px solid #E5E7EB;">
       <div>
-        <p style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:1px;">Bill To</p>
+        <p style="font-size:11px;color:#5F6E85;text-transform:uppercase;letter-spacing:1px;">Bill To</p>
         <p style="font-size:15px;font-weight:700;color:#0F172A;margin-top:4px;">${customerName}</p>
         ${customerPhone ? `<p style="font-size:12px;color:#64748B;margin-top:2px;">${customerPhone}</p>` : ""}
       </div>
       <div style="text-align:right;">
-        <p style="font-size:11px;color:#94A3B8;">Date: <span style="color:#0F172A;font-weight:600;">${invoiceDate}</span></p>
-        ${dueDate ? `<p style="font-size:11px;color:#94A3B8;margin-top:2px;">Due: <span style="color:#0F172A;font-weight:600;">${dueDate}</span></p>` : ""}
-        ${validUntil ? `<p style="font-size:11px;color:#94A3B8;">Valid until: <span style="color:#0F172A;font-weight:600;">${validUntil}</span></p>` : ""}
+        <p style="font-size:11px;color:#5F6E85;">Date: <span style="color:#0F172A;font-weight:600;">${invoiceDate}</span></p>
+        ${dueDate ? `<p style="font-size:11px;color:#5F6E85;margin-top:2px;">Due: <span style="color:#0F172A;font-weight:600;">${dueDate}</span></p>` : ""}
+        ${validUntil ? `<p style="font-size:11px;color:#5F6E85;">Valid until: <span style="color:#0F172A;font-weight:600;">${validUntil}</span></p>` : ""}
         <p style="margin-top:6px;">${statusBadgeHtml(invoice.paymentStatus, accent)}</p>
       </div>
     </div>
@@ -548,14 +548,14 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
           <td style="padding:12px 16px;font-size:13px;color:#64748B;text-align:center;">${item.quantity || 1}</td>
           <td style="padding:12px 16px;font-size:13px;color:#64748B;text-align:right;">${formatKES(Number(item.price || 0))}</td>
           <td style="padding:12px 16px;font-size:13px;color:#0F172A;font-weight:600;text-align:right;">${formatKES(Number(item.quantity || 1) * Number(item.price || 0))}</td>
-        </tr>`).join("") || `<tr><td colspan="4" style="padding:24px;text-align:center;color:#94A3B8;">No items</td></tr>`}
+        </tr>`).join("") || `<tr><td colspan="4" style="padding:24px;text-align:center;color:#5F6E85;">No items</td></tr>`}
       </tbody>
     </table>
     ${totalsHtml(total, paid, layout)}
     ${profile.bankName ? `<div style="margin-top:24px;padding:16px;background:#F8FAFC;border-radius:8px;font-size:12px;color:#64748B;">
       <strong>Payment:</strong> ${escapeHtml(profile.bankName)}${profile.bankAccount ? ` · A/C ${escapeHtml(profile.bankAccount)}` : ""}${profile.bankBranch ? ` · ${escapeHtml(profile.bankBranch)}` : ""}
     </div>` : ""}
-    ${profile.invoiceNotes ? `<p style="margin-top:16px;font-size:11px;color:#94A3B8;text-align:center;">${escapeHtml(profile.invoiceNotes)}</p>` : ""}
+    ${profile.invoiceNotes ? `<p style="margin-top:16px;font-size:11px;color:#5F6E85;text-align:center;">${escapeHtml(profile.invoiceNotes)}</p>` : ""}
     ${signatureFooterHtml(profile, accent)}
     <p style="margin-top:24px;text-align:center;font-size:10px;color:#CBD5E1;">${escapeHtml(farmName)} · Wangari Farm OS</p>`;
     return baseDoc(invoice.invoiceNumber, body);
@@ -589,22 +589,22 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;">
       <div>
-        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#94A3B8;margin-bottom:8px;">From</p>
+        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#5F6E85;margin-bottom:8px;">From</p>
         <p style="font-size:15px;font-weight:700;color:#0F172A;">${escapeHtml(farmName)}</p>
         ${profile.address ? `<p style="font-size:12px;color:#64748B;margin-top:4px;">${escapeHtml(profile.address)}</p>` : ""}
         ${profile.tinNumber ? `<p style="font-size:12px;color:#64748B;margin-top:2px;">TIN: ${escapeHtml(profile.tinNumber)}</p>` : ""}
       </div>
       <div>
-        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#94A3B8;margin-bottom:8px;">Bill To</p>
+        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#5F6E85;margin-bottom:8px;">Bill To</p>
         <p style="font-size:15px;font-weight:700;color:#0F172A;">${customerName}</p>
         ${customerPhone ? `<p style="font-size:12px;color:#64748B;margin-top:4px;">${customerPhone}</p>` : ""}
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;background:#F8FAFC;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
       <div style="display:flex;gap:24px;font-size:13px;flex-wrap:wrap;">
-        <div><span style="color:#94A3B8;">No:</span> <strong>${escapeHtml(invoice.invoiceNumber)}</strong></div>
-        <div><span style="color:#94A3B8;">Date:</span> <strong>${invoiceDate}</strong></div>
-        ${dueDate ? `<div><span style="color:#94A3B8;">Due:</span> <strong>${dueDate}</strong></div>` : ""}
+        <div><span style="color:#5F6E85;">No:</span> <strong>${escapeHtml(invoice.invoiceNumber)}</strong></div>
+        <div><span style="color:#5F6E85;">Date:</span> <strong>${invoiceDate}</strong></div>
+        ${dueDate ? `<div><span style="color:#5F6E85;">Due:</span> <strong>${dueDate}</strong></div>` : ""}
       </div>
       ${statusBadgeHtml(invoice.paymentStatus, accent)}
     </div>
@@ -621,7 +621,7 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
     ${signatureFooterHtml(profile, accent)}
     <div style="text-align:center;padding-top:24px;border-top:2px solid ${accent};">
       <p style="font-size:13px;color:${accent};font-weight:600;">${escapeHtml(farmName)}</p>
-      ${profile.phone || profile.email ? `<p style="font-size:11px;color:#94A3B8;margin-top:4px;">${[profile.phone, profile.email].filter(Boolean).join(" · ")}</p>` : ""}
+      ${profile.phone || profile.email ? `<p style="font-size:11px;color:#5F6E85;margin-top:4px;">${[profile.phone, profile.email].filter(Boolean).join(" · ")}</p>` : ""}
       <p style="font-size:10px;color:#CBD5E1;margin-top:8px;">Generated by Wangari Farm OS</p>
     </div>`;
     return baseDoc(invoice.invoiceNumber, body);
@@ -665,7 +665,7 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
           <td style="padding:14px 8px;font-size:14px;color:#374151;text-align:right;">${Number(item.price || 0).toLocaleString()}</td>
           <td style="padding:14px 8px;font-size:14px;color:#374151;text-align:right;">${item.quantity || 1}</td>
           <td style="padding:14px 8px;font-size:14px;color:#111827;font-weight:600;text-align:right;">${formatKES(Number(item.quantity || 1) * Number(item.price || 0))}</td>
-        </tr>`).join("") || `<tr><td colspan="4" style="padding:24px;text-align:center;color:#94A3B8;">No items</td></tr>`}
+        </tr>`).join("") || `<tr><td colspan="4" style="padding:24px;text-align:center;color:#5F6E85;">No items</td></tr>`}
       </tbody>
       <tfoot>
         <tr style="border-top:2px solid #1F2937;">
@@ -715,7 +715,7 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
       <tr>
         <td style="width:50%;vertical-align:top;padding-right:16px;">
           <div style="background:#F8FAFC;border-left:3px solid ${accent};padding:12px 16px;">
-            <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#94A3B8;margin-bottom:4px;">From</p>
+            <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#5F6E85;margin-bottom:4px;">From</p>
             <p style="font-weight:700;color:#0F172A;">${escapeHtml(farmName)}</p>
             ${profile.phone ? `<p style="color:#64748B;margin-top:2px;">${escapeHtml(profile.phone)}</p>` : ""}
             ${profile.email ? `<p style="color:#64748B;">${escapeHtml(profile.email)}</p>` : ""}
@@ -723,7 +723,7 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
         </td>
         <td style="width:50%;vertical-align:top;padding-left:16px;">
           <div style="background:#F8FAFC;border-left:3px solid #94A3B8;padding:12px 16px;">
-            <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#94A3B8;margin-bottom:4px;">To</p>
+            <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#5F6E85;margin-bottom:4px;">To</p>
             <p style="font-weight:700;color:#0F172A;">${customerName}</p>
             ${customerPhone ? `<p style="color:#64748B;margin-top:2px;">${customerPhone}</p>` : ""}
           </div>
@@ -805,7 +805,7 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
           <th style="padding:10px 0;font-size:11px;font-weight:800;letter-spacing:1px;color:${accent};text-align:right;">AMOUNT</th>
         </tr>
       </thead>
-      <tbody>${rows || `<tr><td colspan="4" style="padding:24px;text-align:center;color:#94A3B8;">No items</td></tr>`}</tbody>
+      <tbody>${rows || `<tr><td colspan="4" style="padding:24px;text-align:center;color:#5F6E85;">No items</td></tr>`}</tbody>
     </table>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;">
       <div>
@@ -878,7 +878,7 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
           <td style="padding:12px;font-size:13px;color:#6B7280;text-align:right;">${Number(item.price || 0).toLocaleString()}</td>
           <td style="padding:12px;font-size:13px;color:#6B7280;text-align:center;">${item.quantity || 1}</td>
           <td style="padding:12px;font-size:13px;color:#1F2937;font-weight:600;text-align:right;">${formatKES(Number(item.quantity || 1) * Number(item.price || 0))}</td>
-        </tr>`).join("") || `<tr><td colspan="4" style="padding:24px;text-align:center;color:#94A3B8;">No items</td></tr>`}
+        </tr>`).join("") || `<tr><td colspan="4" style="padding:24px;text-align:center;color:#5F6E85;">No items</td></tr>`}
       </tbody>
     </table>
     <table style="width:100%;border-collapse:collapse;margin-bottom:36px;">
@@ -956,7 +956,7 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
           <td style="padding:11px 14px;font-size:13px;color:#64748B;text-align:right;">${Number(item.price || 0).toLocaleString()}</td>
           <td style="padding:11px 14px;font-size:13px;color:#64748B;text-align:center;">${item.quantity || 1}</td>
           <td style="padding:11px 14px;font-size:13px;color:#0F172A;font-weight:600;text-align:right;">${formatKES(Number(item.quantity || 1) * Number(item.price || 0))}</td>
-        </tr>`).join("") || `<tr><td colspan="4" style="padding:24px;text-align:center;color:#94A3B8;">No items</td></tr>`}
+        </tr>`).join("") || `<tr><td colspan="4" style="padding:24px;text-align:center;color:#5F6E85;">No items</td></tr>`}
       </tbody>
     </table>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:32px;margin-bottom:28px;">
@@ -978,7 +978,7 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
           ${signatureFooterHtml(profile, accent, "left")}
         </div>
         <div style="flex:1;border-bottom:1px solid #94A3B8;padding-bottom:4px;">
-          <p style="font-size:10px;color:#94A3B8;margin-top:36px;">Print Name:</p>
+          <p style="font-size:10px;color:#5F6E85;margin-top:36px;">Print Name:</p>
         </div>
       </div>
     </div>
@@ -1024,7 +1024,7 @@ export function generateInvoiceHtml(invoice: any, templateId: string, profile: F
           <th style="padding:10px 14px;font-size:12px;font-weight:700;color:#1E3A8A;text-align:right;">Amount</th>
         </tr>
       </thead>
-      <tbody>${rows || `<tr><td colspan="5" style="padding:24px;text-align:center;color:#94A3B8;">No entries</td></tr>`}</tbody>
+      <tbody>${rows || `<tr><td colspan="5" style="padding:24px;text-align:center;color:#5F6E85;">No entries</td></tr>`}</tbody>
     </table>
     <div style="display:flex;justify-content:flex-end;margin-bottom:32px;">
       <table style="min-width:280px;border-collapse:collapse;font-size:13px;">

@@ -47,7 +47,7 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534]" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" /></div>;
 
   // Production by date — aggregate across all species
   const prodByDate: Record<string, { output: number; mortality: number; feed: number }> = {};
@@ -109,14 +109,14 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight">Reports</h1>
-          <p className="text-sm text-[#64748B] mt-1">Analytics across all your farm operations.</p>
+          <h1 className="text-2xl font-extrabold text-wangari-heading tracking-tight">Reports</h1>
+          <p className="text-sm text-wangari-muted mt-1">Analytics across all your farm operations.</p>
         </div>
         <div className="flex gap-2 no-print">
-          <Button onClick={handleExportPDF} variant="outline" className="border-[#E5E7EB] hover:bg-[#F0FDF4] hover:border-[#BBF7D0] cursor-pointer">
+          <Button onClick={handleExportPDF} variant="outline" className="border-wangari-border hover:bg-wangari-green-50 hover:border-wangari-green-200 cursor-pointer">
             <Download className="h-4 w-4 mr-2" /> Export PDF
           </Button>
-          <Button onClick={handleExportCSV} variant="outline" className="border-[#E5E7EB] hover:bg-[#F0FDF4] hover:border-[#BBF7D0] cursor-pointer">
+          <Button onClick={handleExportCSV} variant="outline" className="border-wangari-border hover:bg-wangari-green-50 hover:border-wangari-green-200 cursor-pointer">
             <Download className="h-4 w-4 mr-2" /> Export CSV
           </Button>
         </div>
@@ -131,11 +131,11 @@ export default function ReportsPage() {
           { title: "Total Expenses", value: "KES " + expenses.toLocaleString(), icon: <TrendingDown className="h-5 w-5" /> },
         ].map((kpi) => (
           <motion.div key={kpi.title} variants={scaleIn} whileHover={{ y: -4, scale: 1.02 }}>
-            <Card className="border border-[#E5E7EB] hover:shadow-lg hover:border-[#BBF7D0] transition-all duration-300">
+            <Card className="border border-wangari-border hover:shadow-lg hover:border-wangari-green-200 transition-all duration-300">
               <CardContent className="pt-6 pb-4 px-5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4EA] text-[#166534] mb-3">{kpi.icon}</div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B] mb-1">{kpi.title}</p>
-                <p className="text-2xl font-extrabold text-[#0F172A] tracking-tight">{kpi.value}</p>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-tone-good-bg text-wangari-green-800 mb-3">{kpi.icon}</div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-wangari-muted mb-1">{kpi.title}</p>
+                <p className="text-2xl font-extrabold text-wangari-heading tracking-tight">{kpi.value}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -145,13 +145,13 @@ export default function ReportsPage() {
       {/* Charts Row 1 */}
       <div className="grid lg:grid-cols-2 gap-6">
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-[#E5E7EB] hover:shadow-lg transition-shadow">
+          <Card className="border border-wangari-border hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-[#166534]" />
+                <BarChart3 className="h-4 w-4 text-wangari-green-800" />
                 <CardTitle className="text-base font-bold">Production Trend</CardTitle>
               </div>
-              <p className="text-xs text-[#94A3B8]">Last 14 days — all species combined</p>
+              <p className="text-xs text-wangari-subtle">Last 14 days — all species combined</p>
             </CardHeader>
             <CardContent className="pt-2">
               <ResponsiveContainer width="100%" height={250}>
@@ -168,13 +168,13 @@ export default function ReportsPage() {
         </motion.div>
 
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-[#E5E7EB] hover:shadow-lg transition-shadow">
+          <Card className="border border-wangari-border hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-[#166534]" />
+                <TrendingUp className="h-4 w-4 text-wangari-green-800" />
                 <CardTitle className="text-base font-bold">Revenue vs Expenses</CardTitle>
               </div>
-              <p className="text-xs text-[#94A3B8]">By month</p>
+              <p className="text-xs text-wangari-subtle">By month</p>
             </CardHeader>
             <CardContent className="pt-2">
               <ResponsiveContainer width="100%" height={250}>
@@ -195,13 +195,13 @@ export default function ReportsPage() {
       {/* Charts Row 2 */}
       <div className="grid lg:grid-cols-2 gap-6">
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-[#E5E7EB] hover:shadow-lg transition-shadow">
+          <Card className="border border-wangari-border hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <TrendingDown className="h-4 w-4 text-[#166534]" />
+                <TrendingDown className="h-4 w-4 text-wangari-green-800" />
                 <CardTitle className="text-base font-bold">Mortality Trend</CardTitle>
               </div>
-              <p className="text-xs text-[#94A3B8]">Daily count</p>
+              <p className="text-xs text-wangari-subtle">Daily count</p>
             </CardHeader>
             <CardContent className="pt-2">
               <ResponsiveContainer width="100%" height={250}>
@@ -218,17 +218,17 @@ export default function ReportsPage() {
         </motion.div>
 
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-[#E5E7EB] hover:shadow-lg transition-shadow">
+          <Card className="border border-wangari-border hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-[#166534]" />
+                <Calendar className="h-4 w-4 text-wangari-green-800" />
                 <CardTitle className="text-base font-bold">Livestock by Species</CardTitle>
               </div>
-              <p className="text-xs text-[#94A3B8]">Animal count breakdown</p>
+              <p className="text-xs text-wangari-subtle">Animal count breakdown</p>
             </CardHeader>
             <CardContent className="pt-2">
               {speciesPie.length === 0 ? (
-                <div className="flex items-center justify-center h-[250px] text-sm text-[#94A3B8]">No livestock yet</div>
+                <div className="flex items-center justify-center h-[250px] text-sm text-wangari-subtle">No livestock yet</div>
               ) : (
                 <div className="flex items-center gap-6">
                   <ResponsiveContainer width="50%" height={200}>
@@ -244,9 +244,9 @@ export default function ReportsPage() {
                   <div className="space-y-3">
                     {speciesPie.map((e, i) => (
                       <div key={e.name} className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full" style={{ background: [GREEN, LIGHT_GREEN, "#86EFAC", MUTED][i] }} />
-                        <span className="text-xs text-[#64748B]">{e.name}</span>
-                        <span className="text-xs font-bold text-[#0F172A]">{e.value.toLocaleString()}</span>
+                        <div className="h-3 w-3 rounded-full" style={{ background: [GREEN, LIGHT_GREEN, "var(--color-wangari-green-300)", MUTED][i] }} />
+                        <span className="text-xs text-wangari-muted">{e.name}</span>
+                        <span className="text-xs font-bold text-wangari-heading">{e.value.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -260,24 +260,24 @@ export default function ReportsPage() {
       {/* Expense Breakdown + Feed */}
       <div className="grid lg:grid-cols-2 gap-6">
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-[#E5E7EB] hover:shadow-lg transition-shadow">
+          <Card className="border border-wangari-border hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-[#166534]" />
+                <Calendar className="h-4 w-4 text-wangari-green-800" />
                 <CardTitle className="text-base font-bold">Expense Breakdown</CardTitle>
               </div>
-              <p className="text-xs text-[#94A3B8]">By category</p>
+              <p className="text-xs text-wangari-subtle">By category</p>
             </CardHeader>
             <CardContent className="pt-2">
               {expensePie.length === 0 ? (
-                <div className="flex items-center justify-center h-[200px] text-sm text-[#94A3B8]">No expense data yet</div>
+                <div className="flex items-center justify-center h-[200px] text-sm text-wangari-subtle">No expense data yet</div>
               ) : (
                 <div className="space-y-2">
                   {expensePie.sort((a, b) => b.value - a.value).slice(0, 6).map((e, i) => (
                     <div key={e.name} className="flex items-center gap-3">
-                      <div className="h-2.5 rounded-full" style={{ background: [GREEN, LIGHT_GREEN, "#86EFAC", MUTED, "#CBD5E1", "#F1F5F9"][i], width: `${Math.min((e.value / Math.max(...expensePie.map(x => x.value))) * 100, 100)}%` }} />
-                      <span className="text-xs text-[#64748B] flex-shrink-0">{e.name}</span>
-                      <span className="text-xs font-bold text-[#0F172A] ml-auto">KES {e.value.toLocaleString()}</span>
+                      <div className="h-2.5 rounded-full" style={{ background: [GREEN, LIGHT_GREEN, "var(--color-wangari-green-300)", MUTED, "var(--color-wangari-rule)", "var(--color-wangari-sunken)"][i], width: `${Math.min((e.value / Math.max(...expensePie.map(x => x.value))) * 100, 100)}%` }} />
+                      <span className="text-xs text-wangari-muted flex-shrink-0">{e.name}</span>
+                      <span className="text-xs font-bold text-wangari-heading ml-auto">KES {e.value.toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
@@ -287,13 +287,13 @@ export default function ReportsPage() {
         </motion.div>
 
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-[#E5E7EB] hover:shadow-lg transition-shadow">
+          <Card className="border border-wangari-border hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-[#166534]" />
+                <BarChart3 className="h-4 w-4 text-wangari-green-800" />
                 <CardTitle className="text-base font-bold">Feed Consumption</CardTitle>
               </div>
-              <p className="text-xs text-[#94A3B8]">Daily usage in kg</p>
+              <p className="text-xs text-wangari-subtle">Daily usage in kg</p>
             </CardHeader>
             <CardContent className="pt-2">
               <ResponsiveContainer width="100%" height={200}>

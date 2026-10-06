@@ -122,7 +122,7 @@ export function StatCards() {
       {STATS.map((s) => (
         <div
           key={s.label}
-          className={`stat-card group relative overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white p-6 text-center transition-all duration-300 hover:-translate-y-1.5 hover:border-transparent ${s.glow}`}
+          className={`stat-card group relative overflow-hidden rounded-2xl border border-wangari-border bg-white p-6 text-center transition-all duration-300 hover:-translate-y-1.5 hover:border-transparent ${s.glow}`}
         >
           {/* soft accent wash on hover */}
           <div
@@ -140,8 +140,8 @@ export function StatCards() {
             <p className={`text-3xl md:text-[2.1rem] font-extrabold leading-none tracking-tight ${s.text}`}>
               <CountUpNumber stat={s} />
             </p>
-            <p className="mt-2.5 text-sm font-semibold text-[#0F172A]">{s.label}</p>
-            <p className="mt-1.5 hidden md:block text-xs leading-relaxed text-[#94A3B8]">{s.description}</p>
+            <p className="mt-2.5 text-sm font-semibold text-wangari-heading">{s.label}</p>
+            <p className="mt-1.5 hidden md:block text-xs leading-relaxed text-wangari-subtle">{s.description}</p>
           </div>
         </div>
       ))}

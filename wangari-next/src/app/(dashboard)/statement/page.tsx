@@ -169,7 +169,7 @@ export default function StatementPage() {
           <Button size="sm" variant="outline" onClick={() => window.print()} className="h-10 gap-1.5">
             <Printer className="h-4 w-4" /> Print
           </Button>
-          <Button size="sm" onClick={share} className="h-10 gap-1.5 bg-[#166534] hover:bg-[#14532D]">
+          <Button size="sm" onClick={share} className="h-10 gap-1.5 bg-wangari-green-800 hover:bg-wangari-green-900">
             <Share2 className="h-4 w-4" /> Share
           </Button>
         </div>
@@ -209,7 +209,7 @@ export default function StatementPage() {
 
         {loading ? (
           <div className="p-12 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#166534] mx-auto" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800 mx-auto" />
           </div>
         ) : (
           <>

@@ -103,7 +103,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
           className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
         >
           {/* Header */}
-          <div className="p-5 flex items-center justify-between bg-[#166534] text-white">
+          <div className="p-5 flex items-center justify-between bg-wangari-green-800 text-white">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-2xl bg-white/20">
                 <UserCog className="h-6 w-6" />
@@ -128,7 +128,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
             <button
               onClick={() => setTab("profile")}
               className={`py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                tab === "profile" ? "bg-[#166534] text-white shadow-md" : "text-[#64748B]"
+                tab === "profile" ? "bg-wangari-green-800 text-white shadow-md" : "text-wangari-muted"
               }`}
             >
               EDIT DETAILS
@@ -136,7 +136,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
             <button
               onClick={() => setTab("pin")}
               className={`py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                tab === "pin" ? "bg-[#166534] text-white shadow-md" : "text-[#64748B]"
+                tab === "pin" ? "bg-wangari-green-800 text-white shadow-md" : "text-wangari-muted"
               }`}
             >
               CHANGE PIN
@@ -147,17 +147,17 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
             {tab === "profile" && (
               <form onSubmit={saveProfile} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-[#334155]">Full Name</Label>
+                  <Label className="text-xs font-bold text-wangari-text">Full Name</Label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
                     maxLength={80}
-                    className="h-12 rounded-xl border-[#E5E7EB] focus:border-[#166534] font-semibold"
+                    className="h-12 rounded-xl border-wangari-border focus:border-wangari-green-800 font-semibold"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-[#334155] flex items-center gap-1">
+                  <Label className="text-xs font-bold text-wangari-text flex items-center gap-1">
                     <Phone className="h-3.5 w-3.5" /> Phone (for phone + PIN login)
                   </Label>
                   <Input
@@ -165,11 +165,11 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="0712345678"
-                    className="h-12 rounded-xl border-[#E5E7EB] focus:border-[#166534] font-semibold"
+                    className="h-12 rounded-xl border-wangari-border focus:border-wangari-green-800 font-semibold"
                   />
                 </div>
-                <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 text-xs text-[#64748B]">
-                  Role: <span className="font-bold text-[#0F172A]">{profile?.role || "Farm Worker"}</span>
+                <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 text-xs text-wangari-muted">
+                  Role: <span className="font-bold text-wangari-heading">{profile?.role || "Farm Worker"}</span>
                   {" "}• Managed by your farm owner
                 </div>
 
@@ -182,7 +182,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
                 <Button
                   type="submit"
                   disabled={savingProfile}
-                  className="w-full h-12 rounded-2xl bg-[#166534] hover:bg-[#14532D] text-white font-black cursor-pointer"
+                  className="w-full h-12 rounded-2xl bg-wangari-green-800 hover:bg-wangari-green-900 text-white font-black cursor-pointer"
                 >
                   {savingProfile ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
                   {savingProfile ? "SAVING..." : "SAVE PROFILE"}
@@ -197,7 +197,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
                   Changing your PIN signs you out of nothing — it takes effect at your next login.
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-[#334155]">Current PIN</Label>
+                  <Label className="text-xs font-bold text-wangari-text">Current PIN</Label>
                   <Input
                     type="password"
                     inputMode="numeric"
@@ -205,11 +205,11 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
                     value={currentPin}
                     onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))}
                     required
-                    className="h-12 rounded-xl border-[#E5E7EB] focus:border-[#166534] font-black tracking-widest text-lg"
+                    className="h-12 rounded-xl border-wangari-border focus:border-wangari-green-800 font-black tracking-widest text-lg"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-[#334155]">New 4-Digit PIN</Label>
+                  <Label className="text-xs font-bold text-wangari-text">New 4-Digit PIN</Label>
                   <Input
                     type="password"
                     inputMode="numeric"
@@ -217,11 +217,11 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
                     value={newPin}
                     onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
                     required
-                    className="h-12 rounded-xl border-[#E5E7EB] focus:border-[#166534] font-black tracking-widest text-lg"
+                    className="h-12 rounded-xl border-wangari-border focus:border-wangari-green-800 font-black tracking-widest text-lg"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-[#334155]">Confirm New PIN</Label>
+                  <Label className="text-xs font-bold text-wangari-text">Confirm New PIN</Label>
                   <Input
                     type="password"
                     inputMode="numeric"
@@ -229,7 +229,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
                     value={confirmPin}
                     onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
                     required
-                    className="h-12 rounded-xl border-[#E5E7EB] focus:border-[#166534] font-black tracking-widest text-lg"
+                    className="h-12 rounded-xl border-wangari-border focus:border-wangari-green-800 font-black tracking-widest text-lg"
                   />
                 </div>
 
@@ -242,7 +242,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
                 <Button
                   type="submit"
                   disabled={savingPin || newPin.length !== 4}
-                  className="w-full h-12 rounded-2xl bg-[#166534] hover:bg-[#14532D] text-white font-black cursor-pointer disabled:opacity-50"
+                  className="w-full h-12 rounded-2xl bg-wangari-green-800 hover:bg-wangari-green-900 text-white font-black cursor-pointer disabled:opacity-50"
                 >
                   {savingPin ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <KeyRound className="h-4 w-4 mr-2" />}
                   {savingPin ? "CHANGING..." : "CHANGE PIN"}

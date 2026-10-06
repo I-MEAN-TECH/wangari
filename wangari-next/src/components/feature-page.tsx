@@ -34,10 +34,10 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#0B1220] via-[#14532D] to-[#166534] text-white py-28 md:py-36 px-6">
+      <section className="relative overflow-hidden bg-gradient-to-br from-wangari-ink via-wangari-green-900 to-wangari-green-800 text-white py-28 md:py-36 px-6">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-20 -right-20 h-[500px] w-[500px] rounded-full bg-[#22C55E]/10 blur-[120px]" />
-          <div className="absolute -bottom-20 -left-20 h-[400px] w-[400px] rounded-full bg-[#4ADE80]/8 blur-[100px]" />
+          <div className="absolute -top-20 -right-20 h-[500px] w-[500px] rounded-full bg-wangari-green-500/10 blur-[120px]" />
+          <div className="absolute -bottom-20 -left-20 h-[400px] w-[400px] rounded-full bg-wangari-green-400/8 blur-[100px]" />
         </div>
         <div className="relative mx-auto max-w-5xl text-center">
           <motion.div initial="hidden" animate="visible" variants={stagger}>
@@ -52,7 +52,7 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
               {subtitle}
             </motion.p>
             <motion.div variants={fadeUp} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/register" className="group inline-flex items-center gap-3 rounded-full bg-white text-[#166534] px-8 py-4 text-base font-bold hover:bg-[#F0FDF4] transition-all duration-300 shadow-2xl hover:-translate-y-1">
+              <Link href="/register" className="group inline-flex items-center gap-3 rounded-full bg-white text-wangari-green-800 px-8 py-4 text-base font-bold hover:bg-wangari-green-50 transition-all duration-300 shadow-2xl hover:-translate-y-1">
                 Start Free
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1.5" />
               </Link>
@@ -68,7 +68,7 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
       {/* Description */}
       <section className="py-20 px-6">
         <div className="mx-auto max-w-4xl text-center">
-          <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-lg text-[#64748B] leading-relaxed">
+          <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-lg text-wangari-muted leading-relaxed">
             {description}
           </motion.p>
         </div>
@@ -76,12 +76,12 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
 
       {/* Stats */}
       {stats && stats.length > 0 && (
-      <section className="py-16 px-6 bg-[#F0FDF4]">
+      <section className="py-16 px-6 bg-wangari-green-50">
         <div className="mx-auto max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((s) => (
             <motion.div key={s.label} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="text-center">
-              <p className="text-3xl md:text-4xl font-extrabold text-[#166534]">{s.value}</p>
-              <p className="text-sm text-[#64748B] mt-2">{s.label}</p>
+              <p className="text-3xl md:text-4xl font-extrabold text-wangari-green-800">{s.value}</p>
+              <p className="text-sm text-wangari-muted mt-2">{s.label}</p>
             </motion.div>
           ))}
         </div>
@@ -93,14 +93,14 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
         <div className="mx-auto max-w-6xl">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid md:grid-cols-2 gap-8">
             {capabilities.map((c) => (
-              <motion.div key={c.title} variants={fadeUp} whileHover={{ y: -4 }} className="rounded-2xl border border-[#E5E7EB] bg-white p-8 hover:shadow-xl hover:border-[#BBF7D0] transition-all duration-300">
+              <motion.div key={c.title} variants={fadeUp} whileHover={{ y: -4 }} className="rounded-2xl border border-wangari-border bg-white p-8 hover:shadow-xl hover:border-wangari-green-200 transition-all duration-300">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F0FDF4] text-[#166534]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-wangari-green-50 text-wangari-green-800">
                     <CheckCircle2 className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-[#0F172A]">{c.title}</h3>
-                    <p className="mt-2 text-sm text-[#64748B] leading-relaxed">{c.desc}</p>
+                    <h3 className="text-lg font-bold text-wangari-heading">{c.title}</h3>
+                    <p className="mt-2 text-sm text-wangari-muted leading-relaxed">{c.desc}</p>
                   </div>
                 </div>
               </motion.div>
@@ -110,16 +110,16 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
       </section>
 
       {/* Highlights */}
-      <section className="py-20 px-6 bg-[#FAFBFC]">
+      <section className="py-20 px-6 bg-wangari-cream">
         <div className="mx-auto max-w-4xl">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-2xl md:text-3xl font-extrabold text-[#0F172A] text-center mb-12">
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-2xl md:text-3xl font-extrabold text-wangari-heading text-center mb-12">
             Why farmers love this
           </motion.h2>
           <div className="space-y-4">
             {highlights.map((h) => (
-              <motion.div key={h} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="flex items-center gap-4 rounded-xl bg-white border border-[#E5E7EB] p-5">
-                <CheckCircle2 className="h-5 w-5 text-[#166534] shrink-0" />
-                <span className="text-sm font-medium text-[#334155]">{h}</span>
+              <motion.div key={h} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="flex items-center gap-4 rounded-xl bg-white border border-wangari-border p-5">
+                <CheckCircle2 className="h-5 w-5 text-wangari-green-800 shrink-0" />
+                <span className="text-sm font-medium text-wangari-text">{h}</span>
               </motion.div>
             ))}
           </div>
@@ -130,10 +130,10 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
       {testimonial && (
       <section className="py-24 px-6">
         <div className="mx-auto max-w-3xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-2xl border border-[#E5E7EB] bg-white p-10 text-center">
-            <p className="text-lg text-[#334155] leading-relaxed italic mb-6">&ldquo;{testimonial.text}&rdquo;</p>
-            <p className="font-bold text-[#0F172A]">{testimonial.name}</p>
-            <p className="text-sm text-[#64748B]">{testimonial.role}</p>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-2xl border border-wangari-border bg-white p-10 text-center">
+            <p className="text-lg text-wangari-text leading-relaxed italic mb-6">&ldquo;{testimonial.text}&rdquo;</p>
+            <p className="font-bold text-wangari-heading">{testimonial.name}</p>
+            <p className="text-sm text-wangari-muted">{testimonial.role}</p>
           </motion.div>
         </div>
       </section>
@@ -141,20 +141,20 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
 
       {/* The farmer's experience — a day-in-the-life walkthrough */}
       {farmerExperience && (
-        <section className="py-24 px-6 bg-[#0B1220] text-white relative overflow-hidden">
-          <div className="absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full bg-[#22C55E]/10 blur-[130px] pointer-events-none" />
+        <section className="py-24 px-6 bg-wangari-ink text-white relative overflow-hidden">
+          <div className="absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full bg-wangari-green-500/10 blur-[130px] pointer-events-none" />
           <div className="relative mx-auto max-w-4xl">
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-14">
-              <motion.p variants={fadeUp} className="text-sm font-bold uppercase tracking-widest text-[#4ADE80] mb-3">The farmer&apos;s experience</motion.p>
+              <motion.p variants={fadeUp} className="text-sm font-bold uppercase tracking-widest text-wangari-green-400 mb-3">The farmer&apos;s experience</motion.p>
               <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-extrabold tracking-tight">{farmerExperience.heading}</motion.h2>
             </motion.div>
             <div className="relative">
               {/* Timeline spine */}
-              <div className="absolute left-[19px] top-2 bottom-2 w-[2px] bg-gradient-to-b from-[#22C55E]/60 via-[#22C55E]/25 to-transparent hidden sm:block" />
+              <div className="absolute left-[19px] top-2 bottom-2 w-[2px] bg-gradient-to-b from-wangari-green-500/60 via-wangari-green-500/25 to-transparent hidden sm:block" />
               <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="space-y-8">
                 {farmerExperience.steps.map((s, i) => (
                   <motion.div key={s.title} variants={fadeUp} className="relative flex gap-5 sm:gap-7">
-                    <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#22C55E]/40 bg-[#0B1220] text-sm font-extrabold text-[#4ADE80] shadow-[0_0_20px_rgba(34,197,94,0.25)]">
+                    <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-wangari-green-500/40 bg-wangari-ink text-sm font-extrabold text-wangari-green-400 shadow-[0_0_20px_rgba(34,197,94,0.25)]">
                       {i + 1}
                     </div>
                     <div className="flex-1 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
@@ -170,7 +170,7 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
       )}
 
       {/* CTA */}
-      <section className="py-20 px-6 bg-gradient-to-br from-[#0B1220] to-[#166534] text-white text-center">
+      <section className="py-20 px-6 bg-gradient-to-br from-wangari-ink to-wangari-green-800 text-white text-center">
         <div className="mx-auto max-w-3xl">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-4xl font-extrabold tracking-tight">
             Ready to try {title.toLowerCase()}?
@@ -179,7 +179,7 @@ export function FeaturePage({ icon: Icon, badge, title, subtitle, description, h
             Start for free. No credit card required.
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-8">
-            <Link href="/register" className="group inline-flex items-center gap-3 rounded-full bg-white text-[#166534] px-8 py-4 text-base font-bold hover:bg-[#F0FDF4] transition-all duration-300 shadow-2xl hover:-translate-y-1">
+            <Link href="/register" className="group inline-flex items-center gap-3 rounded-full bg-white text-wangari-green-800 px-8 py-4 text-base font-bold hover:bg-wangari-green-50 transition-all duration-300 shadow-2xl hover:-translate-y-1">
               Get Started Free
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1.5" />
             </Link>

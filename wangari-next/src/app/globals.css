@@ -14,11 +14,19 @@
 
   --color-wangari-ink: #0B1220;
   --color-wangari-cream: #FAFBFC;
+  /* Paper: the document reader's sheet — one step warmer than --color-card. */
+  --color-wangari-paper: #FAFAF7;
   --color-wangari-card: #FFFFFF;
   --color-wangari-border: #E5E7EB;
+  /* Hairline rule: one step darker than border, for signature lines and
+     document dividers. */
+  --color-wangari-rule: #CBD5E1;
   --color-wangari-text: #334155;
   --color-wangari-heading: #0F172A;
   --color-wangari-muted: #64748B;
+  /* Sunken/alt-row surfaces: the step between --color-wangari-card and the
+     page background. Named here so dashboard rows stop spelling #F1F5F9. */
+  --color-wangari-sunken: #F1F5F9;
   /* Secondary text grey.
      Was #94A3B8, which measured 2.56:1 on white — below the WCAG AA 4.5:1 floor
      for body text, and this token is used for real copy in 150+ places, not

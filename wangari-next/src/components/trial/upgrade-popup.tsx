@@ -50,7 +50,7 @@ export function UpgradePopup({ open, onClose, moduleName }: UpgradePopupProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-[#0B1220] via-[#14532D] to-[#166534] px-6 py-8 text-center text-white">
+        <div className="relative bg-gradient-to-br from-wangari-ink via-wangari-green-900 to-wangari-green-800 px-6 py-8 text-center text-white">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer border border-white/20"
@@ -84,24 +84,24 @@ export function UpgradePopup({ open, onClose, moduleName }: UpgradePopupProps) {
               key={plan.id}
               className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
                 popular
-                  ? "border-[#166534] bg-[#F0FDF4]"
-                  : "border-[#E5E7EB] hover:border-[#BBF7D0]"
+                  ? "border-wangari-green-800 bg-wangari-green-50"
+                  : "border-wangari-border hover:border-wangari-green-200"
               }`}
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-[#0F172A]">{plan.name.replace(/ (Monthly|Annual)$/, "")}</p>
+                  <p className="text-sm font-bold text-wangari-heading">{plan.name.replace(/ (Monthly|Annual)$/, "")}</p>
                   {popular && (
-                    <span className="text-[9px] font-bold text-[#166534] bg-[#F0FDF4] px-2 py-0.5 rounded-full border border-[#BBF7D0]">
+                    <span className="text-[9px] font-bold text-wangari-green-800 bg-wangari-green-50 px-2 py-0.5 rounded-full border border-wangari-green-200">
                       Popular
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-[#64748B] mt-0.5">
+                <p className="text-xs text-wangari-muted mt-0.5">
                   KES {plan.amountKes.toLocaleString("en-KE")}{period}
                 </p>
                 {plan.description && (
-                  <p className="text-[10px] text-[#64748B] mt-1">{plan.description}</p>
+                  <p className="text-[10px] text-wangari-muted mt-1">{plan.description}</p>
                 )}
               </div>
               <Link
@@ -109,8 +109,8 @@ export function UpgradePopup({ open, onClose, moduleName }: UpgradePopupProps) {
                 onClick={onClose}
                 className={`flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold transition-colors ${
                   popular
-                    ? "bg-[#166534] text-white hover:bg-[#14532D]"
-                    : "border border-[#E5E7EB] text-[#0F172A] hover:border-[#166534] hover:text-[#166534]"
+                    ? "bg-wangari-green-800 text-white hover:bg-wangari-green-900"
+                    : "border border-wangari-border text-wangari-heading hover:border-wangari-green-800 hover:text-wangari-green-800"
                 }`}
               >
                 Choose <ArrowRight className="h-3 w-3" />
@@ -119,7 +119,7 @@ export function UpgradePopup({ open, onClose, moduleName }: UpgradePopupProps) {
             );
           })}
           {plans.length === 0 && (
-            <p className="text-xs text-[#64748B] text-center py-4">Loading plans…</p>
+            <p className="text-xs text-wangari-muted text-center py-4">Loading plans…</p>
           )}
         </div>
 
@@ -128,14 +128,14 @@ export function UpgradePopup({ open, onClose, moduleName }: UpgradePopupProps) {
           <Link
             href="/subscription"
             onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#166534] text-white text-sm font-extrabold hover:bg-[#14532D] transition-colors shadow-md"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-wangari-green-800 text-white text-sm font-extrabold hover:bg-wangari-green-900 transition-colors shadow-md"
           >
             See All Plans & Subscription Options
             <ArrowRight className="h-4 w-4" />
           </Link>
           <button
             onClick={onClose}
-            className="w-full py-2 text-xs font-bold text-[#64748B] hover:text-[#0F172A] transition-colors cursor-pointer text-center"
+            className="w-full py-2 text-xs font-bold text-wangari-muted hover:text-wangari-heading transition-colors cursor-pointer text-center"
           >
             ← Back to Farm Navigation
           </button>

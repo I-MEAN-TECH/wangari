@@ -135,15 +135,15 @@ function NavAction({
       onClick={onClick}
       className={cn(
         "inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#166534] focus-visible:ring-offset-2",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wangari-green-800 focus-visible:ring-offset-2",
         variant === "primary" &&
-          "bg-[#166534] text-white shadow-sm hover:bg-[#14532D]",
+          "bg-wangari-green-800 text-white shadow-sm hover:bg-wangari-green-900",
         variant === "ghost" && !lightOnDark &&
-          "text-[#64748B] hover:bg-[#F0FDF4] hover:text-[#166534]",
+          "text-wangari-muted hover:bg-wangari-green-50 hover:text-wangari-green-800",
         variant === "ghost" && lightOnDark &&
           "text-white/80 hover:bg-white/10 hover:text-white",
         variant === "outline" &&
-          "border border-[#E5E7EB] bg-white text-[#0F172A] shadow-sm hover:bg-[#F0FDF4]",
+          "border border-wangari-border bg-white text-wangari-heading shadow-sm hover:bg-wangari-green-50",
         className,
       )}
     >
@@ -169,7 +169,7 @@ function Brand({
     <Link
       href={brandHref}
       onClick={onNavigate}
-      className={cn("relative z-10 flex shrink-0 items-center gap-2.5 text-lg font-bold tracking-tight", lightOnDark ? "text-white" : "text-[#0F172A]")}
+      className={cn("relative z-10 flex shrink-0 items-center gap-2.5 text-lg font-bold tracking-tight", lightOnDark ? "text-white" : "text-wangari-heading")}
     >
       {logo ? (
         <>{logo}</>
@@ -204,9 +204,9 @@ function MenuTrigger({
       onFocus={onOpen}
       className={cn(
         "flex items-center gap-1 rounded-md px-4 py-2 text-sm font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#166534]",
-        !lightOnDark && "text-[#64748B] hover:bg-[#F0FDF4] hover:text-[#166534]",
-        !lightOnDark && isOpen && "bg-[#F0FDF4] text-[#166534]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wangari-green-800",
+        !lightOnDark && "text-wangari-muted hover:bg-wangari-green-50 hover:text-wangari-green-800",
+        !lightOnDark && isOpen && "bg-wangari-green-50 text-wangari-green-800",
         lightOnDark && "text-white/80 hover:bg-white/10 hover:text-white",
         lightOnDark && isOpen && "bg-white/10 text-white",
       )}
@@ -228,24 +228,24 @@ function FeatureGrid({ items }: { items: MegaMenuItem[] }) {
           <Link
             key={item.title}
             href={item.href}
-            className="group/item flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-[#F0FDF4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#166534]"
+            className="group/item flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-wangari-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wangari-green-800"
           >
             {Icon ? (
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-[#E5E7EB] bg-white shadow-sm transition-colors group-hover/item:border-[#BBF7D0]">
-                <Icon className="size-5 text-[#166534]" />
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-wangari-border bg-white shadow-sm transition-colors group-hover/item:border-wangari-green-200">
+                <Icon className="size-5 text-wangari-green-800" />
               </span>
             ) : null}
             <span className="min-w-0">
               <span className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-[#0F172A]">{item.title}</span>
+                <span className="text-sm font-semibold text-wangari-heading">{item.title}</span>
                 {item.badge ? (
-                  <span className="rounded-full border border-[#BBF7D0] bg-[#F0FDF4] px-1.5 py-0.5 text-[10px] font-medium text-[#166534]">
+                  <span className="rounded-full border border-wangari-green-200 bg-wangari-green-50 px-1.5 py-0.5 text-[10px] font-medium text-wangari-green-800">
                     {item.badge}
                   </span>
                 ) : null}
               </span>
               {item.description ? (
-                <span className="mt-1 block text-xs leading-relaxed text-[#64748B]">
+                <span className="mt-1 block text-xs leading-relaxed text-wangari-muted">
                   {item.description}
                 </span>
               ) : null}
@@ -351,7 +351,7 @@ export function MegaMenuNavbar({
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300",
         isSolid
-          ? "border-b border-[#E5E7EB] bg-white/95 backdrop-blur-md shadow-xs"
+          ? "border-b border-wangari-border bg-white/95 backdrop-blur-md shadow-xs"
           : "bg-gradient-to-b from-black/60 via-black/30 to-transparent backdrop-blur-[2px]",
         className,
       )}
@@ -374,11 +374,11 @@ export function MegaMenuNavbar({
                     onOpen={() => setOpenMenu("features")}
                   />
                   <DesktopDropdown id="features-mega-menu" open={openMenu === "features"} className="w-[640px]">
-                    <div className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-xl">
+                    <div className="rounded-xl border border-wangari-border bg-white p-4 shadow-xl">
                       <FeatureGrid items={features} />
-                      <div className="mt-4 flex items-center justify-between border-t border-[#F0FDF4] px-2 pt-4">
-                        <span className="text-sm text-[#64748B]">See all platform features</span>
-                        <Link href="/about" className="inline-flex items-center gap-1 text-sm font-medium text-[#166534] hover:underline">
+                      <div className="mt-4 flex items-center justify-between border-t border-wangari-green-50 px-2 pt-4">
+                        <span className="text-sm text-wangari-muted">See all platform features</span>
+                        <Link href="/about" className="inline-flex items-center gap-1 text-sm font-medium text-wangari-green-800 hover:underline">
                           Learn more <MoveRight className="size-4" />
                         </Link>
                       </div>
@@ -390,8 +390,8 @@ export function MegaMenuNavbar({
                   <Link
                     href={pricingHref}
                     className={cn(
-                      "inline-flex rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#166534]",
-                      isSolid ? "text-[#64748B] hover:bg-[#F0FDF4] hover:text-[#166534]" : "text-white/80 hover:bg-white/10 hover:text-white",
+                      "inline-flex rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wangari-green-800",
+                      isSolid ? "text-wangari-muted hover:bg-wangari-green-50 hover:text-wangari-green-800" : "text-white/80 hover:bg-white/10 hover:text-white",
                     )}
                   >
                     Pricing
@@ -408,19 +408,19 @@ export function MegaMenuNavbar({
                     onOpen={() => setOpenMenu("resources")}
                   />
                   <DesktopDropdown id="resources-mega-menu" open={openMenu === "resources"} className="w-[520px]">
-                    <div className="grid grid-cols-2 gap-6 rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-xl">
+                    <div className="grid grid-cols-2 gap-6 rounded-xl border border-wangari-border bg-white p-5 shadow-xl">
                       {resourceGroups.map((group) => (
                         <div key={group.title} className="flex flex-col gap-1">
-                          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">{group.title}</h4>
+                          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-wangari-subtle">{group.title}</h4>
                           {group.links.map((item) => {
                             const Icon = item.icon;
                             return (
                               <Link
                                 key={item.title}
                                 href={item.href}
-                                className="flex items-center gap-2 rounded-md p-2 text-sm text-[#64748B] transition-colors hover:bg-[#F0FDF4] hover:text-[#166534]"
+                                className="flex items-center gap-2 rounded-md p-2 text-sm text-wangari-muted transition-colors hover:bg-wangari-green-50 hover:text-wangari-green-800"
                               >
-                                {Icon ? <Icon className="size-4 text-[#166534]" /> : null}
+                                {Icon ? <Icon className="size-4 text-wangari-green-800" /> : null}
                                 {item.title}
                               </Link>
                             );
@@ -435,8 +435,8 @@ export function MegaMenuNavbar({
                   <Link
                     href="/about"
                     className={cn(
-                      "inline-flex rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#166534]",
-                      isSolid ? "text-[#64748B] hover:bg-[#F0FDF4] hover:text-[#166534]" : "text-white/80 hover:bg-white/10 hover:text-white",
+                      "inline-flex rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wangari-green-800",
+                      isSolid ? "text-wangari-muted hover:bg-wangari-green-50 hover:text-wangari-green-800" : "text-white/80 hover:bg-white/10 hover:text-white",
                     )}
                   >
                     About
@@ -457,9 +457,9 @@ export function MegaMenuNavbar({
               aria-expanded={mobileOpen}
               onClick={() => setMobileOpen(true)}
               className={cn(
-                "flex h-11 w-11 min-h-[48px] min-w-[48px] items-center justify-center rounded-xl transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#166534] lg:hidden cursor-pointer",
+                "flex h-11 w-11 min-h-[48px] min-w-[48px] items-center justify-center rounded-xl transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wangari-green-800 lg:hidden cursor-pointer",
                 isSolid
-                  ? "text-[#0F172A] bg-gray-100/80 hover:bg-[#F0FDF4] hover:text-[#166534]"
+                  ? "text-wangari-heading bg-gray-100/80 hover:bg-wangari-green-50 hover:text-wangari-green-800"
                   : "text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm"
               )}
             >
@@ -488,14 +488,14 @@ export function MegaMenuNavbar({
           style={{ animation: "slideInRight 0.3s ease-out forwards" }}
         >
             {/* Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between bg-white border-b border-[#E5E7EB] px-6 py-4">
+            <div className="sticky top-0 z-10 flex items-center justify-between bg-white border-b border-wangari-border px-6 py-4">
               <Brand brandName={brandName} brandHref={brandHref} logo={logo} onNavigate={closeMobile} />
               <button
                 ref={closeButtonRef}
                 type="button"
                 onClick={closeMobile}
                 aria-label="Close navigation menu"
-                className="flex size-10 items-center justify-center rounded-md text-[#64748B] transition-colors hover:bg-[#F0FDF4]"
+                className="flex size-10 items-center justify-center rounded-md text-wangari-muted transition-colors hover:bg-wangari-green-50"
               >
                 <X className="size-5" />
               </button>
@@ -503,7 +503,7 @@ export function MegaMenuNavbar({
 
             {/* Navigation links */}
             <div className="px-6 py-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-3">Features</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-wangari-subtle mb-3">Features</p>
               <div className="space-y-1 mb-6">
                 {features.map((item) => {
                   const Icon = item.icon;
@@ -512,22 +512,22 @@ export function MegaMenuNavbar({
                       key={item.title}
                       href={item.href}
                       onClick={closeMobile}
-                      className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#334155] hover:bg-[#F0FDF4] hover:text-[#166534] transition-colors"
+                      className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-wangari-text hover:bg-wangari-green-50 hover:text-wangari-green-800 transition-colors"
                     >
-                      {Icon && <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F0FDF4] text-[#166534]"><Icon className="size-4" /></div>}
+                      {Icon && <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-wangari-green-50 text-wangari-green-800"><Icon className="size-4" /></div>}
                       <span className="font-medium">{item.title}</span>
                     </Link>
                   );
                 })}
               </div>
 
-              <div className="border-t border-[#E5E7EB] pt-4 mb-4">
-                <Link href={pricingHref} onClick={closeMobile} className="flex items-center rounded-xl px-3 py-3 text-sm font-medium text-[#0F172A] hover:bg-[#F0FDF4] hover:text-[#166534] transition-colors">
+              <div className="border-t border-wangari-border pt-4 mb-4">
+                <Link href={pricingHref} onClick={closeMobile} className="flex items-center rounded-xl px-3 py-3 text-sm font-medium text-wangari-heading hover:bg-wangari-green-50 hover:text-wangari-green-800 transition-colors">
                   Pricing
                 </Link>
               </div>
 
-              <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-3">Resources</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-wangari-subtle mb-3">Resources</p>
               <div className="space-y-1 mb-6">
                 {resourceGroups.flatMap((group) =>
                   group.links.map((item) => {
@@ -537,9 +537,9 @@ export function MegaMenuNavbar({
                         key={`${group.title}-${item.title}`}
                         href={item.href}
                         onClick={closeMobile}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[#64748B] hover:bg-[#F0FDF4] hover:text-[#166534] transition-colors"
+                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-wangari-muted hover:bg-wangari-green-50 hover:text-wangari-green-800 transition-colors"
                       >
-                        {Icon && <Icon className="size-4 text-[#166534] shrink-0" />}
+                        {Icon && <Icon className="size-4 text-wangari-green-800 shrink-0" />}
                         <span>{item.title}</span>
                       </Link>
                     );
@@ -547,15 +547,15 @@ export function MegaMenuNavbar({
                 )}
               </div>
 
-              <div className="border-t border-[#E5E7EB] pt-4">
-                <Link href="/about" onClick={closeMobile} className="flex items-center rounded-xl px-3 py-3 text-sm font-medium text-[#0F172A] hover:bg-[#F0FDF4] hover:text-[#166534] transition-colors">
+              <div className="border-t border-wangari-border pt-4">
+                <Link href="/about" onClick={closeMobile} className="flex items-center rounded-xl px-3 py-3 text-sm font-medium text-wangari-heading hover:bg-wangari-green-50 hover:text-wangari-green-800 transition-colors">
                   About
                 </Link>
               </div>
             </div>
 
             {/* Bottom buttons */}
-            <div className="sticky bottom-0 bg-white border-t border-[#E5E7EB] px-6 py-4 grid grid-cols-2 gap-3">
+            <div className="sticky bottom-0 bg-white border-t border-wangari-border px-6 py-4 grid grid-cols-2 gap-3">
               <NavAction href={loginHref} variant="outline" className="w-full justify-center" onClick={closeMobile}>Sign In</NavAction>
               <NavAction href={ctaHref} className="w-full justify-center" onClick={closeMobile}>{ctaLabel}</NavAction>
             </div>

@@ -125,7 +125,7 @@ export function DocReader({
   const headings = doc.sections.map((s, i) => ({ heading: s.heading, anchor: `sec-${i}` }));
 
   return (
-    <div className="relative min-h-screen bg-[#FAFAF7]">
+    <div className="relative min-h-screen bg-wangari-paper">
       {/* Reading progress bar */}
       <div className="fixed inset-x-0 top-0 z-50 h-1 bg-transparent">
         <div className="h-full bg-gradient-to-r from-emerald-600 to-teal-500 transition-[width] duration-150" style={{ width: `${progress}%` }} />

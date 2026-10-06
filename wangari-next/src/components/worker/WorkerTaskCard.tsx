@@ -34,7 +34,7 @@ export function WorkerTaskCard({ task, onToggleComplete }: WorkerTaskCardProps) 
       className={`p-5 rounded-3xl border-3 transition-all cursor-pointer shadow-sm flex items-center justify-between gap-4 ${
         task.isCompleted
           ? "bg-emerald-50/60 border-emerald-300 text-emerald-950"
-          : "bg-white border-gray-200 hover:border-emerald-500 text-[#0F172A]"
+          : "bg-white border-gray-200 hover:border-emerald-500 text-wangari-heading"
       }`}
     >
       <div className="flex items-center gap-4 min-w-0">
@@ -42,7 +42,7 @@ export function WorkerTaskCard({ task, onToggleComplete }: WorkerTaskCardProps) 
           className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${
             task.isCompleted
               ? "bg-emerald-600 text-white"
-              : "bg-gray-100 text-[#64748B]"
+              : "bg-gray-100 text-wangari-muted"
           }`}
         >
           <Icon className="h-6 w-6 stroke-[2.5]" />
@@ -50,13 +50,13 @@ export function WorkerTaskCard({ task, onToggleComplete }: WorkerTaskCardProps) 
         <div className="min-w-0">
           <h4
             className={`text-base font-extrabold truncate ${
-              task.isCompleted ? "line-through text-emerald-800" : "text-[#0F172A]"
+              task.isCompleted ? "line-through text-emerald-800" : "text-wangari-heading"
             }`}
           >
             {task.title}
           </h4>
           {task.description && (
-            <p className="text-xs text-[#64748B] truncate mt-0.5">{task.description}</p>
+            <p className="text-xs text-wangari-muted truncate mt-0.5">{task.description}</p>
           )}
         </div>
       </div>

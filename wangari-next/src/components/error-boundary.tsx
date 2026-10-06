@@ -36,13 +36,13 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-500 mb-4">
             <AlertTriangle className="h-6 w-6" />
           </div>
-          <h3 className="text-sm font-bold text-[#0F172A] mb-1">Something went wrong</h3>
-          <p className="text-xs text-[#64748B] mb-4 max-w-sm">
+          <h3 className="text-sm font-bold text-wangari-heading mb-1">Something went wrong</h3>
+          <p className="text-xs text-wangari-muted mb-4 max-w-sm">
             An unexpected error occurred. Please try refreshing the page.
           </p>
           <button
             onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#166534] text-white text-xs font-bold hover:bg-[#14532D] cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-wangari-green-800 text-white text-xs font-bold hover:bg-wangari-green-900 cursor-pointer"
           >
             <RefreshCw className="h-3.5 w-3.5" /> Refresh
           </button>

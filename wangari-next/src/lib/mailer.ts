@@ -39,7 +39,7 @@ export async function sendPasswordResetEmail(email: string, resetToken: string) 
     <p style="margin:0 0 24px;font-size:15px;color:#64748b;">Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr><td align="center"><a href="${resetUrl}" style="display:inline-block;background:#166534;color:#fff;font-size:15px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:8px;">Reset Password</a></td></tr></table>
     <p style="margin:0;font-size:13px;color:#64748b;">If you didn't request this, you can safely ignore this email.</p>
-    <p style="margin:8px 0 0;font-size:12px;color:#94a3b8;word-break:break-all;">Button not working? Paste this URL: <a href="${resetUrl}" style="color:#166534;">${resetUrl}</a></p>
+    <p style="margin:8px 0 0;font-size:12px;color:#5F6E85;word-break:break-all;">Button not working? Paste this URL: <a href="${resetUrl}" style="color:#166534;">${resetUrl}</a></p>
   `);
   await transporter.sendMail({ from: FROM, to: email, subject: 'Reset your Wangari password', html });
 }

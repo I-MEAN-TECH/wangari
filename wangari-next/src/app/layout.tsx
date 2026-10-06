@@ -110,7 +110,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans antialiased text-[#334155] bg-[#FAFBFC]" suppressHydrationWarning>
+      <body className="font-sans antialiased text-wangari-text bg-wangari-cream" suppressHydrationWarning>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

@@ -68,15 +68,15 @@ export function EarlyAccessPanel() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4 }}
-            className="rounded-2xl border border-[#BBF7D0] bg-white p-7"
+            className="rounded-2xl border border-wangari-green-200 bg-white p-7"
           >
-            <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#DCFCE7]">
-              <Icon className="h-5 w-5 text-[#166534]" aria-hidden />
+            <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-wangari-green-100">
+              <Icon className="h-5 w-5 text-wangari-green-800" aria-hidden />
             </div>
-            <h3 className="mb-2 text-base font-extrabold text-[#0F172A]">
+            <h3 className="mb-2 text-base font-extrabold text-wangari-heading">
               {f.title}
             </h3>
-            <p className="text-sm leading-relaxed text-[#475569]">{f.body}</p>
+            <p className="text-sm leading-relaxed text-tone-neutral-text">{f.body}</p>
           </motion.div>
         );
       })}
@@ -89,10 +89,10 @@ export function EarlyAccessPanel() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.4 }}
-        className="sm:col-span-2 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-7"
+        className="sm:col-span-2 rounded-2xl border border-tone-warn-border bg-tone-warn-bg p-7"
       >
         <div className="flex items-start gap-4">
-          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#92400E]" aria-hidden />
+          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-tone-warn-text" aria-hidden />
           <div>
             <h3 className="mb-1.5 text-base font-extrabold text-[#78350F]">
               Where we honestly are

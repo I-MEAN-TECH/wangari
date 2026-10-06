@@ -23,7 +23,7 @@ export function Toast({ message, type, onClose }: ToastProps) {
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
       className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-xl border px-4 py-3 shadow-xl ${
         type === "success"
-          ? "border-[#BBF7D0] bg-[#F0FDF4] text-[#166534]"
+          ? "border-wangari-green-200 bg-wangari-green-50 text-wangari-green-800"
           : "border-red-200 bg-red-50 text-red-700"
       }`}
     >
