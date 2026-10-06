@@ -4,6 +4,7 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { Download, FileText, Table, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BTN_CANCEL, BTN_TOOL } from "@/components/ui/patterns";
 
 interface ExportReportProps {
   flock: any;
@@ -71,7 +72,7 @@ export function ExportReport({ flock, onClose }: ExportReportProps) {
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">Export Report</h2>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+          <button onClick={onClose} className={BTN_TOOL}>
             <X className="h-5 w-5 text-gray-400" />
           </button>
         </div>
@@ -113,7 +114,7 @@ export function ExportReport({ flock, onClose }: ExportReportProps) {
         </div>
 
         <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-white border border-gray-200 transition-colors cursor-pointer">
+          <button onClick={onClose} className={BTN_CANCEL}>
             Close
           </button>
         </div>

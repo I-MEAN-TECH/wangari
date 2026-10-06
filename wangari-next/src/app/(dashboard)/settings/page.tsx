@@ -16,6 +16,7 @@ import { SyncStatus } from "@/components/settings/SyncStatus";
 import { FarmProfileEditor } from "@/components/settings/FarmProfileEditor";
 import { useAuth } from "@/hooks/useAuth";
 import { linkGoogleAccount, mfaStatus, mfaSetup, mfaVerify, mfaDisable } from "@/lib/auth-client";
+import { CARD_PANEL_XL, CARD_ROW_CREAM } from "@/components/ui/patterns";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
@@ -392,7 +393,7 @@ export default function SettingsPage() {
                 {MODULES.map(m => {
                   const enabled = getSetting(m.key, "true") === "true";
                   return (
-                    <div key={m.key} className="flex items-center justify-between p-3 rounded-xl border border-wangari-border hover:bg-wangari-cream transition-colors">
+                    <div key={m.key} className={CARD_ROW_CREAM}>
                       <div className="flex items-center gap-3">
                         <div className={enabled ? "flex h-9 w-9 items-center justify-center rounded-xl bg-wangari-green-50 text-wangari-green-800" : "flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-400"}>{MODULE_ICONS[m.icon as string]}</div>
                         <div><p className="text-sm font-bold text-wangari-heading">{m.label}</p><p className="text-[10px] text-wangari-subtle">{m.desc}</p></div>
@@ -417,7 +418,7 @@ export default function SettingsPage() {
                 {NOTIFICATIONS.map(n => {
                   const enabled = getSetting(n.key, String(n.default)) === "true";
                   return (
-                    <div key={n.key} className="flex items-center justify-between p-3 rounded-xl border border-wangari-border hover:bg-wangari-cream transition-colors">
+                    <div key={n.key} className={CARD_ROW_CREAM}>
                       <div><p className="text-sm font-bold text-wangari-heading">{n.label}</p><p className="text-[10px] text-wangari-subtle">{n.desc}</p></div>
                       <button onClick={() => setSetting(n.key, enabled ? "false" : "true")}
                         className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${enabled ? "bg-wangari-green-800" : "bg-gray-300"}`}>
@@ -471,15 +472,15 @@ export default function SettingsPage() {
 
                 {/* One-time recovery codes display */}
                 {recoveryCodes && (
-                  <div className="rounded-xl bg-amber-50 border border-amber-300 p-4">
+                  <div className="rounded-xl bg-tone-warn-bg border border-amber-300 p-4">
                     <p className="text-sm font-bold text-amber-900 mb-1">Save your recovery codes now</p>
-                    <p className="text-[11px] text-amber-700 mb-3">
+                    <p className="text-[11px] text-tone-warn-text mb-3">
                       If you lose your phone, a recovery code is the only other way in.
                       Each works once. These are shown <strong>only this once</strong>.
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {recoveryCodes.map((c) => (
-                        <code key={c} className="bg-white border border-amber-200 rounded-lg px-2 py-1.5 text-center font-mono text-xs text-amber-900 select-all">{c}</code>
+                        <code key={c} className="bg-white border border-tone-warn-border rounded-lg px-2 py-1.5 text-center font-mono text-xs text-amber-900 select-all">{c}</code>
                       ))}
                     </div>
                     <Button
@@ -497,7 +498,7 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-bold text-wangari-heading">Two-Factor Authentication</p>
                     {mfaEnabled !== null && (
-                      <Badge className={mfaEnabled ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}>
+                      <Badge className={mfaEnabled ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-gray-100 text-gray-500 border-wangari-border"}>
                         {mfaEnabled ? "Enabled" : "Off"}
                       </Badge>
                     )}
@@ -610,7 +611,7 @@ export default function SettingsPage() {
                               }}
                               disabled={mfaBusy || !disablePw || !disableCode}
                               variant="outline"
-                              className="border-red-300 text-red-600 hover:bg-red-50 cursor-pointer"
+                              className="border-red-300 text-red-600 hover:bg-tone-bad-bg cursor-pointer"
                             >
                               Disable
                             </Button>
@@ -676,20 +677,20 @@ export default function SettingsPage() {
             <Card className="border border-wangari-border">
               <CardHeader><CardTitle className="flex items-center gap-2 text-base font-bold"><Download className="h-4 w-4 text-wangari-green-800" /> Data Management</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-xl border border-wangari-border p-4">
+                <div className={CARD_PANEL_XL}>
                   <p className="text-sm font-bold text-wangari-heading">Export All Farm Data</p>
                   <p className="text-xs text-wangari-subtle mt-1">Download a complete backup of your farm data for loan applications or records.</p>
                   <Button onClick={handleExportAll} variant="outline" className="mt-3 border-wangari-green-800 text-wangari-green-800 hover:bg-wangari-green-50 cursor-pointer"><Download className="h-4 w-4 mr-2" />Export Data</Button>
                 </div>
-                <div className="rounded-xl border border-wangari-border p-4">
+                <div className={CARD_PANEL_XL}>
                   <p className="text-sm font-bold text-wangari-heading">Import Data</p>
                   <p className="text-xs text-wangari-subtle mt-1">Upload CSV files to import livestock, production, sales, and more.</p>
                   <Button onClick={() => window.location.href = "/import"} variant="outline" className="mt-3 border-wangari-green-800 text-wangari-green-800 hover:bg-wangari-green-50 cursor-pointer"><Download className="h-4 w-4 mr-2" />Import Data</Button>
                 </div>
-                <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-                  <p className="text-sm font-bold text-red-700">Danger Zone</p>
+                <div className="rounded-xl border border-tone-bad-border bg-tone-bad-bg p-4">
+                  <p className="text-sm font-bold text-badge-red-text">Danger Zone</p>
                   <p className="text-xs text-red-500 mt-1">Permanently delete your account and all farm data. This cannot be undone.</p>
-                  <Button variant="outline" className="mt-3 border-red-300 text-red-600 hover:bg-red-100 cursor-pointer"><Trash2 className="h-4 w-4 mr-2" />Delete Account</Button>
+                  <Button variant="outline" className="mt-3 border-red-300 text-red-600 hover:bg-badge-red-bg cursor-pointer"><Trash2 className="h-4 w-4 mr-2" />Delete Account</Button>
                 </div>
               </CardContent>
             </Card>

@@ -292,11 +292,11 @@ export default function VaccinationsPage() {
               {overdue.length > 0 && (
                 <div className="space-y-1.5 mb-3">
                   {overdue.map(r => (
-                    <div key={r.id} className="flex items-center justify-between p-2.5 rounded-xl bg-red-50 border border-red-200">
+                    <div key={r.id} className="flex items-center justify-between p-2.5 rounded-xl bg-tone-bad-bg border border-tone-bad-border">
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
                         <div>
-                          <p className="text-xs font-bold text-red-700">{r.vaccineName}</p>
+                          <p className="text-xs font-bold text-badge-red-text">{r.vaccineName}</p>
                           <p className="text-[10px] text-red-500">{r.flock?.name} — overdue</p>
                         </div>
                       </div>
@@ -308,7 +308,7 @@ export default function VaccinationsPage() {
               {upcoming.length > 0 ? (
                 <div className="space-y-1.5">
                   {upcoming.map(r => (
-                    <div key={r.id} className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50 border border-amber-200">
+                    <div key={r.id} className="flex items-center justify-between p-2.5 rounded-xl bg-tone-warn-bg border border-tone-warn-border">
                       <div className="flex items-center gap-2">
                         <Clock className="h-3.5 w-3.5 text-amber-600" />
                         <div>
@@ -366,12 +366,12 @@ export default function VaccinationsPage() {
             const cleanNotes = (r.notes || "").replace(/ \| Cost:.*$/, "").trim();
             return (
               <motion.div key={r.id} variants={fadeUp}>
-                <Card className={`border ${isOverdue ? "border-red-300 bg-red-50/30" : isPending ? "border-amber-200" : "border-wangari-border"}`}>
+                <Card className={`border ${isOverdue ? "border-red-300 bg-tone-bad-bg/30" : isPending ? "border-tone-warn-border" : "border-wangari-border"}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <Badge className={isPending ? (isOverdue ? "bg-red-100 text-red-700 border-red-200" : "bg-amber-50 text-amber-700 border-amber-200") : "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200"}>
+                          <Badge className={isPending ? (isOverdue ? "bg-badge-red-bg text-badge-red-text border-tone-bad-border" : "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border") : "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200"}>
                             {isPending ? "Pending" : "Done"}
                           </Badge>
                           <span className="text-[10px] text-wangari-subtle">
@@ -382,7 +382,7 @@ export default function VaccinationsPage() {
                         <p className="text-[10px] text-wangari-muted">{r.flock?.name || "Unknown group"}</p>
                         {/* Metadata chips */}
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
-                          {costMatch && <span className="inline-flex items-center gap-1 text-[9px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full"><DollarSign className="h-2.5 w-2.5" />KES {costMatch[1]}/dose</span>}
+                          {costMatch && <span className="inline-flex items-center gap-1 text-[9px] bg-blue-50 text-badge-blue-text px-2 py-0.5 rounded-full"><DollarSign className="h-2.5 w-2.5" />KES {costMatch[1]}/dose</span>}
                           {vetMatch && <span className="inline-flex items-center gap-1 text-[9px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full"><User className="h-2.5 w-2.5" />{vetMatch[1].trim()}</span>}
                           {batchMatch && <span className="inline-flex items-center gap-1 text-[9px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"><Hash className="h-2.5 w-2.5" />{batchMatch[1].trim()}</span>}
                         </div>

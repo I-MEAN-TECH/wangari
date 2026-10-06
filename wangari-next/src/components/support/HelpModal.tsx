@@ -3,6 +3,7 @@
 import * as React from "react";
 import { LifeBuoy, X, Send, CheckCircle2 } from "lucide-react";
 import api from "@/lib/api-client";
+import { ALERT_DANGER_SM } from "@/components/ui/patterns";
 
 /**
  * Customer help modal — opens a support ticket straight into the admin
@@ -102,7 +103,7 @@ export function HelpModal({ open, onOpenChange }: { open: boolean; onOpenChange:
                     onClick={() => setPriority(p)}
                     className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
                       priority === p
-                        ? p === "high" ? "bg-red-100 text-red-700" : p === "normal" ? "bg-wangari-green-100 text-wangari-green-800" : "bg-gray-100 text-gray-600"
+                        ? p === "high" ? "bg-badge-red-bg text-badge-red-text" : p === "normal" ? "bg-wangari-green-100 text-wangari-green-800" : "bg-gray-100 text-gray-600"
                         : "bg-gray-50 text-gray-500 hover:bg-gray-100"
                     }`}
                   >
@@ -111,7 +112,7 @@ export function HelpModal({ open, onOpenChange }: { open: boolean; onOpenChange:
                 ))}
               </div>
             </div>
-            {error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>}
+            {error && <div className={ALERT_DANGER_SM}>{error}</div>}
             <button
               type="submit"
               disabled={busy || !subject.trim() || !body.trim()}

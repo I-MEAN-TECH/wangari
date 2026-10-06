@@ -50,11 +50,11 @@ function getActionIcon(action: string) {
 function getActionColor(action: string) {
   switch (action.toLowerCase()) {
     case "create": return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    case "delete": return "bg-red-50 text-red-700 border-red-200";
-    case "update": return "bg-amber-50 text-amber-700 border-amber-200";
-    case "view": return "bg-blue-50 text-blue-700 border-blue-200";
+    case "delete": return "bg-tone-bad-bg text-badge-red-text border-tone-bad-border";
+    case "update": return "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border";
+    case "view": return "bg-blue-50 text-badge-blue-text border-blue-200";
     case "login": return "bg-violet-50 text-violet-700 border-violet-200";
-    default: return "bg-gray-50 text-gray-700 border-gray-200";
+    default: return "bg-gray-50 text-gray-700 border-wangari-border";
   }
 }
 

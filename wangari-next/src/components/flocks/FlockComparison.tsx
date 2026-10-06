@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import api from "@/lib/api-client";
 import { getSpeciesCategories } from "@/lib/species-templates";
 import { speciesFor } from "@/lib/species-resolve";
+import { BTN_CANCEL_BLOCK, BTN_TOOL } from "@/components/ui/patterns";
 
 interface FlockComparisonProps {
   flockIds: number[];
@@ -90,7 +91,7 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 text-center" onClick={(e) => e.stopPropagation()}>
           <p className="text-sm text-tone-warn-text">{error}</p>
-          <button onClick={onClose} className="mt-4 px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 border border-gray-200 cursor-pointer">
+          <button onClick={onClose} className={BTN_CANCEL_BLOCK}>
             Close
           </button>
         </div>
@@ -103,7 +104,7 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 text-center" onClick={(e) => e.stopPropagation()}>
           <p className="text-sm text-gray-400">Select at least 2 flocks to compare</p>
-          <button onClick={onClose} className="mt-4 px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 border border-gray-200 cursor-pointer">
+          <button onClick={onClose} className={BTN_CANCEL_BLOCK}>
             Close
           </button>
         </div>
@@ -141,7 +142,7 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
             </h2>
             <p className="text-xs text-gray-400 mt-0.5">Comparing {data.length} flocks side by side</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+          <button onClick={onClose} className={BTN_TOOL}>
             <X className="h-5 w-5 text-gray-400" />
           </button>
         </div>
@@ -185,7 +186,7 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
               {
                 label: "Mortality Rate",
                 values: data.map((f) => f.mortalityRate),
-                render: (v: number) => <span className={cn("font-bold", v <= 3 ? "text-emerald-700" : v <= 5 ? "text-amber-700" : "text-red-700")}>{v.toFixed(1)}%</span>,
+                render: (v: number) => <span className={cn("font-bold", v <= 3 ? "text-emerald-700" : v <= 5 ? "text-tone-warn-text" : "text-badge-red-text")}>{v.toFixed(1)}%</span>,
                 best: mortalityIdx,
               },
               {
@@ -240,7 +241,7 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
               {
                 label: "Survival Rate",
                 values: data.map((f) => f.currentCount / Math.max(f.initialCount, 1)),
-                render: (v: number) => <span className={cn("font-bold", v >= 0.95 ? "text-emerald-700" : v >= 0.9 ? "text-amber-700" : "text-red-700")}>{(v * 100).toFixed(1)}%</span>,
+                render: (v: number) => <span className={cn("font-bold", v >= 0.95 ? "text-emerald-700" : v >= 0.9 ? "text-tone-warn-text" : "text-badge-red-text")}>{(v * 100).toFixed(1)}%</span>,
                 best: survivalIdx,
               },
             ] as any[]).map((row: any) => (

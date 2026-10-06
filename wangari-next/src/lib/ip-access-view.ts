@@ -136,7 +136,7 @@ export function previewTone(r: PreviewResult): { cls: string; text: string } {
   }
   if (r.effective === "allow" && r.overriddenBy) {
     return {
-      cls: "bg-badge-yellow-bg text-amber-700",
+      cls: "bg-badge-yellow-bg text-tone-warn-text",
       text: `An existing allow rule (${r.overriddenBy}) wins, so this block would have no effect.`,
     };
   }

@@ -54,7 +54,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
   // NOT get someone else's feed plan.
   if (!species) {
     return (
-      <Card className="border-2 border-amber-200 bg-amber-50/40 shadow-xl">
+      <Card className="border-2 border-tone-warn-border bg-tone-warn-bg/40 shadow-xl">
         <CardContent className="p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white">
@@ -64,7 +64,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
               <p className="text-sm font-bold text-amber-900">
                 {flock.name} added
               </p>
-              <p className="text-xs text-amber-700">
+              <p className="text-xs text-tone-warn-text">
                 {flock.initialCount} animals recorded
               </p>
             </div>
@@ -207,19 +207,19 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
 
                   {/* Feed info cards */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">
+                    <div className="p-3 rounded-xl bg-tone-warn-bg border border-amber-100">
                       <p className="text-[10px] font-bold uppercase text-amber-600">Feed Type</p>
                       <p className="text-sm font-bold text-amber-900 mt-1">
                         {species.feedTypes[0] || "—"}
                       </p>
                     </div>
-                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">
+                    <div className="p-3 rounded-xl bg-tone-warn-bg border border-amber-100">
                       <p className="text-[10px] font-bold uppercase text-amber-600">Per Animal/Day</p>
                       <p className="text-sm font-bold text-amber-900 mt-1">
                         {species.feedPerDay}
                       </p>
                     </div>
-                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">
+                    <div className="p-3 rounded-xl bg-tone-warn-bg border border-amber-100">
                       <p className="text-[10px] font-bold uppercase text-amber-600">Water/Day</p>
                       <p className="text-sm font-bold text-amber-900 mt-1">
                         {species.waterPerDay}
@@ -245,7 +245,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
                           key={i}
                           className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 text-xs"
                         >
-                          <div className="h-5 w-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-[9px] font-bold">
+                          <div className="h-5 w-5 rounded-full bg-amber-100 text-tone-warn-text flex items-center justify-center text-[9px] font-bold">
                             {i + 1}
                           </div>
                           <span className="text-gray-700">{ft}</span>
@@ -319,7 +319,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
 
                   {/* Next vaccination highlight */}
                   {nextVax && nextVaxDate && (
-                    <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                    <div className="p-4 rounded-xl bg-blue-50 border border-badge-blue-bg">
                       <div className="flex items-center gap-2 mb-1">
                         <Bell className="h-4 w-4 text-blue-600" />
                         <p className="text-xs font-bold text-blue-800">First vaccination due:</p>
@@ -350,7 +350,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
                           key={i}
                           className={`flex items-center gap-3 p-2.5 rounded-xl text-xs transition-all ${
                             isNext
-                              ? "bg-blue-50 border border-blue-200 ring-1 ring-blue-100"
+                              ? "bg-blue-50 border border-blue-200 ring-1 ring-badge-blue-bg"
                               : isPast
                               ? "bg-gray-50 opacity-60"
                               : "bg-gray-50"
@@ -359,7 +359,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
                           <div
                             className={`h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
                               isPast
-                                ? "bg-gray-200 text-gray-500"
+                                ? "bg-wangari-border text-gray-500"
                                 : isNext
                                 ? "bg-blue-500 text-white"
                                 : "bg-emerald-100 text-emerald-700"
@@ -386,12 +386,12 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
                     })}
                   </div>
 
-                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">
+                  <div className="p-3 rounded-xl bg-tone-warn-bg border border-amber-100">
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-xs font-bold text-amber-800">Important</p>
-                        <p className="text-[11px] text-amber-700 mt-0.5">
+                        <p className="text-[11px] text-tone-warn-text mt-0.5">
                           Vaccinations are auto-scheduled based on{" "}
                           {flock.hatchDate ? "the hatch date" : "today"}. You can adjust dates
                           anytime from the Vaccinations page.
@@ -471,7 +471,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
                     </div>
 
                     {/* Break-even */}
-                    <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                    <div className="p-4 rounded-xl bg-blue-50 border border-badge-blue-bg">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="h-8 w-8 rounded-lg bg-blue-500 text-white flex items-center justify-center">
                           <DollarSign className="h-4 w-4" />
@@ -492,7 +492,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
                             year: "numeric",
                           })}
                         </p>
-                        <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px]">
+                        <Badge className="bg-badge-blue-bg text-badge-blue-text border-blue-200 text-[9px]">
                           ~{species.breakEvenMonths} months
                         </Badge>
                       </div>
@@ -520,7 +520,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
                             {species.revenuePerUnit || "—"}
                           </span>
                         </div>
-                        <div className="flex justify-between text-xs border-t border-gray-200 pt-1.5">
+                        <div className="flex justify-between text-xs border-t border-wangari-border pt-1.5">
                           <span className="text-gray-400">Skill level</span>
                           <span className="font-bold text-gray-700">{species.skillLevel}</span>
                         </div>
@@ -528,7 +528,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
                     </div>
 
                     {/* Health alerts */}
-                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">
+                    <div className="p-3 rounded-xl bg-tone-warn-bg border border-amber-100">
                       <p className="text-[10px] font-bold uppercase text-amber-600 mb-1.5">
                         Common Health Issues to Watch
                       </p>
@@ -536,7 +536,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
                         {species.commonHealthIssues.slice(0, 4).map((issue, i) => (
                           <Badge
                             key={i}
-                            className="bg-amber-100 text-amber-700 border-amber-200 text-[9px]"
+                            className="bg-amber-100 text-tone-warn-text border-tone-warn-border text-[9px]"
                           >
                             {issue}
                           </Badge>

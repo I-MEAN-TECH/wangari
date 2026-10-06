@@ -166,10 +166,10 @@ export function BiometricSettings() {
 
       {/* Unmapped users */}
       {unmapped.length > 0 && (
-        <Card className="border border-amber-200 bg-amber-50">
+        <Card className="border border-tone-warn-border bg-tone-warn-bg">
           <CardHeader><CardTitle className="text-sm font-bold text-amber-800">⚠️ Unmapped Device Users ({unmapped.length})</CardTitle></CardHeader>
           <CardContent>
-            <p className="text-xs text-amber-700 mb-3">These device user IDs need to be mapped to workers in your system</p>
+            <p className="text-xs text-tone-warn-text mb-3">These device user IDs need to be mapped to workers in your system</p>
             <div className="space-y-2">
               {unmapped.map((log: any, i: number) => (
                 <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white border border-amber-100">
@@ -177,7 +177,7 @@ export function BiometricSettings() {
                     <p className="text-xs font-bold text-wangari-heading">Device ID: {log.deviceUserId}</p>
                     <p className="text-[10px] text-wangari-subtle">Device: {log.device?.name || "Unknown"}</p>
                   </div>
-                  <select onChange={e => handleMapWorker(log.id, Number(e.target.value))} className="h-8 rounded-lg border border-amber-200 px-2 text-xs">
+                  <select onChange={e => handleMapWorker(log.id, Number(e.target.value))} className="h-8 rounded-lg border border-tone-warn-border px-2 text-xs">
                     <option value="">Select worker...</option>
                     {workers.filter(w => w.status === "active").map((w: any) => (
                       <option key={w.id} value={w.id}>{w.name}</option>

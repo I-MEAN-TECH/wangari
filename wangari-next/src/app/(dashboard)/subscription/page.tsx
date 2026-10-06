@@ -199,7 +199,7 @@ function SubscriptionContent() {
             )}
 
             {isPending && (
-              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
+              <div className="rounded-xl bg-tone-warn-bg border border-tone-warn-border p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <Clock className="h-4 w-4 text-amber-600" />
                   <p className="text-sm font-bold text-amber-800">{sub.planName || sub.plan_name} — Pending</p>
@@ -219,10 +219,10 @@ function SubscriptionContent() {
             )}
 
             {!isActive && !isPending && !isTrial && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-4">
+              <div className="rounded-xl bg-tone-bad-bg border border-tone-bad-border p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <AlertTriangle className="h-4 w-4 text-red-600" />
-                  <p className="text-sm font-bold text-red-800">No active plan</p>
+                  <p className="text-sm font-bold text-tone-bad-text">No active plan</p>
                 </div>
                 <p className="text-xs text-red-600">Subscribe to access all modules and features.</p>
               </div>
@@ -266,12 +266,12 @@ function SubscriptionContent() {
           </div>
         </div>
         {promoNote && (
-          <div className={`mb-3 rounded-lg px-3 py-2 text-xs ${promoNote.kind === "err" ? "bg-red-50 text-red-700 border border-red-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
+          <div className={`mb-3 rounded-lg px-3 py-2 text-xs ${promoNote.kind === "err" ? "bg-tone-bad-bg text-badge-red-text border border-tone-bad-border" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
             {promoNote.text}
           </div>
         )}
         {subError && (
-          <div className="mb-3 rounded-lg px-3 py-2 text-xs bg-red-50 text-red-700 border border-red-200 flex items-center justify-between gap-2">
+          <div className="mb-3 rounded-lg px-3 py-2 text-xs bg-tone-bad-bg text-badge-red-text border border-tone-bad-border flex items-center justify-between gap-2">
             <span>{subError}</span>
             <button onClick={() => setSubError("")} className="font-bold hover:underline shrink-0">Dismiss</button>
           </div>

@@ -11,6 +11,7 @@ import {
   EmptyState, Modal, PrimaryButton, GhostButton, StatCard,
 } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { CARD_PANEL, CARD_ROW_SM, CARD_WELL_DASHED } from "@/components/ui/patterns";
 
 interface Redemption {
   id: number;
@@ -555,7 +556,7 @@ export default function AdminPromosPage() {
                 <GhostButton
                   onClick={() => revokeRedemption(r)}
                   disabled={redeemersBusy}
-                  className="h-8 shrink-0 px-2 text-xs text-red-600 hover:bg-red-50"
+                  className="h-8 shrink-0 px-2 text-xs text-red-600 hover:bg-tone-bad-bg"
                 >
                   <Trash2 className="h-3.5 w-3.5" /> Remove
                 </GhostButton>
@@ -631,7 +632,7 @@ export default function AdminPromosPage() {
             <Field label={batchForm.type === "sponsorship" ? "Sponsor name" : "Partner name"} hint="Optional — appears in the WhatsApp message">
               <input value={batchForm.partnerName} onChange={(e) => setBatchForm({ ...batchForm, partnerName: e.target.value })} className={inputClass} />
             </Field>
-            {batchError && <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{batchError}</div>}
+            {batchError && <div className="rounded-lg bg-tone-bad-bg px-3 py-2 text-xs text-badge-red-text">{batchError}</div>}
             <div className="flex justify-end gap-2 pt-1">
               <GhostButton onClick={() => setShowBatch(false)}>Cancel</GhostButton>
               <PrimaryButton type="submit" disabled={batchBusy}>
@@ -665,7 +666,7 @@ export default function AdminPromosPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-wangari-border p-3.5">
+                <div className={CARD_PANEL}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Discount</div>
                   <div className="mt-1 text-xl font-bold text-wangari-heading">
                     {isFreeType(detail.type)
@@ -673,17 +674,17 @@ export default function AdminPromosPage() {
                       : detail.discountType === "percent" ? `${detail.value}%` : `KES ${detail.value?.toLocaleString()}`}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-wangari-border p-3.5">
+                <div className={CARD_PANEL}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Redeemed</div>
                   <div className="mt-1 text-xl font-bold text-wangari-heading">
                     {detail.timesRedeemed}{detail.maxRedemptions ? <span className="text-sm text-wangari-muted"> / {detail.maxRedemptions}</span> : ""}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-wangari-border p-3.5">
+                <div className={CARD_PANEL}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Plan</div>
                   <div className="mt-1 font-medium text-wangari-heading">{detail.planId ? planName(detail.planId) || detail.plan?.name || detail.planId : "Any plan"}</div>
                 </div>
-                <div className="rounded-2xl border border-wangari-border p-3.5">
+                <div className={CARD_PANEL}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Expires</div>
                   <div className="mt-1 font-medium text-wangari-heading">
                     {detail.expiresAt ? new Date(detail.expiresAt).toLocaleDateString() : "Never"}
@@ -697,13 +698,13 @@ export default function AdminPromosPage() {
                   <button onClick={() => openRedeemers(detail)} className="text-wangari-green-700 hover:underline">Manage all</button>
                 </div>
                 {detail.recentRedemptions.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-wangari-border px-3 py-4 text-center text-xs text-wangari-subtle">
+                  <div className={CARD_WELL_DASHED}>
                     Not redeemed yet — redemptions appear here as customers use it at checkout.
                   </div>
                 ) : (
                   <div className="space-y-1.5">
                     {detail.recentRedemptions.map((r) => (
-                      <div key={r.id} className="flex items-center justify-between rounded-lg border border-wangari-border px-3 py-2 text-sm">
+                      <div key={r.id} className={CARD_ROW_SM}>
                         <div>
                           <div className="font-mono text-xs text-wangari-heading">{r.reference || "no reference"}</div>
                           <div className="text-[11px] text-wangari-subtle">{new Date(r.createdAt).toLocaleString()}</div>

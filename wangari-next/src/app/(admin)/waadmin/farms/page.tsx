@@ -11,6 +11,7 @@ import {
   Flash, EmptyState, Modal, Field, inputClass, PrimaryButton, GhostButton, StatCard,
 } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { CARD_PANEL, CARD_PANEL_P4, CARD_ROW_SM, CARD_WELL_DASHED } from "@/components/ui/patterns";
 
 interface FarmRow {
   id: number;
@@ -286,7 +287,7 @@ export default function AdminFarmsPage() {
                 </div>
 
                 {/* Owner card */}
-                <div className="rounded-2xl border border-wangari-border p-4">
+                <div className={CARD_PANEL_P4}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Owner</div>
                   <div className="mt-1.5 flex items-center gap-2.5">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-wangari-green-100 text-xs font-bold text-wangari-green-800">
@@ -304,11 +305,11 @@ export default function AdminFarmsPage() {
 
                 {/* Counts */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-wangari-border p-3.5">
+                  <div className={CARD_PANEL}>
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-wangari-muted"><UsersIcon className="h-3.5 w-3.5" /> Workers</div>
                     <div className="mt-1 text-2xl font-bold text-wangari-heading">{detail.workers}</div>
                   </div>
-                  <div className="rounded-2xl border border-wangari-border p-3.5">
+                  <div className={CARD_PANEL}>
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-wangari-muted"><Wheat className="h-3.5 w-3.5" /> Flocks</div>
                     <div className="mt-1 text-2xl font-bold text-wangari-heading">{detail.flocks}</div>
                   </div>
@@ -348,11 +349,11 @@ export default function AdminFarmsPage() {
                     <ReceiptText className="h-3.5 w-3.5" /> Subscription history
                   </div>
                   {detail.subscriptions.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-wangari-border px-3 py-4 text-center text-xs text-wangari-subtle">Never subscribed</div>
+                    <div className={CARD_WELL_DASHED}>Never subscribed</div>
                   ) : (
                     <div className="space-y-1.5">
                       {detail.subscriptions.map((s) => (
-                        <div key={s.id} className="flex items-center justify-between rounded-lg border border-wangari-border px-3 py-2 text-sm">
+                        <div key={s.id} className={CARD_ROW_SM}>
                           <div>
                             <span className="font-medium text-wangari-heading">{s.planName}</span>
                             <div className="text-[11px] text-wangari-subtle">

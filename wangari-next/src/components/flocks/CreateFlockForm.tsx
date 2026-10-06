@@ -28,6 +28,7 @@ import {
 } from "@/lib/species-templates";
 import { AnitracRangeCard } from "@/components/flocks/AnitracRangeCard";
 import { useToast } from "@/components/shared/toast";
+import { BTN_LINK_SM } from "@/components/ui/patterns";
 
 const iconMap: Record<string, any> = { bird: Bird, beef: Beef, droplets: Droplets, flower: Flower };
 
@@ -141,7 +142,7 @@ export function CreateFlockForm({ onSubmit, onCancel, existingNames = [] }: Crea
               {i < 3 && <div className={`flex-1 h-0.5 rounded ${i < step ? "bg-wangari-green-800" : "bg-wangari-cream"}`} />}
             </React.Fragment>
           ))}
-          <button onClick={onCancel} className="ml-auto text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
+          <button onClick={onCancel} className={BTN_LINK_SM}><X className="h-4 w-4" /></button>
         </div>
 
         {/* Step 0: Category */}

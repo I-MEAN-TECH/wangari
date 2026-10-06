@@ -151,7 +151,7 @@ export default function FinancesPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <button onClick={() => setForm({ ...form, type: "income", category: "eggs" })}
                     className={`py-5 rounded-xl text-base font-bold transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                      form.type === "income" ? "bg-emerald-50 text-emerald-700 border-2 border-emerald-400 shadow-md" : "bg-gray-50 text-gray-500 border border-gray-200"
+                      form.type === "income" ? "bg-emerald-50 text-emerald-700 border-2 border-emerald-400 shadow-md" : "bg-gray-50 text-gray-500 border border-wangari-border"
                     }`}>
                     <TrendingUp className="h-6 w-6" />
                     <span>Money IN</span>
@@ -159,7 +159,7 @@ export default function FinancesPage() {
                   </button>
                   <button onClick={() => setForm({ ...form, type: "expense", category: "animal_feed" })}
                     className={`py-5 rounded-xl text-base font-bold transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                      form.type === "expense" ? "bg-red-50 text-red-700 border-2 border-red-400 shadow-md" : "bg-gray-50 text-gray-500 border border-gray-200"
+                      form.type === "expense" ? "bg-tone-bad-bg text-badge-red-text border-2 border-red-400 shadow-md" : "bg-gray-50 text-gray-500 border border-wangari-border"
                     }`}>
                     <TrendingDown className="h-6 w-6" />
                     <span>Money OUT</span>
@@ -179,7 +179,7 @@ export default function FinancesPage() {
                   {categories.map(c => (
                     <button key={c.id} onClick={() => setForm({ ...form, category: c.id })}
                       className={`py-3 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                        form.category === c.id ? "bg-wangari-green-800 text-white shadow-md" : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
+                        form.category === c.id ? "bg-wangari-green-800 text-white shadow-md" : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-wangari-border"
                       }`}>
                       <span className="text-center leading-tight">{c.label}</span>
                     </button>
@@ -306,7 +306,7 @@ export default function FinancesPage() {
               const isIncome = t.type === "income";
               return (                  <div key={t.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
                   <div className="flex items-center gap-3">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isIncome ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>{isIncome ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}</div>
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isIncome ? "bg-emerald-50 text-emerald-600" : "bg-tone-bad-bg text-red-500"}`}>{isIncome ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}</div>
                     <div>
                       <p className="text-xs font-bold text-gray-900">{t.description || "Transaction"}</p>
                       <p className="text-[10px] text-gray-400">{new Date(t.date).toLocaleDateString()} - {(t.category || "other").replace(/_/g, " ")}</p>

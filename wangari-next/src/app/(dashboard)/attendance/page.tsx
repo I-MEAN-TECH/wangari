@@ -221,12 +221,12 @@ export default function AttendancePage() {
                         </div>
                         {isDone ? (
                           <div className="text-right">
-                            <Badge className="bg-gray-100 text-wangari-muted border-gray-200">Shift Done</Badge>
+                            <Badge className="bg-gray-100 text-wangari-muted border-wangari-border">Shift Done</Badge>
                             <p className="text-[10px] text-wangari-subtle mt-0.5">{todayRec.checkIn} - {todayRec.checkOut}</p>
                           </div>
                         ) : isCheckedIn ? (
                           <button onClick={() => handleClockInOut(w.id)}
-                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200 hover:bg-amber-100 cursor-pointer min-h-[44px]">
+                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-tone-warn-bg text-tone-warn-text text-xs font-bold border border-tone-warn-border hover:bg-amber-100 cursor-pointer min-h-[44px]">
                             <LogOut className="h-4 w-4" /> Clock Out
                           </button>
                         ) : (
@@ -265,7 +265,7 @@ export default function AttendancePage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <Badge className={r.checkOut ? "bg-gray-100 text-wangari-muted border-gray-200" : "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200"}>{r.checkOut ? "Completed" : "Present"}</Badge>
+                      <Badge className={r.checkOut ? "bg-gray-100 text-wangari-muted border-wangari-border" : "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200"}>{r.checkOut ? "Completed" : "Present"}</Badge>
                     </div>
                   </div>
                   <div className="flex items-center justify-between mt-3">

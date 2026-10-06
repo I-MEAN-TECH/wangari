@@ -14,6 +14,7 @@ import api from "@/lib/api-client";
 import Link from "next/link";
 
 import { speciesFor } from "@/lib/species-resolve";
+import { BTN_LINK_SM } from "@/components/ui/patterns";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
@@ -130,7 +131,7 @@ export default function ProductionPage() {
                       {i < 2 && <div className={`flex-1 h-0.5 rounded ${i < step ? "bg-wangari-green-800" : "bg-gray-100"}`} />}
                     </React.Fragment>
                   ))}
-                  <button onClick={resetForm} className="ml-auto text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
+                  <button onClick={resetForm} className={BTN_LINK_SM}><X className="h-4 w-4" /></button>
                 </div>
 
                 {/* Step 0: Select Group */}
@@ -156,7 +157,7 @@ export default function ProductionPage() {
                           const ft = speciesFor(f);
                           return (
                             <button key={f.id} onClick={() => { setForm({ ...form, flockId: String(f.id) }); setStep(1); }}
-                              className="text-left rounded-xl border border-gray-200 px-3 py-2.5 hover:border-wangari-green-800 hover:bg-wangari-green-50 transition-all cursor-pointer">
+                              className="text-left rounded-xl border border-wangari-border px-3 py-2.5 hover:border-wangari-green-800 hover:bg-wangari-green-50 transition-all cursor-pointer">
                               <p className="text-sm font-semibold text-gray-900">{f.name}</p>
                               <p className="text-[10px] text-gray-400">{ft?.name || f.type} · {f.currentCount} head</p>
                             </button>

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 import api from "@/lib/api-client";
 import { speciesFor } from "@/lib/species-resolve";
+import { BTN_CANCEL, BTN_CTA_EMERALD, BTN_TOOL } from "@/components/ui/patterns";
 
 interface BatchProductionProps {
   flocks: any[];
@@ -92,7 +93,7 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
             </h2>
             <p className="text-xs text-gray-400 mt-0.5">Record production for multiple flocks at once</p>
           </div>
-          <button onClick={onCancel} className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+          <button onClick={onCancel} className={BTN_TOOL}>
             <X className="h-5 w-5 text-gray-400" />
           </button>
         </div>
@@ -119,7 +120,7 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="rounded-lg border border-wangari-border px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -172,7 +173,7 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
                             placeholder="0"
                             value={entry.production}
                             onChange={(e) => updateEntry(flock.id, "production", e.target.value)}
-                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                            className="w-full rounded-lg border border-wangari-border px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                           />
                         </div>
                         <div>
@@ -182,7 +183,7 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
                             placeholder="0"
                             value={entry.mortality}
                             onChange={(e) => updateEntry(flock.id, "mortality", e.target.value)}
-                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                            className="w-full rounded-lg border border-wangari-border px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                           />
                         </div>
                         <div>
@@ -193,7 +194,7 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
                             placeholder="0"
                             value={entry.feedUsed}
                             onChange={(e) => updateEntry(flock.id, "feedUsed", e.target.value)}
-                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                            className="w-full rounded-lg border border-wangari-border px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                           />
                         </div>
                       </div>
@@ -205,13 +206,13 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
 
             {/* Footer */}
             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50">
-              <button onClick={onCancel} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-white border border-gray-200 transition-colors cursor-pointer">
+              <button onClick={onCancel} className={BTN_CANCEL}>
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={loading || selectedFlocks.size === 0}
-                className="px-6 py-2 rounded-xl text-sm font-semibold bg-emerald-700 text-white hover:bg-emerald-800 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                className={BTN_CTA_EMERALD}
               >
                 {loading ? "Saving..." : `Save ${selectedFlocks.size} Records`}
               </button>

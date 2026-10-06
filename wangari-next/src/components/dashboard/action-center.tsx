@@ -8,6 +8,7 @@ import {
   ShieldAlert, CalendarX, ClipboardList, ListTodo, CalendarClock, ChevronRight,
   RefreshCw, Sparkles, AlertOctagon, CircleCheck,
 } from "lucide-react";
+import { CARD_PANEL_P5 } from "@/components/ui/patterns";
 
 const ICONS: Record<string, any> = {
   HandCoins, FileWarning, TrendingDown, TrendingUp, Wheat, Package, Syringe, Baby,
@@ -15,8 +16,8 @@ const ICONS: Record<string, any> = {
 };
 
 const PRIORITY_STYLES: Record<string, { ring: string; chip: string; label: string }> = {
-  critical: { ring: "border-red-200 bg-red-50/60", chip: "bg-red-600 text-white", label: "Act now" },
-  high: { ring: "border-amber-200 bg-amber-50/60", chip: "bg-amber-500 text-white", label: "Today" },
+  critical: { ring: "border-tone-bad-border bg-tone-bad-bg/60", chip: "bg-red-600 text-white", label: "Act now" },
+  high: { ring: "border-tone-warn-border bg-tone-warn-bg/60", chip: "bg-amber-500 text-white", label: "Today" },
   medium: { ring: "border-sky-200 bg-sky-50/50", chip: "bg-sky-600 text-white", label: "This week" },
   info: { ring: "border-stone-200 bg-stone-50/70", chip: "bg-stone-500 text-white", label: "FYI" },
 };
@@ -58,7 +59,7 @@ export function ActionCenter() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-wangari-border bg-white p-5">
+      <div className={CARD_PANEL_P5}>
         <div className="flex items-center gap-2 text-sm font-bold text-wangari-muted">
           <Sparkles className="h-4 w-4 text-wangari-green-600 animate-pulse" />
           Analyzing your farm...

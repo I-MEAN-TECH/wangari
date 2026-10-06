@@ -19,14 +19,14 @@ export function KpiCard({
 }: KpiCardProps) {
   const changeColors = {
     positive: "text-wangari-green-600 bg-wangari-green-50",
-    negative: "text-red-600 bg-red-50",
+    negative: "text-red-600 bg-tone-bad-bg",
     neutral: "text-wangari-muted bg-gray-50",
   };
 
   return (
     <div
       className={cn(
-        "rounded-2xl border border-gray-200 bg-white p-3.5 sm:p-5 shadow-xs transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
+        "rounded-2xl border border-wangari-border bg-white p-3.5 sm:p-5 shadow-xs transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
         className
       )}
     >

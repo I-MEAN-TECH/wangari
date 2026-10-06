@@ -11,6 +11,7 @@ import {
   EmptyState, GhostButton, StatCard,
 } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { CARD_PANEL } from "@/components/ui/patterns";
 
 interface AuditRow {
   id: number;
@@ -210,14 +211,14 @@ export default function AdminAuditPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-wangari-border p-3.5">
+                <div className={CARD_PANEL}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Actor</div>
                   <div className="mt-1 text-sm font-medium text-wangari-heading">
                     {detail.details?._actor ? actorLabel(String(detail.details._actor)) : detail.user?.name || `user #${detail.userId ?? "?"}`}
                   </div>
                   {detail.user?.email && <div className="text-xs text-wangari-subtle">{detail.user.email}</div>}
                 </div>
-                <div className="rounded-2xl border border-wangari-border p-3.5">
+                <div className={CARD_PANEL}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Entity</div>
                   <div className="mt-1 text-sm font-medium text-wangari-heading">
                     {detail.entityType || "—"}

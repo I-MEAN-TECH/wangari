@@ -11,6 +11,7 @@ import {
   Flash, EmptyState, GhostButton, StatCard, PrimaryButton,
 } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { CARD_PANEL, CARD_PANEL_P4 } from "@/components/ui/patterns";
 
 interface SubRow {
   id: number;
@@ -244,30 +245,30 @@ export default function AdminBillingPage() {
                 </button>
               </div>
 
-              <div className="rounded-2xl border border-wangari-border p-4">
+              <div className={CARD_PANEL_P4}>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Customer</div>
                 <div className="mt-1.5 font-medium text-wangari-heading">{detail.user?.name || `User #${detail.userId}`}</div>
                 <div className="text-xs text-wangari-subtle">{detail.user?.email}</div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-wangari-border p-3.5">
+                <div className={CARD_PANEL}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Amount</div>
                   <div className="mt-1 text-xl font-bold text-wangari-heading">
                     {Number(detail.amount) > 0 ? `KES ${Number(detail.amount).toLocaleString()}` : "Free comp"}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-wangari-border p-3.5">
+                <div className={CARD_PANEL}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Status</div>
                   <div className="mt-1.5">
                     {detail.status === "active" ? <Badge variant="success">active</Badge> : <Badge variant="outline">{detail.status}</Badge>}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-wangari-border p-3.5">
+                <div className={CARD_PANEL}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Starts</div>
                   <div className="mt-1 font-medium text-wangari-heading">{new Date(detail.startsAt).toLocaleDateString()}</div>
                 </div>
-                <div className="rounded-2xl border border-wangari-border p-3.5">
+                <div className={CARD_PANEL}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Expires</div>
                   <div className="mt-1 font-medium text-wangari-heading">
                     {new Date(detail.expiresAt).toLocaleDateString()}
@@ -276,14 +277,14 @@ export default function AdminBillingPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-wangari-border p-4">
+              <div className={CARD_PANEL_P4}>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Paystack reference</div>
                 <code className="mt-1 block break-all font-mono text-xs text-wangari-text">{detail.reference || "no reference (admin action)"}</code>
               </div>
 
               <div className="flex gap-2 border-t border-wangari-border pt-4">
                 {detail.status === "active" && (
-                  <PrimaryButton onClick={() => { setDetailId(null); cancel(detail.id); }} className="bg-badge-red-text hover:bg-red-700">
+                  <PrimaryButton onClick={() => { setDetailId(null); cancel(detail.id); }} className="bg-badge-red-text hover:bg-badge-red-text">
                     <Ban className="h-4 w-4" /> Cancel subscription
                   </PrimaryButton>
                 )}

@@ -223,7 +223,7 @@ export function TemplateGallery({ profile, currentSelection, onSelect }: { profi
                     </Button>
                   )}
                   <Button size="sm" variant="outline" onClick={printFull} className="gap-1.5 rounded-lg"><Printer className="h-3.5 w-3.5" /> Test print</Button>
-                  <button onClick={() => setFullPreview(null)} className="rounded-lg p-1.5 hover:bg-slate-100"><X className="h-5 w-5 text-slate-500" /></button>
+                  <button onClick={() => setFullPreview(null)} className="rounded-lg p-1.5 hover:bg-wangari-sunken"><X className="h-5 w-5 text-wangari-muted" /></button>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto bg-wangari-sunken p-4">

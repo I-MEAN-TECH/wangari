@@ -34,7 +34,7 @@ export function WorkerTaskCard({ task, onToggleComplete }: WorkerTaskCardProps) 
       className={`p-5 rounded-3xl border-3 transition-all cursor-pointer shadow-sm flex items-center justify-between gap-4 ${
         task.isCompleted
           ? "bg-emerald-50/60 border-emerald-300 text-emerald-950"
-          : "bg-white border-gray-200 hover:border-emerald-500 text-wangari-heading"
+          : "bg-white border-wangari-border hover:border-emerald-500 text-wangari-heading"
       }`}
     >
       <div className="flex items-center gap-4 min-w-0">

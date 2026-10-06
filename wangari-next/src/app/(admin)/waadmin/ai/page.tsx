@@ -72,8 +72,8 @@ const btnDanger = `${btn} border border-badge-red-border text-badge-red-text hov
  *  the same way in the table. */
 const TONE_CLS: Record<string, string> = {
   good: "text-badge-green-text",
-  ok: "text-amber-700",
-  slow: "text-orange-700",
+  ok: "text-tone-warn-text",
+  slow: "text-badge-orange-text",
   bad: "text-badge-red-text",
   unknown: "text-wangari-subtle",
 };

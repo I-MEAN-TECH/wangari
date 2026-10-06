@@ -9,6 +9,7 @@ import {
 import { adminApi, setAdminSession, clearAdminSession, getAdminSession } from "@/lib/admin-client";
 import { PageHeader, Panel, StatCard, Loading, ErrorState, GhostButton } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { BTN_PRIMARY_H11 } from "@/components/ui/patterns";
 
 /**
  * Admin Security & MFA — account security center.
@@ -277,7 +278,7 @@ export default function AdminSecurityPage() {
                     <button
                       onClick={verifyEnable}
                       disabled={busy || code.replace(/\D/g, "").length !== 6}
-                      className="h-11 rounded-xl bg-wangari-green-800 px-4 text-sm font-semibold text-white shadow-md hover:bg-wangari-green-900 disabled:opacity-60"
+                      className={BTN_PRIMARY_H11}
                     >
                       {busy ? "Verifying…" : "Enable"}
                     </button>
@@ -318,7 +319,7 @@ export default function AdminSecurityPage() {
                   <button
                     onClick={rotateCodes}
                     disabled={busy || !rotatePassword || !rotateCode}
-                    className="h-11 rounded-xl bg-wangari-green-800 px-4 text-sm font-semibold text-white shadow-md hover:bg-wangari-green-900 disabled:opacity-60"
+                    className={BTN_PRIMARY_H11}
                   >
                     {busy ? "Working…" : "Rotate codes"}
                   </button>
@@ -453,7 +454,7 @@ export default function AdminSecurityPage() {
                 <button
                   onClick={signOutEverywhere}
                   disabled={busy || !signoutPassword}
-                  className="h-11 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-md hover:bg-red-700 disabled:opacity-60"
+                  className="h-11 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-md hover:bg-badge-red-text disabled:opacity-60"
                 >
                   {busy ? "Revoking…" : "Revoke all sessions"}
                 </button>

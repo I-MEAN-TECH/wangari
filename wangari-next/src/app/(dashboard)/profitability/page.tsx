@@ -36,8 +36,8 @@ interface Economics {
 /** Verdict → colour. The farmer reads the chip before the sentence (R2). */
 const VERDICTS: Record<Economics["verdict"], { label: string; chip: string; text: string }> = {
   profitable: { label: "Making money", chip: "bg-emerald-100 text-emerald-800", text: "text-emerald-700" },
-  thin: { label: "Thin margin", chip: "bg-amber-100 text-amber-800", text: "text-amber-700" },
-  losing: { label: "Losing money", chip: "bg-red-100 text-red-700", text: "text-red-600" },
+  thin: { label: "Thin margin", chip: "bg-amber-100 text-amber-800", text: "text-tone-warn-text" },
+  losing: { label: "Losing money", chip: "bg-badge-red-bg text-badge-red-text", text: "text-red-600" },
   "no-cost": { label: "No cost data", chip: "bg-gray-100 text-gray-600", text: "text-gray-700" },
   "no-price": { label: "No price data", chip: "bg-sky-100 text-sky-700", text: "text-sky-700" },
 };
@@ -140,17 +140,17 @@ export default function ProfitabilityPage() {
 
       {/* Summary strip */}
       <div className="grid grid-cols-3 gap-3">
-        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="rounded-2xl border border-gray-200 bg-white p-4">
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="rounded-2xl border border-wangari-border bg-white p-4">
           <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Revenue</p>
           <p className="mt-1 text-lg font-black text-gray-900">{loading ? "…" : KES(summary.totalRevenue)}</p>
         </motion.div>
-        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="rounded-2xl border border-gray-200 bg-white p-4">
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="rounded-2xl border border-wangari-border bg-white p-4">
           <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Costs</p>
           <p className="mt-1 text-lg font-black text-gray-900">{loading ? "…" : KES(summary.totalCosts)}</p>
         </motion.div>
-        <motion.div initial="hidden" animate="visible" variants={fadeUp} className={`rounded-2xl border p-4 ${summary.totalProfit >= 0 ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"}`}>
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} className={`rounded-2xl border p-4 ${summary.totalProfit >= 0 ? "border-emerald-200 bg-emerald-50" : "border-tone-bad-border bg-tone-bad-bg"}`}>
           <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Net profit</p>
-          <p className={`mt-1 text-lg font-black ${summary.totalProfit >= 0 ? "text-emerald-800" : "text-red-700"}`}>{loading ? "…" : KES(summary.totalProfit)}</p>
+          <p className={`mt-1 text-lg font-black ${summary.totalProfit >= 0 ? "text-emerald-800" : "text-badge-red-text"}`}>{loading ? "…" : KES(summary.totalProfit)}</p>
         </motion.div>
       </div>
 
@@ -166,12 +166,12 @@ export default function ProfitabilityPage() {
             </div>
           </div>
           {worst && worst.profit < 0 && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 flex items-center gap-3">
+            <div className="rounded-2xl border border-tone-bad-border bg-tone-bad-bg p-4 flex items-center gap-3">
               <TrendingDown className="h-8 w-8 text-red-500 shrink-0" />
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-red-700">Losing money</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-badge-red-text">Losing money</p>
                 <p className="text-sm font-extrabold text-red-900">{worst.name} — {KES(worst.profit)} net</p>
-                <p className="text-xs text-red-700">Costs {KES(worst.costs)} vs revenue {KES(worst.revenue)}. Fix it or cut it.</p>
+                <p className="text-xs text-badge-red-text">Costs {KES(worst.costs)} vs revenue {KES(worst.revenue)}. Fix it or cut it.</p>
               </div>
             </div>
           )}
@@ -181,7 +181,7 @@ export default function ProfitabilityPage() {
       {/* M4 — cost of production vs price, side by side */}
       {!loading && priceRows.length > 0 && (
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-gray-200 overflow-hidden">
+          <Card className="border border-wangari-border overflow-hidden">
             <CardContent className="p-0">
               <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
                 <p className="text-sm font-black text-gray-900">Cost of production vs price</p>
@@ -229,7 +229,7 @@ export default function ProfitabilityPage() {
 
       {/* Ranked table */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <Card className="border border-gray-200 overflow-hidden">
+        <Card className="border border-wangari-border overflow-hidden">
           <CardContent className="p-0">
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
               <p className="text-sm font-black text-gray-900">Every enterprise, ranked</p>
@@ -249,7 +249,7 @@ export default function ProfitabilityPage() {
                   const profitPositive = r.profit >= 0;
                   return (
                     <div key={r.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/60 transition-colors">
-                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black ${i === 0 ? "bg-amber-100 text-amber-700" : i === enterprises.length - 1 && !profitPositive ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-500"}`}>
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black ${i === 0 ? "bg-amber-100 text-tone-warn-text" : i === enterprises.length - 1 && !profitPositive ? "bg-badge-red-bg text-badge-red-text" : "bg-gray-100 text-gray-500"}`}>
                         {i + 1}
                       </div>
                       <div className="hidden sm:block text-xl" title={r.species || r.cropType || r.kind}>{rowIcon(r)}</div>

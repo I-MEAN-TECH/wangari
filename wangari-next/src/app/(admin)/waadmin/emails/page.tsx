@@ -11,6 +11,7 @@ import {
   Flash, EmptyState, PrimaryButton, GhostButton, Modal, StatCard,
 } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { CARD_PANEL_P4 } from "@/components/ui/patterns";
 
 interface EmailRow {
   id: number;
@@ -103,7 +104,7 @@ export default function AdminEmailsPage() {
       />
 
       {allFailingNoKey && (
-        <div className="rounded-xl border border-amber-200 bg-badge-yellow-bg px-4 py-3 text-sm font-medium text-badge-yellow-text">
+        <div className="rounded-xl border border-tone-warn-border bg-badge-yellow-bg px-4 py-3 text-sm font-medium text-badge-yellow-text">
           Every send is failing with &quot;not configured&quot; — add <code className="rounded bg-black/10 px-1">SMTP_HOST / RESEND_API_KEY</code> to the server .env and restart the API. Nothing is lost: failed sends stay in this log and can be re-sent.
         </div>
       )}
@@ -231,7 +232,7 @@ export default function AdminEmailsPage() {
                 </button>
               </div>
 
-              <div className="rounded-2xl border border-wangari-border p-4">
+              <div className={CARD_PANEL_P4}>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">To</div>
                 <div className="mt-1 font-medium text-wangari-heading">{detail.to}</div>
                 <div className="mt-0.5 text-xs text-wangari-subtle">
@@ -239,7 +240,7 @@ export default function AdminEmailsPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-wangari-border p-4">
+              <div className={CARD_PANEL_P4}>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Provider</div>
                 <div className="mt-1 text-sm font-medium capitalize text-wangari-heading">{detail.provider || "none"}</div>
                 {detail.providerId && (
@@ -248,7 +249,7 @@ export default function AdminEmailsPage() {
               </div>
 
               {detail.error && (
-                <div className="rounded-2xl border border-red-200 bg-badge-red-bg p-4">
+                <div className="rounded-2xl border border-tone-bad-border bg-badge-red-bg p-4">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-badge-red-text">Error</div>
                   <div className="mt-1 text-sm text-badge-red-text">{detail.error}</div>
                 </div>

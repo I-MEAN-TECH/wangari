@@ -260,7 +260,7 @@ export function AiHealthPanel({
                     <td className={`${td} text-xs`}>
                       <code className="font-semibold text-wangari-heading">{u.model}</code>
                       {u.fellBackFrom && (
-                        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-700">
+                        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-tone-warn-text">
                           <AlertTriangle className="h-3 w-3" /> took over from {u.fellBackFrom}
                         </div>
                       )}

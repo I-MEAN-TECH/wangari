@@ -16,12 +16,13 @@ import {
   Cell,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CARD_RAISED } from "@/components/ui/patterns";
 
 // ─── Custom Tooltip ───────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-wangari-border bg-white px-4 py-3 shadow-lg">
+    <div className={CARD_RAISED}>
       <p className="text-xs font-semibold text-wangari-muted">{label}</p>
       {payload.map((entry: any, i: number) => (
         <p key={i} className="text-sm font-bold text-wangari-heading">
@@ -287,7 +288,7 @@ export function HDPTrendChart({ data }: HDPTrendChartProps) {
                   content={({ active, payload, label }) => {
                     if (!active || !payload?.length || !label) return null;
                     return (
-                      <div className="rounded-xl border border-wangari-border bg-white px-4 py-3 shadow-lg">
+                      <div className={CARD_RAISED}>
                         <p className="text-xs font-semibold text-wangari-muted">
                           {new Date(String(label)).toLocaleDateString("en-KE", { weekday: "long", month: "short", day: "numeric" })}
                         </p>

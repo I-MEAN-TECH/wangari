@@ -69,8 +69,8 @@ function SpeciesIcon({ speciesId }: { speciesId: string }) {
 function getMortalityRating(rate: number): { label: string; color: string; bg: string } {
   if (rate <= 1) return { label: "Normal", color: "text-emerald-700", bg: "bg-emerald-50" };
   if (rate <= 3) return { label: "Acceptable", color: "text-emerald-700", bg: "bg-emerald-50" };
-  if (rate <= 5) return { label: "Watch", color: "text-amber-700", bg: "bg-amber-50" };
-  return { label: "Critical", color: "text-red-700", bg: "bg-red-50" };
+  if (rate <= 5) return { label: "Watch", color: "text-tone-warn-text", bg: "bg-tone-warn-bg" };
+  return { label: "Critical", color: "text-badge-red-text", bg: "bg-tone-bad-bg" };
 }
 
 function getAge(hatchDate: string | null): string {
@@ -112,32 +112,32 @@ function QuickMortality({ flock, onRecord }: { flock: any; onRecord: (deaths: nu
 
   if (!show) {
     return (
-      <Button onClick={() => setShow(true)} variant="ghost" size="sm" className="gap-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 cursor-pointer">
+      <Button onClick={() => setShow(true)} variant="ghost" size="sm" className="gap-1.5 text-red-500 hover:text-red-600 hover:bg-tone-bad-bg cursor-pointer">
         <AlertTriangle className="h-4 w-4" />Record Death
       </Button>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 p-2 rounded-xl border border-red-100 bg-red-50">
+    <div className="flex items-center gap-2 p-2 rounded-xl border border-badge-red-bg bg-tone-bad-bg">
       <input
         type="number"
         placeholder="#"
         value={deaths}
         onChange={(e) => setDeaths(e.target.value)}
-        className="w-16 rounded-lg border border-red-200 px-2 py-1.5 text-xs focus:ring-2 focus:ring-red-500/20 focus:border-red-400"
+        className="w-16 rounded-lg border border-tone-bad-border px-2 py-1.5 text-xs focus:ring-2 focus:ring-red-500/20 focus:border-red-400"
         autoFocus
       />
       <input
         placeholder="Reason (optional)"
         value={reason}
         onChange={(e) => setReason(e.target.value)}
-        className="flex-1 rounded-lg border border-red-200 px-2 py-1.5 text-xs focus:ring-2 focus:ring-red-500/20 focus:border-red-400"
+        className="flex-1 rounded-lg border border-tone-bad-border px-2 py-1.5 text-xs focus:ring-2 focus:ring-red-500/20 focus:border-red-400"
       />
       <button onClick={handleRecord} disabled={loading || !deaths} className="p-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 cursor-pointer">
         <Check className="h-3.5 w-3.5" />
       </button>
-      <button onClick={() => setShow(false)} className="p-1.5 rounded-lg hover:bg-red-100 text-red-400 cursor-pointer">
+      <button onClick={() => setShow(false)} className="p-1.5 rounded-lg hover:bg-badge-red-bg text-red-400 cursor-pointer">
         <X className="h-3.5 w-3.5" />
       </button>
     </div>
@@ -382,7 +382,7 @@ export default function FlocksPage() {
             <Button onClick={() => setShowProductionForm(true)} variant="ghost" size="sm" className="gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 cursor-pointer">
               <ClipboardList className="h-4 w-4" />Record
             </Button>
-            <Button onClick={() => setShowBatchProduction(true)} variant="ghost" size="sm" className="gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 cursor-pointer">
+            <Button onClick={() => setShowBatchProduction(true)} variant="ghost" size="sm" className="gap-1.5 text-blue-600 hover:text-badge-blue-text hover:bg-blue-50 cursor-pointer">
               <ClipboardList className="h-4 w-4" />Batch
             </Button>
             <Button onClick={() => setShowExport(true)} variant="ghost" size="sm" className="gap-1.5 text-gray-500 hover:text-gray-700 cursor-pointer">
@@ -391,7 +391,7 @@ export default function FlocksPage() {
             <Button onClick={() => { setEditingFlock(flock); setShowEditForm(true); }} variant="ghost" size="sm" className="gap-1.5 text-gray-500 hover:text-gray-700 cursor-pointer">
               <Edit3 className="h-4 w-4" />Edit
             </Button>
-            <button onClick={() => handleDelete(flock.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
+            <button onClick={() => handleDelete(flock.id)} className="p-2 rounded-lg hover:bg-tone-bad-bg text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
@@ -711,7 +711,7 @@ export default function FlocksPage() {
                     <div key={vax.id} className="flex items-center gap-4 p-3 rounded-xl border border-gray-50 bg-gray-50/50">
                       <div className={cn(
                         "flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0",
-                        vax.status === "completed" ? "bg-emerald-100 text-emerald-600" : "bg-amber-50 text-amber-600"
+                        vax.status === "completed" ? "bg-emerald-100 text-emerald-600" : "bg-tone-warn-bg text-amber-600"
                       )}>
                         <Syringe className="h-4 w-4" />
                       </div>
@@ -859,7 +859,7 @@ export default function FlocksPage() {
                 <div className="flex-1">
                   <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{kpi.label}</p>
                   <p className="mt-2 text-3xl font-bold text-gray-900">{kpi.value}</p>
-                  <Badge variant="default" className={`mt-2 ${kpi.positive ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{kpi.change}</Badge>
+                  <Badge variant="default" className={`mt-2 ${kpi.positive ? "bg-emerald-50 text-emerald-700" : "bg-tone-warn-bg text-tone-warn-text"}`}>{kpi.change}</Badge>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">{kpi.icon}</div>
               </div>
@@ -871,14 +871,14 @@ export default function FlocksPage() {
       {/* Filters + View Toggle */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => setFilterSpecies("all")} className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${filterSpecies === "all" ? "bg-emerald-700 text-white shadow-md" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+          <button onClick={() => setFilterSpecies("all")} className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${filterSpecies === "all" ? "bg-emerald-700 text-white shadow-md" : "bg-gray-100 text-gray-700 hover:bg-wangari-border"}`}>
             All ({flocks.length})
           </button>
           {categories.map((cat) => {
             const count = flocks.filter((f: any) => f.category === cat.id).length;
             if (count === 0) return null;
             return (
-              <button key={cat.id} onClick={() => setFilterSpecies(cat.id)} className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${filterSpecies === cat.id ? "bg-emerald-700 text-white shadow-md" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+              <button key={cat.id} onClick={() => setFilterSpecies(cat.id)} className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${filterSpecies === cat.id ? "bg-emerald-700 text-white shadow-md" : "bg-gray-100 text-gray-700 hover:bg-wangari-border"}`}>
                 {cat.label} ({count})
               </button>
             );
@@ -896,7 +896,7 @@ export default function FlocksPage() {
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input placeholder="Search by name, breed, or species..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full h-12 rounded-xl border border-gray-200 pl-10 pr-4 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+        <input placeholder="Search by name, breed, or species..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full h-12 rounded-xl border border-wangari-border pl-10 pr-4 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
       </motion.div>
 
       {filtered.length === 0 ? (
@@ -1029,7 +1029,7 @@ export default function FlocksPage() {
                       </button>
                       <button
                         onClick={() => handleDelete(f.id)}
-                        className="flex items-center justify-center p-2 rounded-lg bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+                        className="flex items-center justify-center p-2 rounded-lg bg-gray-50 text-gray-400 hover:bg-tone-bad-bg hover:text-red-500 transition-colors cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -1151,7 +1151,7 @@ export default function FlocksPage() {
                     </button>
                     <button
                       onClick={() => handleDelete(f.id)}
-                      className="p-1.5 rounded-lg bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg bg-gray-50 text-gray-400 hover:bg-tone-bad-bg hover:text-red-500 transition-colors cursor-pointer"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>

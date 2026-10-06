@@ -112,7 +112,7 @@ export default function FeedCalculatorPage() {
             <CardHeader className="pb-3"><CardTitle className="text-sm font-bold text-gray-900">Select your group</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <select value={selectedFlock} onChange={e => { setSelectedFlock(e.target.value); setHeadCount(""); }}
-                className="w-full h-12 rounded-xl border border-gray-200 px-3 text-sm font-medium focus:ring-2 focus:ring-wangari-green-800/20 focus:border-wangari-green-800">
+                className="w-full h-12 rounded-xl border border-wangari-border px-3 text-sm font-medium focus:ring-2 focus:ring-wangari-green-800/20 focus:border-wangari-green-800">
                 <option value="">Choose a group...</option>
                 {flocks.map(f => <option key={f.id} value={f.id}>{f.name} — {f.currentCount} head ({speciesFor(f)?.name || f.type})</option>)}
               </select>
@@ -146,7 +146,7 @@ export default function FeedCalculatorPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {feedItems.map((item, idx) => (
-                <div key={item.id} className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                <div key={item.id} className="p-3 rounded-xl border border-wangari-border bg-gray-50/50 space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] font-bold text-gray-400 uppercase">Item {idx + 1}</p>
                     {feedItems.length > 1 && (

@@ -90,7 +90,7 @@ export function SyncStatus() {
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${online ? "bg-wangari-green-50" : "bg-amber-50"}`}>
+              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${online ? "bg-wangari-green-50" : "bg-tone-warn-bg"}`}>
                 {online ? <CheckCircle2 className="h-5 w-5 text-wangari-green-600" /> : <CloudOff className="h-5 w-5 text-amber-600" />}
               </div>
               <div>

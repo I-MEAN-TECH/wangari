@@ -182,19 +182,19 @@ export default function FeedbackAdminPage() {
   );
 
   const contradictionPanel = hasContradiction ? (
-    <Panel title="Works offline vs needs internet" description="Some people said Wangari works without internet, others said it needs a connection — a real answer, not an AI smoothing." className="border-amber-300 bg-amber-50/40">
+    <Panel title="Works offline vs needs internet" description="Some people said Wangari works without internet, others said it needs a connection — a real answer, not an AI smoothing." className="border-amber-300 bg-tone-warn-bg/40">
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-amber-200 bg-white p-4">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700"><span className="inline-flex items-center gap-1.5"><Radio className="h-3.5 w-3.5"/>Works offline</span></div>
+        <div className="rounded-xl border border-tone-warn-border bg-white p-4">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-tone-warn-text"><span className="inline-flex items-center gap-1.5"><Radio className="h-3.5 w-3.5"/>Works offline</span></div>
           <div className="mt-2 text-2xl font-extrabold text-wangari-heading">{offlineBest}</div>
           <div className="text-xs text-wangari-muted">people chose this</div>
         </div>
-        <div className="rounded-xl border border-red-200 bg-white p-4">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-red-700"><span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5"/>Needs internet</span></div>
+        <div className="rounded-xl border border-tone-bad-border bg-white p-4">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-badge-red-text"><span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5"/>Needs internet</span></div>
           <div className="mt-2 text-2xl font-extrabold text-wangari-heading">{internetWants}</div>
           <div className="text-xs text-wangari-muted">people named it essential</div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="rounded-xl border border-tone-neutral-border bg-white p-4">
           <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-muted">What it means</div>
           <p className="text-sm text-wangari-text">This is not a contradiction — it is a real connectivity problem. Farmers want to use it without a network, yet they run into the need for one. That gap is the point, per R8.</p>
         </div>
@@ -216,7 +216,7 @@ export default function FeedbackAdminPage() {
     <li key={b.tag} className="flex items-center justify-between rounded-lg border border-wangari-border/60 bg-white px-4 py-2.5 text-sm">
       <span className="truncate font-medium text-wangari-heading">{tagLbl(data.labels.improve, b.tag)}</span>
       <div className="ml-4 shrink-0 flex items-center gap-2">
-        <span className="font-bold text-amber-700">{b.count}</span>
+        <span className="font-bold text-tone-warn-text">{b.count}</span>
         <span className="text-xs text-wangari-muted">mentioned it</span>
       </div>
     </li>

@@ -32,7 +32,7 @@ export function CropGuidanceCard({ crop }: { crop: any }) {
 
   if (!template) {
     return (
-      <Card className="border-amber-200 bg-amber-50/50">
+      <Card className="border-tone-warn-border bg-tone-warn-bg/50">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
@@ -121,8 +121,8 @@ export function CropGuidanceCard({ crop }: { crop: any }) {
             </div>
 
             {/* The one thing that costs this crop the most */}
-            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-amber-700">
+            <div className="rounded-xl border border-tone-warn-border bg-tone-warn-bg/60 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-tone-warn-text">
                 The mistake that costs most
               </p>
               <p className="mt-1 text-xs text-amber-900">{template.criticalTiming}</p>

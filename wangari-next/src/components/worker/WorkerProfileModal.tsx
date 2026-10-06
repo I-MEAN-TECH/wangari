@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import api from "@/lib/api-client";
+import { BTN_GLASS } from "@/components/ui/patterns";
 
 export interface WorkerProfile {
   id: number;
@@ -117,7 +118,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white cursor-pointer"
+              className={BTN_GLASS}
             >
               <X className="h-5 w-5" />
             </button>
@@ -192,7 +193,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
 
             {tab === "pin" && (
               <form onSubmit={changePin} className="space-y-4">
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-800 flex items-start gap-2">
+                <div className="p-3 rounded-xl bg-tone-warn-bg border border-tone-warn-border text-xs font-bold text-amber-800 flex items-start gap-2">
                   <KeyRound className="h-4 w-4 shrink-0 mt-0.5" />
                   Changing your PIN signs you out of nothing — it takes effect at your next login.
                 </div>

@@ -62,7 +62,7 @@ export default function WhatsAppPage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white">
                 <MessageCircle className="h-6 w-6" />
               </div>
-              <Badge className="bg-amber-100 text-amber-800 border-amber-200 font-bold text-xs">
+              <Badge className="bg-amber-100 text-amber-800 border-tone-warn-border font-bold text-xs">
                 Coming Soon / Beta
               </Badge>
             </div>
@@ -86,7 +86,7 @@ export default function WhatsAppPage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sky-600 text-white">
                 <PhoneCall className="h-6 w-6" />
               </div>
-              <Badge className="bg-amber-100 text-amber-800 border-amber-200 font-bold text-xs">
+              <Badge className="bg-amber-100 text-amber-800 border-tone-warn-border font-bold text-xs">
                 Coming Soon
               </Badge>
             </div>

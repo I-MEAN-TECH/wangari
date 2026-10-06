@@ -4,6 +4,7 @@ import * as React from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Bird, BarChart3, Package, MousePointerClick, Smartphone } from "lucide-react";
+import { CARD_PANEL_P5 } from "@/components/ui/patterns";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -159,7 +160,7 @@ export function DemoVideoShowcase() {
           {callouts.map((c, i) => (
             <div
               key={c.title}
-              className="rounded-2xl border border-wangari-border bg-white p-5"
+              className={CARD_PANEL_P5}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-wangari-green-800 text-white mb-3">
                 <c.icon className="h-5 w-5" />

@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { CropGuidanceCard } from "@/components/crops/CropGuidanceCard";
 import { useToast } from "@/components/shared/toast";
 import api from "@/lib/api-client";
+import { BTN_LINK_SM } from "@/components/ui/patterns";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
@@ -56,10 +57,10 @@ function BatchTimeline({ status }: { status: string }) {
       {BATCH_STAGES.map((s, i) => (
         <React.Fragment key={s}>
           <div className="flex flex-col items-center gap-0.5" title={s}>
-            <div className={`h-2.5 w-2.5 rounded-full ${i <= effIdx && effIdx >= 0 ? "bg-wangari-green-800" : effIdx === -2 ? (i === 0 ? "bg-red-500" : "bg-gray-200") : "bg-gray-200"}`} />
+            <div className={`h-2.5 w-2.5 rounded-full ${i <= effIdx && effIdx >= 0 ? "bg-wangari-green-800" : effIdx === -2 ? (i === 0 ? "bg-red-500" : "bg-wangari-border") : "bg-wangari-border"}`} />
             <span className={`text-[8px] capitalize ${i <= effIdx && effIdx >= 0 ? "text-wangari-green-800 font-bold" : "text-gray-400"}`}>{s}</span>
           </div>
-          {i < BATCH_STAGES.length - 1 && <div className={`h-0.5 w-3 -mt-3 ${i < effIdx && effIdx >= 0 ? "bg-wangari-green-800" : "bg-gray-200"}`} />}
+          {i < BATCH_STAGES.length - 1 && <div className={`h-0.5 w-3 -mt-3 ${i < effIdx && effIdx >= 0 ? "bg-wangari-green-800" : "bg-wangari-border"}`} />}
         </React.Fragment>
       ))}
     </div>
@@ -185,7 +186,7 @@ export default function CropsPage() {
                       {i < 2 && <div className={`flex-1 h-0.5 rounded ${i < step ? "bg-wangari-green-800" : "bg-gray-100"}`} />}
                     </React.Fragment>
                   ))}
-                  <button onClick={resetForm} className="ml-auto text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
+                  <button onClick={resetForm} className={BTN_LINK_SM}><X className="h-4 w-4" /></button>
                 </div>
 
                 {step === 0 && (
@@ -194,7 +195,7 @@ export default function CropsPage() {
                     <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                       {CROP_TYPES.map(c => (
                         <button key={c} onClick={() => { setForm({ ...form, cropType: c }); setStep(1); }}
-                          className="rounded-xl border border-gray-200 px-3 py-3 text-center text-sm font-medium hover:border-wangari-green-800 hover:bg-wangari-green-50 transition-all cursor-pointer">{c}</button>
+                          className="rounded-xl border border-wangari-border px-3 py-3 text-center text-sm font-medium hover:border-wangari-green-800 hover:bg-wangari-green-50 transition-all cursor-pointer">{c}</button>
                       ))}
                     </div>
                   </div>
@@ -275,7 +276,7 @@ export default function CropsPage() {
       {(insights.phiAlerts?.length > 0 || insights.reminders?.length > 0) && (
         <motion.div initial="hidden" animate="visible" variants={fadeUp} className="space-y-2">
           {insights.phiAlerts.map((a: any, i: number) => (
-            <div key={`phi-${i}`} className={`flex items-center gap-3 rounded-xl border p-3 ${a.safe ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+            <div key={`phi-${i}`} className={`flex items-center gap-3 rounded-xl border p-3 ${a.safe ? "bg-emerald-50 border-emerald-200" : "bg-tone-warn-bg border-tone-warn-border"}`}>
               <ShieldAlert className={`h-5 w-5 shrink-0 ${a.safe ? "text-emerald-600" : "text-amber-600"}`} />
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-bold ${a.safe ? "text-emerald-800" : "text-amber-800"}`}>
@@ -284,7 +285,7 @@ export default function CropsPage() {
                 <p className="text-xs text-gray-500 truncate">{a.productName} sprayed {new Date(a.sprayedOn).toLocaleDateString()} · {a.phiDays}-day PHI</p>
               </div>
               <div className="text-right shrink-0">
-                <p className={`text-xs font-bold ${a.safe ? "text-emerald-700" : "text-amber-700"}`}>{a.safe ? "Now" : `${a.daysLeft}d left`}</p>
+                <p className={`text-xs font-bold ${a.safe ? "text-emerald-700" : "text-tone-warn-text"}`}>{a.safe ? "Now" : `${a.daysLeft}d left`}</p>
                 <p className="text-[10px] text-gray-400">safe {new Date(a.safeDate).toLocaleDateString()}</p>
               </div>
             </div>
@@ -471,7 +472,7 @@ export default function CropsPage() {
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        {hasActiveIssues && <Badge className="bg-red-50 text-red-700 border-red-200 text-[9px]"><Bug className="h-2.5 w-2.5 mr-0.5" />Issue</Badge>}
+                        {hasActiveIssues && <Badge className="bg-tone-bad-bg text-badge-red-text border-tone-bad-border text-[9px]"><Bug className="h-2.5 w-2.5 mr-0.5" />Issue</Badge>}
                         <Badge className={crop.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-50 text-gray-500"}>{crop.status}</Badge>
                       </div>
                     </div>
@@ -506,9 +507,9 @@ export default function CropsPage() {
                       <div className="flex gap-1 mb-2">
                         {[
                           { key: "growth", label: "Growth", icon: <Sprout className="h-3 w-3" />, color: "bg-emerald-50 text-emerald-700" },
-                          { key: "watering", label: "Water", icon: <Droplets className="h-3 w-3" />, color: "bg-blue-50 text-blue-700" },
+                          { key: "watering", label: "Water", icon: <Droplets className="h-3 w-3" />, color: "bg-blue-50 text-badge-blue-text" },
                           { key: "flower", label: "Flower", icon: <Leaf className="h-3 w-3" />, color: "bg-purple-50 text-purple-700" },
-                          { key: "harvest", label: "Harvest", icon: <Check className="h-3 w-3" />, color: "bg-amber-50 text-amber-700" },
+                          { key: "harvest", label: "Harvest", icon: <Check className="h-3 w-3" />, color: "bg-tone-warn-bg text-tone-warn-text" },
                         ].map(tab => {
                           const isActive = growth.stage.toLowerCase().includes(tab.key) ||
                             (tab.key === "growth" && ["Germinating", "Vegetative"].includes(growth.stage)) ||
@@ -526,10 +527,10 @@ export default function CropsPage() {
                         <button onClick={() => openModal("harvest", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-semibold hover:bg-emerald-100 transition-colors cursor-pointer">
                           <Check className="h-3.5 w-3.5" />Harvest
                         </button>
-                        <button onClick={() => openModal("health", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-amber-50 text-amber-700 text-[10px] font-semibold hover:bg-amber-100 transition-colors cursor-pointer">
+                        <button onClick={() => openModal("health", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-tone-warn-bg text-tone-warn-text text-[10px] font-semibold hover:bg-amber-100 transition-colors cursor-pointer">
                           <Bug className="h-3.5 w-3.5" />Report Issue
                         </button>
-                        <button onClick={() => openModal("apply", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-blue-50 text-blue-700 text-[10px] font-semibold hover:bg-blue-100 transition-colors cursor-pointer">
+                        <button onClick={() => openModal("apply", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-blue-50 text-badge-blue-text text-[10px] font-semibold hover:bg-badge-blue-bg transition-colors cursor-pointer">
                           <Pill className="h-3.5 w-3.5" />Apply Input
                         </button>
                         <button onClick={() => openModal("postharvest", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-purple-50 text-purple-700 text-[10px] font-semibold hover:bg-purple-100 transition-colors cursor-pointer">
@@ -574,7 +575,7 @@ export default function CropsPage() {
                     <div><Label className="text-xs font-semibold text-gray-400">Quantity (kg)</Label><Input type="number" placeholder="0" value={harvestForm.quantityKg} onChange={e => setHarvestForm({ ...harvestForm, quantityKg: e.target.value })} className="h-9 rounded-lg text-sm" autoFocus /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs font-semibold text-gray-400">Grade</Label><select value={harvestForm.quality} onChange={e => setHarvestForm({ ...harvestForm, quality: e.target.value })} className="w-full h-9 rounded-lg border border-gray-200 px-2 text-sm"><option>A</option><option>B</option><option>C</option></select></div>
+                    <div><Label className="text-xs font-semibold text-gray-400">Grade</Label><select value={harvestForm.quality} onChange={e => setHarvestForm({ ...harvestForm, quality: e.target.value })} className="w-full h-9 rounded-lg border border-wangari-border px-2 text-sm"><option>A</option><option>B</option><option>C</option></select></div>
                     <div><Label className="text-xs font-semibold text-gray-400">Sale Price (KES)</Label><Input type="number" placeholder="0" value={harvestForm.salePrice} onChange={e => setHarvestForm({ ...harvestForm, salePrice: e.target.value })} className="h-9 rounded-lg text-sm" /></div>
                   </div>
                 </div>
@@ -584,11 +585,11 @@ export default function CropsPage() {
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label className="text-xs font-semibold text-gray-400">Date</Label><Input type="date" value={healthForm.date} onChange={e => setHealthForm({ ...healthForm, date: e.target.value })} className="h-9 rounded-lg text-sm" /></div>
-                    <div><Label className="text-xs font-semibold text-gray-400">Issue Type</Label><select value={healthForm.issueType} onChange={e => setHealthForm({ ...healthForm, issueType: e.target.value })} className="w-full h-9 rounded-lg border border-gray-200 px-2 text-sm">{HEALTH_ISSUES.map(i => <option key={i}>{i}</option>)}</select></div>
+                    <div><Label className="text-xs font-semibold text-gray-400">Issue Type</Label><select value={healthForm.issueType} onChange={e => setHealthForm({ ...healthForm, issueType: e.target.value })} className="w-full h-9 rounded-lg border border-wangari-border px-2 text-sm">{HEALTH_ISSUES.map(i => <option key={i}>{i}</option>)}</select></div>
                   </div>
                   <div><Label className="text-xs font-semibold text-gray-400">Description</Label><Input placeholder="e.g. Aphids on leaves" value={healthForm.description} onChange={e => setHealthForm({ ...healthForm, description: e.target.value })} className="h-9 rounded-lg text-sm" /></div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs font-semibold text-gray-400">Severity</Label><select value={healthForm.severity} onChange={e => setHealthForm({ ...healthForm, severity: e.target.value })} className="w-full h-9 rounded-lg border border-gray-200 px-2 text-sm"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+                    <div><Label className="text-xs font-semibold text-gray-400">Severity</Label><select value={healthForm.severity} onChange={e => setHealthForm({ ...healthForm, severity: e.target.value })} className="w-full h-9 rounded-lg border border-wangari-border px-2 text-sm"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
                     <div><Label className="text-xs font-semibold text-gray-400">Treatment</Label><Input placeholder="e.g. Malathion" value={healthForm.treatment} onChange={e => setHealthForm({ ...healthForm, treatment: e.target.value })} className="h-9 rounded-lg text-sm" /></div>
                   </div>
                 </div>
@@ -598,12 +599,12 @@ export default function CropsPage() {
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label className="text-xs font-semibold text-gray-400">Date</Label><Input type="date" value={applyForm.date} onChange={e => setApplyForm({ ...applyForm, date: e.target.value })} className="h-9 rounded-lg text-sm" /></div>
-                    <div><Label className="text-xs font-semibold text-gray-400">Type</Label><select value={applyForm.type} onChange={e => setApplyForm({ ...applyForm, type: e.target.value })} className="w-full h-9 rounded-lg border border-gray-200 px-2 text-sm">{APPLICATION_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>
+                    <div><Label className="text-xs font-semibold text-gray-400">Type</Label><select value={applyForm.type} onChange={e => setApplyForm({ ...applyForm, type: e.target.value })} className="w-full h-9 rounded-lg border border-wangari-border px-2 text-sm">{APPLICATION_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>
                   </div>
                   <div><Label className="text-xs font-semibold text-gray-400">Product Name</Label><Input placeholder="e.g. NPK 17:17:17" value={applyForm.productName} onChange={e => setApplyForm({ ...applyForm, productName: e.target.value })} className="h-9 rounded-lg text-sm" /></div>
                   <div className="grid grid-cols-3 gap-3">
                     <div><Label className="text-xs font-semibold text-gray-400">Quantity</Label><Input type="number" placeholder="0" value={applyForm.quantity} onChange={e => setApplyForm({ ...applyForm, quantity: e.target.value })} className="h-9 rounded-lg text-sm" /></div>
-                    <div><Label className="text-xs font-semibold text-gray-400">Unit</Label><select value={applyForm.unit} onChange={e => setApplyForm({ ...applyForm, unit: e.target.value })} className="w-full h-9 rounded-lg border border-gray-200 px-2 text-sm"><option>kg</option><option>litres</option><option>bags</option><option>ml</option></select></div>
+                    <div><Label className="text-xs font-semibold text-gray-400">Unit</Label><select value={applyForm.unit} onChange={e => setApplyForm({ ...applyForm, unit: e.target.value })} className="w-full h-9 rounded-lg border border-wangari-border px-2 text-sm"><option>kg</option><option>litres</option><option>bags</option><option>ml</option></select></div>
                     <div><Label className="text-xs font-semibold text-gray-400">Cost (KES)</Label><Input type="number" placeholder="0" value={applyForm.cost} onChange={e => setApplyForm({ ...applyForm, cost: e.target.value })} className="h-9 rounded-lg text-sm" /></div>
                   </div>
                   {applyForm.type === "Pesticide" && (
@@ -625,7 +626,7 @@ export default function CropsPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs font-semibold text-gray-400">Grade</Label>
-                      <select value={phForm.grade} onChange={e => setPhForm({ ...phForm, grade: e.target.value })} className="w-full h-9 rounded-lg border border-gray-200 px-2 text-sm">
+                      <select value={phForm.grade} onChange={e => setPhForm({ ...phForm, grade: e.target.value })} className="w-full h-9 rounded-lg border border-wangari-border px-2 text-sm">
                         <option value="">— Select —</option>
                         <option>Premium Export</option><option>Export</option><option>Domestic</option><option>Reject</option>
                       </select>
@@ -633,13 +634,13 @@ export default function CropsPage() {
                     <div><Label className="text-xs font-semibold text-gray-400">Dry Matter %</Label><Input type="number" step="0.1" placeholder="e.g. 26" value={phForm.dryMatterPct} onChange={e => setPhForm({ ...phForm, dryMatterPct: e.target.value })} className="h-9 rounded-lg text-sm" /></div>
                   </div>
                   {Number(phForm.dryMatterPct) > 0 && Number(phForm.dryMatterPct) < 21 && phForm.grade.toLowerCase().includes("export") && (
-                    <div className="rounded-lg bg-red-50 border border-red-200 p-2 text-[11px] text-red-700">
+                    <div className="rounded-lg bg-tone-bad-bg border border-tone-bad-border p-2 text-[11px] text-badge-red-text">
                       ⚠️ Below 21% dry matter the fruit will never ripen — cannot be graded Export. Grade as Domestic or leave on the tree.
                     </div>
                   )}
                   <div>
                     <Label className="text-xs font-semibold text-gray-400">Treatment</Label>
-                    <select value={phForm.treatment} onChange={e => setPhForm({ ...phForm, treatment: e.target.value })} className="w-full h-9 rounded-lg border border-gray-200 px-2 text-sm">
+                    <select value={phForm.treatment} onChange={e => setPhForm({ ...phForm, treatment: e.target.value })} className="w-full h-9 rounded-lg border border-wangari-border px-2 text-sm">
                       <option value="">— Select —</option>
                       <option>Hot Water Treatment (HWT)</option><option>Vapour Heat Treatment (VHT)</option><option>Fungicide dip</option><option>Waxing</option><option>None</option>
                     </select>
@@ -659,13 +660,13 @@ export default function CropsPage() {
                     <div><Label className="text-xs font-semibold text-gray-400">Organic Matter %</Label><Input type="number" step="0.1" placeholder="e.g. 3.5" value={soilForm.organicMatterPct} onChange={e => setSoilForm({ ...soilForm, organicMatterPct: e.target.value })} className="h-9 rounded-lg text-sm" /></div>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <div><Label className="text-xs font-semibold text-gray-400">N</Label><select value={soilForm.nitrogen} onChange={e => setSoilForm({ ...soilForm, nitrogen: e.target.value })} className="w-full h-9 rounded-lg border border-gray-200 px-2 text-sm"><option value="">—</option><option>low</option><option>medium</option><option>high</option></select></div>
-                    <div><Label className="text-xs font-semibold text-gray-400">P</Label><select value={soilForm.phosphorus} onChange={e => setSoilForm({ ...soilForm, phosphorus: e.target.value })} className="w-full h-9 rounded-lg border border-gray-200 px-2 text-sm"><option value="">—</option><option>low</option><option>medium</option><option>high</option></select></div>
-                    <div><Label className="text-xs font-semibold text-gray-400">K</Label><select value={soilForm.potassium} onChange={e => setSoilForm({ ...soilForm, potassium: e.target.value })} className="w-full h-9 rounded-lg border border-gray-200 px-2 text-sm"><option value="">—</option><option>low</option><option>medium</option><option>high</option></select></div>
+                    <div><Label className="text-xs font-semibold text-gray-400">N</Label><select value={soilForm.nitrogen} onChange={e => setSoilForm({ ...soilForm, nitrogen: e.target.value })} className="w-full h-9 rounded-lg border border-wangari-border px-2 text-sm"><option value="">—</option><option>low</option><option>medium</option><option>high</option></select></div>
+                    <div><Label className="text-xs font-semibold text-gray-400">P</Label><select value={soilForm.phosphorus} onChange={e => setSoilForm({ ...soilForm, phosphorus: e.target.value })} className="w-full h-9 rounded-lg border border-wangari-border px-2 text-sm"><option value="">—</option><option>low</option><option>medium</option><option>high</option></select></div>
+                    <div><Label className="text-xs font-semibold text-gray-400">K</Label><select value={soilForm.potassium} onChange={e => setSoilForm({ ...soilForm, potassium: e.target.value })} className="w-full h-9 rounded-lg border border-wangari-border px-2 text-sm"><option value="">—</option><option>low</option><option>medium</option><option>high</option></select></div>
                   </div>
                   <div><Label className="text-xs font-semibold text-gray-400">Recommendation</Label><Input placeholder="e.g. Apply lime 2t/ha before planting" value={soilForm.recommendation} onChange={e => setSoilForm({ ...soilForm, recommendation: e.target.value })} className="h-9 rounded-lg text-sm" /></div>
                   {Number(soilForm.ph) > 0 && Number(soilForm.ph) < 5.2 && (
-                    <div className="rounded-lg bg-amber-50 border border-amber-200 p-2 text-[11px] text-amber-700">⚠️ pH below 5.2 is too acidic for most crops (beans need 5.8–6.5) — lime recommended.</div>
+                    <div className="rounded-lg bg-tone-warn-bg border border-tone-warn-border p-2 text-[11px] text-tone-warn-text">⚠️ pH below 5.2 is too acidic for most crops (beans need 5.8–6.5) — lime recommended.</div>
                   )}
                 </div>
               )}
@@ -677,7 +678,7 @@ export default function CropsPage() {
                     {phBatches.length === 0 ? <p className="text-xs text-gray-400">No batches yet — create one with “Post-Harvest”.</p> : (
                       <div className="space-y-3">
                         {phBatches.map((b: any) => (
-                          <div key={b.id} className={`rounded-xl border p-3 text-xs ${b.status === "rejected" ? "border-red-200 bg-red-50" : "border-gray-150 bg-gray-50/50"}`}>
+                          <div key={b.id} className={`rounded-xl border p-3 text-xs ${b.status === "rejected" ? "border-tone-bad-border bg-tone-bad-bg" : "border-gray-150 bg-gray-50/50"}`}>
                             <div className="flex justify-between items-center mb-2">
                               <span className="font-bold text-gray-900">{b.batchCode}</span>
                               <span className="font-bold text-gray-700">{Number(b.quantityKg).toFixed(0)} kg{b.grade ? ` · ${b.grade}` : ""}</span>

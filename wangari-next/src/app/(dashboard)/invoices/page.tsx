@@ -211,7 +211,7 @@ export default function InvoicesPage() {
           )}
         </button>
         {!farmProfile.businessName && (
-          <a href="/settings" className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold hover:bg-amber-100 cursor-pointer">
+          <a href="/settings" className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-tone-warn-bg border border-tone-warn-border text-tone-warn-text text-xs font-bold hover:bg-amber-100 cursor-pointer">
             <Settings className="h-3 w-3" />Set up farm profile for branded invoices
           </a>
         )}
@@ -248,7 +248,7 @@ export default function InvoicesPage() {
                         <div className="flex justify-between"><div className="h-1 rounded bg-gray-100 w-1/4" /><div className="h-1 rounded bg-gray-100 w-1/5" /></div>
                       </div>
                       <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between">
-                        <div className="h-1.5 rounded bg-gray-200 w-1/3" />
+                        <div className="h-1.5 rounded bg-wangari-border w-1/3" />
                         <div className="h-1.5 rounded w-1/4" style={{ background: template.color }} />
                       </div>
                     </div>
@@ -426,7 +426,7 @@ export default function InvoicesPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="text-xs font-bold text-wangari-green-800 font-mono">{inv.invoiceNumber}</p>
-                          <Badge className={inv.paymentStatus === "paid" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200 text-[9px]" : inv.paymentStatus === "partial" ? "bg-amber-50 text-amber-700 border-amber-200 text-[9px]" : "bg-red-50 text-red-700 border-red-200 text-[9px]"}>{inv.paymentStatus}</Badge>
+                          <Badge className={inv.paymentStatus === "paid" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200 text-[9px]" : inv.paymentStatus === "partial" ? "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border text-[9px]" : "bg-tone-bad-bg text-badge-red-text border-tone-bad-border text-[9px]"}>{inv.paymentStatus}</Badge>
                         </div>
                         <p className="text-sm font-bold text-wangari-heading">{inv.customer?.name || "Walk-in"}</p>
                         <p className="text-[10px] text-wangari-subtle">{new Date(inv.createdAt).toLocaleDateString()}</p>
@@ -441,7 +441,7 @@ export default function InvoicesPage() {
                       <button onClick={() => handlePrint(inv)} className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-wangari-sunken text-wangari-muted text-xs font-bold hover:bg-tone-neutral-border cursor-pointer"><Printer className="h-3 w-3" />Print</button>
                       {balance > 0 && (
                         <button onClick={() => { setShowPayModal(inv.id); setPayAmount(String(balance)); }}
-                          className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200 hover:bg-amber-100 cursor-pointer"><DollarSign className="h-3 w-3" />Pay</button>
+                          className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-tone-warn-bg text-tone-warn-text text-xs font-bold border border-tone-warn-border hover:bg-amber-100 cursor-pointer"><DollarSign className="h-3 w-3" />Pay</button>
                       )}
                     </div>
                   </CardContent>

@@ -41,8 +41,8 @@ type Instrument = {
 };
 
 const TONE_CLASS: Record<string, string> = {
-  red: "border-red-300 bg-red-50",
-  amber: "border-amber-300 bg-amber-50",
+  red: "border-red-300 bg-tone-bad-bg",
+  amber: "border-amber-300 bg-tone-warn-bg",
   green: "border-emerald-300 bg-emerald-50",
 };
 
@@ -164,7 +164,7 @@ export default function FeedbackPage() {
   if (loadError) {
     return (
       <Shell>
-        <p className="text-lg font-bold text-red-700">
+        <p className="text-lg font-bold text-badge-red-text">
           Could not load the questions. Please try again.
         </p>
       </Shell>
@@ -215,7 +215,7 @@ export default function FeedbackPage() {
               key={option.key}
               type="button"
               onClick={() => setAudience(option.key)}
-              className="flex min-h-[72px] items-center gap-4 rounded-2xl border-2 border-gray-200 bg-white px-5 text-left transition active:scale-[0.98]"
+              className="flex min-h-[72px] items-center gap-4 rounded-2xl border-2 border-wangari-border bg-white px-5 text-left transition active:scale-[0.98]"
             >
               <span className="text-3xl">{option.icon}</span>
               <span className="text-lg font-black text-gray-800">{option.label}</span>
@@ -235,7 +235,7 @@ export default function FeedbackPage() {
         <button
           type="button"
           onClick={() => setAudience(null)}
-          className="mb-4 min-h-[56px] rounded-2xl border-2 border-gray-200 bg-white px-4 text-sm font-bold text-gray-600"
+          className="mb-4 min-h-[56px] rounded-2xl border-2 border-wangari-border bg-white px-4 text-sm font-bold text-gray-600"
         >
           ← Change your answer
         </button>
@@ -282,7 +282,7 @@ export default function FeedbackPage() {
             className={`flex min-h-[64px] items-center gap-3 rounded-2xl border-2 px-4 text-left transition ${
               best === tag.key
                 ? "border-emerald-600 bg-emerald-50"
-                : "border-gray-200 bg-white"
+                : "border-wangari-border bg-white"
             }`}
           >
             <span className="text-2xl">{tag.icon}</span>
@@ -303,8 +303,8 @@ export default function FeedbackPage() {
             onClick={() => toggle(improve, setImprove, tag.key)}
             className={`flex min-h-[64px] items-center gap-3 rounded-2xl border-2 px-4 text-left transition ${
               improve.includes(tag.key)
-                ? "border-amber-500 bg-amber-50"
-                : "border-gray-200 bg-white"
+                ? "border-amber-500 bg-tone-warn-bg"
+                : "border-wangari-border bg-white"
             }`}
           >
             <span className="text-2xl">{tag.icon}</span>
@@ -326,7 +326,7 @@ export default function FeedbackPage() {
             className={`min-h-[56px] rounded-full border-2 px-5 text-base font-bold transition ${
               species.includes(s)
                 ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                : "border-gray-200 bg-white text-gray-700"
+                : "border-wangari-border bg-white text-gray-700"
             }`}
           >
             {SPECIES_LABEL[s] ?? s}
@@ -345,11 +345,11 @@ export default function FeedbackPage() {
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
         placeholder="07…"
-        className="mt-3 w-full min-h-[64px] rounded-2xl border-2 border-gray-200 px-4 text-lg font-bold"
+        className="mt-3 w-full min-h-[64px] rounded-2xl border-2 border-wangari-border px-4 text-lg font-bold"
       />
 
       {error && (
-        <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>
+        <p className="mt-4 rounded-xl bg-tone-bad-bg p-3 text-sm font-bold text-badge-red-text">{error}</p>
       )}
 
       <button

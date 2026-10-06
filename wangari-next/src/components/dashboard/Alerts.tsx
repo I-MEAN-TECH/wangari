@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Package, Syringe, TrendingDown, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CARD_ROW_ICON } from "@/components/ui/patterns";
 
 // ─── Mortality Alert ──────────────────────────────────────
 interface MortalityAlertProps {
@@ -16,7 +17,7 @@ export function MortalityAlert({ flockName, mortalityRate, totalMortality }: Mor
   const isHigh = mortalityRate > 5;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-wangari-border bg-white p-3.5 transition-colors hover:bg-gray-50">
+    <div className={CARD_ROW_ICON}>
       <div className={`rounded-lg p-2 ${isHigh ? "bg-badge-red-bg" : "bg-badge-yellow-bg"}`}>
         <TrendingDown className={`h-4 w-4 ${isHigh ? "text-badge-red-text" : "text-badge-yellow-text"}`} />
       </div>
@@ -45,7 +46,7 @@ export function LowStockAlert({ itemName, currentStock, unit, reorderLevel }: Lo
   const percentage = reorderLevel > 0 ? (currentStock / reorderLevel) * 100 : 0;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-wangari-border bg-white p-3.5 transition-colors hover:bg-gray-50">
+    <div className={CARD_ROW_ICON}>
       <div className="rounded-lg bg-badge-yellow-bg p-2">
         <Package className="h-4 w-4 text-badge-yellow-text" />
       </div>
@@ -80,7 +81,7 @@ export function VaccinationAlert({ flockName, vaccineName, dueDate }: Vaccinatio
   const isUrgent = daysUntil <= 3;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-wangari-border bg-white p-3.5 transition-colors hover:bg-gray-50">
+    <div className={CARD_ROW_ICON}>
       <div className={`rounded-lg p-2 ${isUrgent ? "bg-badge-red-bg" : "bg-badge-blue-bg"}`}>
         <Syringe className={`h-4 w-4 ${isUrgent ? "text-badge-red-text" : "text-badge-blue-text"}`} />
       </div>

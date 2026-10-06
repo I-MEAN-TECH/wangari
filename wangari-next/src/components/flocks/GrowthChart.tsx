@@ -23,7 +23,7 @@ export function GrowthChart({ production, expectedWeight }: GrowthChartProps) {
   if (weightData.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
-        <Scale className="h-8 w-8 text-gray-200 mb-2" />
+        <Scale className="h-8 w-8 text-wangari-border mb-2" />
         <p className="text-xs text-gray-400">No weight data recorded yet</p>
         <p className="text-[10px] text-gray-300 mt-1">Record weights in daily production to see growth trends</p>
       </div>

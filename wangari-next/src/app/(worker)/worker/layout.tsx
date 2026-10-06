@@ -120,7 +120,7 @@ export default function WorkerLayout({ children }: { children: React.ReactNode }
                   <div className="border-t border-wangari-border p-1.5">
                     <button
                       onClick={() => logout()}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-red-50 transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-tone-bad-bg transition-colors cursor-pointer"
                     >
                       <LogOut className="h-4 w-4 text-red-500" />
                       <span className="text-sm font-medium text-red-600">Sign Out</span>

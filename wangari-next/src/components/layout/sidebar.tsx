@@ -273,7 +273,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                       {item.icon}
                       <span className="flex-1">{item.label}</span>
                       {item.badge && (
-                        <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-extrabold border", isActive ? "bg-emerald-700/60 text-white border-emerald-500" : "bg-amber-100 text-amber-800 border-amber-200")}>
+                        <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-extrabold border", isActive ? "bg-emerald-700/60 text-white border-emerald-500" : "bg-amber-100 text-amber-800 border-tone-warn-border")}>
                           {item.badge}
                         </span>
                       )}
@@ -331,7 +331,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         </div>
         <button
           onClick={signOut}
-          className="flex items-center justify-center gap-2 w-full rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 bg-red-50 border border-red-100 hover:bg-red-100 transition-colors cursor-pointer"
+          className="flex items-center justify-center gap-2 w-full rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 bg-tone-bad-bg border border-badge-red-bg hover:bg-badge-red-bg transition-colors cursor-pointer"
         >
           <LogOut className="h-4 w-4" />
           Sign Out

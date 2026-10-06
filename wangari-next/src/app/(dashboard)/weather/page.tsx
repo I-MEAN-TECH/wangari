@@ -220,10 +220,10 @@ export default function WeatherPage() {
       {alerts.length > 0 && (
         <motion.div variants={fadeUp} className="space-y-2">
           {alerts.map((alert, i) => (
-            <Card key={i} className={`border ${alert.type === "danger" ? "border-red-300 bg-red-50" : alert.type === "warning" ? "border-amber-300 bg-amber-50" : "border-blue-300 bg-blue-50"}`}>
+            <Card key={i} className={`border ${alert.type === "danger" ? "border-red-300 bg-tone-bad-bg" : alert.type === "warning" ? "border-amber-300 bg-tone-warn-bg" : "border-blue-300 bg-blue-50"}`}>
               <CardContent className="flex items-start gap-3 p-3">
                 <AlertTriangle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${alert.type === "danger" ? "text-red-600" : alert.type === "warning" ? "text-amber-600" : "text-blue-600"}`} />
-                <p className={`text-xs font-medium ${alert.type === "danger" ? "text-red-800" : alert.type === "warning" ? "text-amber-800" : "text-blue-800"}`}>{alert.text}</p>
+                <p className={`text-xs font-medium ${alert.type === "danger" ? "text-tone-bad-text" : alert.type === "warning" ? "text-amber-800" : "text-blue-800"}`}>{alert.text}</p>
               </CardContent>
             </Card>
           ))}
@@ -232,9 +232,9 @@ export default function WeatherPage() {
 
       {/* Spray recommendation */}
       <motion.div variants={fadeUp}>
-        <Card className={`border ${sprayOk ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+        <Card className={`border ${sprayOk ? "border-emerald-200 bg-emerald-50" : "border-tone-warn-border bg-tone-warn-bg"}`}>
           <CardContent className="flex items-center gap-3 p-4">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${sprayOk ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${sprayOk ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-tone-warn-text"}`}>
               {sprayOk ? <Leaf className="h-5 w-5" /> : <Umbrella className="h-5 w-5" />}
             </div>
             <div>

@@ -40,7 +40,7 @@ function ResetPasswordForm() {
         className="space-y-8 text-center"
       >
         <motion.div variants={fadeUp} className="flex justify-center">
-          <div className="h-16 w-16 rounded-full bg-red-50 flex items-center justify-center">
+          <div className="h-16 w-16 rounded-full bg-tone-bad-bg flex items-center justify-center">
             <AlertCircle className="h-8 w-8 text-red-500" />
           </div>
         </motion.div>
@@ -149,7 +149,7 @@ function ResetPasswordForm() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium"
+          className="rounded-xl bg-tone-bad-bg border border-tone-bad-border px-4 py-3 text-sm text-badge-red-text font-medium"
         >
           {error}
         </motion.div>

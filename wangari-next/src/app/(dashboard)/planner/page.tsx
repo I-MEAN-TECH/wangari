@@ -93,7 +93,7 @@ export default function PlannerPage() {
             : 0;
           return (
             <motion.div key={plan.cropId} initial="hidden" animate="visible" variants={fadeUp}>
-              <Card className="border border-gray-200 overflow-hidden">
+              <Card className="border border-wangari-border overflow-hidden">
                 {/* Summary row */}
                 <button onClick={() => setExpanded(isOpen ? null : plan.cropId)} className="w-full text-left p-5 flex items-center gap-4 hover:bg-gray-50/70 transition-colors cursor-pointer">
                   <div className="hidden sm:flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-2xl shrink-0">
@@ -115,7 +115,7 @@ export default function PlannerPage() {
                     {/* Stage progress bar */}
                     <div className="mt-2 flex items-center gap-1">
                       {plan.stages.map((s, i) => (
-                        <div key={i} className={`h-1.5 flex-1 rounded-full ${s.state === "done" ? "bg-emerald-500" : s.state === "current" ? "bg-emerald-300 animate-pulse" : "bg-gray-200"}`} title={s.name} />
+                        <div key={i} className={`h-1.5 flex-1 rounded-full ${s.state === "done" ? "bg-emerald-500" : s.state === "current" ? "bg-emerald-300 animate-pulse" : "bg-wangari-border"}`} title={s.name} />
                       ))}
                     </div>
                   </div>
@@ -130,7 +130,7 @@ export default function PlannerPage() {
                         <div key={i} className="relative">
                           {/* Timeline dot + line */}
                           <div className={`absolute -left-6 top-1 h-4 w-4 rounded-full border-2 ${s.state === "done" ? "bg-emerald-500 border-emerald-500" : s.state === "current" ? "bg-white border-emerald-500 ring-4 ring-emerald-100" : "bg-gray-100 border-gray-300"}`} />
-                          {i < plan.stages.length - 1 && <div className={`absolute -left-[18px] top-5 h-full w-0.5 ${s.state === "done" ? "bg-emerald-300" : "bg-gray-200"}`} />}
+                          {i < plan.stages.length - 1 && <div className={`absolute -left-[18px] top-5 h-full w-0.5 ${s.state === "done" ? "bg-emerald-300" : "bg-wangari-border"}`} />}
                           <div className={`${s.state === "current" ? "bg-emerald-50/80 border border-emerald-200 rounded-xl p-3" : ""} ${s.state === "upcoming" ? "opacity-70" : ""}`}>
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-lg">{s.icon}</span>

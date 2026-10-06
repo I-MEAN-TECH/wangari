@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { IpAccessPanel, type IpData } from "@/components/admin/ip-access-panel";
 import { getAdminSession } from "@/lib/admin-client";
 import type { PreviewResult } from "@/lib/ip-access-view";
+import { CARD_PANEL } from "@/components/ui/patterns";
 
 interface SystemInfo {
   status: string;
@@ -204,7 +205,7 @@ export default function AdminSystemPage() {
               { label: "Subscriptions", value: info.counts.subs, icon: <Layers className="h-4 w-4" /> },
               { label: "Workers", value: info.counts.workers, icon: <Layers className="h-4 w-4" /> },
             ].map((c) => (
-              <div key={c.label} className="rounded-2xl border border-wangari-border p-3.5">
+              <div key={c.label} className={CARD_PANEL}>
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-wangari-muted">{c.icon} {c.label}</div>
                 <div className="mt-1 text-2xl font-bold text-wangari-heading">{c.value.toLocaleString()}</div>
               </div>

@@ -128,9 +128,9 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
           </div>
           <Link
             href="/subscription"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-amber-900 text-xs sm:text-sm font-extrabold hover:bg-amber-50 transition-all shadow-md shrink-0 cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-amber-900 text-xs sm:text-sm font-extrabold hover:bg-tone-warn-bg transition-all shadow-md shrink-0 cursor-pointer"
           >
-            <CreditCard className="h-4 w-4 text-amber-700" />
+            <CreditCard className="h-4 w-4 text-tone-warn-text" />
             Renew Subscription Now
           </Link>
         </div>
@@ -216,23 +216,23 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
   // ── Trial Expired — Paywall banner ───────────────────────
   if (trialStatus === "expired" || timeLeft.isExpired) {
     return (
-      <div className="rounded-2xl bg-gradient-to-r from-red-700 to-red-800 text-white p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="rounded-2xl bg-gradient-to-r from-badge-red-text to-tone-bad-text text-white p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="h-11 w-11 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
             <AlertTriangle className="h-6 w-6 text-white" />
           </div>
           <div>
             <p className="text-sm sm:text-base font-extrabold">Your Free Trial Has Ended</p>
-            <p className="text-xs text-red-100 mt-0.5">
+            <p className="text-xs text-badge-red-bg mt-0.5">
               Subscribe now to reactivate access to your farm records, reports, and team tools. Your data is safely saved.
             </p>
           </div>
         </div>
         <Link
           href="/subscription"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-red-700 text-xs sm:text-sm font-extrabold hover:bg-red-50 transition-all shadow-md shrink-0 cursor-pointer"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-badge-red-text text-xs sm:text-sm font-extrabold hover:bg-tone-bad-bg transition-all shadow-md shrink-0 cursor-pointer"
         >
-          <CreditCard className="h-4 w-4 text-red-700" />
+          <CreditCard className="h-4 w-4 text-badge-red-text" />
           Subscribe Now
         </Link>
       </div>

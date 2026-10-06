@@ -317,7 +317,7 @@ export function DocReader({
                     <li key={n.link + n.title}>
                       <a href={n.link} target="_blank" rel="noreferrer" className="group flex items-start gap-2.5">
                         {n.alert ? (
-                          <span className="mt-0.5 flex shrink-0 items-center gap-1 rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-black uppercase text-red-700">
+                          <span className="mt-0.5 flex shrink-0 items-center gap-1 rounded bg-badge-red-bg px-1.5 py-0.5 text-[9px] font-black uppercase text-badge-red-text">
                             <AlertTriangle className="h-2.5 w-2.5" /> Alert
                           </span>
                         ) : (

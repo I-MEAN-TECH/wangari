@@ -46,7 +46,7 @@ function pct(cur: number, prev: number): number {
 function DeltaPill({ value }: { value: number }) {
   if (value > 0) return <span className="inline-flex items-center gap-1 rounded-full bg-wangari-green-50 px-2 py-0.5 text-[11px] font-bold text-wangari-green-700"><TrendingUp className="h-3 w-3" />+{value}%</span>;
   if (value < 0) return <span className="inline-flex items-center gap-1 rounded-full bg-badge-red-bg px-2 py-0.5 text-[11px] font-bold text-badge-red-text"><TrendingDown className="h-3 w-3" />{value}%</span>;
-  return <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-wangari-muted"><Minus className="h-3 w-3" />0%</span>;
+  return <span className="inline-flex items-center gap-1 rounded-full bg-wangari-sunken px-2 py-0.5 text-[11px] font-bold text-wangari-muted"><Minus className="h-3 w-3" />0%</span>;
 }
 
 // ── Queries ───────────────────────────────────────────────
@@ -236,7 +236,7 @@ export default function PostHogAnalyticsPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">⚠️ {error} — showing partial data.</div>
+        <div className="rounded-xl border border-tone-warn-border bg-tone-warn-bg px-4 py-3 text-sm text-amber-800">⚠️ {error} — showing partial data.</div>
       )}
 
       {/* ── KPI cards ── */}
@@ -334,7 +334,7 @@ export default function PostHogAnalyticsPage() {
                         {i > 0 && drop > 0 && <span className="text-[10px] font-semibold text-badge-red-text">−{drop}%</span>}
                       </span>
                     </div>
-                    <div className="mt-1 h-3 overflow-hidden rounded-full bg-slate-100">
+                    <div className="mt-1 h-3 overflow-hidden rounded-full bg-wangari-sunken">
                       <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(wPct, 2)}%`, background: EVENT_COLORS[i % EVENT_COLORS.length] }} />
                     </div>
                   </div>
@@ -365,7 +365,7 @@ export default function PostHogAnalyticsPage() {
                     <p className="text-[11px] font-bold uppercase tracking-wide text-wangari-subtle">{s.stage}</p>
                     <p className="mt-1 text-2xl font-extrabold text-wangari-heading">{fmt(s.count)}</p>
                     <p className="text-[11px] text-wangari-subtle">{s.note}</p>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-wangari-sunken">
                       <div className="h-full rounded-full" style={{ width: `${Math.max((s.count / max) * 100, 3)}%`, background: EVENT_COLORS[i % EVENT_COLORS.length] }} />
                     </div>
                     {i > 0 && drop > 0 && <p className="mt-1 text-[10px] font-semibold text-badge-red-text">−{drop}% from {qFunnel.steps[i - 1].stage.toLowerCase()}</p>}
@@ -377,9 +377,9 @@ export default function PostHogAnalyticsPage() {
               <Badge className="bg-wangari-green-50 text-wangari-green-700 border-0">{qFunnel.totals.conversionRate}% quote → invoice (of decided)</Badge>
               <Badge className="bg-badge-red-bg text-badge-red-text border-0">{qFunnel.totals.declined} declined</Badge>
               <Badge className="bg-amber-100 text-amber-800 border-0">{qFunnel.totals.expired} expired</Badge>
-              <Badge className="bg-slate-100 text-slate-600 border-0">{qFunnel.totals.sent} awaiting response</Badge>
+              <Badge className="bg-wangari-sunken text-tone-neutral-text border-0">{qFunnel.totals.sent} awaiting response</Badge>
               <Badge className="bg-wangari-green-50 text-wangari-green-700 border-0">KES {qFunnel.totals.acceptedValue.toLocaleString()} accepted value</Badge>
-              <Badge className="bg-slate-100 text-slate-600 border-0">{qFunnel.totals.sendRate}% of drafts get sent</Badge>
+              <Badge className="bg-wangari-sunken text-tone-neutral-text border-0">{qFunnel.totals.sendRate}% of drafts get sent</Badge>
             </div>
           </div>
         )}
@@ -446,5 +446,5 @@ function eventBadge(e: string): string {
   if (e.includes("exception")) return "bg-badge-red-bg text-badge-red-text border-0";
   if (e.includes("signup") || e.includes("subscription")) return "bg-wangari-green-50 text-wangari-green-700 border-0";
   if (e.includes("checkout")) return "bg-amber-100 text-amber-800 border-0";
-  return "bg-slate-100 text-slate-600 border-0";
+  return "bg-wangari-sunken text-tone-neutral-text border-0";
 }

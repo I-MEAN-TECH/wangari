@@ -116,7 +116,7 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
     <div className="space-y-4">
       {/* Alert Summary */}
       {(overdueCount > 0 || todayCount > 0) && (
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-tone-warn-bg border border-amber-100">
           <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
           <div>
             <p className="text-sm font-semibold text-amber-800">
@@ -144,7 +144,7 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
               "px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer",
               filter === tab.key
                 ? "bg-emerald-700 text-white shadow-sm"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 text-gray-600 hover:bg-wangari-border"
             )}
           >
             {tab.label} ({tab.count})
@@ -175,16 +175,16 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-xl border transition-all",
                   isOverdue
-                    ? "border-red-200 bg-red-50/50"
+                    ? "border-tone-bad-border bg-tone-bad-bg/50"
                     : isToday
-                    ? "border-amber-200 bg-amber-50/50"
+                    ? "border-tone-warn-border bg-tone-warn-bg/50"
                     : "border-gray-100 bg-white hover:bg-gray-50"
                 )}
               >
                 {/* Icon */}
                 <div className={cn(
                   "flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0",
-                  isOverdue ? "bg-red-100 text-red-600" : isToday ? "bg-amber-100 text-amber-600" : "bg-emerald-50 text-emerald-600"
+                  isOverdue ? "bg-badge-red-bg text-red-600" : isToday ? "bg-amber-100 text-amber-600" : "bg-emerald-50 text-emerald-600"
                 )}>
                   <Syringe className="h-4 w-4" />
                 </div>
@@ -194,17 +194,17 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-gray-900">{r.vaccineName}</span>
                     {isOverdue && (
-                      <Badge className="text-[9px] bg-red-100 text-red-700 border-red-200">
+                      <Badge className="text-[9px] bg-badge-red-bg text-badge-red-text border-tone-bad-border">
                         {Math.abs(r.daysUntil)}d overdue
                       </Badge>
                     )}
                     {isToday && (
-                      <Badge className="text-[9px] bg-amber-100 text-amber-700 border-amber-200">
+                      <Badge className="text-[9px] bg-amber-100 text-tone-warn-text border-tone-warn-border">
                         Due today
                       </Badge>
                     )}
                     {isSoon && !isToday && (
-                      <Badge className="text-[9px] bg-blue-100 text-blue-700 border-blue-200">
+                      <Badge className="text-[9px] bg-badge-blue-bg text-badge-blue-text border-blue-200">
                         {r.daysUntil}d
                       </Badge>
                     )}

@@ -24,7 +24,7 @@ export function Toast({ message, type, onClose }: ToastProps) {
       className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-xl border px-4 py-3 shadow-xl ${
         type === "success"
           ? "border-wangari-green-200 bg-wangari-green-50 text-wangari-green-800"
-          : "border-red-200 bg-red-50 text-red-700"
+          : "border-tone-bad-border bg-tone-bad-bg text-badge-red-text"
       }`}
     >
       {type === "success" ? <CheckCircle2 className="h-5 w-5 shrink-0" /> : <XCircle className="h-5 w-5 shrink-0" />}

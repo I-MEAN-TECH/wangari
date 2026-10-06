@@ -6,6 +6,7 @@ import { X, Calendar, Egg, Droplets, Scale, Wheat, AlertTriangle, Check, Trendin
 import { cn } from "@/lib/utils";
 
 import { speciesFor } from "@/lib/species-resolve";
+import { BTN_CANCEL, BTN_CTA_EMERALD, BTN_TOOL } from "@/components/ui/patterns";
 
 interface RecordProductionFormProps {
   flock: any;
@@ -95,7 +96,7 @@ export function RecordProductionForm({ flock, onSubmit, onCancel }: RecordProduc
               {flock.name} — {flock.breed || species?.name}
             </p>
           </div>
-          <button onClick={onCancel} className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+          <button onClick={onCancel} className={BTN_TOOL}>
             <X className="h-5 w-5 text-gray-400" />
           </button>
         </div>
@@ -123,7 +124,7 @@ export function RecordProductionForm({ flock, onSubmit, onCancel }: RecordProduc
                 type="date"
                 value={form.date}
                 onChange={(e) => updateForm("date", e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
               />
             </div>
 
@@ -139,7 +140,7 @@ export function RecordProductionForm({ flock, onSubmit, onCancel }: RecordProduc
                     placeholder="0"
                     value={form.eggsCollected}
                     onChange={(e) => updateForm("eggsCollected", e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   />
                   {flock.currentCount > 0 && form.eggsCollected && (
                     <p className="mt-1 text-[10px] text-gray-400">
@@ -159,7 +160,7 @@ export function RecordProductionForm({ flock, onSubmit, onCancel }: RecordProduc
                     placeholder="0"
                     value={form.eggsCollected}
                     onChange={(e) => updateForm("eggsCollected", e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   />
                   {flock.currentCount > 0 && form.eggsCollected && (
                     <p className="mt-1 text-[10px] text-gray-400">
@@ -180,7 +181,7 @@ export function RecordProductionForm({ flock, onSubmit, onCancel }: RecordProduc
                     placeholder="0"
                     value={form.avgWeight}
                     onChange={(e) => updateForm("avgWeight", e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   />
                 </div>
               )}
@@ -194,7 +195,7 @@ export function RecordProductionForm({ flock, onSubmit, onCancel }: RecordProduc
                   placeholder="0"
                   value={form.mortality}
                   onChange={(e) => updateForm("mortality", e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
               </div>
             </div>
@@ -210,7 +211,7 @@ export function RecordProductionForm({ flock, onSubmit, onCancel }: RecordProduc
                 placeholder="0"
                 value={form.feedUsed}
                 onChange={(e) => updateForm("feedUsed", e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
               />
               {flock.currentCount > 0 && form.feedUsed && (
                 <p className="mt-1 text-[10px] text-gray-400">
@@ -227,7 +228,7 @@ export function RecordProductionForm({ flock, onSubmit, onCancel }: RecordProduc
                 value={form.notes}
                 onChange={(e) => updateForm("notes", e.target.value)}
                 rows={2}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none"
+                className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none"
               />
             </div>
 
@@ -253,13 +254,13 @@ export function RecordProductionForm({ flock, onSubmit, onCancel }: RecordProduc
         {/* Footer */}
         {!submitted && (
           <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
-            <button onClick={onCancel} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-white border border-gray-200 transition-colors cursor-pointer">
+            <button onClick={onCancel} className={BTN_CANCEL}>
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="px-6 py-2 rounded-xl text-sm font-semibold bg-emerald-700 text-white hover:bg-emerald-800 shadow-md transition-all cursor-pointer disabled:opacity-50"
+              className={BTN_CTA_EMERALD}
             >
               {loading ? "Saving..." : "Record Production"}
             </button>

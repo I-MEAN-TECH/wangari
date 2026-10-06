@@ -216,10 +216,10 @@ export default function WorkersPage() {
             <CardContent className="p-5">
               <h3 className="text-xs font-bold uppercase text-gray-400 tracking-wider mb-4">Quick Actions</h3>
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => openEdit(w)} className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 cursor-pointer">
+                <button onClick={() => openEdit(w)} className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 text-badge-blue-text text-xs font-bold hover:bg-badge-blue-bg cursor-pointer">
                   <Edit3 className="h-4 w-4" />Edit Details
                 </button>
-                <button onClick={() => handleToggleStatus(w.id, w.status)} className={`flex items-center gap-2 p-3 rounded-xl text-xs font-bold cursor-pointer ${w.status === "active" ? "bg-red-50 text-red-600 hover:bg-red-100" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"}`}>
+                <button onClick={() => handleToggleStatus(w.id, w.status)} className={`flex items-center gap-2 p-3 rounded-xl text-xs font-bold cursor-pointer ${w.status === "active" ? "bg-tone-bad-bg text-red-600 hover:bg-badge-red-bg" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"}`}>
                   {w.status === "active" ? <><UserX className="h-4 w-4" />Deactivate</> : <><UserCheck className="h-4 w-4" />Activate</>}
                 </button>
               </div>
@@ -250,7 +250,7 @@ export default function WorkersPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <h3 className="text-sm font-bold text-wangari-heading">{editingId ? "Edit Worker" : "Add Worker"}</h3>
-                    <div className="flex gap-1">{[1, 2].map(s => <div key={s} className={`h-1.5 w-8 rounded-full ${step >= s ? "bg-wangari-green-800" : "bg-gray-200"}`} />)}</div>
+                    <div className="flex gap-1">{[1, 2].map(s => <div key={s} className={`h-1.5 w-8 rounded-full ${step >= s ? "bg-wangari-green-800" : "bg-wangari-border"}`} />)}</div>
                   </div>
                   <button onClick={() => { setShowForm(false); resetForm(); }} className="text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
                 </div>
@@ -367,7 +367,7 @@ export default function WorkersPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 mt-3 text-[10px] text-wangari-subtle">
-                      <Badge className={w.status === "active" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-gray-100 text-wangari-muted border-gray-200"}>{w.status}</Badge>
+                      <Badge className={w.status === "active" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-gray-100 text-wangari-muted border-wangari-border"}>{w.status}</Badge>
                       <span>{daysWorked} days worked</span>
                       <span className="ml-auto text-wangari-subtle">→</span>
                     </div>

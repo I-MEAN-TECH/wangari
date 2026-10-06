@@ -188,15 +188,15 @@ const typeIcons: Record<string, any> = {
 
 const priorityColors: Record<string, { bg: string; text: string; border: string; icon: string }> = {
   urgent: {
-    bg: "bg-red-50",
-    text: "text-red-800",
-    border: "border-red-200",
+    bg: "bg-tone-bad-bg",
+    text: "text-tone-bad-text",
+    border: "border-tone-bad-border",
     icon: "bg-red-500 text-white",
   },
   due_soon: {
-    bg: "bg-amber-50",
+    bg: "bg-tone-warn-bg",
     text: "text-amber-800",
-    border: "border-amber-200",
+    border: "border-tone-warn-border",
     icon: "bg-amber-500 text-white",
   },
   routine: {
@@ -303,7 +303,7 @@ export function DailyTasks({ flocks, compact = false }: DailyTasksProps) {
             {totalTasks} remaining
           </Badge>
           {urgentCount > 0 && (
-            <Badge className="bg-red-100 text-red-700 border-red-200 text-[10px]">
+            <Badge className="bg-badge-red-bg text-badge-red-text border-tone-bad-border text-[10px]">
               {urgentCount} urgent
             </Badge>
           )}
@@ -343,13 +343,13 @@ export function DailyTasks({ flocks, compact = false }: DailyTasksProps) {
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <Link
                         href={task.href}
-                        className="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-[10px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                        className="px-2.5 py-1.5 rounded-lg bg-white border border-wangari-border text-[10px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
                       >
                         Go
                       </Link>
                       <button
                         onClick={() => handleComplete(task.id)}
-                        className="p-1.5 rounded-lg bg-white border border-gray-200 text-gray-400 hover:text-emerald-600 hover:border-emerald-200 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-lg bg-white border border-wangari-border text-gray-400 hover:text-emerald-600 hover:border-emerald-200 transition-colors cursor-pointer"
                         title="Mark done"
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" />

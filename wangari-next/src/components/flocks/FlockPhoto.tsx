@@ -93,7 +93,7 @@ export function FlockPhoto({ flockId, photoUrl, onPhotoUpdate, size = "md" }: Fl
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           className={cn(
-            "h-full w-full rounded-2xl border-2 border-dashed border-gray-200 hover:border-emerald-400 hover:bg-emerald-50/50 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer",
+            "h-full w-full rounded-2xl border-2 border-dashed border-wangari-border hover:border-emerald-400 hover:bg-emerald-50/50 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer",
             uploading && "opacity-50"
           )}
         >

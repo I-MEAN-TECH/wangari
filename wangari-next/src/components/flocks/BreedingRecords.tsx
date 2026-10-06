@@ -89,9 +89,9 @@ export function BreedingRecords({ flockId, flockName, flockType, onClose }: Bree
 
   const getStatusColor = (status: string) => {
     if (status === "born") return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    if (status === "confirmed") return "bg-blue-50 text-blue-700 border-blue-200";
-    if (status === "failed") return "bg-red-50 text-red-700 border-red-200";
-    return "bg-amber-50 text-amber-700 border-amber-200";
+    if (status === "confirmed") return "bg-blue-50 text-badge-blue-text border-blue-200";
+    if (status === "failed") return "bg-tone-bad-bg text-badge-red-text border-tone-bad-border";
+    return "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border";
   };
 
   const flock = flockId ? records[0]?.flock : null;
@@ -132,7 +132,7 @@ export function BreedingRecords({ flockId, flockName, flockType, onClose }: Bree
         </div>
       ) : records.length === 0 ? (
         <div className="flex flex-col items-center py-8 text-center">
-          <Heart className="h-8 w-8 text-gray-200 mb-2" />
+          <Heart className="h-8 w-8 text-wangari-border mb-2" />
           <p className="text-sm text-gray-400">No breeding records yet</p>
           <p className="text-[10px] text-gray-300 mt-1">Track matings, births, and lineage</p>
         </div>
@@ -202,7 +202,7 @@ export function BreedingRecords({ flockId, flockName, flockType, onClose }: Bree
                     {r.status === "pending" && (
                       <button
                         onClick={() => api.patch(`/api/breeding/${r.id}`, { status: "confirmed" }).then(loadRecords)}
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-blue-50 text-badge-blue-text hover:bg-badge-blue-bg transition-colors cursor-pointer"
                       >
                         Confirm Pregnant
                       </button>
@@ -223,7 +223,7 @@ export function BreedingRecords({ flockId, flockName, flockType, onClose }: Bree
                     </button>
                     <button
                       onClick={() => handleDelete(r.id)}
-                      className="px-3 py-1.5 rounded-lg text-[10px] font-semibold text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg text-[10px] font-semibold text-red-500 hover:bg-tone-bad-bg transition-colors cursor-pointer"
                     >
                       Delete
                     </button>
@@ -329,36 +329,36 @@ function BreedingForm({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-gray-700 block mb-1">Sire Name</label>
-              <input value={form.sireName} onChange={(e) => setForm({ ...form, sireName: e.target.value })} placeholder="Male parent" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+              <input value={form.sireName} onChange={(e) => setForm({ ...form, sireName: e.target.value })} placeholder="Male parent" className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-700 block mb-1">Sire Breed</label>
-              <input value={form.sireBreed} onChange={(e) => setForm({ ...form, sireBreed: e.target.value })} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+              <input value={form.sireBreed} onChange={(e) => setForm({ ...form, sireBreed: e.target.value })} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-700 block mb-1">Dam Name</label>
-              <input value={form.damName} onChange={(e) => setForm({ ...form, damName: e.target.value })} placeholder="Female parent" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+              <input value={form.damName} onChange={(e) => setForm({ ...form, damName: e.target.value })} placeholder="Female parent" className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-700 block mb-1">Dam Breed</label>
-              <input value={form.damBreed} onChange={(e) => setForm({ ...form, damBreed: e.target.value })} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+              <input value={form.damBreed} onChange={(e) => setForm({ ...form, damBreed: e.target.value })} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-gray-700 block mb-1">Mating Date *</label>
-              <input type="date" value={form.matingDate} onChange={(e) => setForm({ ...form, matingDate: e.target.value })} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+              <input type="date" value={form.matingDate} onChange={(e) => setForm({ ...form, matingDate: e.target.value })} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-700 block mb-1">Expected Birth</label>
-              <input type="date" value={form.expectedBirth} onChange={(e) => setForm({ ...form, expectedBirth: e.target.value })} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+              <input type="date" value={form.expectedBirth} onChange={(e) => setForm({ ...form, expectedBirth: e.target.value })} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
             </div>
           </div>
 
           <div>
             <label className="text-xs font-semibold text-gray-700 block mb-1">Breeding Method</label>
-            <select value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+            <select value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
               <option value="natural">Natural Mating</option>
               <option value="ai">Artificial Insemination</option>
               <option value="other">Other</option>
@@ -367,12 +367,12 @@ function BreedingForm({
 
           <div>
             <label className="text-xs font-semibold text-gray-700 block mb-1">Notes</label>
-            <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none" placeholder="Any observations about the mating..." />
+            <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none" placeholder="Any observations about the mating..." />
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
-          <button onClick={onCancel} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-white border border-gray-200 cursor-pointer">Cancel</button>
+          <button onClick={onCancel} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-white border border-wangari-border cursor-pointer">Cancel</button>
           <button onClick={handleSubmit} disabled={loading || !form.matingDate} className="px-6 py-2 rounded-xl text-sm font-semibold bg-emerald-700 text-white hover:bg-emerald-800 shadow-md cursor-pointer disabled:opacity-50">
             {loading ? "Saving..." : record ? "Update" : "Create"}
           </button>

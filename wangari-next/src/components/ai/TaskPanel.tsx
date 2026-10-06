@@ -113,7 +113,7 @@ export function TaskPanel({ tasks, onClear }: TaskPanelProps) {
             className={cn(
               "rounded-lg border transition-all",
               task.status === "completed" && "border-wangari-green-200 bg-wangari-green-50/50",
-              task.status === "failed" && "border-red-200 bg-red-50/50",
+              task.status === "failed" && "border-tone-bad-border bg-tone-bad-bg/50",
               task.status === "running" && "border-blue-200 bg-blue-50/50",
               task.status === "pending" && "border-wangari-border bg-white"
             )}
@@ -163,7 +163,7 @@ export function TaskPanel({ tasks, onClear }: TaskPanelProps) {
                   </div>
                 )}
                 {task.error && (
-                  <p className="text-[11px] text-red-600 bg-red-50 rounded px-2 py-1">
+                  <p className="text-[11px] text-red-600 bg-tone-bad-bg rounded px-2 py-1">
                     {task.error}
                   </p>
                 )}

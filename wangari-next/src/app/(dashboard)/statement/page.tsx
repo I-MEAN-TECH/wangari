@@ -72,8 +72,8 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 
 const VERDICTS: Record<Economics["verdict"], { label: string; chip: string; text: string }> = {
   profitable: { label: "Making money", chip: "bg-emerald-100 text-emerald-800", text: "text-emerald-700" },
-  thin: { label: "Thin margin", chip: "bg-amber-100 text-amber-800", text: "text-amber-700" },
-  losing: { label: "Losing money", chip: "bg-red-100 text-red-700", text: "text-red-600" },
+  thin: { label: "Thin margin", chip: "bg-amber-100 text-amber-800", text: "text-tone-warn-text" },
+  losing: { label: "Losing money", chip: "bg-badge-red-bg text-badge-red-text", text: "text-red-600" },
   "no-cost": { label: "No cost data", chip: "bg-gray-100 text-gray-600", text: "text-gray-700" },
   "no-price": { label: "No price data", chip: "bg-sky-100 text-sky-700", text: "text-sky-700" },
 };
@@ -148,7 +148,7 @@ export default function StatementPage() {
           <ArrowLeft className="h-4 w-4" /> Back to scoreboard
         </Link>
         <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-xl border border-gray-200 bg-white">
+          <div className="flex items-center rounded-xl border border-wangari-border bg-white">
             <button
               onClick={() => setMonth(shiftMonth(month, -1))}
               className="px-3 py-2.5 text-gray-500 hover:bg-gray-50 rounded-l-xl cursor-pointer"
@@ -182,7 +182,7 @@ export default function StatementPage() {
       )}
 
       {/* The card — everything below is the screenshot */}
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-wangari-border bg-white shadow-sm overflow-hidden">
         {/* Header */}
         <div className="border-b border-gray-100 bg-gradient-to-br from-wangari-green-50 to-white px-6 py-5">
           <div className="flex items-start justify-between gap-3">

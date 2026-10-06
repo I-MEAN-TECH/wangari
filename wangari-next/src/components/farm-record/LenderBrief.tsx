@@ -60,7 +60,7 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
         </div>
 
         {/* The caveats go FIRST. An assessor needs the limits before the figures. */}
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="rounded-2xl border border-tone-warn-border bg-tone-warn-bg p-3 text-sm text-amber-900">
           <p className="font-semibold">Scope and limits</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5">
             <li>
@@ -129,7 +129,7 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
             {grade.criteria.map((c) => (
               <li key={c.id} className="flex items-start gap-2 text-sm">
                 {c.earned ? (
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" aria-hidden />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-wangari-green-600" aria-hidden />
                 ) : (
                   <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-gray-300" aria-hidden />
                 )}
@@ -171,7 +171,7 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
             </table>
             <p className="mt-2 flex items-center gap-1.5 text-sm text-gray-600">
               <TrendingUp
-                className={`h-4 w-4 ${trend.recordingImproving ? "text-green-600" : "text-gray-400"}`}
+                className={`h-4 w-4 ${trend.recordingImproving ? "text-wangari-green-600" : "text-gray-400"}`}
                 aria-hidden
               />
               {trend.recordingImproving
@@ -207,7 +207,7 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-gray-200 p-3">
+    <div className="rounded-2xl border border-wangari-border p-3">
       <h3 className="text-sm font-bold text-gray-800">{title}</h3>
       <dl className="mt-1 space-y-0.5">{children}</dl>
     </div>
@@ -228,7 +228,7 @@ function Row({
       <dt className="text-gray-600">{k}</dt>
       <dd
         className={`text-right font-medium ${
-          tone === "good" ? "text-green-700" : tone === "warn" ? "text-amber-700" : "text-gray-900"
+          tone === "good" ? "text-wangari-green-700" : tone === "warn" ? "text-tone-warn-text" : "text-gray-900"
         }`}
       >
         {v}

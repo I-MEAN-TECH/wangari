@@ -75,9 +75,9 @@ function getWeatherGradient(condition: string, night: boolean, mins: number, ris
     if (mins >= setMins - 45) return "from-orange-500 via-rose-500 to-purple-500"; // sunset
     return "from-sky-400 via-blue-500 to-cyan-500"; // clear day
   }
-  if (c.includes("rain") || c.includes("drizzle")) return "from-slate-500 via-slate-600 to-slate-700";
-  if (c.includes("thunder")) return "from-slate-600 via-purple-800 to-slate-900";
-  return "from-slate-400 via-slate-500 to-slate-600"; // cloudy day
+  if (c.includes("rain") || c.includes("drizzle")) return "from-wangari-muted via-tone-neutral-text to-wangari-text";
+  if (c.includes("thunder")) return "from-tone-neutral-text via-purple-800 to-wangari-heading";
+  return "from-wangari-subtle via-wangari-muted to-tone-neutral-text"; // cloudy day
 }
 
 // ─── Animated Background Elements ─────────────────────────
@@ -144,7 +144,7 @@ function AnimatedBackground({ icon, condition, night }: { icon: string; conditio
               [...Array(5)].map((_, i) => (
                 <motion.span
                   key={`ff-${i}`}
-                  className="absolute h-1 w-1 rounded-full bg-amber-200/70 blur-[1px]"
+                  className="absolute h-1 w-1 rounded-full bg-tone-warn-border/70 blur-[1px]"
                   style={{ left: `${15 + i * 18}%`, top: `${30 + ((i * 13) % 40)}%` }}
                   animate={{ x: [0, 26, -12, 0], y: [0, -18, 10, 0], opacity: [0, 0.8, 0] }}
                   transition={{ duration: 9 + i * 2, repeat: Infinity, delay: i * 1.7, ease: "easeInOut" }}

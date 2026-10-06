@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Egg, Milk, Wheat, Heart, X, Check, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api-client";
+import { BTN_GLASS } from "@/components/ui/patterns";
 
 interface WorkerQuickLogModalProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ const TYPE_CONFIG = {
     title: "Log Feed Used",
     icon: Wheat,
     color: "bg-amber-600 text-white",
-    btnColor: "bg-amber-600 hover:bg-amber-700",
+    btnColor: "bg-amber-600 hover:bg-tone-warn-text",
     presets: [1, 2, 5, 10, 25, 50],
     unit: "kg / bags",
   },
@@ -129,7 +130,7 @@ export function WorkerQuickLogModal({
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white cursor-pointer"
+              className={BTN_GLASS}
             >
               <X className="h-6 w-6" />
             </button>
@@ -166,7 +167,7 @@ export function WorkerQuickLogModal({
                           className={`px-4 py-2.5 rounded-xl text-sm font-extrabold whitespace-nowrap cursor-pointer transition-all border-2 ${
                             selectedFlockId === f.id
                               ? "bg-wangari-green-800 text-white border-wangari-green-800 shadow-sm"
-                              : "bg-gray-50 text-wangari-heading border-gray-200 hover:border-gray-300"
+                              : "bg-gray-50 text-wangari-heading border-wangari-border hover:border-gray-300"
                           }`}
                         >
                           {f.name}
@@ -182,7 +183,7 @@ export function WorkerQuickLogModal({
                   <div className="flex items-center justify-center gap-6 my-2">
                     <button
                       onClick={() => handleIncrement(-1)}
-                      className="h-16 w-16 rounded-2xl bg-white border-2 border-gray-200 text-wangari-heading flex items-center justify-center shadow-sm hover:bg-gray-100 active:scale-95 cursor-pointer text-2xl font-black"
+                      className="h-16 w-16 rounded-2xl bg-white border-2 border-wangari-border text-wangari-heading flex items-center justify-center shadow-sm hover:bg-gray-100 active:scale-95 cursor-pointer text-2xl font-black"
                     >
                       <Minus className="h-8 w-8 stroke-[3]" />
                     </button>
@@ -191,7 +192,7 @@ export function WorkerQuickLogModal({
                     </div>
                     <button
                       onClick={() => handleIncrement(1)}
-                      className="h-16 w-16 rounded-2xl bg-white border-2 border-gray-200 text-wangari-heading flex items-center justify-center shadow-sm hover:bg-gray-100 active:scale-95 cursor-pointer text-2xl font-black"
+                      className="h-16 w-16 rounded-2xl bg-white border-2 border-wangari-border text-wangari-heading flex items-center justify-center shadow-sm hover:bg-gray-100 active:scale-95 cursor-pointer text-2xl font-black"
                     >
                       <Plus className="h-8 w-8 stroke-[3]" />
                     </button>
@@ -203,7 +204,7 @@ export function WorkerQuickLogModal({
                       <button
                         key={val}
                         onClick={() => handleIncrement(val)}
-                        className="px-4 py-2 bg-white border-2 border-gray-200 hover:border-wangari-green-800 text-wangari-heading rounded-xl text-sm font-black shadow-2xs active:scale-95 cursor-pointer"
+                        className="px-4 py-2 bg-white border-2 border-wangari-border hover:border-wangari-green-800 text-wangari-heading rounded-xl text-sm font-black shadow-2xs active:scale-95 cursor-pointer"
                       >
                         +{val}
                       </button>
@@ -218,7 +219,7 @@ export function WorkerQuickLogModal({
                     placeholder="Add a simple note (Optional)..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl text-sm font-semibold text-wangari-heading focus:outline-none focus:border-wangari-green-800"
+                    className="w-full p-4 bg-gray-50 border-2 border-wangari-border rounded-2xl text-sm font-semibold text-wangari-heading focus:outline-none focus:border-wangari-green-800"
                   />
                 </div>
 

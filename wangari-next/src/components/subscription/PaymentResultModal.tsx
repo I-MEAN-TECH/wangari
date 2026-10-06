@@ -46,8 +46,8 @@ export function PaymentResultModal({
   if (type === "failed") {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-        <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-red-100 text-center animate-in fade-in zoom-in duration-200">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-600 mb-4 border border-red-100">
+        <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-badge-red-bg text-center animate-in fade-in zoom-in duration-200">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-tone-bad-bg text-red-600 mb-4 border border-badge-red-bg">
             <XCircle className="h-10 w-10" />
           </div>
 
@@ -56,12 +56,12 @@ export function PaymentResultModal({
             Your transaction was not completed. No funds were deducted from your account.
           </p>
 
-          <div className="mt-5 rounded-2xl bg-red-50/80 border border-red-200/60 p-4 text-left space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-red-800">
+          <div className="mt-5 rounded-2xl bg-tone-bad-bg/80 border border-tone-bad-border/60 p-4 text-left space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-tone-bad-text">
               <AlertTriangle className="h-4 w-4 shrink-0 text-red-600" />
               Reason for status:
             </div>
-            <p className="text-xs text-red-700 leading-relaxed font-medium">
+            <p className="text-xs text-badge-red-text leading-relaxed font-medium">
               {reason || "The directory server or payment prompt timed out before confirmation. This usually happens if the phone STK push prompt expired, or network connection was interrupted."}
             </p>
           </div>
@@ -85,7 +85,7 @@ export function PaymentResultModal({
             <Button
               onClick={onClose}
               variant="outline"
-              className="w-full border-gray-200 text-gray-700 font-semibold cursor-pointer py-3 rounded-xl"
+              className="w-full border-wangari-border text-gray-700 font-semibold cursor-pointer py-3 rounded-xl"
             >
               Close
             </Button>
@@ -112,9 +112,9 @@ export function PaymentResultModal({
         </div>
 
         {/* Printable Official Invoice & Statement Receipt */}
-        <div ref={receiptRef} className="rounded-2xl border border-gray-200 bg-gray-50/50 p-6 print:border-none print:bg-white print:p-0">
+        <div ref={receiptRef} className="rounded-2xl border border-wangari-border bg-gray-50/50 p-6 print:border-none print:bg-white print:p-0">
           {/* Receipt Top Brand Header */}
-          <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
+          <div className="flex items-center justify-between border-b border-wangari-border pb-4 mb-4">
             <div>
               <div className="flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-wangari-green-800 text-white flex items-center justify-center font-black text-xs">W</div>
@@ -147,7 +147,7 @@ export function PaymentResultModal({
           </div>
 
           {/* Itemized Table */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden mb-4 bg-white">
+          <div className="border border-wangari-border rounded-xl overflow-hidden mb-4 bg-white">
             <div className="grid grid-cols-12 bg-gray-100 p-2.5 text-[10px] font-bold uppercase text-gray-500 tracking-wider">
               <div className="col-span-8">Description</div>
               <div className="col-span-4 text-right">Amount</div>
@@ -161,7 +161,7 @@ export function PaymentResultModal({
                 KES {amount ? (amount / 100).toLocaleString() : "—"}
               </div>
             </div>
-            <div className="grid grid-cols-12 p-3 text-xs bg-emerald-50/50 border-t border-gray-200">
+            <div className="grid grid-cols-12 p-3 text-xs bg-emerald-50/50 border-t border-wangari-border">
               <div className="col-span-8 font-extrabold text-wangari-heading">TOTAL PAID</div>
               <div className="col-span-4 text-right font-black text-lg text-wangari-green-800">
                 KES {amount ? (amount / 100).toLocaleString() : "—"}
@@ -180,7 +180,7 @@ export function PaymentResultModal({
           <Button
             onClick={handlePrint}
             variant="outline"
-            className="w-full border-gray-200 text-gray-700 font-bold gap-2 cursor-pointer py-3 rounded-xl hover:bg-gray-50"
+            className="w-full border-wangari-border text-gray-700 font-bold gap-2 cursor-pointer py-3 rounded-xl hover:bg-gray-50"
           >
             <Printer className="h-4 w-4" /> Download / Print Receipt
           </Button>

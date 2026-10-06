@@ -11,6 +11,7 @@ import {
   PrimaryButton, GhostButton, StatCard, Modal,
 } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { CARD_PANEL, CARD_WELL_DASHED } from "@/components/ui/patterns";
 
 interface Contact {
   id: number;
@@ -283,7 +284,7 @@ export default function AdminCrmPage() {
                   <span className="font-medium text-wangari-heading">{selected.company}</span>
                 </div>
               )}
-              <div className="rounded-2xl border border-wangari-border p-3.5">
+              <div className={CARD_PANEL}>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Pipeline stage</div>
                 <select
                   value={selected.stage}
@@ -302,7 +303,7 @@ export default function AdminCrmPage() {
                 </div>
                 <div className="mb-3 max-h-72 space-y-2 overflow-y-auto">
                   {notes.length === 0 && (
-                    <div className="rounded-xl border border-dashed border-wangari-border px-3 py-4 text-center text-xs text-wangari-subtle">
+                    <div className={CARD_WELL_DASHED}>
                       No notes yet — log every call, meeting, and touchpoint.
                     </div>
                   )}

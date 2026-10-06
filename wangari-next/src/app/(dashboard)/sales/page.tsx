@@ -341,7 +341,7 @@ export default function SalesPage() {
               ) : (
                 <div className="space-y-2">
                   {customerDebt.slice(0, 5).map((c: any) => (
-                    <div key={c.id} className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-100 px-3 py-2.5">
+                    <div key={c.id} className="flex items-center justify-between rounded-xl bg-tone-warn-bg border border-amber-100 px-3 py-2.5">
                       <div>
                         <p className="text-xs font-bold text-wangari-heading">{c.name}</p>
                         {c.phone && <p className="text-[10px] text-wangari-subtle">{c.phone}</p>}
@@ -382,7 +382,7 @@ export default function SalesPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <Badge className={s.paymentStatus === "paid" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-amber-50 text-amber-700 border-amber-200"}>{s.paymentStatus}</Badge>
+                          <Badge className={s.paymentStatus === "paid" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border"}>{s.paymentStatus}</Badge>
                           <span className="text-[10px] text-wangari-subtle">{new Date(s.saleDate).toLocaleDateString()}</span>
                         </div>
                         <p className="text-xs text-wangari-muted">{productNames}</p>
@@ -396,11 +396,11 @@ export default function SalesPage() {
                     <div className="flex gap-2 mt-3">
                       {balance > 0 && (
                         <button onClick={() => { setShowPayModal(s.id); setPayAmount(String(balance)); }}
-                          className="flex-1 py-2 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200 hover:bg-amber-100 cursor-pointer">Record Payment</button>
+                          className="flex-1 py-2 rounded-xl bg-tone-warn-bg text-tone-warn-text text-xs font-bold border border-tone-warn-border hover:bg-amber-100 cursor-pointer">Record Payment</button>
                       )}
                       <button onClick={() => handlePrintReceipt(s)} title={`Print receipt (${INVOICE_TEMPLATES.find(t => t.id === (receiptTemplate === "same" ? invoiceTemplate : receiptTemplate))?.name || "Professional"})`}
                         className="py-2 px-3 rounded-xl bg-wangari-sunken text-wangari-muted text-xs font-bold hover:bg-tone-neutral-border cursor-pointer"><Printer className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => handleDelete(s.id)} className="py-2 px-3 rounded-xl bg-red-50 text-red-500 text-xs font-bold border border-red-200 hover:bg-red-100 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => handleDelete(s.id)} className="py-2 px-3 rounded-xl bg-tone-bad-bg text-red-500 text-xs font-bold border border-tone-bad-border hover:bg-badge-red-bg cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                   </CardContent>
                 </Card>

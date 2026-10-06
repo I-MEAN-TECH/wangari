@@ -16,12 +16,12 @@ import { generateQuoteHtml, getDefaultFarmProfile, type FarmProfile, type DocLay
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-600 border-slate-200",
-  sent: "bg-blue-50 text-blue-700 border-blue-200",
-  accepted: "bg-green-50 text-green-700 border-green-200",
-  declined: "bg-red-50 text-red-600 border-red-200",
-  converted: "bg-amber-50 text-amber-700 border-amber-200",
-  expired: "bg-orange-50 text-orange-600 border-orange-200",
+  draft: "bg-wangari-sunken text-tone-neutral-text border-tone-neutral-border",
+  sent: "bg-blue-50 text-badge-blue-text border-blue-200",
+  accepted: "bg-wangari-green-50 text-wangari-green-700 border-wangari-green-200",
+  declined: "bg-tone-bad-bg text-red-600 border-tone-bad-border",
+  converted: "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border",
+  expired: "bg-orange-50 text-orange-600 border-badge-orange-bg",
 };
 
 type Item = { description: string; qty: number; unitPrice: number };
@@ -171,9 +171,9 @@ export default function QuotesPage() {
   });
 
   const statCards = stats ? [
-    { label: "Total quotes", value: stats.total, color: "text-slate-700" },
+    { label: "Total quotes", value: stats.total, color: "text-wangari-text" },
     { label: "Sent", value: stats.sent, color: "text-blue-600" },
-    { label: "Accepted", value: stats.accepted + stats.converted, color: "text-green-600" },
+    { label: "Accepted", value: stats.accepted + stats.converted, color: "text-wangari-green-600" },
     { label: "Declined", value: stats.declined, color: "text-red-500" },
     { label: "Accepted value", value: `KES ${Number(stats.acceptedValue || 0).toLocaleString()}`, color: "text-amber-600" },
     { label: "Conversion rate", value: `${stats.conversionRate}%`, color: "text-wangari-green-800" },
@@ -260,7 +260,7 @@ export default function QuotesPage() {
                       </>
                     )}
                     {q.status === "accepted" && (
-                      <Button size="sm" disabled={busy} onClick={() => convert(q.id)} className="gap-1 rounded-lg bg-amber-600 hover:bg-amber-700"><ArrowRightCircle className="h-3.5 w-3.5" /> Convert to invoice</Button>
+                      <Button size="sm" disabled={busy} onClick={() => convert(q.id)} className="gap-1 rounded-lg bg-amber-600 hover:bg-tone-warn-text"><ArrowRightCircle className="h-3.5 w-3.5" /> Convert to invoice</Button>
                     )}
                     {(q.status === "converted" || q.status === "declined") && (
                       <Button size="sm" variant="outline" onClick={() => setViewQuote(q)} className="gap-1 rounded-lg"><Eye className="h-3.5 w-3.5" /> View</Button>
@@ -279,7 +279,7 @@ export default function QuotesPage() {
           <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-white p-6 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-bold text-wangari-heading">New quote</h3>
-              <button onClick={() => setShowCreate(false)} className="rounded-lg p-1.5 hover:bg-slate-100"><X className="h-5 w-5 text-slate-500" /></button>
+              <button onClick={() => setShowCreate(false)} className="rounded-lg p-1.5 hover:bg-wangari-sunken"><X className="h-5 w-5 text-wangari-muted" /></button>
             </div>
             <div className="space-y-4">
               <div>
@@ -300,7 +300,7 @@ export default function QuotesPage() {
                       <Input placeholder="Description (e.g. 500 broiler chicks)" value={it.description} onChange={(e) => setItems(items.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))} className="h-10 flex-1 rounded-xl" />
                       <Input type="number" min="0" placeholder="Qty" value={it.qty || ""} onChange={(e) => setItems(items.map((x, j) => (j === i ? { ...x, qty: Number(e.target.value) } : x)))} className="h-10 w-20 rounded-xl" />
                       <Input type="number" min="0" placeholder="Unit price" value={it.unitPrice || ""} onChange={(e) => setItems(items.map((x, j) => (j === i ? { ...x, unitPrice: Number(e.target.value) } : x)))} className="h-10 w-28 rounded-xl" />
-                      {items.length > 1 && <button onClick={() => setItems(items.filter((_, j) => j !== i))} className="rounded-lg p-2 text-red-400 hover:bg-red-50"><X className="h-4 w-4" /></button>}
+                      {items.length > 1 && <button onClick={() => setItems(items.filter((_, j) => j !== i))} className="rounded-lg p-2 text-red-400 hover:bg-tone-bad-bg"><X className="h-4 w-4" /></button>}
                     </div>
                   ))}
                 </div>
@@ -337,7 +337,7 @@ export default function QuotesPage() {
                 <h3 className="font-mono text-lg font-bold text-wangari-green-800">{viewQuote.quoteNumber}</h3>
                 <Badge variant="outline" className={`mt-1 capitalize ${STATUS_STYLES[viewQuote.status] || ""}`}>{viewQuote.status}</Badge>
               </div>
-              <button onClick={() => setViewQuote(null)} className="rounded-lg p-1.5 hover:bg-slate-100"><X className="h-5 w-5 text-slate-500" /></button>
+              <button onClick={() => setViewQuote(null)} className="rounded-lg p-1.5 hover:bg-wangari-sunken"><X className="h-5 w-5 text-wangari-muted" /></button>
             </div>
             <div className="space-y-3 text-sm">
               <p><span className="text-wangari-subtle">Customer:</span> {viewQuote.customer?.name || "Walk-in customer"}</p>

@@ -74,7 +74,7 @@ const statAccents = {
   amber: "bg-badge-yellow-bg text-badge-yellow-text",
   red: "bg-badge-red-bg text-badge-red-text",
   violet: "bg-[#F3E8FF] text-[#7E22CE]",
-  slate: "bg-slate-100 text-wangari-muted",
+  slate: "bg-wangari-sunken text-wangari-muted",
 } as const;
 
 export function StatCard({
@@ -198,7 +198,7 @@ export function Loading({ label = "Loading…" }: { label?: string }) {
 
 export function ErrorState({ message }: { message: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-badge-red-bg px-4 py-3 text-sm font-medium text-badge-red-text">
+    <div className="flex items-center gap-3 rounded-xl border border-tone-bad-border bg-badge-red-bg px-4 py-3 text-sm font-medium text-badge-red-text">
       <AlertTriangle className="h-4 w-4 shrink-0" />
       {message}
     </div>

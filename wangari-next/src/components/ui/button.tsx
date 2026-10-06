@@ -12,7 +12,7 @@ const buttonVariants = cva(
         default:
           "bg-wangari-green-800 text-white shadow-md hover:bg-wangari-green-900 hover:shadow-lg hover:-translate-y-0.5",
         destructive:
-          "bg-badge-red-bg text-badge-red-text border border-red-200 hover:bg-red-200",
+          "bg-badge-red-bg text-badge-red-text border border-tone-bad-border hover:bg-tone-bad-border",
         outline:
           "border border-wangari-border bg-white text-wangari-text hover:bg-wangari-green-50 hover:border-wangari-green-300 hover:text-wangari-green-800",
         secondary:

@@ -249,10 +249,10 @@ function NotificationDropdown({ open, onOpenChange }: { open: boolean; onOpenCha
             <div className="p-1">
               {alerts.map((item) => {
                 const colorMap: Record<string, string> = {
-                  warning: "bg-amber-50 text-amber-600",
-                  danger: "bg-red-50 text-red-600",
+                  warning: "bg-tone-warn-bg text-amber-600",
+                  danger: "bg-tone-bad-bg text-red-600",
                   info: "bg-blue-50 text-blue-600",
-                  success: "bg-green-50 text-green-600",
+                  success: "bg-wangari-green-50 text-wangari-green-600",
                   muted: "bg-gray-50 text-gray-500",
                 };
                 return (
@@ -330,7 +330,7 @@ function ProfileDropdown({ open, onOpenChange }: { open: boolean; onOpenChange: 
         <div className="border-t border-wangari-border p-1.5">
           <button
             onClick={signOut}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-red-50 transition-colors cursor-pointer"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-tone-bad-bg transition-colors cursor-pointer"
           >
             <LogOut className="h-4 w-4 text-red-500" />
             <span className="text-sm font-medium text-red-600">Sign Out</span>

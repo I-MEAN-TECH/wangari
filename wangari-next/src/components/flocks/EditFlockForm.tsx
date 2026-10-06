@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/shared/toast";
 
 import { speciesFor } from "@/lib/species-resolve";
+import { BTN_CANCEL, BTN_TOOL } from "@/components/ui/patterns";
 
 interface EditFlockFormProps {
   flock: any;
@@ -157,7 +158,7 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
             <h2 className="text-lg font-bold text-gray-900">Edit {flock.name}</h2>
             <p className="text-xs text-gray-400 mt-0.5">Update flock details</p>
           </div>
-          <button onClick={onCancel} className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+          <button onClick={onCancel} className={BTN_TOOL}>
             <X className="h-5 w-5 text-gray-400" />
           </button>
         </div>
@@ -188,11 +189,11 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
                       <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Flock Name</label>
-                          <input value={form.name} onChange={(e) => updateForm("name", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.name} onChange={(e) => updateForm("name", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Status</label>
-                          <select value={form.status} onChange={(e) => updateForm("status", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
+                          <select value={form.status} onChange={(e) => updateForm("status", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
                             <option value="sold">Sold</option>
@@ -201,21 +202,21 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Breed</label>
-                          <select value={form.breed} onChange={(e) => updateForm("breed", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
+                          <select value={form.breed} onChange={(e) => updateForm("breed", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
                             {species?.breeds.map((b: string) => <option key={b} value={b}>{b}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Current Count</label>
-                          <input type="number" value={form.currentCount} onChange={(e) => updateForm("currentCount", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input type="number" value={form.currentCount} onChange={(e) => updateForm("currentCount", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Deaths (Mortality)</label>
-                          <input type="number" value={form.mortality} onChange={(e) => updateForm("mortality", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input type="number" value={form.mortality} onChange={(e) => updateForm("mortality", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Purpose</label>
-                          <select value={form.purpose} onChange={(e) => updateForm("purpose", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
+                          <select value={form.purpose} onChange={(e) => updateForm("purpose", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
                             <option value="production">Production</option>
                             <option value="breeding">Breeding</option>
                             <option value="dual_purpose">Dual Purpose</option>
@@ -223,7 +224,7 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Gender</label>
-                          <select value={form.gender} onChange={(e) => updateForm("gender", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
+                          <select value={form.gender} onChange={(e) => updateForm("gender", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
                             <option value="female">All Female</option>
                             <option value="male">All Male</option>
                             <option value="mixed">Mixed</option>
@@ -236,7 +237,7 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
                       <div className="space-y-4">
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Location / Pen</label>
-                          <input value={form.location} onChange={(e) => updateForm("location", e.target.value)} placeholder="e.g., Pen A, Barn 2" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.location} onChange={(e) => updateForm("location", e.target.value)} placeholder="e.g., Pen A, Barn 2" className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                       </div>
                     )}
@@ -245,19 +246,19 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
                       <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Source / Supplier</label>
-                          <input value={form.source} onChange={(e) => updateForm("source", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.source} onChange={(e) => updateForm("source", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Supplier Phone</label>
-                          <input value={form.supplierContact} onChange={(e) => updateForm("supplierContact", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.supplierContact} onChange={(e) => updateForm("supplierContact", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Cost per Animal (KES)</label>
-                          <input type="number" value={form.costPerAnimal} onChange={(e) => updateForm("costPerAnimal", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input type="number" value={form.costPerAnimal} onChange={(e) => updateForm("costPerAnimal", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div className="col-span-2">
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Target Market</label>
-                          <input value={form.targetMarket} onChange={(e) => updateForm("targetMarket", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.targetMarket} onChange={(e) => updateForm("targetMarket", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                       </div>
                     )}
@@ -266,18 +267,18 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Feed Type</label>
-                          <select value={form.feedType} onChange={(e) => updateForm("feedType", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
+                          <select value={form.feedType} onChange={(e) => updateForm("feedType", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
                             <option value="">Select...</option>
                             {species?.feedTypes.map((ft: string) => <option key={ft} value={ft}>{ft}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Feed Supplier</label>
-                          <input value={form.feedSupplier} onChange={(e) => updateForm("feedSupplier", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.feedSupplier} onChange={(e) => updateForm("feedSupplier", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Feed Cost/Month (KES)</label>
-                          <input type="number" value={form.feedCostPerMonth} onChange={(e) => updateForm("feedCostPerMonth", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input type="number" value={form.feedCostPerMonth} onChange={(e) => updateForm("feedCostPerMonth", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                       </div>
                     )}
@@ -286,15 +287,15 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Veterinarian</label>
-                          <input value={form.vetName} onChange={(e) => updateForm("vetName", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.vetName} onChange={(e) => updateForm("vetName", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Vet Phone</label>
-                          <input value={form.vetPhone} onChange={(e) => updateForm("vetPhone", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.vetPhone} onChange={(e) => updateForm("vetPhone", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div className="col-span-2">
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Health on Arrival</label>
-                          <input value={form.healthOnArrival} onChange={(e) => updateForm("healthOnArrival", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.healthOnArrival} onChange={(e) => updateForm("healthOnArrival", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                       </div>
                     )}
@@ -303,15 +304,15 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
                       <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Expected Yield</label>
-                          <input value={form.expectedYield} onChange={(e) => updateForm("expectedYield", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.expectedYield} onChange={(e) => updateForm("expectedYield", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Expected Weight</label>
-                          <input value={form.expectedWeight} onChange={(e) => updateForm("expectedWeight", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.expectedWeight} onChange={(e) => updateForm("expectedWeight", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Expected Revenue</label>
-                          <input value={form.expectedRevenue} onChange={(e) => updateForm("expectedRevenue", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.expectedRevenue} onChange={(e) => updateForm("expectedRevenue", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                       </div>
                     )}
@@ -320,11 +321,11 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
                       <div className="space-y-4">
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Insurance Policy</label>
-                          <input value={form.insurancePolicy} onChange={(e) => updateForm("insurancePolicy", e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
+                          <input value={form.insurancePolicy} onChange={(e) => updateForm("insurancePolicy", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700 block mb-1.5">Notes</label>
-                          <textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} rows={3} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none" />
+                          <textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} rows={3} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none" />
                         </div>
                       </div>
                     )}
@@ -337,7 +338,7 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
-          <button onClick={onCancel} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-white border border-gray-200 transition-colors cursor-pointer">
+          <button onClick={onCancel} className={BTN_CANCEL}>
             Cancel
           </button>
           <button

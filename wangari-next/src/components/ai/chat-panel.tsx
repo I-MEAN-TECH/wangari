@@ -53,6 +53,7 @@ import { RichText } from "./rich-text";
 import { QuickActions, type QuickAction } from "./quick-actions";
 import { useWangariPresence, PRESENCE_LINE, PRESENCE_VERB, waitLine, type Presence } from "@/lib/wangari-presence";
 import { cn } from "@/lib/utils";
+import { BTN_REMOVE } from "@/components/ui/patterns";
 
 /** One line of conversation. */
 export interface Turn {
@@ -321,7 +322,7 @@ export function ChatPanel({
                             <p className="text-sm font-semibold text-tone-bad-text">{t.error}</p>
                             <button
                               onClick={onRetry}
-                              className="mt-2 flex min-h-[40px] items-center gap-2 rounded-xl bg-white px-3.5 text-sm font-bold text-tone-bad-text shadow-sm"
+                              className={BTN_REMOVE}
                             >
                               <RotateCcw className="h-4 w-4" aria-hidden />
                               Try again
@@ -470,7 +471,7 @@ export function ChatPanel({
               <p className="text-sm font-semibold text-tone-bad-text">{error}</p>
               <button
                 onClick={onRetry}
-                className="mt-2 flex min-h-[40px] items-center gap-2 rounded-xl bg-white px-3.5 text-sm font-bold text-tone-bad-text shadow-sm"
+                className={BTN_REMOVE}
               >
                 <RotateCcw className="h-4 w-4" aria-hidden />
                 Try again

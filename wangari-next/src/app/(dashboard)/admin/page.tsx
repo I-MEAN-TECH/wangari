@@ -134,8 +134,8 @@ export default function AdminPage() {
                         <td className="py-2.5 px-3 text-wangari-muted">{u.email}</td>
                         <td className="py-2.5 px-3">
                           {sub ? <Badge className="bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200">{sub.planName}</Badge>
-                            : trialActive ? <Badge className="bg-blue-50 text-blue-700 border-blue-200">Trial</Badge>
-                            : <Badge className="bg-gray-50 text-gray-500 border-gray-200">None</Badge>}
+                            : trialActive ? <Badge className="bg-blue-50 text-badge-blue-text border-blue-200">Trial</Badge>
+                            : <Badge className="bg-gray-50 text-gray-500 border-wangari-border">None</Badge>}
                         </td>
                         <td className="py-2.5 px-3 text-wangari-muted">{u.trialEndsAt ? new Date(u.trialEndsAt).toLocaleDateString() : "—"}</td>
                         <td className="py-2.5 px-3 text-wangari-muted">{new Date(u.createdAt).toLocaleDateString()}</td>

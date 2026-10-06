@@ -3,6 +3,7 @@
 import * as React from "react";
 import { CheckCircle2, Mail, Phone, MapPin, Clock } from "lucide-react";
 import { useSiteContent } from "@/lib/site-content";
+import { ALERT_DANGER_SM } from "@/components/ui/patterns";
 
 // Editable content shape (managed in /waadmin/website).
 interface ContactContent {
@@ -120,7 +121,7 @@ export default function ContactPage() {
             <textarea required rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })}
               className="w-full rounded-xl border border-wangari-border px-4 py-3 text-sm focus:border-wangari-green-800 focus:outline-none" />
           </div>
-          {error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>}
+          {error && <div className={ALERT_DANGER_SM}>{error}</div>}
           <button type="submit" disabled={busy}
             className="h-12 w-full rounded-xl bg-wangari-green-800 text-sm font-bold text-white hover:bg-wangari-green-900 disabled:opacity-60 sm:w-auto sm:px-8">
             {busy ? "Sending…" : "Send message"}

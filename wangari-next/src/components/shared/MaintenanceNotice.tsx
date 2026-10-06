@@ -103,7 +103,7 @@ export function MaintenanceNotice() {
     <div
       role="status"
       aria-live="polite"
-      className="sticky top-0 z-[100] border-b border-amber-200 bg-amber-50 px-4 py-3 text-amber-900"
+      className="sticky top-0 z-[100] border-b border-tone-warn-border bg-tone-warn-bg px-4 py-3 text-amber-900"
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-2">
         <WifiOff className="h-4 w-4 shrink-0 text-amber-600" aria-hidden />

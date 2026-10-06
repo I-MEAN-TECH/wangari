@@ -66,9 +66,9 @@ export function stateMeta(state: string): Tone {
     case "unknown":
       return { label: "Not tried yet", cls: "bg-wangari-cream text-wangari-muted" };
     case "rate_limited":
-      return { label: "Rate limited", cls: "bg-badge-yellow-bg text-amber-700" };
+      return { label: "Rate limited", cls: "bg-badge-yellow-bg text-tone-warn-text" };
     case "exhausted":
-      return { label: "No capacity", cls: "bg-badge-yellow-bg text-amber-700" };
+      return { label: "No capacity", cls: "bg-badge-yellow-bg text-tone-warn-text" };
     case "gone":
       return { label: "Retired", cls: "bg-badge-red-bg text-badge-red-text" };
     default:
@@ -118,7 +118,7 @@ export function overallTone(models: ModelHealthLike[], candidates: string[]): To
   if (usable.some((m) => m.state === "healthy")) {
     return { label: "Wangari AI is answering", cls: "bg-badge-green-bg text-badge-green-text" };
   }
-  return { label: "Recovering", cls: "bg-badge-yellow-bg text-amber-700" };
+  return { label: "Recovering", cls: "bg-badge-yellow-bg text-tone-warn-text" };
 }
 
 /**

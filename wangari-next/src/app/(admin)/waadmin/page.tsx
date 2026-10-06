@@ -11,6 +11,7 @@ import { adminApi } from "@/lib/admin-client";
 import { PageHeader, Panel, StatCard, TableShell, Th, Td, Loading, ErrorState, EmptyState, GhostButton } from "@/components/admin/ui";
 import { TrendAreaChart, DailyBarChart, DonutChart } from "@/components/admin/charts";
 import { Badge } from "@/components/ui/badge";
+import { CARD_PANEL_CREAM } from "@/components/ui/patterns";
 
 interface Overview {
   totals: { farms: number; users: number; workers: number; activeSubscriptions: number; mrrKes: number; openTickets: number };
@@ -34,7 +35,7 @@ function daysLeft(iso: string): number {
 function Delta({ pct }: { pct: number }) {
   if (pct > 0) return <span className="inline-flex items-center gap-1 rounded-full bg-wangari-green-50 px-2 py-0.5 text-[11px] font-bold text-wangari-green-700"><TrendingUp className="h-3 w-3" /> +{pct}%</span>;
   if (pct < 0) return <span className="inline-flex items-center gap-1 rounded-full bg-badge-red-bg px-2 py-0.5 text-[11px] font-bold text-badge-red-text"><TrendingDown className="h-3 w-3" /> {pct}%</span>;
-  return <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-wangari-muted"><Minus className="h-3 w-3" /> 0%</span>;
+  return <span className="inline-flex items-center gap-1 rounded-full bg-wangari-sunken px-2 py-0.5 text-[11px] font-bold text-wangari-muted"><Minus className="h-3 w-3" /> 0%</span>;
 }
 
 function friendlyAction(action: string): string {
@@ -133,7 +134,7 @@ export default function AdminOverviewPage() {
         <Panel
           title="Needs attention"
           description="Subscriptions expiring soon, open tickets, and unconverted trials"
-          className="border-amber-300 bg-amber-50/40"
+          className="border-amber-300 bg-tone-warn-bg/40"
         >
           <div className="space-y-2">
             {data.expiringSubs.length > 0 && (
@@ -201,13 +202,13 @@ export default function AdminOverviewPage() {
         {/* Ops health */}
         <Panel title="Operations health" description="Emails and system, last 24 hours">
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-wangari-border bg-wangari-cream/50 p-3.5">
+            <div className={CARD_PANEL_CREAM}>
               <div className="flex items-center gap-2 text-xs font-semibold text-wangari-muted">
                 <MailCheck className="h-4 w-4 text-wangari-green-600" /> Emails delivered
               </div>
               <div className="mt-1.5 text-2xl font-bold text-wangari-heading">{data.emailHealth.sent}</div>
             </div>
-            <div className="rounded-xl border border-wangari-border bg-wangari-cream/50 p-3.5">
+            <div className={CARD_PANEL_CREAM}>
               <div className="flex items-center gap-2 text-xs font-semibold text-wangari-muted">
                 <MailWarning className={`h-4 w-4 ${data.emailHealth.failed > 0 ? "text-badge-red-text" : "text-wangari-subtle"}`} /> Email failures
               </div>

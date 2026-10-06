@@ -33,7 +33,7 @@ export function SpeciesGuidanceCard({
   // Unknown species: say so plainly and offer the one action that fixes it.
   if (!species) {
     return (
-      <Card className="border-amber-200 bg-amber-50/50">
+      <Card className="border-tone-warn-border bg-tone-warn-bg/50">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">

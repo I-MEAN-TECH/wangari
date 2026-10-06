@@ -155,7 +155,7 @@ export default function AdminLoginPage() {
               </div>
             </>
           )}
-          {error && <div className="rounded-lg border border-badge-red-bg bg-red-50 px-3 py-2 text-xs text-badge-red-text">{error}</div>}
+          {error && <div className="rounded-lg border border-badge-red-bg bg-tone-bad-bg px-3 py-2 text-xs text-badge-red-text">{error}</div>}
           <button
             type="submit"
             disabled={busy}

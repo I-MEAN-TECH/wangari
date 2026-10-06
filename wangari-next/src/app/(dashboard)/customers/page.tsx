@@ -107,7 +107,7 @@ export default function CustomersPage() {
         <div className="grid grid-cols-3 gap-3">
           <Card className="border border-wangari-border"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-wangari-muted uppercase">Orders</p><p className="text-xl font-extrabold text-wangari-heading">{cust.salesCount}</p></CardContent></Card>
           <Card className="border border-wangari-border"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-wangari-muted uppercase">Total spent</p><p className="text-xl font-extrabold text-wangari-green-800">KES {cust.totalSpent.toLocaleString()}</p></CardContent></Card>
-          <Card className="border border-amber-200 bg-amber-50"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-amber-600 uppercase">Owed</p><p className="text-xl font-extrabold text-amber-600">KES {cust.totalOwed.toLocaleString()}</p></CardContent></Card>
+          <Card className="border border-tone-warn-border bg-tone-warn-bg"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-amber-600 uppercase">Owed</p><p className="text-xl font-extrabold text-amber-600">KES {cust.totalOwed.toLocaleString()}</p></CardContent></Card>
         </div>
 
         {cust.totalOwed > 0 && (
@@ -127,7 +127,7 @@ export default function CustomersPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-extrabold text-wangari-heading">KES {Number(s.totalAmount).toLocaleString()}</p>
-                      <Badge className={s.paymentStatus === "paid" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200 text-[9px]" : "bg-amber-50 text-amber-700 border-amber-200 text-[9px]"}>{s.paymentStatus}</Badge>
+                      <Badge className={s.paymentStatus === "paid" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200 text-[9px]" : "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border text-[9px]"}>{s.paymentStatus}</Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -174,7 +174,7 @@ export default function CustomersPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <h3 className="text-sm font-bold text-wangari-heading">Add Customer</h3>
-                  <div className="flex gap-1">{[1, 2].map(s => <div key={s} className={`h-1.5 w-8 rounded-full ${step >= s ? "bg-wangari-green-800" : "bg-gray-200"}`} />)}</div>
+                  <div className="flex gap-1">{[1, 2].map(s => <div key={s} className={`h-1.5 w-8 rounded-full ${step >= s ? "bg-wangari-green-800" : "bg-wangari-border"}`} />)}</div>
                 </div>
                 <button onClick={() => setShowForm(false)} className="text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
               </div>

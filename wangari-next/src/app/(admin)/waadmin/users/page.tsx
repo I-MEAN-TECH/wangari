@@ -11,6 +11,7 @@ import {
   Flash, EmptyState, GhostButton, StatCard, PrimaryButton,
 } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { CARD_PANEL, CARD_ROW_SM, CARD_WELL_DASHED } from "@/components/ui/patterns";
 
 interface UserRow {
   id: number;
@@ -276,11 +277,11 @@ export default function AdminUsersPage() {
 
                 {/* Meta */}
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-2xl border border-wangari-border p-3.5">
+                  <div className={CARD_PANEL}>
                     <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Joined</div>
                     <div className="mt-1 font-medium text-wangari-heading">{new Date(detail.user.createdAt).toLocaleDateString()}</div>
                   </div>
-                  <div className="rounded-2xl border border-wangari-border p-3.5">
+                  <div className={CARD_PANEL}>
                     <div className="text-[11px] font-bold uppercase tracking-wider text-wangari-subtle">Trial</div>
                     <div className="mt-1 font-medium text-wangari-heading">
                       {detail.user.trialEndsAt
@@ -302,7 +303,7 @@ export default function AdminUsersPage() {
                   ) : (
                     <div className="space-y-1.5">
                       {detail.user.ownedFarms.map((f) => (
-                        <div key={f.id} className="flex items-center justify-between rounded-lg border border-wangari-border px-3 py-2 text-sm">
+                        <div key={f.id} className={CARD_ROW_SM}>
                           <div>
                             <span className="font-medium text-wangari-heading">{f.name}</span>
                             <div className="text-[11px] text-wangari-subtle">{f.code || "no code"}</div>
@@ -320,11 +321,11 @@ export default function AdminUsersPage() {
                     <ReceiptText className="h-3.5 w-3.5" /> Subscription history
                   </div>
                   {detail.subscriptions.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-wangari-border px-3 py-4 text-center text-xs text-wangari-subtle">Never subscribed</div>
+                    <div className={CARD_WELL_DASHED}>Never subscribed</div>
                   ) : (
                     <div className="space-y-1.5">
                       {detail.subscriptions.map((s) => (
-                        <div key={s.id} className="flex items-center justify-between rounded-lg border border-wangari-border px-3 py-2 text-sm">
+                        <div key={s.id} className={CARD_ROW_SM}>
                           <div>
                             <span className="font-medium text-wangari-heading">{s.planName}</span>
                             <div className="text-[11px] text-wangari-subtle">
