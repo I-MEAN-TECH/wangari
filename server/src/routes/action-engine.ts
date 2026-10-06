@@ -10,6 +10,7 @@ import {
 import { weatherActions, type ForecastDay } from "../lib/weather-rules.js";
 import { saleTiming, BASELINE_DAYS as SALE_TIMING_LOOKBACK } from "../lib/sale-timing.js";
 import { feedTrend, TREND_WINDOW_DAYS as FEED_TREND_WINDOW, type FeedTrend } from "../lib/feed-trend.js";
+import { flockReplacement } from "../lib/flock-replacement.js";
 import { EGGS_PER_TRAY } from "./deliveries.js";
 
 /**
@@ -51,7 +52,7 @@ router.get("/actions", async (req: Request, res: Response) => {
       prodInWindow, prodOldest, prodNewest, recentMoney,
       trendProd, feedBill, feedKg90,
     ] = await Promise.all([
-      prisma.flock.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, currentCount: true, type: true, category: true, createdAt: true } }),
+      prisma.flock.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, currentCount: true, type: true, category: true, createdAt: true, hatchDate: true, costPerAnimal: true, totalInvestment: true } }),
       prisma.crop.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, cropType: true, plantingDate: true, expectedHarvest: true } }),
       prisma.dailyProduction.findMany({ where: { farmId, date: { gte: weekAgo } }, orderBy: { date: "asc" } }),
       prisma.inventory.findMany({ where: { farmId }, select: { id: true, itemName: true, quantity: true, unit: true, reorderLevel: true, category: true } }),
@@ -554,6 +555,43 @@ router.get("/actions", async (req: Request, res: Response) => {
           moneyImpact: worst.moneyImpact,
           href: "/flocks",
           cta: "Check the feed",
+        });
+      }
+    }
+
+    // ─── 13. Flock replacement timing (M3, layers only) ──────────────────────
+    // The third M3 rule, deferred for months because "there is no bird-age
+    // data" — an audit proved that stale: the intake form has always recorded
+    // an arrival date. Layers only: broilers are slaughtered by week 8 and
+    // cattle are culled per animal, so a replacement window would be a guess
+    // there, and a guess is decoration. Silence until the decision is 8 weeks
+    // out (lib/flock-replacement.ts).
+    {
+      let replacement: ReturnType<typeof flockReplacement> = null;
+      for (const f of flocks) {
+        const metric = metricOf(f.type);
+        if (metric !== "eggs" || !f.hatchDate) continue;
+        const card = flockReplacement({
+          arrivedAt: f.hatchDate,
+          label: f.name,
+          currentCount: f.currentCount,
+          costPerAnimal: f.costPerAnimal != null ? Number(f.costPerAnimal) : null,
+          totalInvestment: f.totalInvestment != null ? Number(f.totalInvestment) : null,
+          now,
+        });
+        // One card: the flock closest to (or deepest into) its window.
+        if (card && (!replacement || card.ageWeeks > replacement.ageWeeks)) replacement = card;
+      }
+      if (replacement) {
+        actions.push({
+          id: `flock-replacement-${replacement.ageWeeks}`,
+          priority: replacement.phase === "overdue" ? "high" : "medium",
+          icon: "CalendarClock",
+          title: replacement.title,
+          detail: replacement.detail,
+          moneyImpact: replacement.moneyImpact,
+          href: "/flocks",
+          cta: "Plan the flock",
         });
       }
     }

@@ -5,13 +5,13 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   HandCoins, FileWarning, TrendingDown, TrendingUp, Wheat, Package, Syringe, Baby,
-  ShieldAlert, CalendarX, ClipboardList, ListTodo, ChevronRight,
+  ShieldAlert, CalendarX, ClipboardList, ListTodo, CalendarClock, ChevronRight,
   RefreshCw, Sparkles, AlertOctagon, CircleCheck,
 } from "lucide-react";
 
 const ICONS: Record<string, any> = {
   HandCoins, FileWarning, TrendingDown, TrendingUp, Wheat, Package, Syringe, Baby,
-  ShieldAlert, CalendarX, ClipboardList, ListTodo,
+  ShieldAlert, CalendarX, ClipboardList, ListTodo, CalendarClock,
 };
 
 const PRIORITY_STYLES: Record<string, { ring: string; chip: string; label: string }> = {
