@@ -62,7 +62,7 @@ function DialogContent({
       {onClose && (
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-1 text-wangari-muted hover:text-wangari-heading hover:bg-gray-100 transition-colors"
+          className="absolute right-4 top-4 rounded-full p-1 text-wangari-muted hover:text-wangari-heading hover:bg-wangari-gray-100 transition-colors"
         >
           <X className="h-4 w-4" />
         </button>

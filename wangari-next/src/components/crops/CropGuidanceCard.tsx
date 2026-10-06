@@ -35,14 +35,14 @@ export function CropGuidanceCard({ crop }: { crop: any }) {
       <Card className="border-tone-warn-border bg-tone-warn-bg/50">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-wangari-amber-500 text-white">
               <AlertTriangle className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-sm font-bold text-amber-900">
+              <p className="text-sm font-bold text-wangari-amber-900">
                 No guidance for “{crop.cropType}” yet
               </p>
-              <p className="mt-1 text-xs text-amber-800">
+              <p className="mt-1 text-xs text-wangari-amber-800">
                 We have fertiliser, pesticide and timing for maize, beans, tomatoes, kale,
                 potatoes and onions. We would rather say nothing than give you another
                 crop&apos;s instructions.
@@ -125,7 +125,7 @@ export function CropGuidanceCard({ crop }: { crop: any }) {
               <p className="text-[10px] font-bold uppercase tracking-wide text-tone-warn-text">
                 The mistake that costs most
               </p>
-              <p className="mt-1 text-xs text-amber-900">{template.criticalTiming}</p>
+              <p className="mt-1 text-xs text-wangari-amber-900">{template.criticalTiming}</p>
             </div>
 
             {/* Pests */}

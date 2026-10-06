@@ -38,23 +38,23 @@ const stagger = {
 
 function getActionIcon(action: string) {
   switch (action.toLowerCase()) {
-    case "create": return <Plus className="h-4 w-4 text-emerald-500" />;
-    case "delete": return <Trash2 className="h-4 w-4 text-red-500" />;
-    case "update": return <Edit3 className="h-4 w-4 text-amber-500" />;
-    case "view": return <Eye className="h-4 w-4 text-blue-500" />;
-    case "login": return <LogIn className="h-4 w-4 text-violet-500" />;
-    default: return <Settings className="h-4 w-4 text-gray-500" />;
+    case "create": return <Plus className="h-4 w-4 text-wangari-green-500" />;
+    case "delete": return <Trash2 className="h-4 w-4 text-wangari-red-500" />;
+    case "update": return <Edit3 className="h-4 w-4 text-wangari-amber-500" />;
+    case "view": return <Eye className="h-4 w-4 text-wangari-blue-500" />;
+    case "login": return <LogIn className="h-4 w-4 text-wangari-violet-500" />;
+    default: return <Settings className="h-4 w-4 text-wangari-gray-500" />;
   }
 }
 
 function getActionColor(action: string) {
   switch (action.toLowerCase()) {
-    case "create": return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    case "create": return "bg-wangari-green-50 text-wangari-green-700 border-wangari-green-200";
     case "delete": return "bg-tone-bad-bg text-badge-red-text border-tone-bad-border";
     case "update": return "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border";
-    case "view": return "bg-blue-50 text-badge-blue-text border-blue-200";
-    case "login": return "bg-violet-50 text-violet-700 border-violet-200";
-    default: return "bg-gray-50 text-gray-700 border-wangari-border";
+    case "view": return "bg-wangari-blue-50 text-badge-blue-text border-wangari-blue-200";
+    case "login": return "bg-wangari-violet-50 text-wangari-violet-700 border-wangari-violet-200";
+    default: return "bg-wangari-gray-50 text-wangari-gray-700 border-wangari-border";
   }
 }
 
@@ -116,7 +116,7 @@ export default function AuditPage() {
           <button
             key={action}
             onClick={() => setFilterAction(filterAction === action ? "all" : action)}
-            className={`rounded-xl p-4 border text-center transition-all ${filterAction === action ? getActionColor(action) : "bg-white border-wangari-border hover:bg-gray-50"}`}
+            className={`rounded-xl p-4 border text-center transition-all ${filterAction === action ? getActionColor(action) : "bg-white border-wangari-border hover:bg-wangari-gray-50"}`}
           >
             <div className="flex justify-center mb-2">{getActionIcon(action)}</div>
             <p className="text-2xl font-bold">{actionCounts[action] || 0}</p>
@@ -159,7 +159,7 @@ export default function AuditPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-4 px-6 py-4 hover:bg-wangari-gray-50 transition-colors"
               >
                 <div className="shrink-0">{getActionIcon(log.action)}</div>
                 <div className="flex-1 min-w-0">

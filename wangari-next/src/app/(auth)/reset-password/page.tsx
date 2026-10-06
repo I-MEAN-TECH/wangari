@@ -41,7 +41,7 @@ function ResetPasswordForm() {
       >
         <motion.div variants={fadeUp} className="flex justify-center">
           <div className="h-16 w-16 rounded-full bg-tone-bad-bg flex items-center justify-center">
-            <AlertCircle className="h-8 w-8 text-red-500" />
+            <AlertCircle className="h-8 w-8 text-wangari-red-500" />
           </div>
         </motion.div>
         <motion.div variants={fadeUp}>

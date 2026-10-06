@@ -103,15 +103,15 @@ export function MaintenanceNotice() {
     <div
       role="status"
       aria-live="polite"
-      className="sticky top-0 z-[100] border-b border-tone-warn-border bg-tone-warn-bg px-4 py-3 text-amber-900"
+      className="sticky top-0 z-[100] border-b border-tone-warn-border bg-tone-warn-bg px-4 py-3 text-wangari-amber-900"
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-2">
-        <WifiOff className="h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+        <WifiOff className="h-4 w-4 shrink-0 text-wangari-amber-600" aria-hidden />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">
             We can&rsquo;t reach our servers right now
           </p>
-          <p className="text-xs text-amber-800">
+          <p className="text-xs text-wangari-amber-800">
             Your records are safe. Anything you see may be out of date, and new
             records will save once we&rsquo;re back. Please try again in a
             moment.
@@ -120,7 +120,7 @@ export function MaintenanceNotice() {
         <button
           onClick={retry}
           disabled={checking}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-wangari-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-wangari-amber-800 transition-colors hover:bg-wangari-amber-100 disabled:opacity-60"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${checking ? "animate-spin" : ""}`} aria-hidden />
           {checking ? "Checking" : "Try again"}

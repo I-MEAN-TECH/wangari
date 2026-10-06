@@ -70,50 +70,50 @@ export function ExportReport({ flock, onClose }: ExportReportProps) {
         className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">Export Report</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-wangari-gray-100">
+          <h2 className="text-lg font-bold text-wangari-gray-900">Export Report</h2>
           <button onClick={onClose} className={BTN_TOOL}>
-            <X className="h-5 w-5 text-gray-400" />
+            <X className="h-5 w-5 text-wangari-gray-400" />
           </button>
         </div>
 
         <div className="px-6 py-6 space-y-4">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-wangari-gray-500">
             Export <strong>{flock.name}</strong> data ({flock.breed || species?.name || flock.type})
           </p>
 
           <button
             onClick={() => handleExport("csv")}
             disabled={downloading}
-            className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-emerald-300 hover:bg-emerald-50/50 transition-all cursor-pointer text-left"
+            className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-wangari-gray-100 hover:border-wangari-green-300 hover:bg-wangari-green-50/50 transition-all cursor-pointer text-left"
           >
-            <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-              <Table className="h-6 w-6 text-emerald-600" />
+            <div className="h-12 w-12 rounded-xl bg-wangari-green-50 flex items-center justify-center flex-shrink-0">
+              <Table className="h-6 w-6 text-wangari-green-600" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">CSV Spreadsheet</p>
-              <p className="text-xs text-gray-400">Opens in Excel, Google Sheets, Numbers</p>
-              <p className="text-[10px] text-gray-300 mt-1">Basic info + production data + vaccination schedule</p>
+              <p className="text-sm font-bold text-wangari-gray-900">CSV Spreadsheet</p>
+              <p className="text-xs text-wangari-gray-400">Opens in Excel, Google Sheets, Numbers</p>
+              <p className="text-[10px] text-wangari-gray-300 mt-1">Basic info + production data + vaccination schedule</p>
             </div>
           </button>
 
           <button
             onClick={() => handleExport("json")}
             disabled={downloading}
-            className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-emerald-300 hover:bg-emerald-50/50 transition-all cursor-pointer text-left"
+            className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-wangari-gray-100 hover:border-wangari-green-300 hover:bg-wangari-green-50/50 transition-all cursor-pointer text-left"
           >
-            <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-              <FileText className="h-6 w-6 text-blue-600" />
+            <div className="h-12 w-12 rounded-xl bg-wangari-blue-50 flex items-center justify-center flex-shrink-0">
+              <FileText className="h-6 w-6 text-wangari-blue-600" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">JSON Data</p>
-              <p className="text-xs text-gray-400">Full raw data for developers or backup</p>
-              <p className="text-[10px] text-gray-300 mt-1">Complete flock record with all fields</p>
+              <p className="text-sm font-bold text-wangari-gray-900">JSON Data</p>
+              <p className="text-xs text-wangari-gray-400">Full raw data for developers or backup</p>
+              <p className="text-[10px] text-wangari-gray-300 mt-1">Complete flock record with all fields</p>
             </div>
           </button>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+        <div className="px-6 py-4 border-t border-wangari-gray-100 bg-wangari-gray-50 flex justify-end">
           <button onClick={onClose} className={BTN_CANCEL}>
             Close
           </button>

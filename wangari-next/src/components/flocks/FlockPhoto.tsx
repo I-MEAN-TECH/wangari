@@ -76,13 +76,13 @@ export function FlockPhoto({ flockId, photoUrl, onPhotoUpdate, size = "md" }: Fl
           <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-lg bg-white/90 text-gray-700 hover:bg-white cursor-pointer"
+              className="p-2 rounded-lg bg-white/90 text-wangari-gray-700 hover:bg-white cursor-pointer"
             >
               <Camera className="h-4 w-4" />
             </button>
             <button
               onClick={handleRemove}
-              className="p-2 rounded-lg bg-white/90 text-red-500 hover:bg-white cursor-pointer"
+              className="p-2 rounded-lg bg-white/90 text-wangari-red-500 hover:bg-white cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -93,18 +93,18 @@ export function FlockPhoto({ flockId, photoUrl, onPhotoUpdate, size = "md" }: Fl
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           className={cn(
-            "h-full w-full rounded-2xl border-2 border-dashed border-wangari-border hover:border-emerald-400 hover:bg-emerald-50/50 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer",
+            "h-full w-full rounded-2xl border-2 border-dashed border-wangari-border hover:border-wangari-green-400 hover:bg-wangari-green-50/50 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer",
             uploading && "opacity-50"
           )}
         >
           {uploading ? (
-            <div className="h-6 w-6 rounded-full border-2 border-emerald-200 border-t-emerald-600 animate-spin" />
+            <div className="h-6 w-6 rounded-full border-2 border-wangari-green-200 border-t-emerald-600 animate-spin" />
           ) : (
             <>
-              <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                <Upload className="h-5 w-5 text-emerald-600" />
+              <div className="h-10 w-10 rounded-xl bg-wangari-green-50 flex items-center justify-center">
+                <Upload className="h-5 w-5 text-wangari-green-600" />
               </div>
-              <span className="text-[10px] font-medium text-gray-400">
+              <span className="text-[10px] font-medium text-wangari-gray-400">
                 {size === "sm" ? "Photo" : "Upload Photo"}
               </span>
             </>

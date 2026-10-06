@@ -211,7 +211,7 @@ export default function InvoicesPage() {
           )}
         </button>
         {!farmProfile.businessName && (
-          <a href="/settings" className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-tone-warn-bg border border-tone-warn-border text-tone-warn-text text-xs font-bold hover:bg-amber-100 cursor-pointer">
+          <a href="/settings" className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-tone-warn-bg border border-tone-warn-border text-tone-warn-text text-xs font-bold hover:bg-wangari-amber-100 cursor-pointer">
             <Settings className="h-3 w-3" />Set up farm profile for branded invoices
           </a>
         )}
@@ -240,14 +240,14 @@ export default function InvoicesPage() {
                     {/* Mini preview */}
                     <div className="rounded-xl border border-wangari-border bg-white p-3 mb-3 overflow-hidden">
                       <div className="h-2 rounded-full mb-2" style={{ background: template.color, width: "40%" }} />
-                      <div className="h-1 rounded bg-gray-100 mb-1 w-3/4" />
-                      <div className="h-1 rounded bg-gray-100 mb-1 w-1/2" />
-                      <div className="h-1 rounded bg-gray-100 mb-2 w-2/3" />
+                      <div className="h-1 rounded bg-wangari-gray-100 mb-1 w-3/4" />
+                      <div className="h-1 rounded bg-wangari-gray-100 mb-1 w-1/2" />
+                      <div className="h-1 rounded bg-wangari-gray-100 mb-2 w-2/3" />
                       <div className="space-y-1">
-                        <div className="flex justify-between"><div className="h-1 rounded bg-gray-100 w-1/3" /><div className="h-1 rounded bg-gray-100 w-1/4" /></div>
-                        <div className="flex justify-between"><div className="h-1 rounded bg-gray-100 w-1/4" /><div className="h-1 rounded bg-gray-100 w-1/5" /></div>
+                        <div className="flex justify-between"><div className="h-1 rounded bg-wangari-gray-100 w-1/3" /><div className="h-1 rounded bg-wangari-gray-100 w-1/4" /></div>
+                        <div className="flex justify-between"><div className="h-1 rounded bg-wangari-gray-100 w-1/4" /><div className="h-1 rounded bg-wangari-gray-100 w-1/5" /></div>
                       </div>
-                      <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between">
+                      <div className="mt-2 pt-2 border-t border-wangari-gray-100 flex justify-between">
                         <div className="h-1.5 rounded bg-wangari-border w-1/3" />
                         <div className="h-1.5 rounded w-1/4" style={{ background: template.color }} />
                       </div>
@@ -385,8 +385,8 @@ export default function InvoicesPage() {
       <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { title: "Total Invoiced", value: `KES ${totalRevenue.toLocaleString()}`, icon: <FileText className="h-5 w-5" />, color: "bg-wangari-green-800" },
-          { title: "Collected", value: `KES ${totalPaid.toLocaleString()}`, icon: <CheckCircle2 className="h-5 w-5" />, color: "bg-emerald-500" },
-          { title: "Outstanding", value: `KES ${totalOutstanding.toLocaleString()}`, icon: <AlertCircle className="h-5 w-5" />, color: totalOutstanding > 0 ? "bg-amber-500" : "bg-wangari-green-800" },
+          { title: "Collected", value: `KES ${totalPaid.toLocaleString()}`, icon: <CheckCircle2 className="h-5 w-5" />, color: "bg-wangari-green-500" },
+          { title: "Outstanding", value: `KES ${totalOutstanding.toLocaleString()}`, icon: <AlertCircle className="h-5 w-5" />, color: totalOutstanding > 0 ? "bg-wangari-amber-500" : "bg-wangari-green-800" },
           { title: "Total Invoices", value: String(invoices.length), icon: <DollarSign className="h-5 w-5" />, color: "bg-wangari-green-800" },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
@@ -433,7 +433,7 @@ export default function InvoicesPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-extrabold text-wangari-heading">KES {Number(inv.totalAmount).toLocaleString()}</p>
-                        {balance > 0 && <p className="text-[10px] font-bold text-amber-600">KES {balance.toLocaleString()} owing</p>}
+                        {balance > 0 && <p className="text-[10px] font-bold text-wangari-amber-600">KES {balance.toLocaleString()} owing</p>}
                       </div>
                     </div>
                     <div className="flex gap-2 mt-3">
@@ -441,7 +441,7 @@ export default function InvoicesPage() {
                       <button onClick={() => handlePrint(inv)} className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-wangari-sunken text-wangari-muted text-xs font-bold hover:bg-tone-neutral-border cursor-pointer"><Printer className="h-3 w-3" />Print</button>
                       {balance > 0 && (
                         <button onClick={() => { setShowPayModal(inv.id); setPayAmount(String(balance)); }}
-                          className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-tone-warn-bg text-tone-warn-text text-xs font-bold border border-tone-warn-border hover:bg-amber-100 cursor-pointer"><DollarSign className="h-3 w-3" />Pay</button>
+                          className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-tone-warn-bg text-tone-warn-text text-xs font-bold border border-tone-warn-border hover:bg-wangari-amber-100 cursor-pointer"><DollarSign className="h-3 w-3" />Pay</button>
                       )}
                     </div>
                   </CardContent>
@@ -478,9 +478,9 @@ export default function InvoicesPage() {
                 )}
                 <div className="border-t border-wangari-border pt-3 space-y-1.5">
                   <div className="flex justify-between text-xs"><span className="text-wangari-muted">Total</span><span className="font-extrabold text-wangari-heading">KES {Number(viewInvoice.totalAmount).toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-wangari-muted">Paid</span><span className="font-bold text-emerald-600">KES {Number(viewInvoice.amountPaid).toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs"><span className="text-wangari-muted">Paid</span><span className="font-bold text-wangari-green-600">KES {Number(viewInvoice.amountPaid).toLocaleString()}</span></div>
                   {Number(viewInvoice.totalAmount) - Number(viewInvoice.amountPaid) > 0 && (
-                    <div className="flex justify-between text-xs"><span className="text-wangari-muted">Balance</span><span className="font-bold text-amber-600">KES {(Number(viewInvoice.totalAmount) - Number(viewInvoice.amountPaid)).toLocaleString()}</span></div>
+                    <div className="flex justify-between text-xs"><span className="text-wangari-muted">Balance</span><span className="font-bold text-wangari-amber-600">KES {(Number(viewInvoice.totalAmount) - Number(viewInvoice.amountPaid)).toLocaleString()}</span></div>
                   )}
                 </div>
                 <button onClick={() => { handlePrint(viewInvoice); setViewInvoice(null); }} className="w-full flex items-center justify-center gap-2 py-2.5 bg-wangari-green-800 text-white rounded-xl text-sm font-bold hover:bg-wangari-green-900 cursor-pointer"><Printer className="h-4 w-4" />Print Invoice</button>

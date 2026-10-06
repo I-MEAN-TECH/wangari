@@ -71,11 +71,11 @@ const KES = (n: number) => "KES " + Math.round(n).toLocaleString("en-KE");
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 const VERDICTS: Record<Economics["verdict"], { label: string; chip: string; text: string }> = {
-  profitable: { label: "Making money", chip: "bg-emerald-100 text-emerald-800", text: "text-emerald-700" },
-  thin: { label: "Thin margin", chip: "bg-amber-100 text-amber-800", text: "text-tone-warn-text" },
-  losing: { label: "Losing money", chip: "bg-badge-red-bg text-badge-red-text", text: "text-red-600" },
-  "no-cost": { label: "No cost data", chip: "bg-gray-100 text-gray-600", text: "text-gray-700" },
-  "no-price": { label: "No price data", chip: "bg-sky-100 text-sky-700", text: "text-sky-700" },
+  profitable: { label: "Making money", chip: "bg-wangari-green-100 text-wangari-green-800", text: "text-wangari-green-700" },
+  thin: { label: "Thin margin", chip: "bg-wangari-amber-100 text-wangari-amber-800", text: "text-tone-warn-text" },
+  losing: { label: "Losing money", chip: "bg-badge-red-bg text-badge-red-text", text: "text-wangari-red-600" },
+  "no-cost": { label: "No cost data", chip: "bg-wangari-gray-100 text-wangari-gray-600", text: "text-wangari-gray-700" },
+  "no-price": { label: "No price data", chip: "bg-wangari-sky-100 text-wangari-sky-700", text: "text-wangari-sky-700" },
 };
 
 function monthLabel(m: string): string {
@@ -151,16 +151,16 @@ export default function StatementPage() {
           <div className="flex items-center rounded-xl border border-wangari-border bg-white">
             <button
               onClick={() => setMonth(shiftMonth(month, -1))}
-              className="px-3 py-2.5 text-gray-500 hover:bg-gray-50 rounded-l-xl cursor-pointer"
+              className="px-3 py-2.5 text-wangari-gray-500 hover:bg-wangari-gray-50 rounded-l-xl cursor-pointer"
               aria-label="Previous month"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="px-2 text-xs font-black text-gray-700 min-w-[110px] text-center">{monthLabel(month)}</span>
+            <span className="px-2 text-xs font-black text-wangari-gray-700 min-w-[110px] text-center">{monthLabel(month)}</span>
             <button
               onClick={() => month < currentMonth() && setMonth(shiftMonth(month, 1))}
               disabled={month >= currentMonth()}
-              className="px-3 py-2.5 text-gray-500 hover:bg-gray-50 disabled:opacity-30 rounded-r-xl cursor-pointer"
+              className="px-3 py-2.5 text-wangari-gray-500 hover:bg-wangari-gray-50 disabled:opacity-30 rounded-r-xl cursor-pointer"
               aria-label="Next month"
             >
               <ChevronRight className="h-4 w-4" />
@@ -176,7 +176,7 @@ export default function StatementPage() {
       </div>
 
       {notice && (
-        <div data-no-print className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs font-bold text-sky-800">
+        <div data-no-print className="rounded-xl border border-wangari-sky-200 bg-wangari-sky-50 px-4 py-2.5 text-xs font-bold text-wangari-sky-800">
           {notice}
         </div>
       )}
@@ -184,13 +184,13 @@ export default function StatementPage() {
       {/* The card — everything below is the screenshot */}
       <div className="rounded-2xl border border-wangari-border bg-white shadow-sm overflow-hidden">
         {/* Header */}
-        <div className="border-b border-gray-100 bg-gradient-to-br from-wangari-green-50 to-white px-6 py-5">
+        <div className="border-b border-wangari-gray-100 bg-gradient-to-br from-wangari-green-50 to-white px-6 py-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-black text-gray-900">
+              <h1 className="text-xl font-black text-wangari-gray-900">
                 {loading ? "…" : (stmt?.farm?.name ?? "Farm statement")}
               </h1>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-wangari-gray-500">
                 {stmt?.farm?.county && (
                   <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{stmt.farm.county}</span>
                 )}
@@ -199,8 +199,8 @@ export default function StatementPage() {
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Net this month</p>
-              <p className={`text-2xl font-black ${(stmt?.net ?? 0) >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+              <p className="text-[10px] font-black uppercase tracking-wider text-wangari-gray-400">Net this month</p>
+              <p className={`text-2xl font-black ${(stmt?.net ?? 0) >= 0 ? "text-wangari-green-700" : "text-wangari-red-600"}`}>
                 {loading ? "…" : KES(stmt?.net ?? 0)}
               </p>
             </div>
@@ -214,7 +214,7 @@ export default function StatementPage() {
         ) : (
           <>
             {/* The four numbers */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100 border-b border-gray-100">
+            <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-wangari-gray-100 border-b border-wangari-gray-100">
               {[
                 { label: "Deliveries", value: stmt?.gross ?? 0, note: `${stmt?.deliveries ?? 0} deliveries` },
                 { label: "Deductions", value: -(stmt?.deductions ?? 0), note: "buyer deductions" },
@@ -222,37 +222,37 @@ export default function StatementPage() {
                 { label: "Paid", value: stmt?.paid ?? 0, note: "received" },
               ].map((c) => (
                 <div key={c.label} className="px-4 py-4">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">{c.label}</p>
-                  <p className="mt-1 text-base font-black text-gray-900">{KES(c.value)}</p>
-                  <p className="text-[10px] text-gray-400">{c.note}</p>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-wangari-gray-400">{c.label}</p>
+                  <p className="mt-1 text-base font-black text-wangari-gray-900">{KES(c.value)}</p>
+                  <p className="text-[10px] text-wangari-gray-400">{c.note}</p>
                 </div>
               ))}
             </div>
 
             {/* Owed — the dispute-proof line */}
-            <div className="border-b border-gray-100 px-6 py-4 flex flex-wrap items-center justify-between gap-2">
+            <div className="border-b border-wangari-gray-100 px-6 py-4 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Outstanding (all time)</p>
-                <p className={`text-lg font-black ${(stmt?.allTimeOutstanding ?? 0) > 0 ? "text-amber-600" : "text-emerald-700"}`}>
+                <p className="text-[10px] font-black uppercase tracking-wider text-wangari-gray-400">Outstanding (all time)</p>
+                <p className={`text-lg font-black ${(stmt?.allTimeOutstanding ?? 0) > 0 ? "text-wangari-amber-600" : "text-wangari-green-700"}`}>
                   {KES(stmt?.allTimeOutstanding ?? 0)}
                   {(stmt?.unpaidDeliveries ?? 0) > 0 && (
-                    <span className="ml-2 align-middle text-[11px] font-bold text-amber-600">
+                    <span className="ml-2 align-middle text-[11px] font-bold text-wangari-amber-600">
                       across {stmt?.unpaidDeliveries} deliveries
                     </span>
                   )}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">This month owed</p>
-                <p className="text-lg font-black text-gray-900">{KES(stmt?.outstanding ?? 0)}</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-wangari-gray-400">This month owed</p>
+                <p className="text-lg font-black text-wangari-gray-900">{KES(stmt?.outstanding ?? 0)}</p>
               </div>
             </div>
 
             {/* Cost of production vs price */}
-            <div className="border-b border-gray-100 px-6 py-4">
-              <p className="text-sm font-black text-gray-900">Cost of production vs price</p>
+            <div className="border-b border-wangari-gray-100 px-6 py-4">
+              <p className="text-sm font-black text-wangari-gray-900">Cost of production vs price</p>
               {priceRows.length === 0 ? (
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-wangari-gray-500">
                   Not enough recorded output in the last 30 days to quote a per-unit cost yet.
                 </p>
               ) : (
@@ -262,10 +262,10 @@ export default function StatementPage() {
                     const v = VERDICTS[e.verdict];
                     const u = r.unit ?? "unit";
                     return (
-                      <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+                      <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-wangari-gray-100 bg-wangari-gray-50/60 px-3 py-2.5">
                         <div className="min-w-0">
-                          <p className="text-xs font-extrabold text-gray-900">{r.name}</p>
-                          <p className="text-[11px] text-gray-500">
+                          <p className="text-xs font-extrabold text-wangari-gray-900">{r.name}</p>
+                          <p className="text-[11px] text-wangari-gray-500">
                             {e.costPerUnit !== null && e.costPerUnit > 0 ? `Cost ${KES(r2(e.costPerUnit))}/${u}` : "Cost not recorded"}
                             {e.ownPricePerUnit && ` · you earn ${KES(r2(e.ownPricePerUnit))}/${u}`}
                           </p>
@@ -283,11 +283,11 @@ export default function StatementPage() {
 
             {/* Per-buyer: what settles an argument with a co-op */}
             {buyers.length > 0 && (
-              <div className="border-b border-gray-100 px-6 py-4">
-                <p className="text-sm font-black text-gray-900">By buyer</p>
+              <div className="border-b border-wangari-gray-100 px-6 py-4">
+                <p className="text-sm font-black text-wangari-gray-900">By buyer</p>
                 <table className="mt-2 w-full text-xs">
                   <thead>
-                    <tr className="text-left text-[10px] uppercase tracking-wider text-gray-400">
+                    <tr className="text-left text-[10px] uppercase tracking-wider text-wangari-gray-400">
                       <th className="py-1 font-black">Buyer</th>
                       <th className="py-1 font-black text-right">Qty</th>
                       <th className="py-1 font-black text-right">Gross</th>
@@ -297,12 +297,12 @@ export default function StatementPage() {
                   </thead>
                   <tbody>
                     {buyers.map(([name, b]) => (
-                      <tr key={name} className="border-t border-gray-50">
-                        <td className="py-1.5 font-bold text-gray-800">{name}</td>
-                        <td className="py-1.5 text-right text-gray-600">{Math.round(b.quantity).toLocaleString()}</td>
-                        <td className="py-1.5 text-right text-gray-800">{KES(b.gross)}</td>
-                        <td className="py-1.5 text-right text-gray-600">{KES(b.paid)}</td>
-                        <td className={`py-1.5 text-right font-black ${b.outstanding > 0 ? "text-amber-600" : "text-emerald-700"}`}>{KES(b.outstanding)}</td>
+                      <tr key={name} className="border-t border-wangari-gray-50">
+                        <td className="py-1.5 font-bold text-wangari-gray-800">{name}</td>
+                        <td className="py-1.5 text-right text-wangari-gray-600">{Math.round(b.quantity).toLocaleString()}</td>
+                        <td className="py-1.5 text-right text-wangari-gray-800">{KES(b.gross)}</td>
+                        <td className="py-1.5 text-right text-wangari-gray-600">{KES(b.paid)}</td>
+                        <td className={`py-1.5 text-right font-black ${b.outstanding > 0 ? "text-wangari-amber-600" : "text-wangari-green-700"}`}>{KES(b.outstanding)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -311,14 +311,14 @@ export default function StatementPage() {
             )}
 
             {/* Honesty footer — the line that keeps this document trustworthy */}
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-6 py-3.5">
-              <p className="flex items-center gap-1.5 text-[11px] text-gray-500">
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-wangari-gray-50 px-6 py-3.5">
+              <p className="flex items-center gap-1.5 text-[11px] text-wangari-gray-500">
                 {(stmt?.net ?? 0) >= 0
-                  ? <CircleCheck className="h-3.5 w-3.5 text-emerald-600" />
-                  : <TriangleAlert className="h-3.5 w-3.5 text-red-500" />}
+                  ? <CircleCheck className="h-3.5 w-3.5 text-wangari-green-600" />
+                  : <TriangleAlert className="h-3.5 w-3.5 text-wangari-red-500" />}
                 Computed from this farm's own records — not an audited statement.
               </p>
-              <p className="text-[11px] text-gray-400">Wangari · generated {today}</p>
+              <p className="text-[11px] text-wangari-gray-400">Wangari · generated {today}</p>
             </div>
           </>
         )}

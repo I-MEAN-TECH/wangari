@@ -81,7 +81,7 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="h-8 w-8 rounded-full border-2 border-emerald-200 border-t-emerald-600 animate-spin" />
+        <div className="h-8 w-8 rounded-full border-2 border-wangari-green-200 border-t-emerald-600 animate-spin" />
       </div>
     );
   }
@@ -103,7 +103,7 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 text-center" onClick={(e) => e.stopPropagation()}>
-          <p className="text-sm text-gray-400">Select at least 2 flocks to compare</p>
+          <p className="text-sm text-wangari-gray-400">Select at least 2 flocks to compare</p>
           <button onClick={onClose} className={BTN_CANCEL_BLOCK}>
             Close
           </button>
@@ -134,16 +134,16 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-wangari-gray-100">
           <div>
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-emerald-600" />
+            <h2 className="text-lg font-bold text-wangari-gray-900 flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-wangari-green-600" />
               Flock Comparison
             </h2>
-            <p className="text-xs text-gray-400 mt-0.5">Comparing {data.length} flocks side by side</p>
+            <p className="text-xs text-wangari-gray-400 mt-0.5">Comparing {data.length} flocks side by side</p>
           </div>
           <button onClick={onClose} className={BTN_TOOL}>
-            <X className="h-5 w-5 text-gray-400" />
+            <X className="h-5 w-5 text-wangari-gray-400" />
           </button>
         </div>
 
@@ -154,14 +154,14 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
             {data.map((flock) => {
               const species = speciesFor(flock);
               return (
-                <div key={flock.id} className="flex-1 p-4 rounded-xl bg-gray-50 border border-gray-100">
+                <div key={flock.id} className="flex-1 p-4 rounded-xl bg-wangari-gray-50 border border-wangari-gray-100">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 flex-shrink-0">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-wangari-green-50 text-wangari-green-700 flex-shrink-0">
                       <PawPrint className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-gray-900 truncate">{flock.name}</h3>
-                      <p className="text-[11px] text-gray-400 truncate">{flock.breed || species?.name}</p>
+                      <h3 className="text-sm font-bold text-wangari-gray-900 truncate">{flock.name}</h3>
+                      <p className="text-[11px] text-wangari-gray-400 truncate">{flock.breed || species?.name}</p>
                     </div>
                   </div>
                 </div>
@@ -175,18 +175,18 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
               {
                 label: "Status",
                 values: data.map((f) => f.status) as any[],
-                render: (v: any) => <Badge variant="default" className={v === "active" ? "bg-emerald-50 text-emerald-700" : ""}>{v}</Badge>,
+                render: (v: any) => <Badge variant="default" className={v === "active" ? "bg-wangari-green-50 text-wangari-green-700" : ""}>{v}</Badge>,
               },
               {
                 label: "Current Count",
                 values: data.map((f) => f.currentCount),
-                render: (v: number) => <span className="font-bold text-gray-900">{v.toLocaleString()}</span>,
+                render: (v: number) => <span className="font-bold text-wangari-gray-900">{v.toLocaleString()}</span>,
                 best: getBestMetric(data.map((f) => f.currentCount), "highest"),
               },
               {
                 label: "Mortality Rate",
                 values: data.map((f) => f.mortalityRate),
-                render: (v: number) => <span className={cn("font-bold", v <= 3 ? "text-emerald-700" : v <= 5 ? "text-tone-warn-text" : "text-badge-red-text")}>{v.toFixed(1)}%</span>,
+                render: (v: number) => <span className={cn("font-bold", v <= 3 ? "text-wangari-green-700" : v <= 5 ? "text-tone-warn-text" : "text-badge-red-text")}>{v.toFixed(1)}%</span>,
                 best: mortalityIdx,
               },
               {
@@ -197,7 +197,7 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
               {
                 label: "Avg Daily Production",
                 values: data.map((f) => f.avgProduction),
-                render: (v: number) => <span className="font-bold text-emerald-700">{v > 0 ? v.toFixed(0) : "—"}</span>,
+                render: (v: number) => <span className="font-bold text-wangari-green-700">{v > 0 ? v.toFixed(0) : "—"}</span>,
                 best: productionIdx,
               },
               {
@@ -232,25 +232,25 @@ export function FlockComparison({ flockIds, onClose }: FlockComparisonProps) {
                 values: data.map((f) => f.completedVax),
                 render: (v: number, i: number) => (
                   <span>
-                    <span className="text-emerald-600">{data[i].completedVax}</span>
-                    <span className="text-gray-400">/{data[i].totalVax}</span>
-                    {data[i].pendingVax > 0 && <span className="text-amber-600 ml-1">({data[i].pendingVax} due)</span>}
+                    <span className="text-wangari-green-600">{data[i].completedVax}</span>
+                    <span className="text-wangari-gray-400">/{data[i].totalVax}</span>
+                    {data[i].pendingVax > 0 && <span className="text-wangari-amber-600 ml-1">({data[i].pendingVax} due)</span>}
                   </span>
                 ),
               },
               {
                 label: "Survival Rate",
                 values: data.map((f) => f.currentCount / Math.max(f.initialCount, 1)),
-                render: (v: number) => <span className={cn("font-bold", v >= 0.95 ? "text-emerald-700" : v >= 0.9 ? "text-tone-warn-text" : "text-badge-red-text")}>{(v * 100).toFixed(1)}%</span>,
+                render: (v: number) => <span className={cn("font-bold", v >= 0.95 ? "text-wangari-green-700" : v >= 0.9 ? "text-tone-warn-text" : "text-badge-red-text")}>{(v * 100).toFixed(1)}%</span>,
                 best: survivalIdx,
               },
             ] as any[]).map((row: any) => (
-              <div key={row.label} className="flex gap-4 items-center py-2.5 px-2 rounded-lg hover:bg-gray-50">
-                <div className="w-40 text-xs font-semibold text-gray-400 uppercase flex-shrink-0">{row.label}</div>
+              <div key={row.label} className="flex gap-4 items-center py-2.5 px-2 rounded-lg hover:bg-wangari-gray-50">
+                <div className="w-40 text-xs font-semibold text-wangari-gray-400 uppercase flex-shrink-0">{row.label}</div>
                 {data.map((flock, i) => (
                   <div key={flock.id} className="flex-1 text-sm">
                     {row.render(row.values[i], i)}
-                    {row.best === i && <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-bold">BEST</span>}
+                    {row.best === i && <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded bg-wangari-green-100 text-wangari-green-700 font-bold">BEST</span>}
                   </div>
                 ))}
               </div>

@@ -125,7 +125,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
           </div>
 
           {/* Tabs */}
-          <div className="grid grid-cols-2 p-1.5 bg-gray-100 gap-1 m-4 mb-0 rounded-2xl">
+          <div className="grid grid-cols-2 p-1.5 bg-wangari-gray-100 gap-1 m-4 mb-0 rounded-2xl">
             <button
               onClick={() => setTab("profile")}
               className={`py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
@@ -169,13 +169,13 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
                     className="h-12 rounded-xl border-wangari-border focus:border-wangari-green-800 font-semibold"
                   />
                 </div>
-                <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 text-xs text-wangari-muted">
+                <div className="p-3 rounded-xl bg-wangari-gray-50 border border-wangari-gray-100 text-xs text-wangari-muted">
                   Role: <span className="font-bold text-wangari-heading">{profile?.role || "Farm Worker"}</span>
                   {" "}• Managed by your farm owner
                 </div>
 
                 {profileMsg && (
-                  <p className={`text-xs font-bold ${profileMsg.ok ? "text-emerald-700" : "text-rose-700"}`}>
+                  <p className={`text-xs font-bold ${profileMsg.ok ? "text-wangari-green-700" : "text-wangari-rose-700"}`}>
                     {profileMsg.text}
                   </p>
                 )}
@@ -193,7 +193,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
 
             {tab === "pin" && (
               <form onSubmit={changePin} className="space-y-4">
-                <div className="p-3 rounded-xl bg-tone-warn-bg border border-tone-warn-border text-xs font-bold text-amber-800 flex items-start gap-2">
+                <div className="p-3 rounded-xl bg-tone-warn-bg border border-tone-warn-border text-xs font-bold text-wangari-amber-800 flex items-start gap-2">
                   <KeyRound className="h-4 w-4 shrink-0 mt-0.5" />
                   Changing your PIN signs you out of nothing — it takes effect at your next login.
                 </div>
@@ -235,7 +235,7 @@ export function WorkerProfileModal({ open, onClose, profile, onSaved }: Props) {
                 </div>
 
                 {pinMsg && (
-                  <p className={`text-xs font-bold ${pinMsg.ok ? "text-emerald-700" : "text-rose-700"}`}>
+                  <p className={`text-xs font-bold ${pinMsg.ok ? "text-wangari-green-700" : "text-wangari-rose-700"}`}>
                     {pinMsg.text}
                   </p>
                 )}

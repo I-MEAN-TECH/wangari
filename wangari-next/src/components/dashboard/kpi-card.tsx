@@ -19,8 +19,8 @@ export function KpiCard({
 }: KpiCardProps) {
   const changeColors = {
     positive: "text-wangari-green-600 bg-wangari-green-50",
-    negative: "text-red-600 bg-tone-bad-bg",
-    neutral: "text-wangari-muted bg-gray-50",
+    negative: "text-wangari-red-600 bg-tone-bad-bg",
+    neutral: "text-wangari-muted bg-wangari-gray-50",
   };
 
   return (

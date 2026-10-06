@@ -38,15 +38,15 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
   };
 
   return (
-    <Card className="border-gray-300">
+    <Card className="border-wangari-gray-300">
       <CardContent className="space-y-4 pt-6">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-              <Building2 className="h-5 w-5 text-gray-500" aria-hidden />
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-wangari-gray-900">
+              <Building2 className="h-5 w-5 text-wangari-gray-500" aria-hidden />
               Operational history — for assessment
             </h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-wangari-gray-600">
               {farm.name}
               {farm.owner ? ` · ${farm.owner}` : ""}
               {farm.county ? ` · ${farm.county}` : ""}
@@ -60,7 +60,7 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
         </div>
 
         {/* The caveats go FIRST. An assessor needs the limits before the figures. */}
-        <div className="rounded-2xl border border-tone-warn-border bg-tone-warn-bg p-3 text-sm text-amber-900">
+        <div className="rounded-2xl border border-tone-warn-border bg-tone-warn-bg p-3 text-sm text-wangari-amber-900">
           <p className="font-semibold">Scope and limits</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5">
             <li>
@@ -122,7 +122,7 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
 
         {/* Criteria as a checklist an assessor can scan in seconds. */}
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-wangari-gray-500">
             Record completeness ({grade.stars}/{grade.maxStars})
           </h3>
           <ul className="mt-2 space-y-1">
@@ -131,7 +131,7 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
                 {c.earned ? (
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-wangari-green-600" aria-hidden />
                 ) : (
-                  <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-gray-300" aria-hidden />
+                  <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-wangari-gray-300" aria-hidden />
                 )}
                 <span>
                   <strong>{c.label}</strong> — {c.detail}
@@ -145,13 +145,13 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
             matters more than any single month's figure. */}
         {trend.recentMonths.length > 0 ? (
           <div>
-            <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-500">
+            <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-wangari-gray-500">
               <CalendarRange className="h-4 w-4" aria-hidden />
               Monthly record
             </h3>
             <table className="mt-2 w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs uppercase text-gray-500">
+                <tr className="border-b text-left text-xs uppercase text-wangari-gray-500">
                   <th className="py-1">Month</th>
                   <th className="py-1 text-right">Days</th>
                   <th className="py-1 text-right">Income</th>
@@ -169,9 +169,9 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
                 ))}
               </tbody>
             </table>
-            <p className="mt-2 flex items-center gap-1.5 text-sm text-gray-600">
+            <p className="mt-2 flex items-center gap-1.5 text-sm text-wangari-gray-600">
               <TrendingUp
-                className={`h-4 w-4 ${trend.recordingImproving ? "text-wangari-green-600" : "text-gray-400"}`}
+                className={`h-4 w-4 ${trend.recordingImproving ? "text-wangari-green-600" : "text-wangari-gray-400"}`}
                 aria-hidden
               />
               {trend.recordingImproving
@@ -208,7 +208,7 @@ export function LenderBrief({ record }: { record: FarmRecordResponse }) {
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-wangari-border p-3">
-      <h3 className="text-sm font-bold text-gray-800">{title}</h3>
+      <h3 className="text-sm font-bold text-wangari-gray-800">{title}</h3>
       <dl className="mt-1 space-y-0.5">{children}</dl>
     </div>
   );
@@ -225,10 +225,10 @@ function Row({
 }) {
   return (
     <div className="flex justify-between gap-2 text-sm">
-      <dt className="text-gray-600">{k}</dt>
+      <dt className="text-wangari-gray-600">{k}</dt>
       <dd
         className={`text-right font-medium ${
-          tone === "good" ? "text-wangari-green-700" : tone === "warn" ? "text-tone-warn-text" : "text-gray-900"
+          tone === "good" ? "text-wangari-green-700" : tone === "warn" ? "text-tone-warn-text" : "text-wangari-gray-900"
         }`}
       >
         {v}

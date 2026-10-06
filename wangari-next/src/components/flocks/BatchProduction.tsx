@@ -85,27 +85,27 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-wangari-gray-100">
           <div>
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <ClipboardList className="h-5 w-5 text-emerald-600" />
+            <h2 className="text-lg font-bold text-wangari-gray-900 flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-wangari-green-600" />
               Batch Production Entry
             </h2>
-            <p className="text-xs text-gray-400 mt-0.5">Record production for multiple flocks at once</p>
+            <p className="text-xs text-wangari-gray-400 mt-0.5">Record production for multiple flocks at once</p>
           </div>
           <button onClick={onCancel} className={BTN_TOOL}>
-            <X className="h-5 w-5 text-gray-400" />
+            <X className="h-5 w-5 text-wangari-gray-400" />
           </button>
         </div>
 
         {/* Success State */}
         {submitted && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
-              <Check className="h-6 w-6 text-emerald-600" />
+            <div className="h-12 w-12 rounded-full bg-wangari-green-100 flex items-center justify-center">
+              <Check className="h-6 w-6 text-wangari-green-600" />
             </div>
-            <p className="text-sm font-semibold text-gray-900">All records saved!</p>
-            <p className="text-xs text-gray-400">{selectedFlocks.size} flocks recorded for {new Date(date).toLocaleDateString()}</p>
+            <p className="text-sm font-semibold text-wangari-gray-900">All records saved!</p>
+            <p className="text-xs text-wangari-gray-400">{selectedFlocks.size} flocks recorded for {new Date(date).toLocaleDateString()}</p>
           </div>
         )}
 
@@ -113,21 +113,21 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
         {!submitted && (
           <>
             {/* Date + Controls */}
-            <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-b border-gray-100">
+            <div className="flex items-center justify-between px-6 py-3 bg-wangari-gray-50 border-b border-wangari-gray-100">
               <div className="flex items-center gap-3">
-                <label className="text-xs font-semibold text-gray-600">Date:</label>
+                <label className="text-xs font-semibold text-wangari-gray-600">Date:</label>
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="rounded-lg border border-wangari-border px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="rounded-lg border border-wangari-border px-3 py-1.5 text-sm focus:ring-2 focus:ring-wangari-green-500/20 focus:border-wangari-green-500"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={selectAll} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium cursor-pointer">
+                <button onClick={selectAll} className="text-xs text-wangari-green-600 hover:text-wangari-green-700 font-medium cursor-pointer">
                   Select All Active
                 </button>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-wangari-gray-400">
                   {selectedFlocks.size} of {flocks.filter((f) => f.status === "active").length} selected
                 </span>
               </div>
@@ -146,7 +146,7 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
                     key={flock.id}
                     className={cn(
                       "rounded-xl border p-4 transition-all",
-                      isSelected ? "border-emerald-200 bg-emerald-50/30" : "border-gray-100 bg-white opacity-50"
+                      isSelected ? "border-wangari-green-200 bg-wangari-green-50/30" : "border-wangari-gray-100 bg-white opacity-50"
                     )}
                   >
                     <div className="flex items-center gap-3 mb-3">
@@ -154,18 +154,18 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleFlock(flock.id)}
-                        className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        className="h-4 w-4 rounded border-wangari-gray-300 text-wangari-green-600 focus:ring-wangari-green-500 cursor-pointer"
                       />
                       <div className="flex-1">
-                        <span className="text-sm font-bold text-gray-900">{flock.name}</span>
-                        <span className="text-xs text-gray-400 ml-2">{flock.breed || species?.name} • {flock.currentCount} animals</span>
+                        <span className="text-sm font-bold text-wangari-gray-900">{flock.name}</span>
+                        <span className="text-xs text-wangari-gray-400 ml-2">{flock.breed || species?.name} • {flock.currentCount} animals</span>
                       </div>
                     </div>
 
                     {isSelected && (
                       <div className="grid grid-cols-3 gap-3 ml-7">
                         <div>
-                          <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">
+                          <label className="text-[10px] font-semibold text-wangari-gray-500 uppercase block mb-1">
                             {isPoultry ? "Eggs Collected" : "Milk/Weight (L or kg)"}
                           </label>
                           <input
@@ -173,28 +173,28 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
                             placeholder="0"
                             value={entry.production}
                             onChange={(e) => updateEntry(flock.id, "production", e.target.value)}
-                            className="w-full rounded-lg border border-wangari-border px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                            className="w-full rounded-lg border border-wangari-border px-3 py-2 text-sm focus:ring-2 focus:ring-wangari-green-500/20 focus:border-wangari-green-500"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Deaths</label>
+                          <label className="text-[10px] font-semibold text-wangari-gray-500 uppercase block mb-1">Deaths</label>
                           <input
                             type="number"
                             placeholder="0"
                             value={entry.mortality}
                             onChange={(e) => updateEntry(flock.id, "mortality", e.target.value)}
-                            className="w-full rounded-lg border border-wangari-border px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                            className="w-full rounded-lg border border-wangari-border px-3 py-2 text-sm focus:ring-2 focus:ring-wangari-green-500/20 focus:border-wangari-green-500"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Feed (kg)</label>
+                          <label className="text-[10px] font-semibold text-wangari-gray-500 uppercase block mb-1">Feed (kg)</label>
                           <input
                             type="number"
                             step="0.1"
                             placeholder="0"
                             value={entry.feedUsed}
                             onChange={(e) => updateEntry(flock.id, "feedUsed", e.target.value)}
-                            className="w-full rounded-lg border border-wangari-border px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                            className="w-full rounded-lg border border-wangari-border px-3 py-2 text-sm focus:ring-2 focus:ring-wangari-green-500/20 focus:border-wangari-green-500"
                           />
                         </div>
                       </div>
@@ -205,7 +205,7 @@ export function BatchProduction({ flocks, onSubmit, onCancel }: BatchProductionP
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-wangari-gray-100 bg-wangari-gray-50">
               <button onClick={onCancel} className={BTN_CANCEL}>
                 Cancel
               </button>

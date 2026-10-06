@@ -13,6 +13,7 @@ import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, Cell,
 } from "recharts";
+import { eventSeries as EVENT_COLORS } from "@/lib/chart-series";
 
 /**
  * PostHog Analytics — product overview for the super-admin dashboard.
@@ -24,7 +25,6 @@ import {
 
 type QueryResult = { results: any[][]; columns?: string[] };
 
-const EVENT_COLORS = ["#16A34A", "#0EA5E9", "#F59E0B", "#8B5CF6", "#EF4444", "#14B8A6", "#F97316"];
 
 // ── HogQL helpers ─────────────────────────────────────────
 
@@ -236,7 +236,7 @@ export default function PostHogAnalyticsPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-tone-warn-border bg-tone-warn-bg px-4 py-3 text-sm text-amber-800">⚠️ {error} — showing partial data.</div>
+        <div className="rounded-xl border border-tone-warn-border bg-tone-warn-bg px-4 py-3 text-sm text-wangari-amber-800">⚠️ {error} — showing partial data.</div>
       )}
 
       {/* ── KPI cards ── */}
@@ -376,7 +376,7 @@ export default function PostHogAnalyticsPage() {
             <div className="flex flex-wrap gap-2 pt-1">
               <Badge className="bg-wangari-green-50 text-wangari-green-700 border-0">{qFunnel.totals.conversionRate}% quote → invoice (of decided)</Badge>
               <Badge className="bg-badge-red-bg text-badge-red-text border-0">{qFunnel.totals.declined} declined</Badge>
-              <Badge className="bg-amber-100 text-amber-800 border-0">{qFunnel.totals.expired} expired</Badge>
+              <Badge className="bg-wangari-amber-100 text-wangari-amber-800 border-0">{qFunnel.totals.expired} expired</Badge>
               <Badge className="bg-wangari-sunken text-tone-neutral-text border-0">{qFunnel.totals.sent} awaiting response</Badge>
               <Badge className="bg-wangari-green-50 text-wangari-green-700 border-0">KES {qFunnel.totals.acceptedValue.toLocaleString()} accepted value</Badge>
               <Badge className="bg-wangari-sunken text-tone-neutral-text border-0">{qFunnel.totals.sendRate}% of drafts get sent</Badge>
@@ -445,6 +445,6 @@ function shortEvent(e: string): string {
 function eventBadge(e: string): string {
   if (e.includes("exception")) return "bg-badge-red-bg text-badge-red-text border-0";
   if (e.includes("signup") || e.includes("subscription")) return "bg-wangari-green-50 text-wangari-green-700 border-0";
-  if (e.includes("checkout")) return "bg-amber-100 text-amber-800 border-0";
+  if (e.includes("checkout")) return "bg-wangari-amber-100 text-wangari-amber-800 border-0";
   return "bg-wangari-sunken text-tone-neutral-text border-0";
 }

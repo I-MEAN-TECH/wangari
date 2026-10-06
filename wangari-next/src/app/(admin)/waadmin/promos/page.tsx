@@ -556,7 +556,7 @@ export default function AdminPromosPage() {
                 <GhostButton
                   onClick={() => revokeRedemption(r)}
                   disabled={redeemersBusy}
-                  className="h-8 shrink-0 px-2 text-xs text-red-600 hover:bg-tone-bad-bg"
+                  className="h-8 shrink-0 px-2 text-xs text-wangari-red-600 hover:bg-tone-bad-bg"
                 >
                   <Trash2 className="h-3.5 w-3.5" /> Remove
                 </GhostButton>
@@ -573,7 +573,7 @@ export default function AdminPromosPage() {
       <Modal title="Batch generate codes" onClose={() => setShowBatch(false)} open={showBatch} width="max-w-lg">
         {batchCodes ? (
           <div className="space-y-4">
-            <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+            <div className="rounded-xl bg-wangari-green-50 px-4 py-3 text-sm font-semibold text-wangari-green-800">
               ✓ {batchCodes.length} unique codes created — each is single-use.
             </div>
             <div className="max-h-56 overflow-y-auto rounded-xl border border-wangari-border bg-wangari-cream/40 p-3">

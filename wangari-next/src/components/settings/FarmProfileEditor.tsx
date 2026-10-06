@@ -135,7 +135,7 @@ export function FarmProfileEditor() {
                 ) : profile.logoUrl ? (
                   <div className="relative w-full h-full">
                     <img src={profile.logoUrl.startsWith("/") ? `${process.env.NEXT_PUBLIC_API_URL || "https://api.wangari.imeantech.com"}${profile.logoUrl}` : profile.logoUrl} alt="Farm Logo" className="w-full h-full object-contain p-2" />
-                    <button onClick={() => setProfile({ ...profile, logoUrl: "" })} className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center cursor-pointer"><X className="h-3 w-3" /></button>
+                    <button onClick={() => setProfile({ ...profile, logoUrl: "" })} className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-wangari-red-500 text-white flex items-center justify-center cursor-pointer"><X className="h-3 w-3" /></button>
                   </div>
                 ) : (
                   <label className="flex flex-col items-center gap-1 cursor-pointer">

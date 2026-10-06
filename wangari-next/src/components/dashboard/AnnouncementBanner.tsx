@@ -36,8 +36,8 @@ export function AnnouncementBanner() {
 
   const body = (
     <div className="flex items-start gap-3">
-      <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
-      <div className="min-w-0 flex-1 text-sm text-emerald-950">
+      <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-wangari-green-700" />
+      <div className="min-w-0 flex-1 text-sm text-wangari-green-950">
         {banner.message}
         {banner.link && (
           <a href={banner.link} className="ml-2 font-bold underline underline-offset-2 hover:no-underline">
@@ -45,14 +45,14 @@ export function AnnouncementBanner() {
           </a>
         )}
       </div>
-      <button onClick={dismiss} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-emerald-800/60 hover:bg-emerald-100 hover:text-emerald-900">
+      <button onClick={dismiss} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-wangari-green-800/60 hover:bg-wangari-green-100 hover:text-wangari-green-900">
         <X className="h-4 w-4" />
       </button>
     </div>
   );
 
   return (
-    <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+    <div className="mb-4 rounded-xl border border-wangari-green-200 bg-wangari-green-50 px-4 py-3">
       {banner.link ? <a href={banner.link}>{body}</a> : body}
     </div>
   );

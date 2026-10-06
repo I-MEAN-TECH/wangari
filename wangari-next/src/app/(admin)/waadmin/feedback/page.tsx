@@ -182,7 +182,7 @@ export default function FeedbackAdminPage() {
   );
 
   const contradictionPanel = hasContradiction ? (
-    <Panel title="Works offline vs needs internet" description="Some people said Wangari works without internet, others said it needs a connection — a real answer, not an AI smoothing." className="border-amber-300 bg-tone-warn-bg/40">
+    <Panel title="Works offline vs needs internet" description="Some people said Wangari works without internet, others said it needs a connection — a real answer, not an AI smoothing." className="border-wangari-amber-300 bg-tone-warn-bg/40">
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-tone-warn-border bg-white p-4">
           <div className="text-[11px] font-bold uppercase tracking-wider text-tone-warn-text"><span className="inline-flex items-center gap-1.5"><Radio className="h-3.5 w-3.5"/>Works offline</span></div>

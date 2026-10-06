@@ -459,7 +459,7 @@ export function MegaMenuNavbar({
               className={cn(
                 "flex h-11 w-11 min-h-[48px] min-w-[48px] items-center justify-center rounded-xl transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wangari-green-800 lg:hidden cursor-pointer",
                 isSolid
-                  ? "text-wangari-heading bg-gray-100/80 hover:bg-wangari-green-50 hover:text-wangari-green-800"
+                  ? "text-wangari-heading bg-wangari-gray-100/80 hover:bg-wangari-green-50 hover:text-wangari-green-800"
                   : "text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm"
               )}
             >

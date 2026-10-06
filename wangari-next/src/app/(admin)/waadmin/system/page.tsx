@@ -144,7 +144,7 @@ export default function AdminSystemPage() {
             {info.status === "ok" ? (
               <Badge variant="success"><span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-wangari-green-500" /> All systems operational</Badge>
             ) : (
-              <Badge variant="danger"><span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-red-500" /> Degraded</Badge>
+              <Badge variant="danger"><span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-wangari-red-500" /> Degraded</Badge>
             )}
             <GhostButton onClick={() => load(true)} disabled={refreshing} className="h-8 px-2.5 text-xs">
               <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh

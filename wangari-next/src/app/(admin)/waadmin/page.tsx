@@ -134,7 +134,7 @@ export default function AdminOverviewPage() {
         <Panel
           title="Needs attention"
           description="Subscriptions expiring soon, open tickets, and unconverted trials"
-          className="border-amber-300 bg-tone-warn-bg/40"
+          className="border-wangari-amber-300 bg-tone-warn-bg/40"
         >
           <div className="space-y-2">
             {data.expiringSubs.length > 0 && (

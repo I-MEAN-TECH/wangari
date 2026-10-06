@@ -225,7 +225,7 @@ function NotificationDropdown({ open, onOpenChange }: { open: boolean; onOpenCha
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-bold text-wangari-heading">Notifications</h3>
             {unreadCount > 0 && (
-              <span className="h-5 min-w-5 px-1.5 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+              <span className="h-5 min-w-5 px-1.5 rounded-full bg-wangari-red-500 text-[10px] font-bold text-white flex items-center justify-center">
                 {unreadCount}
               </span>
             )}
@@ -249,11 +249,11 @@ function NotificationDropdown({ open, onOpenChange }: { open: boolean; onOpenCha
             <div className="p-1">
               {alerts.map((item) => {
                 const colorMap: Record<string, string> = {
-                  warning: "bg-tone-warn-bg text-amber-600",
-                  danger: "bg-tone-bad-bg text-red-600",
-                  info: "bg-blue-50 text-blue-600",
+                  warning: "bg-tone-warn-bg text-wangari-amber-600",
+                  danger: "bg-tone-bad-bg text-wangari-red-600",
+                  info: "bg-wangari-blue-50 text-wangari-blue-600",
                   success: "bg-wangari-green-50 text-wangari-green-600",
-                  muted: "bg-gray-50 text-gray-500",
+                  muted: "bg-wangari-gray-50 text-wangari-gray-500",
                 };
                 return (
                   <button
@@ -332,8 +332,8 @@ function ProfileDropdown({ open, onOpenChange }: { open: boolean; onOpenChange: 
             onClick={signOut}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-tone-bad-bg transition-colors cursor-pointer"
           >
-            <LogOut className="h-4 w-4 text-red-500" />
-            <span className="text-sm font-medium text-red-600">Sign Out</span>
+            <LogOut className="h-4 w-4 text-wangari-red-500" />
+            <span className="text-sm font-medium text-wangari-red-600">Sign Out</span>
           </button>
         </div>
       </div>
@@ -384,7 +384,7 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
           {/* Language Switcher — short on mobile, full on sm+ */}
           <button
             onClick={() => setLang(lang === "en" ? "sw" : "en")}
-            className="flex items-center gap-1 h-9 px-2 sm:px-2.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-all font-bold text-xs cursor-pointer shadow-xs"
+            className="flex items-center gap-1 h-9 px-2 sm:px-2.5 rounded-xl bg-wangari-green-50 text-wangari-green-800 border border-wangari-green-200 hover:bg-wangari-green-100 transition-all font-bold text-xs cursor-pointer shadow-xs"
             title="Switch Language / Badili Lugha"
           >
             {/* Short code on xs, full word on sm+ */}
@@ -420,7 +420,7 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />
-              <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-red-500 text-[8px] font-bold text-white flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-wangari-red-500 text-[8px] font-bold text-white flex items-center justify-center">
                 !
               </span>
             </button>

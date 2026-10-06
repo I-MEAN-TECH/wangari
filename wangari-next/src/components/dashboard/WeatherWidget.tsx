@@ -71,12 +71,12 @@ function getWeatherGradient(condition: string, night: boolean, mins: number, ris
 
   // Day — dawn/dusk amber windows (±45min around actual sunrise/sunset)
   if (c.includes("clear") || c.includes("sun")) {
-    if (mins <= riseMins + 45) return "from-amber-300 via-orange-400 to-rose-400"; // sunrise
-    if (mins >= setMins - 45) return "from-orange-500 via-rose-500 to-purple-500"; // sunset
-    return "from-sky-400 via-blue-500 to-cyan-500"; // clear day
+    if (mins <= riseMins + 45) return "from-wangari-amber-300 via-wangari-orange-400 to-wangari-rose-400"; // sunrise
+    if (mins >= setMins - 45) return "from-wangari-orange-500 via-wangari-rose-500 to-wangari-purple-500"; // sunset
+    return "from-wangari-sky-400 via-wangari-blue-500 to-wangari-cyan-500"; // clear day
   }
   if (c.includes("rain") || c.includes("drizzle")) return "from-wangari-muted via-tone-neutral-text to-wangari-text";
-  if (c.includes("thunder")) return "from-tone-neutral-text via-purple-800 to-wangari-heading";
+  if (c.includes("thunder")) return "from-tone-neutral-text via-wangari-purple-800 to-wangari-heading";
   return "from-wangari-subtle via-wangari-muted to-tone-neutral-text"; // cloudy day
 }
 
@@ -134,8 +134,8 @@ function AnimatedBackground({ icon, condition, night }: { icon: string; conditio
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
               >
-                <div className="absolute inset-0 -m-6 rounded-full bg-indigo-200/20 blur-2xl" />
-                <Moon className="relative h-14 w-14 text-indigo-100 drop-shadow-[0_0_18px_rgba(199,210,254,0.6)]" fill="currentColor" strokeWidth={0} />
+                <div className="absolute inset-0 -m-6 rounded-full bg-wangari-indigo-200/20 blur-2xl" />
+                <Moon className="relative h-14 w-14 text-wangari-indigo-100 drop-shadow-[0_0_18px_rgba(199,210,254,0.6)]" fill="currentColor" strokeWidth={0} />
               </motion.div>
             )}
 
@@ -161,7 +161,7 @@ function AnimatedBackground({ icon, condition, night }: { icon: string; conditio
           animate={{ scale: [1, 1.1, 1], opacity: [0.4, 0.6, 0.4] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
-          <div className="h-40 w-40 rounded-full bg-yellow-300/40 blur-3xl" />
+          <div className="h-40 w-40 rounded-full bg-wangari-yellow-300/40 blur-3xl" />
         </motion.div>
       )}
 
@@ -243,7 +243,7 @@ function AnimatedWeatherIcon({ icon, condition, night }: { icon: string; conditi
     return (
       <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}>
         <Moon
-          className="h-14 w-14 text-indigo-100 drop-shadow-[0_0_16px_rgba(199,210,254,0.55)]"
+          className="h-14 w-14 text-wangari-indigo-100 drop-shadow-[0_0_16px_rgba(199,210,254,0.55)]"
           fill="currentColor"
           strokeWidth={0}
         />
@@ -423,7 +423,7 @@ export function WeatherWidget({ data, location = "Farm Location" }: WeatherWidge
               >
                 {weatherData.sunrise && (
                   <div className="flex items-center gap-2">
-                    <Sunrise className="h-4 w-4 text-amber-300" />
+                    <Sunrise className="h-4 w-4 text-wangari-amber-300" />
                     <div>
                       <p className="text-xs font-medium">{weatherData.sunrise}</p>
                       <p className="text-[10px] text-white/50">Sunrise</p>
@@ -432,7 +432,7 @@ export function WeatherWidget({ data, location = "Farm Location" }: WeatherWidge
                 )}
                 {weatherData.sunset && (
                   <div className="flex items-center gap-2">
-                    <Sunset className="h-4 w-4 text-orange-300" />
+                    <Sunset className="h-4 w-4 text-wangari-orange-300" />
                     <div>
                       <p className="text-xs font-medium">{weatherData.sunset}</p>
                       <p className="text-[10px] text-white/50">Sunset</p>

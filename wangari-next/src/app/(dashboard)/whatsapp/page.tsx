@@ -56,13 +56,13 @@ export default function WhatsAppPage() {
       {/* 2 Channel Overview Cards: WhatsApp & USSD */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="grid md:grid-cols-2 gap-4">
         {/* WhatsApp Channel */}
-        <Card className="border border-emerald-200 bg-emerald-50/40 rounded-3xl p-5 shadow-xs">
+        <Card className="border border-wangari-green-200 bg-wangari-green-50/40 rounded-3xl p-5 shadow-xs">
           <CardContent className="p-0 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white">
                 <MessageCircle className="h-6 w-6" />
               </div>
-              <Badge className="bg-amber-100 text-amber-800 border-tone-warn-border font-bold text-xs">
+              <Badge className="bg-wangari-amber-100 text-wangari-amber-800 border-tone-warn-border font-bold text-xs">
                 Coming Soon / Beta
               </Badge>
             </div>
@@ -72,7 +72,7 @@ export default function WhatsAppPage() {
                 Log farm output, check feed inventory, and get daily summaries directly on WhatsApp. No laptop required.
               </p>
             </div>
-            <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between text-xs font-bold text-wangari-green-800">
+            <div className="pt-2 border-t border-wangari-green-200/60 flex items-center justify-between text-xs font-bold text-wangari-green-800">
               <span>WhatsApp Cloud API</span>
               <span>Setup in progress</span>
             </div>
@@ -80,13 +80,13 @@ export default function WhatsAppPage() {
         </Card>
 
         {/* USSD Channel */}
-        <Card className="border border-sky-200 bg-sky-50/40 rounded-3xl p-5 shadow-xs">
+        <Card className="border border-wangari-sky-200 bg-wangari-sky-50/40 rounded-3xl p-5 shadow-xs">
           <CardContent className="p-0 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sky-600 text-white">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-wangari-sky-600 text-white">
                 <PhoneCall className="h-6 w-6" />
               </div>
-              <Badge className="bg-amber-100 text-amber-800 border-tone-warn-border font-bold text-xs">
+              <Badge className="bg-wangari-amber-100 text-wangari-amber-800 border-tone-warn-border font-bold text-xs">
                 Coming Soon
               </Badge>
             </div>
@@ -96,7 +96,7 @@ export default function WhatsAppPage() {
                 Dial shortcode on any basic feature phone (no smartphone/data needed) to log eggs, milk, and view tasks.
               </p>
             </div>
-            <div className="pt-2 border-t border-sky-200/60 flex items-center justify-between text-xs font-bold text-sky-800">
+            <div className="pt-2 border-t border-wangari-sky-200/60 flex items-center justify-between text-xs font-bold text-wangari-sky-800">
               <span>Shortcode: *384*55#</span>
               <span>Telco Integration</span>
             </div>
@@ -143,7 +143,7 @@ export default function WhatsAppPage() {
             </div>
             <div className="flex items-center gap-2 bg-tone-neutral-bg border border-wangari-border px-3 py-1.5 rounded-xl text-xs font-mono text-wangari-heading max-w-full">
               <span className="break-all">{webhookUrl}</span>
-              <button onClick={() => handleCopy(webhookUrl)} className="text-wangari-green-800 hover:text-emerald-800 cursor-pointer">
+              <button onClick={() => handleCopy(webhookUrl)} className="text-wangari-green-800 hover:text-wangari-green-800 cursor-pointer">
                 <Copy className="h-3.5 w-3.5" />
               </button>
             </div>

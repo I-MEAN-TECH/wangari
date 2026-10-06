@@ -233,7 +233,7 @@ export default function AdminSecurityPage() {
             {!mfaEnabled && !setup && (
               <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3 rounded-xl bg-badge-yellow-bg px-4 py-3 text-sm text-wangari-text">
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-wangari-amber-600" />
                   Admin sign-in currently relies on your password alone.
                 </div>
                 <button
@@ -454,7 +454,7 @@ export default function AdminSecurityPage() {
                 <button
                   onClick={signOutEverywhere}
                   disabled={busy || !signoutPassword}
-                  className="h-11 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-md hover:bg-badge-red-text disabled:opacity-60"
+                  className="h-11 rounded-xl bg-wangari-red-600 px-4 text-sm font-semibold text-white shadow-md hover:bg-badge-red-text disabled:opacity-60"
                 >
                   {busy ? "Revoking…" : "Revoke all sessions"}
                 </button>

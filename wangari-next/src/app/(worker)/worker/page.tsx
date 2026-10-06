@@ -410,7 +410,7 @@ export default function WorkerDashboardPage() {
           <motion.div
             whileTap={{ scale: 0.96 }}
             onClick={() => openLog("milk")}
-            className="p-5 rounded-2xl bg-wangari-green-800 text-white shadow-lg cursor-pointer hover:bg-wangari-green-900 transition-all flex flex-col justify-between h-36 border-2 border-sky-500"
+            className="p-5 rounded-2xl bg-wangari-green-800 text-white shadow-lg cursor-pointer hover:bg-wangari-green-900 transition-all flex flex-col justify-between h-36 border-2 border-wangari-sky-500"
           >
             <div className="flex items-center justify-between">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-wangari-card/25 text-white shrink-0">
@@ -446,7 +446,7 @@ export default function WorkerDashboardPage() {
           <motion.div
             whileTap={{ scale: 0.96 }}
             onClick={() => openLog("mortality")}
-            className="p-5 rounded-2xl bg-wangari-green-800 text-white shadow-lg cursor-pointer hover:bg-wangari-green-900 transition-all flex flex-col justify-between h-36 border-2 border-rose-500"
+            className="p-5 rounded-2xl bg-wangari-green-800 text-white shadow-lg cursor-pointer hover:bg-wangari-green-900 transition-all flex flex-col justify-between h-36 border-2 border-wangari-rose-500"
           >
             <div className="flex items-center justify-between">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-wangari-card/25 text-white shrink-0">

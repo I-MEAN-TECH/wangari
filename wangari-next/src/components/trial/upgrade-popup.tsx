@@ -46,7 +46,7 @@ export function UpgradePopup({ open, onClose, moduleName }: UpgradePopupProps) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl my-auto border border-gray-100 animate-in fade-in zoom-in duration-200"
+        className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl my-auto border border-wangari-gray-100 animate-in fade-in zoom-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

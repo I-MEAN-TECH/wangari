@@ -12,6 +12,145 @@
   --color-wangari-green-800: #166534;
   --color-wangari-green-900: #14532D;
 
+  /* Mirrored amber scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-amber-100: #FEF3C7;
+    --color-wangari-amber-300: #FCD34D;
+    --color-wangari-amber-400: #FBBF24;
+    --color-wangari-amber-500: #F59E0B;
+    --color-wangari-amber-600: #D97706;
+    --color-wangari-amber-800: #78350F;
+    --color-wangari-amber-900: #713F12;
+
+  /* Mirrored blue scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-blue-200: #BFDBFE;
+    --color-wangari-blue-300: #93C5FD;
+    --color-wangari-blue-50: #EFF6FF;
+    --color-wangari-blue-500: #3B82F6;
+    --color-wangari-blue-600: #2563EB;
+    --color-wangari-blue-800: #1E40AF;
+    --color-wangari-blue-900: #1E3A8A;
+
+  /* Mirrored cyan scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-cyan-500: #06B6D4;
+
+  /* Mirrored gray scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-gray-100: #F3F4F6;
+    --color-wangari-gray-300: #D1D5DB;
+    --color-wangari-gray-400: #9CA3AF;
+    --color-wangari-gray-50: #F9FAFB;
+    --color-wangari-gray-500: #6B7280;
+    --color-wangari-gray-600: #4B5563;
+    --color-wangari-gray-700: #374151;
+    --color-wangari-gray-800: #1F2937;
+    --color-wangari-gray-900: #111827;
+
+  /* Mirrored green scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-green-950: #052E16;
+
+  /* Mirrored indigo scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-indigo-100: #E0E7FF;
+    --color-wangari-indigo-200: #C7D2FE;
+
+  /* Mirrored lime scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-lime-500: #84CC16;
+    --color-wangari-lime-600: #65A30D;
+
+  /* Mirrored orange scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-orange-300: #FDBA74;
+    --color-wangari-orange-400: #FB923C;
+    --color-wangari-orange-50: #FFF7ED;
+    --color-wangari-orange-500: #F97316;
+    --color-wangari-orange-600: #EA580C;
+
+  /* Mirrored pink scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-pink-50: #FDF2F8;
+    --color-wangari-pink-500: #EC4899;
+    --color-wangari-pink-600: #DB2777;
+    --color-wangari-pink-700: #BE185D;
+
+  /* Mirrored purple scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-purple-100: #F3E8FF;
+    --color-wangari-purple-50: #FAF5FF;
+    --color-wangari-purple-500: #A855F7;
+    --color-wangari-purple-600: #9333EA;
+    --color-wangari-purple-700: #7E22CE;
+    --color-wangari-purple-800: #6B21A8;
+
+  /* Mirrored red scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-red-300: #FCA5A5;
+    --color-wangari-red-400: #F87171;
+    --color-wangari-red-500: #EF4444;
+    --color-wangari-red-600: #DC2626;
+    --color-wangari-red-900: #7F1D1D;
+
+  /* Mirrored rose scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-rose-400: #FB7185;
+    --color-wangari-rose-500: #F43F5E;
+    --color-wangari-rose-600: #E11D48;
+    --color-wangari-rose-700: #BE123C;
+
+  /* Mirrored sky scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-sky-100: #E0F2FE;
+    --color-wangari-sky-200: #BAE6FD;
+    --color-wangari-sky-400: #38BDF8;
+    --color-wangari-sky-50: #F0F9FF;
+    --color-wangari-sky-500: #0EA5E9;
+    --color-wangari-sky-600: #0284C7;
+    --color-wangari-sky-700: #0369A1;
+    --color-wangari-sky-800: #075985;
+    --color-wangari-sky-900: #0C4A6E;
+
+  /* Mirrored slate scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-slate-800: #1E293B;
+
+  /* Mirrored stone scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-stone-100: #F5F5F4;
+    --color-wangari-stone-200: #E7E5E4;
+    --color-wangari-stone-300: #D6D3D1;
+    --color-wangari-stone-400: #A8A29E;
+    --color-wangari-stone-50: #FAFAF9;
+    --color-wangari-stone-500: #78716C;
+    --color-wangari-stone-600: #57534E;
+    --color-wangari-stone-700: #44403C;
+    --color-wangari-stone-800: #292524;
+    --color-wangari-stone-900: #1C1917;
+
+  /* Mirrored teal scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-teal-100: #CCFBF1;
+    --color-wangari-teal-50: #F0FDFA;
+    --color-wangari-teal-500: #14B8A6;
+    --color-wangari-teal-600: #0D9488;
+    --color-wangari-teal-700: #0F766E;
+    --color-wangari-teal-800: #115E59;
+    --color-wangari-teal-900: #134E4A;
+
+  /* Mirrored violet scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-violet-200: #DDD6FE;
+    --color-wangari-violet-50: #F5F3FF;
+    --color-wangari-violet-500: #8B5CF6;
+    --color-wangari-violet-700: #6D28D9;
+
+  /* Mirrored yellow scale — values the app actually uses, named as theme
+     tokens so no component spells a default-palette class again. */
+    --color-wangari-yellow-300: #FDE047;
+
   --color-wangari-ink: #0B1220;
   --color-wangari-cream: #FAFBFC;
   /* Paper: the document reader's sheet — one step warmer than --color-card. */

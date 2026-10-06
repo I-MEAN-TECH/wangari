@@ -109,7 +109,7 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
     // Expiring soon (≤7 days): amber renewal banner with a live timer.
     if (subscription.daysLeft <= 7) {
       return (
-        <div className="rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="rounded-2xl bg-gradient-to-r from-wangari-amber-500 to-wangari-amber-600 text-white p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
               <AlertTriangle className="h-5 w-5 text-white" />
@@ -118,7 +118,7 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
               <p className="text-sm sm:text-base font-bold">
                 Your {subscription.planName || "Active"} plan expires in {subscription.daysLeft} day{subscription.daysLeft !== 1 ? "s" : ""}
               </p>
-              <p className="text-xs text-amber-100 mt-0.5">
+              <p className="text-xs text-wangari-amber-100 mt-0.5">
                 <span className="font-mono font-bold bg-black/20 px-1.5 py-0.5 rounded">
                   {subTimeLeft.days}d {String(subTimeLeft.hours).padStart(2, "0")}h {String(subTimeLeft.minutes).padStart(2, "0")}m {String(subTimeLeft.seconds).padStart(2, "0")}s
                 </span>{" "}
@@ -128,7 +128,7 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
           </div>
           <Link
             href="/subscription"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-amber-900 text-xs sm:text-sm font-extrabold hover:bg-tone-warn-bg transition-all shadow-md shrink-0 cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-wangari-amber-900 text-xs sm:text-sm font-extrabold hover:bg-tone-warn-bg transition-all shadow-md shrink-0 cursor-pointer"
           >
             <CreditCard className="h-4 w-4 text-tone-warn-text" />
             Renew Subscription Now
@@ -139,9 +139,9 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
     // Plenty of time left: green confirmation banner with a live countdown —
     // this is what a user sees immediately after redeeming a sponsor code.
     return (
-      <div className="rounded-2xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white p-4 sm:p-5 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="rounded-2xl bg-gradient-to-r from-wangari-green-800 via-wangari-green-700 to-wangari-teal-800 text-white p-4 sm:p-5 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="h-11 w-11 rounded-2xl bg-emerald-600/50 text-emerald-200 flex items-center justify-center shrink-0">
+          <div className="h-11 w-11 rounded-2xl bg-wangari-green-600/50 text-wangari-green-200 flex items-center justify-center shrink-0">
             <Sparkles className="h-6 w-6" />
           </div>
           <div>
@@ -158,9 +158,9 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
         </div>
         <Link
           href="/subscription"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-wangari-green-800 text-xs sm:text-sm font-extrabold hover:bg-emerald-50 transition-all shadow-md shrink-0 cursor-pointer"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-wangari-green-800 text-xs sm:text-sm font-extrabold hover:bg-wangari-green-50 transition-all shadow-md shrink-0 cursor-pointer"
         >
-          <CreditCard className="h-4 w-4 text-emerald-600" />
+          <CreditCard className="h-4 w-4 text-wangari-green-600" />
           Manage Subscription
         </Link>
       </div>
@@ -174,12 +174,12 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
     return (
       <div className={`rounded-2xl p-4 sm:p-5 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
         isUrgent
-          ? "bg-gradient-to-r from-red-600 via-red-500 to-amber-600 text-white"
-          : "bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white"
+          ? "bg-gradient-to-r from-wangari-red-600 via-wangari-red-500 to-wangari-amber-600 text-white"
+          : "bg-gradient-to-r from-wangari-green-800 via-wangari-green-700 to-wangari-teal-800 text-white"
       }`}>
         <div className="flex items-center gap-3.5">
           <div className={`h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 ${
-            isUrgent ? "bg-white/20 text-white" : "bg-emerald-600/50 text-emerald-200"
+            isUrgent ? "bg-white/20 text-white" : "bg-wangari-green-600/50 text-wangari-green-200"
           }`}>
             <Clock className="h-6 w-6 animate-pulse" />
           </div>
@@ -204,9 +204,9 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
 
         <Link
           href="/subscription"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-wangari-green-800 text-xs sm:text-sm font-extrabold hover:bg-emerald-50 transition-all shadow-md shrink-0 cursor-pointer"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-wangari-green-800 text-xs sm:text-sm font-extrabold hover:bg-wangari-green-50 transition-all shadow-md shrink-0 cursor-pointer"
         >
-          <Sparkles className="h-4 w-4 text-emerald-600" />
+          <Sparkles className="h-4 w-4 text-wangari-green-600" />
           Subscribe Now
         </Link>
       </div>

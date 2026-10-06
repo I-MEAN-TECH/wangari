@@ -51,7 +51,7 @@ export default function AdminPage() {
   if (role !== "super_admin") {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-4 text-center">
-        <ShieldAlert className="h-12 w-12 text-red-500" />
+        <ShieldAlert className="h-12 w-12 text-wangari-red-500" />
         <h2 className="text-xl font-extrabold text-wangari-heading">Access Restricted</h2>
         <p className="text-sm text-wangari-muted max-w-sm">
           This system admin panel is restricted strictly to Wangari System Super Administrators.
@@ -81,9 +81,9 @@ export default function AdminPage() {
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { title: "Total Users", value: stats.totalUsers, icon: <Users className="h-5 w-5" />, color: "bg-wangari-green-800" },
-          { title: "Active Subs", value: stats.activeSubs, icon: <CreditCard className="h-5 w-5" />, color: "bg-emerald-500" },
-          { title: "Free Trials", value: trialUsers, icon: <TrendingUp className="h-5 w-5" />, color: "bg-blue-500" },
-          { title: "Revenue", value: `KES ${stats.revenue.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-amber-500" },
+          { title: "Active Subs", value: stats.activeSubs, icon: <CreditCard className="h-5 w-5" />, color: "bg-wangari-green-500" },
+          { title: "Free Trials", value: trialUsers, icon: <TrendingUp className="h-5 w-5" />, color: "bg-wangari-blue-500" },
+          { title: "Revenue", value: `KES ${stats.revenue.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-wangari-amber-500" },
         ].map(kpi => (
           <Card key={kpi.title} className="border border-wangari-border">
             <CardContent className="pt-4 pb-3 px-4">
@@ -134,8 +134,8 @@ export default function AdminPage() {
                         <td className="py-2.5 px-3 text-wangari-muted">{u.email}</td>
                         <td className="py-2.5 px-3">
                           {sub ? <Badge className="bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200">{sub.planName}</Badge>
-                            : trialActive ? <Badge className="bg-blue-50 text-badge-blue-text border-blue-200">Trial</Badge>
-                            : <Badge className="bg-gray-50 text-gray-500 border-wangari-border">None</Badge>}
+                            : trialActive ? <Badge className="bg-wangari-blue-50 text-badge-blue-text border-wangari-blue-200">Trial</Badge>
+                            : <Badge className="bg-wangari-gray-50 text-wangari-gray-500 border-wangari-border">None</Badge>}
                         </td>
                         <td className="py-2.5 px-3 text-wangari-muted">{u.trialEndsAt ? new Date(u.trialEndsAt).toLocaleDateString() : "—"}</td>
                         <td className="py-2.5 px-3 text-wangari-muted">{new Date(u.createdAt).toLocaleDateString()}</td>

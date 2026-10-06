@@ -16,10 +16,10 @@ const ICONS: Record<string, any> = {
 };
 
 const PRIORITY_STYLES: Record<string, { ring: string; chip: string; label: string }> = {
-  critical: { ring: "border-tone-bad-border bg-tone-bad-bg/60", chip: "bg-red-600 text-white", label: "Act now" },
-  high: { ring: "border-tone-warn-border bg-tone-warn-bg/60", chip: "bg-amber-500 text-white", label: "Today" },
-  medium: { ring: "border-sky-200 bg-sky-50/50", chip: "bg-sky-600 text-white", label: "This week" },
-  info: { ring: "border-stone-200 bg-stone-50/70", chip: "bg-stone-500 text-white", label: "FYI" },
+  critical: { ring: "border-tone-bad-border bg-tone-bad-bg/60", chip: "bg-wangari-red-600 text-white", label: "Act now" },
+  high: { ring: "border-tone-warn-border bg-tone-warn-bg/60", chip: "bg-wangari-amber-500 text-white", label: "Today" },
+  medium: { ring: "border-wangari-sky-200 bg-wangari-sky-50/50", chip: "bg-wangari-sky-600 text-white", label: "This week" },
+  info: { ring: "border-wangari-stone-200 bg-wangari-stone-50/70", chip: "bg-wangari-stone-500 text-white", label: "FYI" },
 };
 
 interface Action {
@@ -73,13 +73,13 @@ export function ActionCenter() {
     return (
       <motion.div
         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-5"
+        className="rounded-2xl border border-wangari-green-200 bg-gradient-to-r from-wangari-green-50 to-wangari-teal-50 p-5"
       >
         <div className="flex items-center gap-3">
-          <CircleCheck className="h-6 w-6 text-emerald-600" />
+          <CircleCheck className="h-6 w-6 text-wangari-green-600" />
           <div>
-            <p className="text-sm font-extrabold text-emerald-900">All clear — nothing needs your attention right now</p>
-            <p className="text-xs text-emerald-700">Keep recording daily and the Action Center will flag money, health and harvest decisions the moment they matter.</p>
+            <p className="text-sm font-extrabold text-wangari-green-900">All clear — nothing needs your attention right now</p>
+            <p className="text-xs text-wangari-green-700">Keep recording daily and the Action Center will flag money, health and harvest decisions the moment they matter.</p>
           </div>
         </div>
       </motion.div>
@@ -102,7 +102,7 @@ export function ActionCenter() {
             <p className="text-sm font-black text-wangari-heading flex items-center gap-2">
               Action Center
               {criticalCount > 0 && (
-                <span className="flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-extrabold text-white animate-pulse">
+                <span className="flex items-center gap-1 rounded-full bg-wangari-red-600 px-2 py-0.5 text-[10px] font-extrabold text-white animate-pulse">
                   <AlertOctagon className="h-3 w-3" /> {criticalCount} urgent
                 </span>
               )}

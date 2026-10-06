@@ -25,7 +25,7 @@ export function WorkerLockout() {
     <div className="fixed inset-0 z-[100] bg-gradient-to-br from-wangari-heading via-wangari-green-900 to-wangari-green-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 text-center">
         <div className="mx-auto h-16 w-16 rounded-2xl bg-tone-bad-bg border border-badge-red-bg flex items-center justify-center mb-4">
-          <Lock className="h-8 w-8 text-red-500" />
+          <Lock className="h-8 w-8 text-wangari-red-500" />
         </div>
         <h1 className="text-xl font-black text-wangari-heading">
           Farm Access Paused
@@ -50,7 +50,7 @@ export function WorkerLockout() {
                 import("@/lib/auth-client").then(({ logout }) => logout());
               } catch {}
             }}
-            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gray-100 text-wangari-muted text-sm font-extrabold hover:bg-wangari-border transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-wangari-gray-100 text-wangari-muted text-sm font-extrabold hover:bg-wangari-border transition-colors cursor-pointer"
           >
             <LogOut className="h-4 w-4" />
             Sign Out

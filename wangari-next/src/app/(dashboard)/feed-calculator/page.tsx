@@ -109,7 +109,7 @@ export default function FeedCalculatorPage() {
         <motion.div initial="hidden" animate="visible" variants={fadeUp} className="space-y-4">
           {/* Flock selector */}
           <Card className="border border-wangari-border">
-            <CardHeader className="pb-3"><CardTitle className="text-sm font-bold text-gray-900">Select your group</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-sm font-bold text-wangari-gray-900">Select your group</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <select value={selectedFlock} onChange={e => { setSelectedFlock(e.target.value); setHeadCount(""); }}
                 className="w-full h-12 rounded-xl border border-wangari-border px-3 text-sm font-medium focus:ring-2 focus:ring-wangari-green-800/20 focus:border-wangari-green-800">
@@ -118,11 +118,11 @@ export default function FeedCalculatorPage() {
               </select>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs font-semibold text-gray-500">Head count</Label>
+                  <Label className="text-xs font-semibold text-wangari-gray-500">Head count</Label>
                   <Input type="number" value={headCount} onChange={e => setHeadCount(e.target.value)} placeholder="e.g. 500" className="h-11 rounded-xl text-lg font-bold" />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold text-gray-500">Number of days</Label>
+                  <Label className="text-xs font-semibold text-wangari-gray-500">Number of days</Label>
                   <Input type="number" value={days} onChange={e => setDays(e.target.value)} className="h-11 rounded-xl text-lg font-bold" />
                 </div>
               </div>
@@ -138,7 +138,7 @@ export default function FeedCalculatorPage() {
           <Card className="border border-wangari-border">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-bold text-gray-900">Feed items</CardTitle>
+                <CardTitle className="text-sm font-bold text-wangari-gray-900">Feed items</CardTitle>
                 <button onClick={addFeedItem} className="flex items-center gap-1 text-[11px] font-bold text-wangari-green-800 hover:underline cursor-pointer">
                   <Plus className="h-3.5 w-3.5" />Add item
                 </button>
@@ -146,28 +146,28 @@ export default function FeedCalculatorPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {feedItems.map((item, idx) => (
-                <div key={item.id} className="p-3 rounded-xl border border-wangari-border bg-gray-50/50 space-y-2">
+                <div key={item.id} className="p-3 rounded-xl border border-wangari-border bg-wangari-gray-50/50 space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase">Item {idx + 1}</p>
+                    <p className="text-[10px] font-bold text-wangari-gray-400 uppercase">Item {idx + 1}</p>
                     {feedItems.length > 1 && (
-                      <button onClick={() => removeFeedItem(item.id)} className="text-gray-400 hover:text-red-500 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => removeFeedItem(item.id)} className="text-wangari-gray-400 hover:text-wangari-red-500 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
                     )}
                   </div>
                   <div>
-                    <Label className="text-xs font-semibold text-gray-500">Feed / input name *</Label>
+                    <Label className="text-xs font-semibold text-wangari-gray-500">Feed / input name *</Label>
                     <Input placeholder="e.g. Layer Mash, NPK 17:17:17, Dairy Meal..." value={item.name} onChange={e => updateFeedItem(item.id, "name", e.target.value)} className="h-10 rounded-xl" />
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <Label className="text-xs font-semibold text-gray-500">💰 Price/bag (KES) *</Label>
+                      <Label className="text-xs font-semibold text-wangari-gray-500">💰 Price/bag (KES) *</Label>
                       <Input type="number" placeholder="0" value={item.pricePerBag || ""} onChange={e => updateFeedItem(item.id, "pricePerBag", Number(e.target.value))} className="h-10 rounded-xl text-sm font-bold" />
                     </div>
                     <div>
-                      <Label className="text-xs font-semibold text-gray-500">⚖️ Kg per bag</Label>
+                      <Label className="text-xs font-semibold text-wangari-gray-500">⚖️ Kg per bag</Label>
                       <Input type="number" placeholder="50" value={item.kgPerBag || ""} onChange={e => updateFeedItem(item.id, "kgPerBag", Number(e.target.value))} className="h-10 rounded-xl text-sm font-bold" />
                     </div>
                     <div>
-                      <Label className="text-xs font-semibold text-gray-500">📦 Number of bags</Label>
+                      <Label className="text-xs font-semibold text-wangari-gray-500">📦 Number of bags</Label>
                       <Input type="number" placeholder="1" value={item.numberOfBags || ""} onChange={e => updateFeedItem(item.id, "numberOfBags", Number(e.target.value))} className="h-10 rounded-xl text-sm font-bold" />
                     </div>
                   </div>
@@ -180,27 +180,27 @@ export default function FeedCalculatorPage() {
         {/* Results section */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp} className="space-y-4">
           <Card className="border border-wangari-border">
-            <CardHeader className="pb-3"><CardTitle className="text-sm font-bold text-gray-900">Results</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-sm font-bold text-wangari-gray-900">Results</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {/* Per-item breakdown */}
               {itemResults.filter(r => r.name).map(r => (
-                <div key={r.id} className="p-3 rounded-xl border border-gray-100 bg-gray-50/50">
-                  <p className="text-xs font-bold text-gray-900 mb-2">{r.name}</p>
+                <div key={r.id} className="p-3 rounded-xl border border-wangari-gray-100 bg-wangari-gray-50/50">
+                  <p className="text-xs font-bold text-wangari-gray-900 mb-2">{r.name}</p>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-lg bg-white p-2 text-center border border-gray-100">
+                    <div className="rounded-lg bg-white p-2 text-center border border-wangari-gray-100">
                       <Wheat className="h-4 w-4 text-wangari-green-800 mx-auto mb-0.5" />
-                      <p className="text-[9px] text-gray-400 uppercase">Total kg</p>
+                      <p className="text-[9px] text-wangari-gray-400 uppercase">Total kg</p>
                       <p className="text-sm font-bold">{r.totalKg.toLocaleString()} kg</p>
                     </div>
-                    <div className="rounded-lg bg-white p-2 text-center border border-gray-100">
+                    <div className="rounded-lg bg-white p-2 text-center border border-wangari-gray-100">
                       <Calculator className="h-4 w-4 text-wangari-green-800 mx-auto mb-0.5" />
-                      <p className="text-[9px] text-gray-400 uppercase">Bags × Price</p>
+                      <p className="text-[9px] text-wangari-gray-400 uppercase">Bags × Price</p>
                       <p className="text-sm font-bold">{r.numberOfBags} × KES {r.pricePerBag.toLocaleString()}</p>
                     </div>
                   </div>
                   <div className="mt-2 flex justify-between text-xs">
-                    <span className="text-gray-400">Cost:</span>
-                    <span className="font-bold text-gray-900">KES {r.totalCost.toLocaleString()}</span>
+                    <span className="text-wangari-gray-400">Cost:</span>
+                    <span className="font-bold text-wangari-gray-900">KES {r.totalCost.toLocaleString()}</span>
                   </div>
                 </div>
               ))}
@@ -237,15 +237,15 @@ export default function FeedCalculatorPage() {
 
               {grandTotalCost === 0 && (
                 <div className="text-center py-8">
-                  <Calculator className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">Add feed items and prices to see calculations</p>
+                  <Calculator className="h-8 w-8 text-wangari-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-wangari-gray-400">Add feed items and prices to see calculations</p>
                 </div>
               )}
 
               {/* Purchase button */}
               {grandTotalCost > 0 && (
                 <button onClick={handlePurchase} disabled={purchased}
-                  className={`w-full py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${purchased ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-white text-wangari-green-800 border-2 border-wangari-green-800 hover:bg-wangari-green-50"}`}>
+                  className={`w-full py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${purchased ? "bg-wangari-green-100 text-wangari-green-700 border border-wangari-green-200" : "bg-white text-wangari-green-800 border-2 border-wangari-green-800 hover:bg-wangari-green-50"}`}>
                   {purchased ? "✅ Added to Finances!" : <><ShoppingCart className="h-4 w-4 inline mr-2" />Record Purchase — KES {grandTotalCost.toLocaleString()}</>}
                 </button>
               )}

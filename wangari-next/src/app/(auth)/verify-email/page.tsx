@@ -241,8 +241,8 @@ function VerifyEmailForm() {
           animate={{ opacity: 1, y: 0 }}
           className="rounded-xl bg-tone-warn-bg border border-tone-warn-border px-4 py-4 text-center"
         >
-          <p className="text-xs font-semibold text-amber-800 mb-2">{devNotice}</p>
-          <p className="text-2xl font-bold tracking-[0.3em] text-amber-900 font-mono">
+          <p className="text-xs font-semibold text-wangari-amber-800 mb-2">{devNotice}</p>
+          <p className="text-2xl font-bold tracking-[0.3em] text-wangari-amber-900 font-mono">
             {devCode}
           </p>
           <p className="text-[11px] text-tone-warn-text mt-2">

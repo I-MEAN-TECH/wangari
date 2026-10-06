@@ -201,30 +201,30 @@ function SubscriptionContent() {
             {isPending && (
               <div className="rounded-xl bg-tone-warn-bg border border-tone-warn-border p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <Clock className="h-4 w-4 text-amber-600" />
-                  <p className="text-sm font-bold text-amber-800">{sub.planName || sub.plan_name} — Pending</p>
+                  <Clock className="h-4 w-4 text-wangari-amber-600" />
+                  <p className="text-sm font-bold text-wangari-amber-800">{sub.planName || sub.plan_name} — Pending</p>
                 </div>
-                <p className="text-xs text-amber-600">Your subscription will start when your free trial ends on {trial?.endsAt ? new Date(trial.endsAt).toLocaleDateString() : "—"}</p>
+                <p className="text-xs text-wangari-amber-600">Your subscription will start when your free trial ends on {trial?.endsAt ? new Date(trial.endsAt).toLocaleDateString() : "—"}</p>
               </div>
             )}
 
             {!isActive && !isPending && isTrial && (
-              <div className="rounded-xl bg-blue-50 border border-blue-200 p-4">
+              <div className="rounded-xl bg-wangari-blue-50 border border-wangari-blue-200 p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="h-4 w-4 text-blue-600" />
-                  <p className="text-sm font-bold text-blue-800">Free Trial — {trial?.daysLeft || 0} days left</p>
+                  <AlertTriangle className="h-4 w-4 text-wangari-blue-600" />
+                  <p className="text-sm font-bold text-wangari-blue-800">Free Trial — {trial?.daysLeft || 0} days left</p>
                 </div>
-                <p className="text-xs text-blue-600">Subscribe now to keep full access after your trial ends.</p>
+                <p className="text-xs text-wangari-blue-600">Subscribe now to keep full access after your trial ends.</p>
               </div>
             )}
 
             {!isActive && !isPending && !isTrial && (
               <div className="rounded-xl bg-tone-bad-bg border border-tone-bad-border p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <AlertTriangle className="h-4 w-4 text-wangari-red-600" />
                   <p className="text-sm font-bold text-tone-bad-text">No active plan</p>
                 </div>
-                <p className="text-xs text-red-600">Subscribe to access all modules and features.</p>
+                <p className="text-xs text-wangari-red-600">Subscribe to access all modules and features.</p>
               </div>
             )}
           </CardContent>
@@ -266,7 +266,7 @@ function SubscriptionContent() {
           </div>
         </div>
         {promoNote && (
-          <div className={`mb-3 rounded-lg px-3 py-2 text-xs ${promoNote.kind === "err" ? "bg-tone-bad-bg text-badge-red-text border border-tone-bad-border" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
+          <div className={`mb-3 rounded-lg px-3 py-2 text-xs ${promoNote.kind === "err" ? "bg-tone-bad-bg text-badge-red-text border border-tone-bad-border" : "bg-wangari-green-50 text-wangari-green-700 border border-wangari-green-200"}`}>
             {promoNote.text}
           </div>
         )}

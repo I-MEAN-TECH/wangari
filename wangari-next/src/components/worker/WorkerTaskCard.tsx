@@ -33,16 +33,16 @@ export function WorkerTaskCard({ task, onToggleComplete }: WorkerTaskCardProps) 
       onClick={() => onToggleComplete(task.id)}
       className={`p-5 rounded-3xl border-3 transition-all cursor-pointer shadow-sm flex items-center justify-between gap-4 ${
         task.isCompleted
-          ? "bg-emerald-50/60 border-emerald-300 text-emerald-950"
-          : "bg-white border-wangari-border hover:border-emerald-500 text-wangari-heading"
+          ? "bg-wangari-green-50/60 border-wangari-green-300 text-wangari-green-950"
+          : "bg-white border-wangari-border hover:border-wangari-green-500 text-wangari-heading"
       }`}
     >
       <div className="flex items-center gap-4 min-w-0">
         <div
           className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${
             task.isCompleted
-              ? "bg-emerald-600 text-white"
-              : "bg-gray-100 text-wangari-muted"
+              ? "bg-wangari-green-600 text-white"
+              : "bg-wangari-gray-100 text-wangari-muted"
           }`}
         >
           <Icon className="h-6 w-6 stroke-[2.5]" />
@@ -50,7 +50,7 @@ export function WorkerTaskCard({ task, onToggleComplete }: WorkerTaskCardProps) 
         <div className="min-w-0">
           <h4
             className={`text-base font-extrabold truncate ${
-              task.isCompleted ? "line-through text-emerald-800" : "text-wangari-heading"
+              task.isCompleted ? "line-through text-wangari-green-800" : "text-wangari-heading"
             }`}
           >
             {task.title}
@@ -64,8 +64,8 @@ export function WorkerTaskCard({ task, onToggleComplete }: WorkerTaskCardProps) 
       <div
         className={`h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 border-2 transition-all ${
           task.isCompleted
-            ? "bg-emerald-600 border-emerald-600 text-white shadow-sm"
-            : "bg-gray-50 border-gray-300 text-transparent hover:border-emerald-500"
+            ? "bg-wangari-green-600 border-wangari-green-600 text-white shadow-sm"
+            : "bg-wangari-gray-50 border-wangari-gray-300 text-transparent hover:border-wangari-green-500"
         }`}
       >
         <Check className="h-6 w-6 stroke-[3]" />

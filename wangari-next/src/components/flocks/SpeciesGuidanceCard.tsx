@@ -36,14 +36,14 @@ export function SpeciesGuidanceCard({
       <Card className="border-tone-warn-border bg-tone-warn-bg/50">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-wangari-amber-500 text-white">
               <AlertTriangle className="h-4 w-4" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-amber-900">
+              <p className="text-sm font-bold text-wangari-amber-900">
                 We do not know what kind of animal this is
               </p>
-              <p className="mt-1 text-xs text-amber-800">
+              <p className="mt-1 text-xs text-wangari-amber-800">
                 Set the species to get the right feed rate, vaccine schedule and housing
                 space. We will not guess — advice for the wrong animal costs more than no
                 advice.

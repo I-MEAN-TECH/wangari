@@ -41,9 +41,9 @@ type Instrument = {
 };
 
 const TONE_CLASS: Record<string, string> = {
-  red: "border-red-300 bg-tone-bad-bg",
-  amber: "border-amber-300 bg-tone-warn-bg",
-  green: "border-emerald-300 bg-emerald-50",
+  red: "border-wangari-red-300 bg-tone-bad-bg",
+  amber: "border-wangari-amber-300 bg-tone-warn-bg",
+  green: "border-wangari-green-300 bg-wangari-green-50",
 };
 
 const SPECIES_LABEL: Record<string, string> = {
@@ -174,7 +174,7 @@ export default function FeedbackPage() {
   if (!instrument) {
     return (
       <Shell>
-        <p className="text-lg font-bold text-gray-500">Inapakia…</p>
+        <p className="text-lg font-bold text-wangari-gray-500">Inapakia…</p>
       </Shell>
     );
   }
@@ -184,8 +184,8 @@ export default function FeedbackPage() {
       <Shell>
         <div className="text-center">
           <div className="text-6xl">🙏</div>
-          <h1 className="mt-4 text-2xl font-black text-gray-900">Thank you!</h1>
-          <p className="mt-2 text-base text-gray-600">
+          <h1 className="mt-4 text-2xl font-black text-wangari-gray-900">Thank you!</h1>
+          <p className="mt-2 text-base text-wangari-gray-600">
             Your feedback helps us make Wangari better for every farmer.
           </p>
         </div>
@@ -207,8 +207,8 @@ export default function FeedbackPage() {
   if (!effectiveAudience) {
     return (
       <Shell>
-        <h1 className="text-2xl font-black text-gray-900">What are you?</h1>
-        <p className="mt-1 text-sm text-gray-500">Which of these are you?</p>
+        <h1 className="text-2xl font-black text-wangari-gray-900">What are you?</h1>
+        <p className="mt-1 text-sm text-wangari-gray-500">Which of these are you?</p>
         <div className="mt-6 grid gap-3">
           {instrument.audiences.map((option) => (
             <button
@@ -218,11 +218,11 @@ export default function FeedbackPage() {
               className="flex min-h-[72px] items-center gap-4 rounded-2xl border-2 border-wangari-border bg-white px-5 text-left transition active:scale-[0.98]"
             >
               <span className="text-3xl">{option.icon}</span>
-              <span className="text-lg font-black text-gray-800">{option.label}</span>
+              <span className="text-lg font-black text-wangari-gray-800">{option.label}</span>
             </button>
           ))}
         </div>
-        <p className="mt-4 text-center text-xs text-gray-400">
+        <p className="mt-4 text-center text-xs text-wangari-gray-400">
           This helps us understand how people use Wangari.
         </p>
       </Shell>
@@ -235,14 +235,14 @@ export default function FeedbackPage() {
         <button
           type="button"
           onClick={() => setAudience(null)}
-          className="mb-4 min-h-[56px] rounded-2xl border-2 border-wangari-border bg-white px-4 text-sm font-bold text-gray-600"
+          className="mb-4 min-h-[56px] rounded-2xl border-2 border-wangari-border bg-white px-4 text-sm font-bold text-wangari-gray-600"
         >
           ← Change your answer
         </button>
       )}
 
-      <h1 className="text-2xl font-black text-gray-900">How much does Wangari help you?</h1>
-      <p className="mt-1 text-sm text-gray-500">Rate it on the scale below.</p>
+      <h1 className="text-2xl font-black text-wangari-gray-900">How much does Wangari help you?</h1>
+      <p className="mt-1 text-sm text-wangari-gray-500">Rate it on the scale below.</p>
 
       {/* 1 — rating */}
       <div className="mt-6 grid grid-cols-5 gap-2">
@@ -255,7 +255,7 @@ export default function FeedbackPage() {
             onClick={() => setRating(point.value)}
             className={`min-h-[72px] rounded-2xl border-2 text-3xl transition ${
               rating === point.value
-                ? "border-emerald-600 bg-emerald-100 scale-105"
+                ? "border-wangari-green-600 bg-wangari-green-100 scale-105"
                 : `${TONE_CLASS[point.tone]} opacity-80`
             }`}
           >
@@ -264,14 +264,14 @@ export default function FeedbackPage() {
         ))}
       </div>
       {rating !== null && (
-        <p className="mt-2 text-center text-sm font-bold text-gray-700">
+        <p className="mt-2 text-center text-sm font-bold text-wangari-gray-700">
           {instrument.ratingScale.find((p) => p.value === rating)?.label}
         </p>
       )}
 
       {/* 2 — the best thing, single tap */}
-      <h2 className="mt-8 text-lg font-black text-gray-900">What works best for you?</h2>
-      <p className="mt-1 text-sm text-gray-500">What is the best thing?</p>
+      <h2 className="mt-8 text-lg font-black text-wangari-gray-900">What works best for you?</h2>
+      <p className="mt-1 text-sm text-wangari-gray-500">What is the best thing?</p>
       <div className="mt-4 grid gap-2">
         {instrument.bestTags.map((tag) => (
           <button
@@ -281,19 +281,19 @@ export default function FeedbackPage() {
             onClick={() => setBest(best === tag.key ? null : tag.key)}
             className={`flex min-h-[64px] items-center gap-3 rounded-2xl border-2 px-4 text-left transition ${
               best === tag.key
-                ? "border-emerald-600 bg-emerald-50"
+                ? "border-wangari-green-600 bg-wangari-green-50"
                 : "border-wangari-border bg-white"
             }`}
           >
             <span className="text-2xl">{tag.icon}</span>
-            <span className="text-base font-bold text-gray-800">{tag.label}</span>
+            <span className="text-base font-bold text-wangari-gray-800">{tag.label}</span>
           </button>
         ))}
       </div>
 
       {/* 3 — what should improve, multi tap */}
-      <h2 className="mt-8 text-lg font-black text-gray-900">What should we improve?</h2>
-      <p className="mt-1 text-sm text-gray-500">What should improve? (choose any)</p>
+      <h2 className="mt-8 text-lg font-black text-wangari-gray-900">What should we improve?</h2>
+      <p className="mt-1 text-sm text-wangari-gray-500">What should improve? (choose any)</p>
       <div className="mt-4 grid gap-2">
         {instrument.improveTags.map((tag) => (
           <button
@@ -303,19 +303,19 @@ export default function FeedbackPage() {
             onClick={() => toggle(improve, setImprove, tag.key)}
             className={`flex min-h-[64px] items-center gap-3 rounded-2xl border-2 px-4 text-left transition ${
               improve.includes(tag.key)
-                ? "border-amber-500 bg-tone-warn-bg"
+                ? "border-wangari-amber-500 bg-tone-warn-bg"
                 : "border-wangari-border bg-white"
             }`}
           >
             <span className="text-2xl">{tag.icon}</span>
-            <span className="text-base font-bold text-gray-800">{tag.label}</span>
+            <span className="text-base font-bold text-wangari-gray-800">{tag.label}</span>
           </button>
         ))}
       </div>
 
       {/* 4 — segmentation, multi tap, optional */}
-      <h2 className="mt-8 text-lg font-black text-gray-900">What do you keep or grow?</h2>
-      <p className="mt-1 text-sm text-gray-500">What do you keep or grow?</p>
+      <h2 className="mt-8 text-lg font-black text-wangari-gray-900">What do you keep or grow?</h2>
+      <p className="mt-1 text-sm text-wangari-gray-500">What do you keep or grow?</p>
       <div className="mt-4 flex flex-wrap gap-2">
         {instrument.species.map((s) => (
           <button
@@ -325,8 +325,8 @@ export default function FeedbackPage() {
             onClick={() => toggle(species, setSpecies, s)}
             className={`min-h-[56px] rounded-full border-2 px-5 text-base font-bold transition ${
               species.includes(s)
-                ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                : "border-wangari-border bg-white text-gray-700"
+                ? "border-wangari-green-600 bg-wangari-green-50 text-wangari-green-900"
+                : "border-wangari-border bg-white text-wangari-gray-700"
             }`}
           >
             {SPECIES_LABEL[s] ?? s}
@@ -335,8 +335,8 @@ export default function FeedbackPage() {
       </div>
 
       {/* 5 — optional phone. Never required; R1 says no typing as the primary path. */}
-      <h2 className="mt-8 text-lg font-black text-gray-900">Phone number (optional)</h2>
-      <p className="mt-1 text-sm text-gray-500">
+      <h2 className="mt-8 text-lg font-black text-wangari-gray-900">Phone number (optional)</h2>
+      <p className="mt-1 text-sm text-wangari-gray-500">
         Optional — only if you would like us to call you back.
       </p>
       <input
@@ -356,12 +356,12 @@ export default function FeedbackPage() {
         type="button"
         disabled={!ready || submitting}
         onClick={submit}
-        className="mt-6 min-h-[72px] w-full rounded-2xl bg-emerald-600 text-xl font-black text-white disabled:bg-gray-300"
+        className="mt-6 min-h-[72px] w-full rounded-2xl bg-wangari-green-600 text-xl font-black text-white disabled:bg-wangari-gray-300"
       >
         {submitting ? "Sending…" : "Send feedback"}
       </button>
 
-      <p className="mt-4 text-center text-xs text-gray-400">
+      <p className="mt-4 text-center text-xs text-wangari-gray-400">
         Your answer is not shown to anyone else.
       </p>
     </Shell>
@@ -370,7 +370,7 @@ export default function FeedbackPage() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-lg bg-gray-50 px-4 py-8">
+    <main className="mx-auto min-h-screen w-full max-w-lg bg-wangari-gray-50 px-4 py-8">
       {children}
     </main>
   );

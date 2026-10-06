@@ -107,7 +107,7 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="h-6 w-6 rounded-full border-2 border-emerald-200 border-t-emerald-600 animate-spin" />
+        <div className="h-6 w-6 rounded-full border-2 border-wangari-green-200 border-t-emerald-600 animate-spin" />
       </div>
     );
   }
@@ -116,15 +116,15 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
     <div className="space-y-4">
       {/* Alert Summary */}
       {(overdueCount > 0 || todayCount > 0) && (
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-tone-warn-bg border border-amber-100">
-          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-tone-warn-bg border border-wangari-amber-100">
+          <AlertTriangle className="h-5 w-5 text-wangari-amber-500 flex-shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-amber-800">
+            <p className="text-sm font-semibold text-wangari-amber-800">
               {overdueCount > 0 && `${overdueCount} overdue`}
               {overdueCount > 0 && todayCount > 0 && " • "}
               {todayCount > 0 && `${todayCount} due today`}
             </p>
-            <p className="text-xs text-amber-600">Vaccinations need attention</p>
+            <p className="text-xs text-wangari-amber-600">Vaccinations need attention</p>
           </div>
         </div>
       )}
@@ -133,9 +133,9 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
       <div className="flex gap-2">
         {[
           { key: "all" as const, label: "All", count: reminders.length },
-          { key: "overdue" as const, label: "Overdue", count: overdueCount, color: "text-red-600" },
-          { key: "today" as const, label: "Today", count: todayCount, color: "text-amber-600" },
-          { key: "week" as const, label: "This Week", count: weekCount, color: "text-emerald-600" },
+          { key: "overdue" as const, label: "Overdue", count: overdueCount, color: "text-wangari-red-600" },
+          { key: "today" as const, label: "Today", count: todayCount, color: "text-wangari-amber-600" },
+          { key: "week" as const, label: "This Week", count: weekCount, color: "text-wangari-green-600" },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -143,8 +143,8 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer",
               filter === tab.key
-                ? "bg-emerald-700 text-white shadow-sm"
-                : "bg-gray-100 text-gray-600 hover:bg-wangari-border"
+                ? "bg-wangari-green-700 text-white shadow-sm"
+                : "bg-wangari-gray-100 text-wangari-gray-600 hover:bg-wangari-border"
             )}
           >
             {tab.label} ({tab.count})
@@ -155,8 +155,8 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
       {/* Reminders List */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center py-8 text-center">
-          <Check className="h-8 w-8 text-emerald-300 mb-2" />
-          <p className="text-sm text-gray-400">
+          <Check className="h-8 w-8 text-wangari-green-300 mb-2" />
+          <p className="text-sm text-wangari-gray-400">
             {filter === "all" ? "No pending vaccinations" : `No ${filter} vaccinations`}
           </p>
         </div>
@@ -178,13 +178,13 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
                     ? "border-tone-bad-border bg-tone-bad-bg/50"
                     : isToday
                     ? "border-tone-warn-border bg-tone-warn-bg/50"
-                    : "border-gray-100 bg-white hover:bg-gray-50"
+                    : "border-wangari-gray-100 bg-white hover:bg-wangari-gray-50"
                 )}
               >
                 {/* Icon */}
                 <div className={cn(
                   "flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0",
-                  isOverdue ? "bg-badge-red-bg text-red-600" : isToday ? "bg-amber-100 text-amber-600" : "bg-emerald-50 text-emerald-600"
+                  isOverdue ? "bg-badge-red-bg text-wangari-red-600" : isToday ? "bg-wangari-amber-100 text-wangari-amber-600" : "bg-wangari-green-50 text-wangari-green-600"
                 )}>
                   <Syringe className="h-4 w-4" />
                 </div>
@@ -192,32 +192,32 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-gray-900">{r.vaccineName}</span>
+                    <span className="text-sm font-semibold text-wangari-gray-900">{r.vaccineName}</span>
                     {isOverdue && (
                       <Badge className="text-[9px] bg-badge-red-bg text-badge-red-text border-tone-bad-border">
                         {Math.abs(r.daysUntil)}d overdue
                       </Badge>
                     )}
                     {isToday && (
-                      <Badge className="text-[9px] bg-amber-100 text-tone-warn-text border-tone-warn-border">
+                      <Badge className="text-[9px] bg-wangari-amber-100 text-tone-warn-text border-tone-warn-border">
                         Due today
                       </Badge>
                     )}
                     {isSoon && !isToday && (
-                      <Badge className="text-[9px] bg-badge-blue-bg text-badge-blue-text border-blue-200">
+                      <Badge className="text-[9px] bg-badge-blue-bg text-badge-blue-text border-wangari-blue-200">
                         {r.daysUntil}d
                       </Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[11px] text-gray-400">{r.flockName}</span>
-                    {r.notes && <span className="text-[10px] text-gray-300">• {r.notes}</span>}
+                    <span className="text-[11px] text-wangari-gray-400">{r.flockName}</span>
+                    {r.notes && <span className="text-[10px] text-wangari-gray-300">• {r.notes}</span>}
                   </div>
                 </div>
 
                 {/* Date */}
                 <div className="text-right flex-shrink-0">
-                  <div className="text-xs font-medium text-gray-700">
+                  <div className="text-xs font-medium text-wangari-gray-700">
                     {new Date(r.scheduledDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                   </div>
                 </div>
@@ -227,14 +227,14 @@ export function VaccinationReminders({ onSelectFlock, flockId }: VaccinationRemi
                   {onSelectFlock && (
                     <button
                       onClick={() => onSelectFlock(r.flockId)}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer"
+                      className="p-1.5 rounded-lg hover:bg-wangari-gray-100 text-wangari-gray-400 cursor-pointer"
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
                     </button>
                   )}
                   <button
                     onClick={() => handleMarkDone(r.id)}
-                    className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-wangari-green-500 text-white hover:bg-wangari-green-600 transition-colors cursor-pointer"
                   >
                     Done
                   </button>

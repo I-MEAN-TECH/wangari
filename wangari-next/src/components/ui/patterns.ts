@@ -41,7 +41,7 @@ export const CARD_ROW_SM =
   "flex items-center justify-between rounded-lg border border-wangari-border px-3 py-2 text-sm";
 
 export const CARD_ROW_ICON =
-  "flex items-center gap-3 rounded-xl border border-wangari-border bg-white p-3.5 transition-colors hover:bg-gray-50";
+  "flex items-center gap-3 rounded-xl border border-wangari-border bg-white p-3.5 transition-colors hover:bg-wangari-gray-50";
 
 export const CARD_ROW_CREAM =
   "flex items-center justify-between p-3 rounded-xl border border-wangari-border hover:bg-wangari-cream transition-colors";
@@ -50,13 +50,13 @@ export const ALERT_DANGER_SM =
   "rounded-lg border border-tone-bad-border bg-tone-bad-bg px-3 py-2 text-xs text-badge-red-text";
 
 export const BTN_TOOL =
-  "p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer";
+  "p-2 rounded-lg hover:bg-wangari-gray-100 transition-colors cursor-pointer";
 
 export const BTN_CANCEL =
-  "px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-white border border-wangari-border transition-colors cursor-pointer";
+  "px-4 py-2 rounded-xl text-sm font-medium text-wangari-gray-500 hover:bg-white border border-wangari-border transition-colors cursor-pointer";
 
 export const BTN_CANCEL_BLOCK =
-  "mt-4 px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 border border-wangari-border cursor-pointer";
+  "mt-4 px-4 py-2 rounded-xl text-sm font-medium text-wangari-gray-500 hover:bg-wangari-gray-100 border border-wangari-border cursor-pointer";
 
 export const BTN_LINK_SM =
   "ml-auto text-wangari-subtle hover:text-wangari-muted cursor-pointer";
@@ -68,7 +68,7 @@ export const BTN_REMOVE =
   "mt-2 flex min-h-[40px] items-center gap-2 rounded-xl bg-white px-3.5 text-sm font-bold text-tone-bad-text shadow-sm";
 
 export const BTN_CTA_EMERALD =
-  "px-6 py-2 rounded-xl text-sm font-semibold bg-emerald-700 text-white hover:bg-emerald-800 shadow-md transition-all cursor-pointer disabled:opacity-50";
+  "px-6 py-2 rounded-xl text-sm font-semibold bg-wangari-green-700 text-white hover:bg-wangari-green-800 shadow-md transition-all cursor-pointer disabled:opacity-50";
 
 export const BTN_GLASS =
   "p-2 rounded-full bg-white/20 hover:bg-white/30 text-white cursor-pointer";

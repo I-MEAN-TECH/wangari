@@ -294,10 +294,10 @@ export default function VaccinationsPage() {
                   {overdue.map(r => (
                     <div key={r.id} className="flex items-center justify-between p-2.5 rounded-xl bg-tone-bad-bg border border-tone-bad-border">
                       <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                        <AlertTriangle className="h-3.5 w-3.5 text-wangari-red-500" />
                         <div>
                           <p className="text-xs font-bold text-badge-red-text">{r.vaccineName}</p>
-                          <p className="text-[10px] text-red-500">{r.flock?.name} — overdue</p>
+                          <p className="text-[10px] text-wangari-red-500">{r.flock?.name} — overdue</p>
                         </div>
                       </div>
                       <button onClick={() => handleComplete(r.id)} className="px-3 py-1.5 rounded-lg bg-wangari-green-800 text-white text-[10px] font-bold cursor-pointer">Mark Done</button>
@@ -310,10 +310,10 @@ export default function VaccinationsPage() {
                   {upcoming.map(r => (
                     <div key={r.id} className="flex items-center justify-between p-2.5 rounded-xl bg-tone-warn-bg border border-tone-warn-border">
                       <div className="flex items-center gap-2">
-                        <Clock className="h-3.5 w-3.5 text-amber-600" />
+                        <Clock className="h-3.5 w-3.5 text-wangari-amber-600" />
                         <div>
-                          <p className="text-xs font-bold text-amber-800">{r.vaccineName}</p>
-                          <p className="text-[10px] text-amber-600">{r.flock?.name} — {new Date(r.scheduledDate).toLocaleDateString()}</p>
+                          <p className="text-xs font-bold text-wangari-amber-800">{r.vaccineName}</p>
+                          <p className="text-[10px] text-wangari-amber-600">{r.flock?.name} — {new Date(r.scheduledDate).toLocaleDateString()}</p>
                         </div>
                       </div>
                       <button onClick={() => handleComplete(r.id)} className="px-3 py-1.5 rounded-lg bg-wangari-green-800 text-white text-[10px] font-bold cursor-pointer">Done</button>
@@ -330,9 +330,9 @@ export default function VaccinationsPage() {
       <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { title: "Total", value: String(records.length), icon: <Syringe className="h-5 w-5" />, color: "bg-wangari-green-800" },
-          { title: "Pending", value: String(pending.length), icon: <Clock className="h-5 w-5" />, color: pending.length > 0 ? "bg-amber-500" : "bg-wangari-green-800" },
-          { title: "Done", value: String(completed.length), icon: <CheckCircle2 className="h-5 w-5" />, color: "bg-emerald-500" },
-          { title: "Total Cost", value: `KES ${totalCost.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-blue-500" },
+          { title: "Pending", value: String(pending.length), icon: <Clock className="h-5 w-5" />, color: pending.length > 0 ? "bg-wangari-amber-500" : "bg-wangari-green-800" },
+          { title: "Done", value: String(completed.length), icon: <CheckCircle2 className="h-5 w-5" />, color: "bg-wangari-green-500" },
+          { title: "Total Cost", value: `KES ${totalCost.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-wangari-blue-500" },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
             <Card className="border border-wangari-border">
@@ -366,7 +366,7 @@ export default function VaccinationsPage() {
             const cleanNotes = (r.notes || "").replace(/ \| Cost:.*$/, "").trim();
             return (
               <motion.div key={r.id} variants={fadeUp}>
-                <Card className={`border ${isOverdue ? "border-red-300 bg-tone-bad-bg/30" : isPending ? "border-tone-warn-border" : "border-wangari-border"}`}>
+                <Card className={`border ${isOverdue ? "border-wangari-red-300 bg-tone-bad-bg/30" : isPending ? "border-tone-warn-border" : "border-wangari-border"}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -382,20 +382,20 @@ export default function VaccinationsPage() {
                         <p className="text-[10px] text-wangari-muted">{r.flock?.name || "Unknown group"}</p>
                         {/* Metadata chips */}
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
-                          {costMatch && <span className="inline-flex items-center gap-1 text-[9px] bg-blue-50 text-badge-blue-text px-2 py-0.5 rounded-full"><DollarSign className="h-2.5 w-2.5" />KES {costMatch[1]}/dose</span>}
-                          {vetMatch && <span className="inline-flex items-center gap-1 text-[9px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full"><User className="h-2.5 w-2.5" />{vetMatch[1].trim()}</span>}
-                          {batchMatch && <span className="inline-flex items-center gap-1 text-[9px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"><Hash className="h-2.5 w-2.5" />{batchMatch[1].trim()}</span>}
+                          {costMatch && <span className="inline-flex items-center gap-1 text-[9px] bg-wangari-blue-50 text-badge-blue-text px-2 py-0.5 rounded-full"><DollarSign className="h-2.5 w-2.5" />KES {costMatch[1]}/dose</span>}
+                          {vetMatch && <span className="inline-flex items-center gap-1 text-[9px] bg-wangari-purple-50 text-wangari-purple-700 px-2 py-0.5 rounded-full"><User className="h-2.5 w-2.5" />{vetMatch[1].trim()}</span>}
+                          {batchMatch && <span className="inline-flex items-center gap-1 text-[9px] bg-wangari-gray-100 text-wangari-gray-600 px-2 py-0.5 rounded-full"><Hash className="h-2.5 w-2.5" />{batchMatch[1].trim()}</span>}
                         </div>
                         {cleanNotes && <p className="text-[10px] text-wangari-subtle mt-1">{cleanNotes}</p>}
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <button onClick={() => handleEdit(r)} className="p-1.5 rounded-lg text-wangari-subtle hover:bg-gray-100 hover:text-wangari-muted cursor-pointer">
+                        <button onClick={() => handleEdit(r)} className="p-1.5 rounded-lg text-wangari-subtle hover:bg-wangari-gray-100 hover:text-wangari-muted cursor-pointer">
                           <Edit3 className="h-3.5 w-3.5" />
                         </button>
                         {isPending && (
                           <button onClick={() => handleComplete(r.id)} className="px-3 py-2 rounded-xl bg-wangari-green-800 text-white text-xs font-bold hover:bg-wangari-green-900 cursor-pointer">Done</button>
                         )}
-                        <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg text-wangari-subtle hover:text-red-500 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg text-wangari-subtle hover:text-wangari-red-500 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </div>
                   </CardContent>

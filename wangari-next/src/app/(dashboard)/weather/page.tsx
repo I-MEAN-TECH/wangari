@@ -144,7 +144,7 @@ export default function WeatherPage() {
           <button
             type="button"
             onClick={() => fetchWeather()}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-wangari-muted border border-wangari-border rounded-xl hover:bg-gray-50 active:scale-95 transition-all cursor-pointer min-h-[44px]"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-wangari-muted border border-wangari-border rounded-xl hover:bg-wangari-gray-50 active:scale-95 transition-all cursor-pointer min-h-[44px]"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -220,10 +220,10 @@ export default function WeatherPage() {
       {alerts.length > 0 && (
         <motion.div variants={fadeUp} className="space-y-2">
           {alerts.map((alert, i) => (
-            <Card key={i} className={`border ${alert.type === "danger" ? "border-red-300 bg-tone-bad-bg" : alert.type === "warning" ? "border-amber-300 bg-tone-warn-bg" : "border-blue-300 bg-blue-50"}`}>
+            <Card key={i} className={`border ${alert.type === "danger" ? "border-wangari-red-300 bg-tone-bad-bg" : alert.type === "warning" ? "border-wangari-amber-300 bg-tone-warn-bg" : "border-wangari-blue-300 bg-wangari-blue-50"}`}>
               <CardContent className="flex items-start gap-3 p-3">
-                <AlertTriangle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${alert.type === "danger" ? "text-red-600" : alert.type === "warning" ? "text-amber-600" : "text-blue-600"}`} />
-                <p className={`text-xs font-medium ${alert.type === "danger" ? "text-tone-bad-text" : alert.type === "warning" ? "text-amber-800" : "text-blue-800"}`}>{alert.text}</p>
+                <AlertTriangle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${alert.type === "danger" ? "text-wangari-red-600" : alert.type === "warning" ? "text-wangari-amber-600" : "text-wangari-blue-600"}`} />
+                <p className={`text-xs font-medium ${alert.type === "danger" ? "text-tone-bad-text" : alert.type === "warning" ? "text-wangari-amber-800" : "text-wangari-blue-800"}`}>{alert.text}</p>
               </CardContent>
             </Card>
           ))}
@@ -232,14 +232,14 @@ export default function WeatherPage() {
 
       {/* Spray recommendation */}
       <motion.div variants={fadeUp}>
-        <Card className={`border ${sprayOk ? "border-emerald-200 bg-emerald-50" : "border-tone-warn-border bg-tone-warn-bg"}`}>
+        <Card className={`border ${sprayOk ? "border-wangari-green-200 bg-wangari-green-50" : "border-tone-warn-border bg-tone-warn-bg"}`}>
           <CardContent className="flex items-center gap-3 p-4">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${sprayOk ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-tone-warn-text"}`}>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${sprayOk ? "bg-wangari-green-100 text-wangari-green-700" : "bg-wangari-amber-100 text-tone-warn-text"}`}>
               {sprayOk ? <Leaf className="h-5 w-5" /> : <Umbrella className="h-5 w-5" />}
             </div>
             <div>
-              <p className={`text-sm font-bold ${sprayOk ? "text-emerald-800" : "text-amber-800"}`}>{sprayOk ? "Good day for spraying" : "Not ideal for spraying"}</p>
-              <p className={`text-xs ${sprayOk ? "text-emerald-600" : "text-amber-600"}`}>{sprayOk ? "No rain expected. Safe to apply pesticides or herbicides." : "Rain expected soon. Wait for dry conditions."}</p>
+              <p className={`text-sm font-bold ${sprayOk ? "text-wangari-green-800" : "text-wangari-amber-800"}`}>{sprayOk ? "Good day for spraying" : "Not ideal for spraying"}</p>
+              <p className={`text-xs ${sprayOk ? "text-wangari-green-600" : "text-wangari-amber-600"}`}>{sprayOk ? "No rain expected. Safe to apply pesticides or herbicides." : "Rain expected soon. Wait for dry conditions."}</p>
             </div>
           </CardContent>
         </Card>
@@ -250,13 +250,13 @@ export default function WeatherPage() {
         <Card className="border border-wangari-border">
           <CardContent className="flex items-center justify-around p-4">
             <div className="text-center">
-              <Sun className="h-5 w-5 text-amber-500 mx-auto mb-1" />
+              <Sun className="h-5 w-5 text-wangari-amber-500 mx-auto mb-1" />
               <p className="text-xs text-wangari-subtle">Sunrise</p>
               <p className="text-sm font-bold text-wangari-heading">{sunrise || "06:30"}</p>
             </div>
             <div className="h-8 w-px bg-wangari-border" />
             <div className="text-center">
-              <Sun className="h-5 w-5 text-orange-500 mx-auto mb-1" />
+              <Sun className="h-5 w-5 text-wangari-orange-500 mx-auto mb-1" />
               <p className="text-xs text-wangari-subtle">Sunset</p>
               <p className="text-sm font-bold text-wangari-heading">{sunset || "18:45"}</p>
             </div>
@@ -282,7 +282,7 @@ export default function WeatherPage() {
                     <WeatherIcon condition={day.condition} className="h-5 w-5 text-wangari-muted mx-auto my-2" />
                     <p className="text-sm font-bold text-wangari-heading">{day.tempMax || day.maxTemp}°</p>
                     <p className="text-[10px] text-wangari-subtle">{day.tempMin || day.minTemp}°</p>
-                    {day.rain > 0 && <p className="text-[9px] text-blue-500 font-bold mt-1">{day.rain}mm</p>}
+                    {day.rain > 0 && <p className="text-[9px] text-wangari-blue-500 font-bold mt-1">{day.rain}mm</p>}
                   </div>
                 );
               })}

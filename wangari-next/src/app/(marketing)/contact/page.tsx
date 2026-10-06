@@ -88,9 +88,9 @@ export default function ContactPage() {
       )}
 
       {done ? (
-        <div className="mt-8 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
-          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
-          <p className="text-sm font-semibold text-emerald-800">{content.successMessage}</p>
+        <div className="mt-8 flex items-center gap-3 rounded-2xl border border-wangari-green-200 bg-wangari-green-50 px-5 py-4">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-wangari-green-600" />
+          <p className="text-sm font-semibold text-wangari-green-800">{content.successMessage}</p>
         </div>
       ) : (
         <form onSubmit={submit} className="mt-8 space-y-4 rounded-2xl border border-wangari-border bg-white p-6 shadow-sm">

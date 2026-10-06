@@ -85,4 +85,28 @@ describe("theme palette", () => {
       "Use a token utility instead (see scripts/tokenize-hex.mjs), or add a token to @theme"
     ).toEqual([]);
   });
+
+  it("no component uses a default Tailwind palette class — theme tokens only", () => {
+    // Every default-palette value the app uses has been either mapped to an
+    // existing token (exact value), mirrored as wangari-<family>-<step>, or
+    // unified onto wangari-green (emerald). A new default-palette class means
+    // a color entered the system outside the theme.
+    const families =
+      "gray|slate|zinc|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose";
+    const re = new RegExp(
+      "(?:bg|text|border|ring|fill|stroke|from|via|to|divide|decoration|placeholder|outline|accent|caret)-" +
+        `(?:(?:${families})-\\d{2,3})\\b`,
+      "g"
+    );
+    const offenders: string[] = [];
+    for (const file of walk(SRC)) {
+      const rel = relative(SRC, file).split("\\").join("/");
+      const src = readFileSync(file, "utf8");
+      for (const hit of src.match(re) ?? []) offenders.push(`${rel}: ${hit}`);
+    }
+    expect(
+      offenders,
+      "Use wangari-*/tone-*/badge-* tokens (see scripts/theme-extend.mjs)"
+    ).toEqual([]);
+  });
 });

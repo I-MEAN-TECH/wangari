@@ -132,32 +132,32 @@ export function BiometricSettings() {
 
           {devices.length === 0 && !showAddForm && (
             <div className="text-center py-6">
-              <Fingerprint className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">No devices registered yet</p>
-              <p className="text-xs text-gray-300 mt-1">Add your ZKTeco device to enable biometric attendance</p>
+              <Fingerprint className="h-8 w-8 text-wangari-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-wangari-gray-400">No devices registered yet</p>
+              <p className="text-xs text-wangari-gray-300 mt-1">Add your ZKTeco device to enable biometric attendance</p>
             </div>
           )}
 
           {devices.map((device: any) => (
             <div key={device.id} className="flex items-center justify-between p-3 rounded-xl border border-wangari-border">
               <div className="flex items-center gap-3">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${device.lastSyncAt ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-400"}`}>
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${device.lastSyncAt ? "bg-wangari-green-50 text-wangari-green-700" : "bg-wangari-gray-100 text-wangari-gray-400"}`}>
                   {device.lastSyncAt ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
                 </div>
                 <div>
                   <p className="text-sm font-bold text-wangari-heading">{device.name || device.serialNumber}</p>
                   <p className="text-[10px] text-wangari-subtle">{device.model || "ZKTeco"} • {device.serialNumber}</p>
                   {device.lastSyncAt && (
-                    <p className="text-[10px] text-emerald-600">Last sync: {new Date(device.lastSyncAt).toLocaleString()}</p>
+                    <p className="text-[10px] text-wangari-green-600">Last sync: {new Date(device.lastSyncAt).toLocaleString()}</p>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge className={device.lastSyncAt ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-500"}>
+                <Badge className={device.lastSyncAt ? "bg-wangari-green-50 text-wangari-green-700 border-wangari-green-200" : "bg-wangari-gray-100 text-wangari-gray-500"}>
                   {device.lastSyncAt ? "Connected" : "Waiting"}
                 </Badge>
                 <span className="text-[10px] text-wangari-subtle">{device._count?.logs || 0} logs</span>
-                <button onClick={() => handleDeleteDevice(device.id)} className="text-wangari-subtle hover:text-red-500 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
+                <button onClick={() => handleDeleteDevice(device.id)} className="text-wangari-subtle hover:text-wangari-red-500 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
               </div>
             </div>
           ))}
@@ -167,12 +167,12 @@ export function BiometricSettings() {
       {/* Unmapped users */}
       {unmapped.length > 0 && (
         <Card className="border border-tone-warn-border bg-tone-warn-bg">
-          <CardHeader><CardTitle className="text-sm font-bold text-amber-800">⚠️ Unmapped Device Users ({unmapped.length})</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm font-bold text-wangari-amber-800">⚠️ Unmapped Device Users ({unmapped.length})</CardTitle></CardHeader>
           <CardContent>
             <p className="text-xs text-tone-warn-text mb-3">These device user IDs need to be mapped to workers in your system</p>
             <div className="space-y-2">
               {unmapped.map((log: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white border border-amber-100">
+                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white border border-wangari-amber-100">
                   <div>
                     <p className="text-xs font-bold text-wangari-heading">Device ID: {log.deviceUserId}</p>
                     <p className="text-[10px] text-wangari-subtle">Device: {log.device?.name || "Unknown"}</p>
@@ -199,7 +199,7 @@ export function BiometricSettings() {
               {logs.slice(0, 20).map((log: any) => (
                 <div key={log.id} className="flex items-center justify-between p-2 rounded-lg bg-tone-neutral-bg text-xs">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-wangari-green-500" />
                     <div>
                       <p className="font-bold text-wangari-heading">{log.worker?.name || `Device ID: ${log.deviceUserId}`}</p>
                       <p className="text-[10px] text-wangari-subtle">{log.verifyType || "fingerprint"} • {log.device?.name || "Unknown device"}</p>

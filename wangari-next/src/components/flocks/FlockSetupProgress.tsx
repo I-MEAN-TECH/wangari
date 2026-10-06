@@ -115,24 +115,24 @@ export function FlockSetupProgress({ flock }: FlockSetupProgressProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <Card className="border border-emerald-100 bg-gradient-to-r from-emerald-50/80 to-white">
+      <Card className="border border-wangari-green-100 bg-gradient-to-r from-wangari-green-50/80 to-white">
         <CardContent className="p-5">
           {isAllDone ? (
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-wangari-green-500 text-white">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-bold text-emerald-800">
+                <p className="text-sm font-bold text-wangari-green-800">
                   🎉 Setup complete!
                 </p>
-                <p className="text-xs text-emerald-600">
+                <p className="text-xs text-wangari-green-600">
                   {flock.name} is fully configured. Great work!
                 </p>
               </div>
               <button
                 onClick={() => setDismissed(true)}
-                className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
+                className="text-xs text-wangari-gray-400 hover:text-wangari-gray-600 cursor-pointer"
               >
                 Dismiss
               </button>
@@ -141,28 +141,28 @@ export function FlockSetupProgress({ flock }: FlockSetupProgressProps) {
             <>
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-xs font-bold text-gray-700">
+                  <p className="text-xs font-bold text-wangari-gray-700">
                     Setup Progress
                   </p>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-[10px] text-wangari-gray-400">
                     {completedCount} of {totalCount} completed
                   </p>
                 </div>
                 <button
                   onClick={() => setDismissed(true)}
-                  className="text-[10px] text-gray-400 hover:text-gray-600 cursor-pointer"
+                  className="text-[10px] text-wangari-gray-400 hover:text-wangari-gray-600 cursor-pointer"
                 >
                   Dismiss
                 </button>
               </div>
 
               {/* Progress bar */}
-              <div className="h-2 overflow-hidden rounded-full bg-gray-100 mb-4">
+              <div className="h-2 overflow-hidden rounded-full bg-wangari-gray-100 mb-4">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="h-full rounded-full bg-emerald-500"
+                  className="h-full rounded-full bg-wangari-green-500"
                 />
               </div>
 
@@ -176,15 +176,15 @@ export function FlockSetupProgress({ flock }: FlockSetupProgressProps) {
                       href={item.href}
                       className={`flex items-center gap-3 p-2.5 rounded-xl transition-all ${
                         item.completed
-                          ? "bg-emerald-50/50"
-                          : "bg-white border border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/30"
+                          ? "bg-wangari-green-50/50"
+                          : "bg-white border border-wangari-gray-100 hover:border-wangari-green-200 hover:bg-wangari-green-50/30"
                       }`}
                     >
                       <div
                         className={`h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
                           item.completed
-                            ? "bg-emerald-500 text-white"
-                            : "bg-gray-100 text-gray-400"
+                            ? "bg-wangari-green-500 text-white"
+                            : "bg-wangari-gray-100 text-wangari-gray-400"
                         }`}
                       >
                         {item.completed ? (
@@ -196,15 +196,15 @@ export function FlockSetupProgress({ flock }: FlockSetupProgressProps) {
                       <div className="flex-1 min-w-0">
                         <p
                           className={`text-xs font-semibold ${
-                            item.completed ? "text-emerald-700" : "text-gray-700"
+                            item.completed ? "text-wangari-green-700" : "text-wangari-gray-700"
                           }`}
                         >
                           {item.label}
                         </p>
-                        <p className="text-[10px] text-gray-400">{item.description}</p>
+                        <p className="text-[10px] text-wangari-gray-400">{item.description}</p>
                       </div>
                       {!item.completed && (
-                        <ChevronRight className="h-3.5 w-3.5 text-gray-300 flex-shrink-0" />
+                        <ChevronRight className="h-3.5 w-3.5 text-wangari-gray-300 flex-shrink-0" />
                       )}
                     </Link>
                   );

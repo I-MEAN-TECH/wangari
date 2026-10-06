@@ -44,10 +44,10 @@ export function HelpModal({ open, onOpenChange }: { open: boolean; onOpenChange:
   }
 
   const STATUS_COLOR: Record<string, string> = {
-    open: "text-amber-600",
-    pending: "text-sky-600",
-    solved: "text-emerald-600",
-    closed: "text-gray-400",
+    open: "text-wangari-amber-600",
+    pending: "text-wangari-sky-600",
+    solved: "text-wangari-green-600",
+    closed: "text-wangari-gray-400",
   };
 
   return (
@@ -65,7 +65,7 @@ export function HelpModal({ open, onOpenChange }: { open: boolean; onOpenChange:
 
         <div className="p-5">
           {done !== null && (
-            <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-wangari-green-200 bg-wangari-green-50 px-4 py-3 text-sm text-wangari-green-800">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>Message sent — ticket #{done}. Our team will get back to you soon.</span>
             </div>
@@ -103,8 +103,8 @@ export function HelpModal({ open, onOpenChange }: { open: boolean; onOpenChange:
                     onClick={() => setPriority(p)}
                     className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
                       priority === p
-                        ? p === "high" ? "bg-badge-red-bg text-badge-red-text" : p === "normal" ? "bg-wangari-green-100 text-wangari-green-800" : "bg-gray-100 text-gray-600"
-                        : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                        ? p === "high" ? "bg-badge-red-bg text-badge-red-text" : p === "normal" ? "bg-wangari-green-100 text-wangari-green-800" : "bg-wangari-gray-100 text-wangari-gray-600"
+                        : "bg-wangari-gray-50 text-wangari-gray-500 hover:bg-wangari-gray-100"
                     }`}
                   >
                     {p}

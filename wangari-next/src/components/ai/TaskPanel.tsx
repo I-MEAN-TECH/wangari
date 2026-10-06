@@ -114,7 +114,7 @@ export function TaskPanel({ tasks, onClear }: TaskPanelProps) {
               "rounded-lg border transition-all",
               task.status === "completed" && "border-wangari-green-200 bg-wangari-green-50/50",
               task.status === "failed" && "border-tone-bad-border bg-tone-bad-bg/50",
-              task.status === "running" && "border-blue-200 bg-blue-50/50",
+              task.status === "running" && "border-wangari-blue-200 bg-wangari-blue-50/50",
               task.status === "pending" && "border-wangari-border bg-white"
             )}
           >
@@ -125,8 +125,8 @@ export function TaskPanel({ tasks, onClear }: TaskPanelProps) {
               {/* Status icon */}
               <div className="shrink-0">
                 {task.status === "completed" && <CheckCircle className="h-4 w-4 text-wangari-green-600" />}
-                {task.status === "failed" && <XCircle className="h-4 w-4 text-red-500" />}
-                {task.status === "running" && <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />}
+                {task.status === "failed" && <XCircle className="h-4 w-4 text-wangari-red-500" />}
+                {task.status === "running" && <Loader2 className="h-4 w-4 text-wangari-blue-500 animate-spin" />}
                 {task.status === "pending" && <Clock className="h-4 w-4 text-wangari-muted" />}
               </div>
 
@@ -163,7 +163,7 @@ export function TaskPanel({ tasks, onClear }: TaskPanelProps) {
                   </div>
                 )}
                 {task.error && (
-                  <p className="text-[11px] text-red-600 bg-tone-bad-bg rounded px-2 py-1">
+                  <p className="text-[11px] text-wangari-red-600 bg-tone-bad-bg rounded px-2 py-1">
                     {task.error}
                   </p>
                 )}

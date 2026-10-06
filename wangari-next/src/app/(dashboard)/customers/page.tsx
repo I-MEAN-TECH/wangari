@@ -107,11 +107,11 @@ export default function CustomersPage() {
         <div className="grid grid-cols-3 gap-3">
           <Card className="border border-wangari-border"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-wangari-muted uppercase">Orders</p><p className="text-xl font-extrabold text-wangari-heading">{cust.salesCount}</p></CardContent></Card>
           <Card className="border border-wangari-border"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-wangari-muted uppercase">Total spent</p><p className="text-xl font-extrabold text-wangari-green-800">KES {cust.totalSpent.toLocaleString()}</p></CardContent></Card>
-          <Card className="border border-tone-warn-border bg-tone-warn-bg"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-amber-600 uppercase">Owed</p><p className="text-xl font-extrabold text-amber-600">KES {cust.totalOwed.toLocaleString()}</p></CardContent></Card>
+          <Card className="border border-tone-warn-border bg-tone-warn-bg"><CardContent className="pt-4 pb-3 px-4"><p className="text-[10px] text-wangari-amber-600 uppercase">Owed</p><p className="text-xl font-extrabold text-wangari-amber-600">KES {cust.totalOwed.toLocaleString()}</p></CardContent></Card>
         </div>
 
         {cust.totalOwed > 0 && (
-          <Button onClick={() => { setShowPayModal(cust.id); setPayAmount(String(cust.totalOwed)); }} className="w-full bg-amber-500 hover:bg-amber-600 text-white cursor-pointer">Record Payment</Button>
+          <Button onClick={() => { setShowPayModal(cust.id); setPayAmount(String(cust.totalOwed)); }} className="w-full bg-wangari-amber-500 hover:bg-wangari-amber-600 text-white cursor-pointer">Record Payment</Button>
         )}
 
         <div>
@@ -210,8 +210,8 @@ export default function CustomersPage() {
       <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-3 gap-3">
         {[
           { title: "Customers", value: String(customers.length), icon: <Users className="h-5 w-5" />, color: "bg-wangari-green-800" },
-          { title: "Revenue", value: `KES ${totalRevenue.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-emerald-500" },
-          { title: "Outstanding", value: `KES ${totalOwed.toLocaleString()}`, icon: <ShoppingCart className="h-5 w-5" />, color: totalOwed > 0 ? "bg-amber-500" : "bg-wangari-green-800" },
+          { title: "Revenue", value: `KES ${totalRevenue.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-wangari-green-500" },
+          { title: "Outstanding", value: `KES ${totalOwed.toLocaleString()}`, icon: <ShoppingCart className="h-5 w-5" />, color: totalOwed > 0 ? "bg-wangari-amber-500" : "bg-wangari-green-800" },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
             <Card className="border border-wangari-border">
@@ -250,7 +250,7 @@ export default function CustomersPage() {
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <p className="text-sm font-extrabold text-wangari-heading">KES {c.totalSpent.toLocaleString()}</p>
-                        {c.totalOwed > 0 && <p className="text-[10px] font-bold text-amber-600">KES {c.totalOwed.toLocaleString()} owed</p>}
+                        {c.totalOwed > 0 && <p className="text-[10px] font-bold text-wangari-amber-600">KES {c.totalOwed.toLocaleString()} owed</p>}
                       </div>
                       <ChevronRight className="h-4 w-4 text-wangari-subtle" />
                     </div>

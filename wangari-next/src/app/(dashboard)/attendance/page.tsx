@@ -159,10 +159,10 @@ export default function AttendancePage() {
       {/* KPIs */}
       <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { title: "Present", value: String(present), icon: <CheckCircle2 className="h-5 w-5" />, color: "bg-emerald-500" },
-          { title: "Absent", value: String(absent), icon: <AlertTriangle className="h-5 w-5" />, color: absent > 0 ? "bg-amber-500" : "bg-wangari-green-800" },
+          { title: "Present", value: String(present), icon: <CheckCircle2 className="h-5 w-5" />, color: "bg-wangari-green-500" },
+          { title: "Absent", value: String(absent), icon: <AlertTriangle className="h-5 w-5" />, color: absent > 0 ? "bg-wangari-amber-500" : "bg-wangari-green-800" },
           { title: "Checked Out", value: String(checkedOut), icon: <LogOut className="h-5 w-5" />, color: "bg-wangari-green-800" },
-          { title: "Day Wages", value: `KES ${dayWages.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-emerald-600" },
+          { title: "Day Wages", value: `KES ${dayWages.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-wangari-green-600" },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
             <Card className="border border-wangari-border">
@@ -221,12 +221,12 @@ export default function AttendancePage() {
                         </div>
                         {isDone ? (
                           <div className="text-right">
-                            <Badge className="bg-gray-100 text-wangari-muted border-wangari-border">Shift Done</Badge>
+                            <Badge className="bg-wangari-gray-100 text-wangari-muted border-wangari-border">Shift Done</Badge>
                             <p className="text-[10px] text-wangari-subtle mt-0.5">{todayRec.checkIn} - {todayRec.checkOut}</p>
                           </div>
                         ) : isCheckedIn ? (
                           <button onClick={() => handleClockInOut(w.id)}
-                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-tone-warn-bg text-tone-warn-text text-xs font-bold border border-tone-warn-border hover:bg-amber-100 cursor-pointer min-h-[44px]">
+                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-tone-warn-bg text-tone-warn-text text-xs font-bold border border-tone-warn-border hover:bg-wangari-amber-100 cursor-pointer min-h-[44px]">
                             <LogOut className="h-4 w-4" /> Clock Out
                           </button>
                         ) : (
@@ -265,7 +265,7 @@ export default function AttendancePage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <Badge className={r.checkOut ? "bg-gray-100 text-wangari-muted border-wangari-border" : "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200"}>{r.checkOut ? "Completed" : "Present"}</Badge>
+                      <Badge className={r.checkOut ? "bg-wangari-gray-100 text-wangari-muted border-wangari-border" : "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200"}>{r.checkOut ? "Completed" : "Present"}</Badge>
                     </div>
                   </div>
                   <div className="flex items-center justify-between mt-3">
@@ -285,7 +285,7 @@ export default function AttendancePage() {
                         </div>
                       )}
                     </div>
-                    <button onClick={() => handleDelete(r.id)} className="text-wangari-subtle hover:text-red-500 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleDelete(r.id)} className="text-wangari-subtle hover:text-wangari-red-500 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </CardContent>
               </Card>

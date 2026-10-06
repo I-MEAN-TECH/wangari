@@ -24,8 +24,8 @@ export function GrowthChart({ production, expectedWeight }: GrowthChartProps) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <Scale className="h-8 w-8 text-wangari-border mb-2" />
-        <p className="text-xs text-gray-400">No weight data recorded yet</p>
-        <p className="text-[10px] text-gray-300 mt-1">Record weights in daily production to see growth trends</p>
+        <p className="text-xs text-wangari-gray-400">No weight data recorded yet</p>
+        <p className="text-[10px] text-wangari-gray-300 mt-1">Record weights in daily production to see growth trends</p>
       </div>
     );
   }
@@ -71,33 +71,33 @@ export function GrowthChart({ production, expectedWeight }: GrowthChartProps) {
       {/* Stats Row */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5">
-          <Scale className="h-3.5 w-3.5 text-gray-400" />
-          <span className="text-xs text-gray-400">Current:</span>
-          <span className="text-xs font-bold text-gray-900">{lastWeight} kg</span>
+          <Scale className="h-3.5 w-3.5 text-wangari-gray-400" />
+          <span className="text-xs text-wangari-gray-400">Current:</span>
+          <span className="text-xs font-bold text-wangari-gray-900">{lastWeight} kg</span>
         </div>
         <div className="flex items-center gap-1.5">
           {totalGain > 0 ? (
-            <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+            <TrendingUp className="h-3.5 w-3.5 text-wangari-green-500" />
           ) : totalGain < 0 ? (
-            <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+            <TrendingDown className="h-3.5 w-3.5 text-wangari-red-500" />
           ) : (
-            <Minus className="h-3.5 w-3.5 text-gray-400" />
+            <Minus className="h-3.5 w-3.5 text-wangari-gray-400" />
           )}
-          <span className="text-xs text-gray-400">Gain:</span>
-          <span className={cn("text-xs font-bold", totalGain > 0 ? "text-emerald-600" : totalGain < 0 ? "text-red-600" : "text-gray-500")}>
+          <span className="text-xs text-wangari-gray-400">Gain:</span>
+          <span className={cn("text-xs font-bold", totalGain > 0 ? "text-wangari-green-600" : totalGain < 0 ? "text-wangari-red-600" : "text-wangari-gray-500")}>
             {totalGain > 0 ? "+" : ""}{totalGain.toFixed(2)} kg
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-gray-400">Daily:</span>
-          <span className={cn("text-xs font-bold", dailyGain > 0 ? "text-emerald-600" : "text-gray-500")}>
+          <span className="text-xs text-wangari-gray-400">Daily:</span>
+          <span className={cn("text-xs font-bold", dailyGain > 0 ? "text-wangari-green-600" : "text-wangari-gray-500")}>
             {dailyGain > 0 ? "+" : ""}{dailyGain.toFixed(3)} kg/day
           </span>
         </div>
       </div>
 
       {/* Chart */}
-      <div className="relative bg-gray-50 rounded-xl p-3">
+      <div className="relative bg-wangari-gray-50 rounded-xl p-3">
         <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-32">
           {/* Grid lines */}
           {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
@@ -157,10 +157,10 @@ export function GrowthChart({ production, expectedWeight }: GrowthChartProps) {
         <div className="flex justify-between mt-1">
           {weightData.length > 0 && (
             <>
-              <span className="text-[9px] text-gray-300">
+              <span className="text-[9px] text-wangari-gray-300">
                 {new Date(weightData[0].date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
               </span>
-              <span className="text-[9px] text-gray-300">
+              <span className="text-[9px] text-wangari-gray-300">
                 {new Date(weightData[weightData.length - 1].date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
               </span>
             </>
@@ -175,13 +175,13 @@ export function GrowthChart({ production, expectedWeight }: GrowthChartProps) {
           const gain = prevWeight ? Number(d.avgWeight) - prevWeight : null;
           return (
             <div key={i} className="flex items-center justify-between text-xs">
-              <span className="text-gray-400">
+              <span className="text-wangari-gray-400">
                 {new Date(d.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
               </span>
               <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">{d.avgWeight} kg</span>
+                <span className="font-medium text-wangari-gray-700">{d.avgWeight} kg</span>
                 {gain !== null && (
-                  <span className={cn("text-[10px]", gain > 0 ? "text-emerald-600" : gain < 0 ? "text-red-600" : "text-gray-400")}>
+                  <span className={cn("text-[10px]", gain > 0 ? "text-wangari-green-600" : gain < 0 ? "text-wangari-red-600" : "text-wangari-gray-400")}>
                     {gain > 0 ? "+" : ""}{gain.toFixed(2)}
                   </span>
                 )}

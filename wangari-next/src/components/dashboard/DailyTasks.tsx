@@ -191,19 +191,19 @@ const priorityColors: Record<string, { bg: string; text: string; border: string;
     bg: "bg-tone-bad-bg",
     text: "text-tone-bad-text",
     border: "border-tone-bad-border",
-    icon: "bg-red-500 text-white",
+    icon: "bg-wangari-red-500 text-white",
   },
   due_soon: {
     bg: "bg-tone-warn-bg",
-    text: "text-amber-800",
+    text: "text-wangari-amber-800",
     border: "border-tone-warn-border",
-    icon: "bg-amber-500 text-white",
+    icon: "bg-wangari-amber-500 text-white",
   },
   routine: {
-    bg: "bg-gray-50",
-    text: "text-gray-700",
-    border: "border-gray-100",
-    icon: "bg-emerald-100 text-emerald-700",
+    bg: "bg-wangari-gray-50",
+    text: "text-wangari-gray-700",
+    border: "border-wangari-gray-100",
+    icon: "bg-wangari-green-100 text-wangari-green-700",
   },
 };
 
@@ -245,11 +245,11 @@ export function DailyTasks({ flocks, compact = false }: DailyTasksProps) {
 
   if (totalTasks === 0) {
     return (
-      <Card className="border border-emerald-100 bg-emerald-50/50">
+      <Card className="border border-wangari-green-100 bg-wangari-green-50/50">
         <CardContent className="p-5 text-center">
-          <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-          <p className="text-sm font-bold text-emerald-800">All caught up! 🎉</p>
-          <p className="text-xs text-emerald-600 mt-1">
+          <CheckCircle2 className="h-8 w-8 text-wangari-green-500 mx-auto mb-2" />
+          <p className="text-sm font-bold text-wangari-green-800">All caught up! 🎉</p>
+          <p className="text-xs text-wangari-green-600 mt-1">
             No urgent tasks for your livestock today
           </p>
         </CardContent>
@@ -276,13 +276,13 @@ export function DailyTasks({ flocks, compact = false }: DailyTasksProps) {
                     {task.title}
                   </p>
                 </div>
-                <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                <ChevronRight className="h-3 w-3 text-wangari-gray-400 flex-shrink-0" />
               </div>
             </Link>
           );
         })}
         {visibleTasks.length > 5 && (
-          <p className="text-[10px] text-gray-400 text-center">
+          <p className="text-[10px] text-wangari-gray-400 text-center">
             +{visibleTasks.length - 5} more tasks
           </p>
         )}
@@ -295,11 +295,11 @@ export function DailyTasks({ flocks, compact = false }: DailyTasksProps) {
       {/* Summary header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 text-emerald-600" />
-          <p className="text-sm font-bold text-gray-900">
+          <Bell className="h-4 w-4 text-wangari-green-600" />
+          <p className="text-sm font-bold text-wangari-gray-900">
             Today&apos;s Tasks
           </p>
-          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]">
+          <Badge className="bg-wangari-green-100 text-wangari-green-700 border-wangari-green-200 text-[10px]">
             {totalTasks} remaining
           </Badge>
           {urgentCount > 0 && (
@@ -318,7 +318,7 @@ export function DailyTasks({ flocks, compact = false }: DailyTasksProps) {
 
         return (
           <div key={priority}>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-wangari-gray-400 mb-2">
               {priorityLabels[priority]}
             </p>
             <div className="space-y-1.5">
@@ -338,18 +338,18 @@ export function DailyTasks({ flocks, compact = false }: DailyTasksProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className={`text-xs font-bold ${colors.text}`}>{task.title}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">{task.description}</p>
+                      <p className="text-[10px] text-wangari-gray-400 mt-0.5">{task.description}</p>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <Link
                         href={task.href}
-                        className="px-2.5 py-1.5 rounded-lg bg-white border border-wangari-border text-[10px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                        className="px-2.5 py-1.5 rounded-lg bg-white border border-wangari-border text-[10px] font-semibold text-wangari-gray-600 hover:bg-wangari-gray-50 transition-colors"
                       >
                         Go
                       </Link>
                       <button
                         onClick={() => handleComplete(task.id)}
-                        className="p-1.5 rounded-lg bg-white border border-wangari-border text-gray-400 hover:text-emerald-600 hover:border-emerald-200 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-lg bg-white border border-wangari-border text-wangari-gray-400 hover:text-wangari-green-600 hover:border-wangari-green-200 transition-colors cursor-pointer"
                         title="Mark done"
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" />

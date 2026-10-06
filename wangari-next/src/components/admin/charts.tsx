@@ -16,10 +16,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card } from "@/components/ui/card";
+import { pieSeries as PIE_COLORS } from "@/lib/chart-series";
 
 const GREEN = "#16A34A";
 const GREEN_LIGHT = "#4ADE80";
-const PIE_COLORS = ["#16A34A", "#4ADE80", "#86EFAC", "#BBF7D0", "#FACC15", "#94A3B8"];
 
 const tooltipStyle = {
   contentStyle: {

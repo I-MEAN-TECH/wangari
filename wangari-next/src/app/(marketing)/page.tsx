@@ -207,8 +207,8 @@ export default function LandingPage() {
             <div className="mx-auto max-w-sm rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-sm p-6 shadow-2xl shadow-black/40">
               <div className="flex items-center justify-between mb-5">
                 <span className="text-xs font-bold uppercase tracking-widest text-white/40">Wangari · Offline</span>
-                <span className="flex items-center gap-1.5 rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> No connection
+                <span className="flex items-center gap-1.5 rounded-full bg-wangari-amber-500/20 px-3 py-1 text-xs font-bold text-wangari-amber-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-wangari-amber-400" /> No connection
                 </span>
               </div>
               <div className="space-y-3">

@@ -12,10 +12,10 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { useToast } from "@/components/shared/toast";
 import api from "@/lib/api-client";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { inventorySeries as COLORS } from "@/lib/chart-series";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
-const COLORS = ["#166534", "#22C55E", "#86EFAC", "#94A3B8", "#CBD5E1", "#F59E0B", "#EF4444", "#3B82F6"];
 
 // Suggested categories — but farmer can type ANYTHING
 const SUGGESTED_CATEGORIES = [
@@ -177,7 +177,7 @@ export default function InventoryPage() {
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {SUGGESTED_CATEGORIES.slice(0, 6).map(c => (
                           <button key={c} onClick={() => setForm({ ...form, category: c })}
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${form.category === c ? "bg-wangari-green-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-wangari-border"}`}>{c}</button>
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${form.category === c ? "bg-wangari-green-800 text-white" : "bg-wangari-gray-100 text-wangari-gray-600 hover:bg-wangari-border"}`}>{c}</button>
                         ))}
                       </div>
                       {/* Or type custom */}
@@ -199,7 +199,7 @@ export default function InventoryPage() {
                         <div className="flex flex-wrap gap-1 mb-1">
                           {SUGGESTED_UNITS.slice(0, 5).map(u => (
                             <button key={u} onClick={() => setForm({ ...form, unit: u })}
-                              className={`px-2 py-0.5 rounded text-[9px] font-bold cursor-pointer ${form.unit === u ? "bg-wangari-green-800 text-white" : "bg-gray-100 text-gray-500"}`}>{u}</button>
+                              className={`px-2 py-0.5 rounded text-[9px] font-bold cursor-pointer ${form.unit === u ? "bg-wangari-green-800 text-white" : "bg-wangari-gray-100 text-wangari-gray-500"}`}>{u}</button>
                           ))}
                         </div>
                         <Input placeholder="Or type custom unit" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} className="h-9 rounded-lg text-sm" />
@@ -270,10 +270,10 @@ export default function InventoryPage() {
           {expiredItems.length > 0 && (
             <Card className="border border-tone-bad-border bg-tone-bad-bg">
               <CardContent className="flex items-center gap-3 p-3">
-                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                <AlertTriangle className="h-5 w-5 text-wangari-red-600 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-bold text-badge-red-text">{expiredItems.length} item{expiredItems.length > 1 ? "s" : ""} expired!</p>
-                  <p className="text-xs text-red-500">{expiredItems.map(i => i.itemName).join(", ")}</p>
+                  <p className="text-xs text-wangari-red-500">{expiredItems.map(i => i.itemName).join(", ")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -281,10 +281,10 @@ export default function InventoryPage() {
           {expiringSoon.length > 0 && (
             <Card className="border border-tone-warn-border bg-tone-warn-bg">
               <CardContent className="flex items-center gap-3 p-3">
-                <Clock className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                <Clock className="h-5 w-5 text-wangari-amber-600 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-bold text-tone-warn-text">{expiringSoon.length} item{expiringSoon.length > 1 ? "s" : ""} expiring soon</p>
-                  <p className="text-xs text-amber-600">{expiringSoon.map(i => `${i.itemName} (${new Date(i.expiryDate).toLocaleDateString()})`).join(", ")}</p>
+                  <p className="text-xs text-wangari-amber-600">{expiringSoon.map(i => `${i.itemName} (${new Date(i.expiryDate).toLocaleDateString()})`).join(", ")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -292,10 +292,10 @@ export default function InventoryPage() {
           {lowStock.length > 0 && (
             <Card className="border border-tone-warn-border bg-tone-warn-bg">
               <CardContent className="flex items-center gap-3 p-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                <AlertTriangle className="h-5 w-5 text-wangari-amber-600 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-bold text-amber-800">{lowStock.length} item{lowStock.length > 1 ? "s" : ""} running low</p>
-                  <p className="text-xs text-amber-600">{lowStock.map(i => i.itemName).join(", ")}</p>
+                  <p className="text-sm font-bold text-wangari-amber-800">{lowStock.length} item{lowStock.length > 1 ? "s" : ""} running low</p>
+                  <p className="text-xs text-wangari-amber-600">{lowStock.map(i => i.itemName).join(", ")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -307,9 +307,9 @@ export default function InventoryPage() {
       <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { title: "Total Items", value: items.length.toString(), icon: <Package className="h-5 w-5" />, color: "bg-wangari-green-800" },
-          { title: "Total Value", value: `KES ${totalValue.toLocaleString()}`, icon: <CircleDollarSign className="h-5 w-5" />, color: "bg-emerald-500" },
-          { title: "Low Stock", value: lowStock.length.toString(), icon: <AlertTriangle className="h-5 w-5" />, color: lowStock.length > 0 ? "bg-amber-500" : "bg-wangari-green-800" },
-          { title: "Expiring", value: String(expiredItems.length + expiringSoon.length), icon: <Clock className="h-5 w-5" />, color: (expiredItems.length + expiringSoon.length) > 0 ? "bg-red-500" : "bg-wangari-green-800" },
+          { title: "Total Value", value: `KES ${totalValue.toLocaleString()}`, icon: <CircleDollarSign className="h-5 w-5" />, color: "bg-wangari-green-500" },
+          { title: "Low Stock", value: lowStock.length.toString(), icon: <AlertTriangle className="h-5 w-5" />, color: lowStock.length > 0 ? "bg-wangari-amber-500" : "bg-wangari-green-800" },
+          { title: "Expiring", value: String(expiredItems.length + expiringSoon.length), icon: <Clock className="h-5 w-5" />, color: (expiredItems.length + expiringSoon.length) > 0 ? "bg-wangari-red-500" : "bg-wangari-green-800" },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
             <Card className="border border-wangari-border">
@@ -326,7 +326,7 @@ export default function InventoryPage() {
       {/* Category tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         <button onClick={() => setActiveCategory("all")}
-          className={`px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeCategory === "all" ? "bg-wangari-green-800 text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-wangari-border"}`}>
+          className={`px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeCategory === "all" ? "bg-wangari-green-800 text-white shadow-md" : "bg-wangari-gray-100 text-wangari-gray-600 hover:bg-wangari-border"}`}>
           All ({items.length})
         </button>
         {allCategories.map(cat => {
@@ -334,7 +334,7 @@ export default function InventoryPage() {
           if (count === 0) return null;
           return (
             <button key={cat} onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeCategory === cat ? "bg-wangari-green-800 text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-wangari-border"}`}>
+              className={`px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeCategory === cat ? "bg-wangari-green-800 text-white shadow-md" : "bg-wangari-gray-100 text-wangari-gray-600 hover:bg-wangari-border"}`}>
               {cat} ({count})
             </button>
           );
@@ -356,11 +356,11 @@ export default function InventoryPage() {
             const isExpiringSoon = item.expiryDate && !isExpired && Math.ceil((new Date(item.expiryDate).getTime() - now.getTime()) / 86400000) <= 30;
             return (
               <motion.div key={item.id} variants={fadeUp}>
-                <Card className={`border ${isExpired ? "border-red-300 bg-tone-bad-bg/30" : isLow ? "border-amber-300 bg-tone-warn-bg/30" : "border-wangari-border"}`}>
+                <Card className={`border ${isExpired ? "border-wangari-red-300 bg-tone-bad-bg/30" : isLow ? "border-wangari-amber-300 bg-tone-warn-bg/30" : "border-wangari-border"}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${isLow ? "bg-amber-100 text-tone-warn-text" : "bg-emerald-50 text-emerald-700"}`}>
+                        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${isLow ? "bg-wangari-amber-100 text-tone-warn-text" : "bg-wangari-green-50 text-wangari-green-700"}`}>
                           <Package className="h-4 w-4" />
                         </div>
                         <div>
@@ -370,8 +370,8 @@ export default function InventoryPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         {isExpired && <Badge className="bg-badge-red-bg text-badge-red-text text-[9px] border-tone-bad-border">Expired</Badge>}
-                        {isExpiringSoon && !isExpired && <Badge className="bg-amber-100 text-tone-warn-text text-[9px] border-tone-warn-border">Expiring</Badge>}
-                        {isLow && !isExpired && <Badge className="bg-amber-100 text-tone-warn-text text-[9px] border-tone-warn-border">Low</Badge>}
+                        {isExpiringSoon && !isExpired && <Badge className="bg-wangari-amber-100 text-tone-warn-text text-[9px] border-tone-warn-border">Expiring</Badge>}
+                        {isLow && !isExpired && <Badge className="bg-wangari-amber-100 text-tone-warn-text text-[9px] border-tone-warn-border">Low</Badge>}
                         <p className="text-lg font-extrabold text-wangari-heading">{Number(item.quantity).toLocaleString()}<span className="text-xs font-normal text-wangari-subtle ml-1">{item.unit}</span></p>
                       </div>
                     </div>
@@ -386,8 +386,8 @@ export default function InventoryPage() {
                     {item.expiryDate && (
                       <div className="mt-2 text-[10px] text-wangari-subtle">
                         Expires: {new Date(item.expiryDate).toLocaleDateString()}
-                        {isExpired && <span className="text-red-600 font-bold ml-1">(EXPIRED)</span>}
-                        {isExpiringSoon && !isExpired && <span className="text-amber-600 font-bold ml-1">(expiring soon)</span>}
+                        {isExpired && <span className="text-wangari-red-600 font-bold ml-1">(EXPIRED)</span>}
+                        {isExpiringSoon && !isExpired && <span className="text-wangari-amber-600 font-bold ml-1">(expiring soon)</span>}
                       </div>
                     )}
                     {item.notes && <p className="mt-1 text-[10px] text-wangari-subtle italic">{item.notes}</p>}
@@ -398,13 +398,13 @@ export default function InventoryPage() {
                         <ArrowUp className="h-3.5 w-3.5" />Restock
                       </button>
                       <button onClick={() => { setAdjustItem(item.id); setAdjustQty(""); }}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-tone-bad-bg text-red-600 text-xs font-bold border border-tone-bad-border hover:bg-badge-red-bg cursor-pointer">
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-tone-bad-bg text-wangari-red-600 text-xs font-bold border border-tone-bad-border hover:bg-badge-red-bg cursor-pointer">
                         <ArrowDown className="h-3.5 w-3.5" />Use Stock
                       </button>
-                      <button onClick={() => openEdit(item)} className="py-2.5 px-3 rounded-xl bg-gray-50 text-wangari-subtle hover:text-wangari-muted border border-wangari-border cursor-pointer">
+                      <button onClick={() => openEdit(item)} className="py-2.5 px-3 rounded-xl bg-wangari-gray-50 text-wangari-subtle hover:text-wangari-muted border border-wangari-border cursor-pointer">
                         <Edit3 className="h-3.5 w-3.5" />
                       </button>
-                      <button onClick={() => handleDelete(item.id)} className="py-2.5 px-3 rounded-xl bg-gray-50 text-wangari-subtle hover:text-red-500 border border-wangari-border cursor-pointer">
+                      <button onClick={() => handleDelete(item.id)} className="py-2.5 px-3 rounded-xl bg-wangari-gray-50 text-wangari-subtle hover:text-wangari-red-500 border border-wangari-border cursor-pointer">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -429,7 +429,7 @@ export default function InventoryPage() {
                 <div className="flex gap-2">
                   <Button onClick={() => setAdjustItem(null)} variant="outline" className="flex-1 cursor-pointer">Cancel</Button>
                   <Button onClick={() => handleAdjust(adjustItem, 1)} disabled={!adjustQty} className="flex-1 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">Add</Button>
-                  <Button onClick={() => handleAdjust(adjustItem, -1)} disabled={!adjustQty} className="flex-1 bg-red-500 hover:bg-red-600 text-white cursor-pointer">Use</Button>
+                  <Button onClick={() => handleAdjust(adjustItem, -1)} disabled={!adjustQty} className="flex-1 bg-wangari-red-500 hover:bg-wangari-red-600 text-white cursor-pointer">Use</Button>
                 </div>
               </CardContent>
             </Card>

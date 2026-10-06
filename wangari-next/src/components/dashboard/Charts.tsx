@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CARD_RAISED } from "@/components/ui/patterns";
+import { flockSeries as FLOCK_COLORS } from "@/lib/chart-series";
 
 // ─── Custom Tooltip ───────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -169,7 +170,6 @@ interface FlockChartProps {
   data: { name: string; value: number }[];
 }
 
-const FLOCK_COLORS = ["#166534", "#16A34A", "#4ADE80", "#86EFAC", "#BBF7D0"];
 
 export function FlockChart({ data }: FlockChartProps) {
   return (

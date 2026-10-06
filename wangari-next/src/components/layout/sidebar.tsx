@@ -273,7 +273,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                       {item.icon}
                       <span className="flex-1">{item.label}</span>
                       {item.badge && (
-                        <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-extrabold border", isActive ? "bg-emerald-700/60 text-white border-emerald-500" : "bg-amber-100 text-amber-800 border-tone-warn-border")}>
+                        <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-extrabold border", isActive ? "bg-wangari-green-700/60 text-white border-wangari-green-500" : "bg-wangari-amber-100 text-wangari-amber-800 border-tone-warn-border")}>
                           {item.badge}
                         </span>
                       )}
@@ -281,7 +281,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                         <Lock
                           className={cn(
                             "h-3.5 w-3.5 shrink-0",
-                            fullyLocked ? "text-red-400 animate-pulse" : "text-wangari-subtle"
+                            fullyLocked ? "text-wangari-red-400 animate-pulse" : "text-wangari-subtle"
                           )}
                         />
                       )}
@@ -331,7 +331,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         </div>
         <button
           onClick={signOut}
-          className="flex items-center justify-center gap-2 w-full rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 bg-tone-bad-bg border border-badge-red-bg hover:bg-badge-red-bg transition-colors cursor-pointer"
+          className="flex items-center justify-center gap-2 w-full rounded-xl px-3 py-2.5 text-sm font-semibold text-wangari-red-600 bg-tone-bad-bg border border-badge-red-bg hover:bg-badge-red-bg transition-colors cursor-pointer"
         >
           <LogOut className="h-4 w-4" />
           Sign Out

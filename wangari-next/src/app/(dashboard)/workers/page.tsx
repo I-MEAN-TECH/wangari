@@ -118,7 +118,7 @@ export default function WorkersPage() {
     return (
       <div className="space-y-6">
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <button onClick={() => setSelectedWorker(null)} className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer mb-2">← Back to Workers</button>
+          <button onClick={() => setSelectedWorker(null)} className="text-sm text-wangari-gray-500 hover:text-wangari-gray-700 cursor-pointer mb-2">← Back to Workers</button>
         </motion.div>
 
         {/* Worker header */}
@@ -126,12 +126,12 @@ export default function WorkersPage() {
           <div className="flex items-center gap-4">
             <Avatar name={w.name} size="lg" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{w.name}</h1>
-              <p className="text-sm text-gray-400">{w.role || "Worker"}{w.phone ? ` • ${w.phone}` : ""}</p>
+              <h1 className="text-2xl font-bold text-wangari-gray-900">{w.name}</h1>
+              <p className="text-sm text-wangari-gray-400">{w.role || "Worker"}{w.phone ? ` • ${w.phone}` : ""}</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Badge className={w.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-500"}>{w.status}</Badge>
+            <Badge className={w.status === "active" ? "bg-wangari-green-50 text-wangari-green-700 border-wangari-green-200" : "bg-wangari-gray-100 text-wangari-gray-500"}>{w.status}</Badge>
             <Button onClick={() => openEdit(w)} variant="ghost" size="sm" className="gap-1 cursor-pointer"><Edit3 className="h-4 w-4" />Edit</Button>
           </div>
         </motion.div>
@@ -165,16 +165,16 @@ export default function WorkersPage() {
         <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { title: "Daily Wage", value: `KES ${Number(w.dailyWage || 0).toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-wangari-green-800" },
-            { title: "Days Worked", value: String(totalDaysWorked), icon: <Calendar className="h-5 w-5" />, color: "bg-blue-500" },
-            { title: "Total Earned", value: `KES ${totalWages.toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, color: "bg-emerald-500" },
-            { title: "Monthly Est.", value: `KES ${(Number(w.dailyWage || 0) * 30).toLocaleString()}`, icon: <Clock className="h-5 w-5" />, color: "bg-amber-500" },
+            { title: "Days Worked", value: String(totalDaysWorked), icon: <Calendar className="h-5 w-5" />, color: "bg-wangari-blue-500" },
+            { title: "Total Earned", value: `KES ${totalWages.toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, color: "bg-wangari-green-500" },
+            { title: "Monthly Est.", value: `KES ${(Number(w.dailyWage || 0) * 30).toLocaleString()}`, icon: <Clock className="h-5 w-5" />, color: "bg-wangari-amber-500" },
           ].map(kpi => (
             <motion.div key={kpi.title} variants={fadeUp}>
-              <Card className="border border-gray-100">
+              <Card className="border border-wangari-gray-100">
                 <CardContent className="pt-4 pb-3 px-4">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-tone-good-bg text-wangari-green-800 mb-2">{kpi.icon}</div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{kpi.title}</p>
-                  <p className="text-xl font-extrabold text-gray-900">{kpi.value}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-wangari-gray-400">{kpi.title}</p>
+                  <p className="text-xl font-extrabold text-wangari-gray-900">{kpi.value}</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -183,25 +183,25 @@ export default function WorkersPage() {
 
         {/* Attendance history */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-gray-100">
+          <Card className="border border-wangari-gray-100">
             <CardContent className="p-5">
-              <h3 className="text-xs font-bold uppercase text-gray-400 tracking-wider mb-4">Recent Attendance</h3>
+              <h3 className="text-xs font-bold uppercase text-wangari-gray-400 tracking-wider mb-4">Recent Attendance</h3>
               {workerAtts.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">No attendance records yet</p>
+                <p className="text-sm text-wangari-gray-400 text-center py-4">No attendance records yet</p>
               ) : (
                 <div className="space-y-2">
                   {workerAtts.slice(0, 14).map((r: any) => (
-                    <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                    <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-wangari-gray-50">
                       <div className="flex items-center gap-3">
-                        <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${r.checkOut ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"}`}>
+                        <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${r.checkOut ? "bg-wangari-green-100 text-wangari-green-600" : "bg-wangari-amber-100 text-wangari-amber-600"}`}>
                           {r.checkOut ? <CheckCircle2 className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-gray-900">{new Date(r.date).toLocaleDateString("en-KE", { weekday: "short", month: "short", day: "numeric" })}</p>
-                          <p className="text-[10px] text-gray-400">{r.checkIn || "--:--"} → {r.checkOut || "--:--"}</p>
+                          <p className="text-xs font-bold text-wangari-gray-900">{new Date(r.date).toLocaleDateString("en-KE", { weekday: "short", month: "short", day: "numeric" })}</p>
+                          <p className="text-[10px] text-wangari-gray-400">{r.checkIn || "--:--"} → {r.checkOut || "--:--"}</p>
                         </div>
                       </div>
-                      <Badge className={r.checkOut ? "bg-gray-100 text-gray-600" : "bg-emerald-50 text-emerald-700"}>{r.checkOut ? "Full day" : "Present"}</Badge>
+                      <Badge className={r.checkOut ? "bg-wangari-gray-100 text-wangari-gray-600" : "bg-wangari-green-50 text-wangari-green-700"}>{r.checkOut ? "Full day" : "Present"}</Badge>
                     </div>
                   ))}
                 </div>
@@ -212,14 +212,14 @@ export default function WorkersPage() {
 
         {/* Quick actions */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <Card className="border border-gray-100">
+          <Card className="border border-wangari-gray-100">
             <CardContent className="p-5">
-              <h3 className="text-xs font-bold uppercase text-gray-400 tracking-wider mb-4">Quick Actions</h3>
+              <h3 className="text-xs font-bold uppercase text-wangari-gray-400 tracking-wider mb-4">Quick Actions</h3>
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => openEdit(w)} className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 text-badge-blue-text text-xs font-bold hover:bg-badge-blue-bg cursor-pointer">
+                <button onClick={() => openEdit(w)} className="flex items-center gap-2 p-3 rounded-xl bg-wangari-blue-50 text-badge-blue-text text-xs font-bold hover:bg-badge-blue-bg cursor-pointer">
                   <Edit3 className="h-4 w-4" />Edit Details
                 </button>
-                <button onClick={() => handleToggleStatus(w.id, w.status)} className={`flex items-center gap-2 p-3 rounded-xl text-xs font-bold cursor-pointer ${w.status === "active" ? "bg-tone-bad-bg text-red-600 hover:bg-badge-red-bg" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"}`}>
+                <button onClick={() => handleToggleStatus(w.id, w.status)} className={`flex items-center gap-2 p-3 rounded-xl text-xs font-bold cursor-pointer ${w.status === "active" ? "bg-tone-bad-bg text-wangari-red-600 hover:bg-badge-red-bg" : "bg-wangari-green-50 text-wangari-green-600 hover:bg-wangari-green-100"}`}>
                   {w.status === "active" ? <><UserX className="h-4 w-4" />Deactivate</> : <><UserCheck className="h-4 w-4" />Activate</>}
                 </button>
               </div>
@@ -294,19 +294,19 @@ export default function WorkersPage() {
 
       {/* Farm Connection Code Banner */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <Card className="border-2 border-emerald-300 bg-emerald-50/80 p-5 rounded-2xl shadow-sm">
+        <Card className="border-2 border-wangari-green-300 bg-wangari-green-50/80 p-5 rounded-2xl shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 rounded-xl bg-wangari-green-800 text-white flex items-center justify-center font-bold shrink-0">
                 <Building2 className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Farm Connection Code</p>
+                <p className="text-xs font-bold text-wangari-green-800 uppercase tracking-wider">Farm Connection Code</p>
                 <p className="text-sm text-wangari-heading font-semibold mt-0.5">Share this code with your farm workers to log in from their phones:</p>
               </div>
             </div>
-            <div className="bg-white border-2 border-emerald-400 px-4 py-2 rounded-xl text-center shadow-xs shrink-0">
-              <p className="text-xs text-gray-400 font-bold uppercase">Farm Code</p>
+            <div className="bg-white border-2 border-wangari-green-400 px-4 py-2 rounded-xl text-center shadow-xs shrink-0">
+              <p className="text-xs text-wangari-gray-400 font-bold uppercase">Farm Code</p>
               <div className="flex items-center gap-2">
                 <p className="text-xl font-black text-wangari-green-800 tracking-widest">{farmCode || "…"}</p>
                 <button onClick={copyCode} className="text-wangari-green-800 hover:text-wangari-green-900 cursor-pointer" title="Copy farm code"><Copy className="h-4 w-4" /></button>
@@ -320,8 +320,8 @@ export default function WorkersPage() {
       <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {[
           { title: "Active Workers", value: String(activeWorkers.length), icon: <Users className="h-5 w-5" />, color: "bg-wangari-green-800" },
-          { title: "Daily Wages", value: `KES ${totalDailyWages.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-emerald-500" },
-          { title: "Monthly Estimate", value: `KES ${monthlyCost.toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, color: "bg-amber-500" },
+          { title: "Daily Wages", value: `KES ${totalDailyWages.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "bg-wangari-green-500" },
+          { title: "Monthly Estimate", value: `KES ${monthlyCost.toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, color: "bg-wangari-amber-500" },
         ].map(kpi => (
           <motion.div key={kpi.title} variants={fadeUp}>
             <Card className="border border-wangari-border">
@@ -367,7 +367,7 @@ export default function WorkersPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 mt-3 text-[10px] text-wangari-subtle">
-                      <Badge className={w.status === "active" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-gray-100 text-wangari-muted border-wangari-border"}>{w.status}</Badge>
+                      <Badge className={w.status === "active" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-wangari-gray-100 text-wangari-muted border-wangari-border"}>{w.status}</Badge>
                       <span>{daysWorked} days worked</span>
                       <span className="ml-auto text-wangari-subtle">→</span>
                     </div>

@@ -91,7 +91,7 @@ export function SyncStatus() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${online ? "bg-wangari-green-50" : "bg-tone-warn-bg"}`}>
-                {online ? <CheckCircle2 className="h-5 w-5 text-wangari-green-600" /> : <CloudOff className="h-5 w-5 text-amber-600" />}
+                {online ? <CheckCircle2 className="h-5 w-5 text-wangari-green-600" /> : <CloudOff className="h-5 w-5 text-wangari-amber-600" />}
               </div>
               <div>
                 <p className="text-sm font-bold text-wangari-heading">
@@ -141,7 +141,7 @@ export function SyncStatus() {
                       <Clock className="h-3 w-3" /> {ageLabel(item.queuedAt)}
                     </p>
                   </div>
-                  <Badge className="shrink-0 bg-amber-100 text-amber-800 hover:bg-amber-100">Waiting</Badge>
+                  <Badge className="shrink-0 bg-wangari-amber-100 text-wangari-amber-800 hover:bg-wangari-amber-100">Waiting</Badge>
                 </li>
               ))}
             </ul>
