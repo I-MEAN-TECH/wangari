@@ -26,6 +26,7 @@ function VerifyEmailForm() {
   const email = searchParams.get("email") || "";
 
   const [code, setCode] = React.useState(["", "", "", "", "", ""]);
+  const codeFull = code.every((d) => d !== "");
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [verified, setVerified] = React.useState(false);
@@ -263,7 +264,13 @@ function VerifyEmailForm() {
               maxLength={1}
               value={digit}
               onChange={(e) => handleCodeChange(i, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(i, e)}
+              onKeyDown={(e) => {
+                handleKeyDown(i, e);
+                if (e.key === "Enter" && codeFull) {
+                  e.preventDefault();
+                  handleVerify(code.join(""));
+                }
+              }}
               onPaste={i === 0 ? handlePaste : undefined}
               disabled={loading}
               className="w-12 h-14 text-center text-xl font-bold rounded-xl border-wangari-border focus:border-wangari-green-800 focus:ring-wangari-green-800/20 transition-all"
@@ -276,6 +283,21 @@ function VerifyEmailForm() {
           <div className="flex items-center justify-center gap-2 text-sm text-wangari-muted">
             <Loader2 className="h-4 w-4 animate-spin" />
             Verifying...
+          </div>
+        )}
+
+        {/* Verify button — visible on desktop so a farmer isn't forced to focus
+e            each of the 6 boxes one by one. Clicking it is the same as typing the
+            last digit (which auto-submits). */}
+        {!loading && codeFull && (
+          <div className="flex justify-center">
+            <Button
+              onClick={() => handleVerify(code.join(""))}
+              className="h-12 rounded-xl bg-wangari-green-800 hover:bg-wangari-green-900 text-white font-bold text-sm transition-all cursor-pointer shadow-md"
+            >
+              Verify code
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
           </div>
         )}
       </motion.div>

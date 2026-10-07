@@ -333,11 +333,9 @@ function LoginForm() {
               Forgot password?
             </Link>
           </div>
-          )}
-
-          <Button
+          )}            <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !email || !password}
             className="w-full h-12 rounded-2xl bg-wangari-green-800 hover:bg-wangari-green-900 text-white font-black text-sm transition-all cursor-pointer shadow-md"
           >
             {loading ? (
@@ -356,7 +354,7 @@ function LoginForm() {
                 <ArrowRight className="h-4 w-4 ml-2" />
               </>
             )}
-          </Button>
+          </button>
         </motion.form>
       )}
 
@@ -390,9 +388,7 @@ function LoginForm() {
                 className="h-12 pl-11 rounded-xl border-wangari-border focus:border-wangari-green-800 uppercase font-black tracking-wider text-sm"
               />
             </div>
-          </div>
-
-          <div className="space-y-1.5">
+          </div>            <div className="space-y-1.5">
             <Label htmlFor="workerPin" className="text-xs font-bold text-wangari-text">
               Your 4-Digit Worker PIN
             </Label>
@@ -402,9 +398,10 @@ function LoginForm() {
                 id="workerPin"
                 type="password"
                 maxLength={4}
+                inputMode="numeric"
                 placeholder="e.g. 1234"
                 value={workerPin}
-                onChange={(e) => setWorkerPin(e.target.value)}
+                onChange={(e) => setWorkerPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
                 onFocus={() => setAvatarState("typing-password")}
                 onBlur={() => setAvatarState("idle")}
                 required
@@ -413,7 +410,7 @@ function LoginForm() {
             </div>
           </div>
 
-          <Button
+          <button
             type="submit"
             disabled={loading || !workerPin}
             className="w-full h-14 rounded-2xl bg-wangari-green-800 hover:bg-wangari-green-900 text-white font-black text-base transition-all cursor-pointer shadow-lg active:scale-98"
@@ -429,7 +426,7 @@ function LoginForm() {
                 <ArrowRight className="h-5 w-5 ml-2" />
               </>
             )}
-          </Button>
+          </button>
         </motion.form>
       )}
 
