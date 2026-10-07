@@ -233,11 +233,11 @@ function LoginForm() {
 
       {/* ─── TAB 1: FARM OWNER FORM ─── */}
       {userRole === "owner" && (
-        <motion.form
-          variants={fadeUp}
+        <form
           onSubmit={handleOwnerSubmit}
           className="space-y-4"
         >
+          <motion.div variants={fadeUp}>
           <div className="space-y-1.5">
             <Label htmlFor="email" className="text-xs font-bold text-wangari-text">
               Email Address
@@ -355,16 +355,17 @@ function LoginForm() {
               </>
             )}
           </button>
-        </motion.form>
+        </motion.div>
+        </form>
       )}
 
       {/* ─── TAB 2: FARM WORKER CODE LOGIN ─── */}
       {userRole === "worker" && (
-        <motion.form
-          variants={fadeUp}
+        <form
           onSubmit={handleWorkerSubmit}
           className="space-y-4"
         >
+          <motion.div variants={fadeUp}>
           <div className="p-4 rounded-2xl bg-wangari-green-50 border border-wangari-green-200">
             <p className="text-xs font-bold text-wangari-green-900">
               Ask your Farm Owner for your Farm Connection Code or 4-digit PIN.
@@ -427,7 +428,8 @@ function LoginForm() {
               </>
             )}
           </button>
-        </motion.form>
+        </motion.div>
+        </form>
       )}
 
       {/* Google Sign-In (Owner only) */}
