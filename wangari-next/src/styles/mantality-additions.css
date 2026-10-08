@@ -2145,12 +2145,31 @@
    MOBILE BUTTON SCALING & COMPACT UX
    ══════════════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
-  .wc .arrow-fill-button.arrow-fill-button {
+  .wc .arrow-fill-button:not(.program-card) {
     min-height: 46px;
     --circle: 32px;
     padding: 8px 46px 8px 18px;
     font-size: 13px;
     border-radius: 999px;
+  }
+
+  .wc .program-card.program-card {
+    border-radius: 24px !important;
+    height: auto !important;
+    min-height: 240px !important;
+    padding: 24px 20px !important;
+  }
+
+  .wc .program-card .program-card-body h3 {
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+    margin-top: 8px !important;
+  }
+
+  .wc .program-card .program-card-body p {
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    margin-top: 8px !important;
   }
 
   .wc .hero.reference-hero .hero-copy .arrow-fill-button {
