@@ -7,6 +7,25 @@ const allowedOrigins = [
   "http://localhost:3099",
 ];
 
+// React's development build calls eval() to rebuild call stacks across module
+// boundaries and to power Fast Refresh. A CSP without 'unsafe-eval' blocks it,
+// so every route logged "eval() is not supported in this environment" and the
+// dev overlay showed an error badge on each page. React's production build
+// never calls eval(), so the allowance is scoped to `next dev` and the policy
+// that actually ships is unchanged.
+const isDev = process.env.NODE_ENV !== "production";
+
+const scriptSrc = [
+  "'self'",
+  // The App Router ships inline bootstrap scripts and no nonce pipeline is
+  // wired yet — without this the app renders nothing.
+  "'unsafe-inline'",
+  ...(isDev ? ["'unsafe-eval'"] : []),
+  "https://accounts.google.com",
+  "https://eu.i.posthog.com",
+  "https://eu.posthog.com",
+].join(" ");
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -59,6 +78,10 @@ const nextConfig: NextConfig = {
         // without it the app renders nothing. It still stops any script
         // from an origin not on this list. Replacing it with a nonce +
         // 'strict-dynamic' is the known next hardening step.
+        //
+        // 'unsafe-eval' is added in development only (see `scriptSrc` above).
+        // It must never reach production: the whole point of script-src here
+        // is to stop an injected string from being evaluated.
         {
           key: "Content-Security-Policy",
           value: [
@@ -66,7 +89,7 @@ const nextConfig: NextConfig = {
             "base-uri 'self'",
             "object-src 'none'",
             "frame-ancestors 'self'",
-            "script-src 'self' 'unsafe-inline' https://accounts.google.com https://eu.i.posthog.com https://eu.posthog.com",
+            `script-src ${scriptSrc}`,
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
             "font-src 'self' data: https://fonts.gstatic.com",
             "img-src 'self' data: blob: https:",

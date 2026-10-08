@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Bricolage_Grotesque, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -7,6 +7,20 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-inter",
+});
+
+/* Marketing-site typography. The public pages use a Bricolage Grotesque
+   headline face over DM Sans body copy; the app keeps Inter. */
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-heading",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-body",
 });
 
 export const metadata: Metadata = {
@@ -101,7 +115,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${bricolage.variable} ${dmSans.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

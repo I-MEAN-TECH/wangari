@@ -14,7 +14,10 @@ const BRAND = {
   textColor: THEME["wangari-text"],
   mutedColor: THEME["wangari-muted"],
   borderColor: THEME["wangari-border"],
-  logoUrl: "https://wangari.imeantech.com/logo.png",
+  /* Must match the mark the header and footer use. The old value pointed at
+     /logo.png, which has never existed in public/ — nothing renders it today,
+     but a mail template that carries a 404 is a trap for the next editor. */
+  logoUrl: "https://wangari.imeantech.com/images/wangari-real-logo.png",
 };
 
 function wrap(body: string): string {

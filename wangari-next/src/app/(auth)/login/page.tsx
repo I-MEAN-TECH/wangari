@@ -27,6 +27,10 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const { setAvatarState } = React.useContext(AuthAvatarContext);
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Role Tab state: "owner" | "worker"
   const [userRole, setUserRole] = React.useState<"owner" | "worker">("owner");
@@ -48,6 +52,7 @@ function LoginForm() {
   const [loading, setLoading] = React.useState(false);
 
   const googleButtonRef = React.useRef<HTMLDivElement>(null);
+  const googleInitializedRef = React.useRef(false);
   const [googleLoaded, setGoogleLoaded] = React.useState(false);
 
   React.useEffect(() => {
@@ -57,41 +62,40 @@ function LoginForm() {
 
     const setupGoogle = () => {
       if (window.google?.accounts?.id) {
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: async (response: any) => {
-            try {
-              setError("");
-              setLoading(true);
-              setAvatarState("loading");
-              await googleLogin(response.credential);
-              setAvatarState("success");
-              router.push(callbackUrl);
-            } catch (err) {
-              setAvatarState("error");
-              // Google proved WHO you are, but this identity has never been
-              // used on Wangari. The server refuses to auto-create a farm — so
-              // send the farmer to registration instead of into a placeholder
-              // farm (see routes/auth.ts). Identity from Google; ownership of a
-              // farm comes from stating the farm.
-              if (err instanceof AccountNotProvisionedError) {
+        if (!googleInitializedRef.current) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: async (response: any) => {
+              try {
                 setError("");
-                router.push(
-                  `/register?googleEmail=${encodeURIComponent(err.email ?? "")}`
-                );
-                return;
+                setLoading(true);
+                setAvatarState("loading");
+                await googleLogin(response.credential);
+                setAvatarState("success");
+                router.push(callbackUrl);
+              } catch (err) {
+                setAvatarState("error");
+                if (err instanceof AccountNotProvisionedError) {
+                  setError("");
+                  router.push(
+                    `/register?googleEmail=${encodeURIComponent(err.email ?? "")}`
+                  );
+                  return;
+                }
+                setError(err instanceof Error ? err.message : "Google sign-in failed");
+              } finally {
+                setLoading(false);
               }
-              setError(err instanceof Error ? err.message : "Google sign-in failed");
-            } finally {
-              setLoading(false);
-            }
-          },
-        });
+            },
+          });
+          googleInitializedRef.current = true;
+        }
         if (googleButtonRef.current) {
+          googleButtonRef.current.innerHTML = "";
           window.google.accounts.id.renderButton(googleButtonRef.current, {
             theme: "outline",
             size: "large",
-            width: "100%",
+            width: 380,
           });
         }
         setGoogleLoaded(true);
@@ -175,8 +179,17 @@ function LoginForm() {
     }
   };
 
+  if (!mounted) {
+    return (
+      <div className="space-y-6 min-h-[380px] flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-wangari-green-800" />
+      </div>
+    );
+  }
+
   return (
     <motion.div
+      suppressHydrationWarning
       initial="hidden"
       animate="visible"
       variants={stagger}
@@ -313,45 +326,47 @@ function LoginForm() {
             <button
               type="button"
               onClick={() => { setMfaStep(false); setTotpCode(""); setError(""); }}
-              className="text-xs font-bold text-wangari-muted hover:text-wangari-text"
+              className="text-xs font-bold text-wangari-muted hover:text-wangari-text transition-colors"
             >
               ← Back to password
             </button>
           ) : (
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-xs font-semibold text-wangari-muted cursor-pointer">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-wangari-border text-wangari-green-800 focus:ring-wangari-green-800/20"
-              />
-              Remember me
-            </label>
-            <Link
-              href="/forgot-password"
-              className="text-xs font-bold text-wangari-green-800 hover:underline"
-            >
-              Forgot password?
-            </Link>
-          </div>
-          )}            <button
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 text-xs font-semibold text-wangari-muted cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-wangari-border text-wangari-green-800 focus:ring-wangari-green-800/20"
+                />
+                Remember me
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-xs font-bold text-wangari-green-800 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+          )}
+
+          <button
             type="submit"
-            disabled={loading || !email || !password}
-            className="w-full h-12 rounded-2xl bg-wangari-green-800 hover:bg-wangari-green-900 text-white font-black text-sm transition-all cursor-pointer shadow-md"
+            disabled={loading || !email || (mfaStep ? !totpCode : !password)}
+            className="w-full h-12 mt-6 rounded-2xl bg-wangari-green-800 hover:bg-wangari-green-900 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-sm transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                VERIFYING CODE...
+                <Loader2 className="h-4 w-4 animate-spin" />
+                VERIFYING...
               </>
             ) : mfaStep ? (
               <>
                 VERIFY CODE
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRight className="h-4 w-4" />
               </>
             ) : (
               <>
                 SIGN IN AS FARMER
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRight className="h-4 w-4" />
               </>
             )}
           </button>
@@ -365,7 +380,7 @@ function LoginForm() {
           onSubmit={handleWorkerSubmit}
           className="space-y-4"
         >
-          <motion.div variants={fadeUp}>
+          <motion.div variants={fadeUp} className="space-y-4">
           <div className="p-4 rounded-2xl bg-wangari-green-50 border border-wangari-green-200">
             <p className="text-xs font-bold text-wangari-green-900">
               Ask your Farm Owner for your Farm Connection Code or 4-digit PIN.
@@ -389,7 +404,9 @@ function LoginForm() {
                 className="h-12 pl-11 rounded-xl border-wangari-border focus:border-wangari-green-800 uppercase font-black tracking-wider text-sm"
               />
             </div>
-          </div>            <div className="space-y-1.5">
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="workerPin" className="text-xs font-bold text-wangari-text">
               Your 4-Digit Worker PIN
             </Label>
@@ -414,17 +431,17 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading || !workerPin}
-            className="w-full h-14 rounded-2xl bg-wangari-green-800 hover:bg-wangari-green-900 text-white font-black text-base transition-all cursor-pointer shadow-lg active:scale-98"
+            className="w-full h-14 rounded-2xl bg-wangari-green-800 hover:bg-wangari-green-900 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-base transition-all cursor-pointer shadow-lg active:scale-98 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                <Loader2 className="h-5 w-5 animate-spin" />
                 CONNECTING...
               </>
             ) : (
               <>
                 CONNECT & LOG IN
-                <ArrowRight className="h-5 w-5 ml-2" />
+                <ArrowRight className="h-5 w-5" />
               </>
             )}
           </button>

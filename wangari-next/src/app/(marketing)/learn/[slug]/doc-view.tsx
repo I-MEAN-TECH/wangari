@@ -1,19 +1,26 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { Lock, GraduationCap, Sparkles, ArrowRight } from "lucide-react";
+
+import { ArrowFillButton } from "@/components/clone/ArrowFillButton";
+import { PageHero } from "@/components/clone/PageHero";
 import { DocReader } from "@/components/learn/DocReader";
 import { isLoggedIn } from "@/lib/auth-client";
 import type { LearnDoc } from "@/lib/learn-library";
 
 /**
- * Public doc gate — the membership play.
+ * Public document gate — the membership play.
  *
- * Visitors: see the first 2 chapters for free, then a locked member overlay
- * (with the live-data panels hidden entirely — that's the members-only magic).
- * Logged-in users: the full document, and links stay in the dashboard library.
+ * Visitors: the first two chapters, then a locked panel. Logged-in users: the
+ * full document. Rebuilt on the public site's design system so a reader who
+ * arrived from the home page never sees the page change character mid-scroll.
+ *
+ * The gate itself is unchanged: same FREE_SECTIONS count, same teaser
+ * behaviour, same hand-off to the dashboard reader for members.
  */
+
+const FREE_SECTIONS = 2;
+
 export function PublicDocGate({ doc }: { doc: LearnDoc }) {
   const [member, setMember] = React.useState<boolean | null>(null);
 
@@ -22,91 +29,74 @@ export function PublicDocGate({ doc }: { doc: LearnDoc }) {
   }, []);
 
   if (member === null) {
-    // avoid flash: render nothing meaningful while checking auth
-    return <div className="min-h-[60vh]" />;
+    // Avoid a flash: render nothing meaningful while the auth check resolves.
+    return <div style={{ minHeight: "60vh" }} />;
   }
 
   if (member) {
-    // Full document — but keep navigation inside the dashboard library
+    // Full document — but keep navigation inside the dashboard library.
     return <DocReader doc={doc} context="dashboard" />;
   }
 
-  // ── Visitor teaser: first 2 sections + locked overlay ──
-  const FREE_SECTIONS = 2;
-  const headings = doc.sections.slice(0, FREE_SECTIONS);
+  const chapters = doc.sections.slice(0, FREE_SECTIONS);
 
   return (
-    <div className="min-h-screen bg-wangari-paper">
-      <div className="mx-auto max-w-3xl px-4 pb-24 pt-8 md:px-8">
-        <header className="mb-8 border-b border-wangari-stone-200 pb-6">
-          <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-wangari-green-700">
-            <GraduationCap className="h-4 w-4" /> Wangari Learn Center — free preview
-          </p>
-          <h1 className="text-3xl font-black leading-tight tracking-tight text-wangari-stone-900 md:text-4xl">
-            {doc.emoji} {doc.title}
-          </h1>
-          <p className="mt-3 text-sm italic text-wangari-stone-500">{doc.summary}</p>
-        </header>
+    <>
+      <PageHero
+        eyebrow="WANGARI LEARN CENTER — FREE PREVIEW"
+        title={
+          <>
+            <span aria-hidden="true">{doc.emoji}</span> {doc.title}
+          </>
+        }
+        lead={doc.summary}
+      />
 
-        {headings.map((s, i) => (
-          <section key={i} className="mb-8">
-            <h2 className="mb-3 flex items-baseline gap-3 text-xl font-extrabold tracking-tight text-wangari-stone-900">
-              <span className="text-sm font-black text-wangari-green-600/60">{String(i + 1).padStart(2, "0")}</span>
-              {s.heading}
-            </h2>
-            {s.body.startsWith("list:") ? (
-              <ul className="mt-2 space-y-2">
-                {s.body.slice(5).split("\n").filter(Boolean).map((li, j) => (
-                  <li key={j} className="flex gap-2.5 leading-relaxed text-wangari-stone-700">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-wangari-green-500" />
-                    <span className="text-[15px]">{li}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-[15px] leading-relaxed text-wangari-stone-700">{s.body}</p>
-            )}
-          </section>
-        ))}
-
-        {/* Locked member overlay */}
-        <div className="relative overflow-hidden rounded-3xl border border-wangari-green-200 bg-gradient-to-br from-wangari-green-950 via-wangari-green-900 to-wangari-teal-900 p-8 md:p-10">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-wangari-green-500/10 blur-3xl" />
-          <div className="relative text-center">
-            <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-              <Lock className="h-6 w-6 text-wangari-green-300" />
-            </span>
-            <h2 className="text-xl font-black text-white md:text-2xl">
-              Read the rest — free with an account
-            </h2>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-wangari-green-100/80">
-              You&apos;ve read the first {FREE_SECTIONS} chapters. Create a free
-              account to unlock all {doc.sections.length} chapters of this guide,
-              the complete library of {14}+ documents, and the live panels:
-              this week&apos;s rain outlook built into every guide, live farm
-              news with risk alerts, and reminders generated from your own
-              records.
-            </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-extrabold text-wangari-green-900 shadow-xl transition-all hover:-translate-y-0.5"
-              >
-                Create free account <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 rounded-full bg-white/10 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/25 transition-all hover:bg-white/15"
-              >
-                Already a member? Sign in
-              </Link>
+      <section className="section stack-section">
+        <div className="doc-reader">
+          {chapters.map((section, i) => (
+            <div key={section.heading}>
+              <h2>
+                <span className="doc-chapter-no">{String(i + 1).padStart(2, "0")}</span>
+                {section.heading}
+              </h2>
+              {section.body.startsWith("list:") ? (
+                <ul>
+                  {section.body
+                    .slice(5)
+                    .split("\n")
+                    .filter(Boolean)
+                    .map((line, j) => (
+                      <li key={j}>{line}</li>
+                    ))}
+                </ul>
+              ) : (
+                <p>{section.body}</p>
+              )}
             </div>
-            <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-wangari-green-300/70">
-              <Sparkles className="h-3 w-3" /> Free forever — no card required
+          ))}
+
+          <div className="doc-lock">
+            <h2>Read the rest — free with an account</h2>
+            <p>
+              You&apos;ve read the first {FREE_SECTIONS} chapters. Create a free account to unlock
+              all {doc.sections.length} chapters of this guide, the complete library, and the live
+              panels: this week&apos;s rain outlook built into every guide, live farm news with risk
+              alerts, and reminders generated from your own records.
             </p>
+            <div className="page-actions">
+              <ArrowFillButton href="/register" className="button primary">
+                Create free account
+              </ArrowFillButton>
+              <a className="site-sign-in" href="/login">
+                Already a member? Sign in
+              </a>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </>
   );
 }
+
+export default PublicDocGate;

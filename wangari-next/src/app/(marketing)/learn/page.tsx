@@ -1,7 +1,21 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { BookOpen, GraduationCap, ArrowRight, Lock, Sparkles } from "lucide-react";
-import { LibraryGrid } from "@/components/learn/LibraryGrid";
+
+import { ArrowFillButton } from "@/components/clone/ArrowFillButton";
+import { CtaBand } from "@/components/clone/CtaBand";
+import { LearnShelf } from "@/components/clone/LearnShelf";
+import { PageHero } from "@/components/clone/PageHero";
+
+/**
+ * Public /learn — the free library.
+ *
+ * Visitors browse and read real documents on our own screens, and member-only
+ * documents show as teasers; the full library unlocks inside the dashboard.
+ * That contrast is the subscription pitch, so the lock has to be visible
+ * rather than hidden.
+ *
+ * Same data as the dashboard library, drawn in the public site's design
+ * system.
+ */
 
 export const metadata: Metadata = {
   title: "Learn Center — Free Farming Knowledge | Wangari Farm OS",
@@ -9,80 +23,88 @@ export const metadata: Metadata = {
     "A free digital library for Kenyan farmers: growing guides, farming-type handbooks and farmer-rights documents — readable right here, no account needed.",
 };
 
-/**
- * Public /learn — the free library. Visitors browse and read real documents
- * on OUR screens (no external redirects). Member-only documents show as
- * teasers; the full library unlocks inside the dashboard — that contrast is
- * the subscription pitch.
- */
+const MEMBER_PANELS = [
+  { value: "Live rain outlook", copy: "woven into every growing guide, from your own location" },
+  { value: "Reminders", copy: "vaccination and calving dates generated from your records" },
+  { value: "Weekly advisory", copy: "farm news with risk alerts, in your inbox" },
+  { value: "The full farm OS", copy: "sales, inventory, invoices, workers and AI insights" },
+];
+
 export default function PublicLearnPage() {
   return (
-    <main className="min-h-screen bg-wangari-paper">
-      {/* Hero */}
-      <section className="border-b border-wangari-stone-200 bg-gradient-to-b from-wangari-green-50/60 to-transparent">
-        <div className="mx-auto max-w-6xl px-6 py-16 md:py-20">
-          <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-wangari-green-700">
-            <BookOpen className="h-4 w-4" /> Wangari Learn Center
+    <>
+      <PageHero
+        eyebrow="WANGARI LEARN CENTER"
+        title={
+          <>
+            The farming library
+            <br />
+            Kenya&apos;s farmers <span className="serif-word">actually read.</span>
+          </>
+        }
+        lead="Growing guides, farming-type handbooks and your rights as a farmer — written for Kenya, readable right here. No account needed to start."
+      >
+        <ArrowFillButton href="/register" className="button primary">
+          Unlock the full library — free
+        </ArrowFillButton>
+        <a className="site-sign-in" href="/pricing">
+          See plans
+        </a>
+      </PageHero>
+
+      <section className="section stack-section">
+        <LearnShelf />
+      </section>
+
+      <section className="section stack-section">
+        <div className="panel panel-deep cta-band">
+          <div className="eyebrow">INSIDE THE DASHBOARD</div>
+          <h2>
+            This page is the free version.
+            <br />
+            <span className="serif-word">Members get the whole library.</span>
+          </h2>
+          <p>
+            The guides stay free forever. What members add is the live layer on top of them — the
+            part that uses your own numbers.
           </p>
-          <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-wangari-stone-900 md:text-5xl">
-            The farming library Kenya&apos;s
-            <span className="bg-gradient-to-r from-wangari-green-600 to-wangari-teal-500 bg-clip-text text-transparent"> farmers actually read</span>
-          </h1>
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-wangari-stone-600">
-            Growing guides, farming-type handbooks and your rights as a farmer —
-            written for Kenya, readable right here on this page. No account
-            needed to start. Members unlock the full library inside the app,
-            with live weather and this week&apos;s farm news built into every guide.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-full bg-wangari-green-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:-translate-y-0.5 hover:bg-wangari-green-700"
-            >
-              <GraduationCap className="h-4 w-4" /> Unlock the full library — free
-            </Link>
-            <Link
-              href="/pricing"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-wangari-stone-700 ring-1 ring-wangari-stone-200 transition-all hover:ring-wangari-green-300"
-            >
-              See plans <ArrowRight className="h-4 w-4" />
-            </Link>
+          <div className="page-actions">
+            <ArrowFillButton href="/register" className="button primary">
+              Create your free account
+            </ArrowFillButton>
+            <a className="site-sign-in" href="/login">
+              Sign in
+            </a>
           </div>
         </div>
       </section>
 
-      {/* Library shelf */}
-      <section className="mx-auto max-w-6xl px-6 py-12">
-        <LibraryGrid isMember={false} />
-      </section>
-
-      {/* Member upsell */}
-      <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-wangari-green-950 via-wangari-green-900 to-wangari-teal-900 p-8 md:p-12">
-          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-wangari-green-500/10 blur-3xl" />
-          <div className="relative">
-            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-wangari-green-300">
-              <Lock className="h-3.5 w-3.5" /> Inside the dashboard
-            </p>
-            <h2 className="mt-3 max-w-xl text-2xl font-black leading-tight text-white md:text-3xl">
-              This page is the free version.
-              <span className="text-wangari-green-300"> Members get the whole library.</span>
-            </h2>
-            <ul className="mt-6 grid gap-3 text-sm text-wangari-green-100/90 md:grid-cols-2">
-              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-wangari-green-300" /> Live rain outlooks woven into every growing guide</li>
-              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-wangari-green-300" /> Vaccination &amp; calving reminders generated from your own records</li>
-              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-wangari-green-300" /> Daily farm-news advisory with risk alerts in your inbox</li>
-              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-wangari-green-300" /> The full farm OS: sales, inventory, invoices, workers, AI insights</li>
-            </ul>
-            <Link
-              href="/register"
-              className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-extrabold text-wangari-green-900 shadow-xl transition-all hover:-translate-y-0.5"
-            >
-              Create your free account <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+      <section className="section stack-section">
+        <div className="grid-4">
+          {MEMBER_PANELS.map((p) => (
+            <div className="stat" key={p.value}>
+              <strong>{p.value}</strong>
+              <span>{p.copy}</span>
+            </div>
+          ))}
         </div>
       </section>
-    </main>
+
+      <CtaBand
+        eyebrow="FREE FOREVER"
+        title={
+          <>
+            Read the guides now.
+            <br />
+            <span className="serif-word">Add your farm</span> when you&apos;re ready.
+          </>
+        }
+        copy="Fourteen days free, no card, and nothing to install from a store."
+        ctaLabel="Start free — 14 days"
+        ctaHref="/register"
+        secondaryLabel="See pricing"
+        secondaryHref="/pricing"
+      />
+    </>
   );
 }

@@ -1,0 +1,107 @@
+/* ══════════════════════════════════════════════════════════════════════
+   PUBLIC SITE THEME — the single place a colour is decided.
+
+   The design system we ported was authored with its own literal palette
+   (a slate-purple ink, a near-white base and a yellow accent). This file
+   re-points that palette at Wangari's own system colours — green and cream —
+   without touching a single rule in the ported stylesheet.
+
+   How to use it:
+     • Never write a colour literal in a component or in the ported CSS.
+       Reference a token from this file instead.
+     • Change a value here and the whole public site follows: every band,
+       button, card tint, badge and photo-shade is derived from these.
+
+   Names follow the app's `--color-wangari-*` tokens, which are declared in
+   globals.css @theme and mirrored in src/lib/theme.ts. If a value here is
+   ever needed in JS, add it to the mirror rather than copying the literal.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.wc {
+  /* ── Core surfaces ───────────────────────────────────────────────── */
+  --wc-base: var(--color-wangari-cream); /* page background          */
+  --wc-white: var(--color-wangari-card); /* true white panels        */
+  --wc-surface: var(--color-wangari-green-50); /* soft tinted panel  */
+  --wc-hairline: var(--color-wangari-border); /* neutral 1px borders */
+
+  /* ── Ink (text + dark bands) ─────────────────────────────────────── */
+  --wc-ink: var(--color-wangari-green-900); /* primary text, dark bands */
+  --wc-ink-deep: var(--color-wangari-green-950); /* deepest surface     */
+  --wc-muted: var(--color-wangari-muted); /* secondary body copy       */
+  --wc-muted-strong: var(--color-wangari-subtle); /* emphasised secondary */
+
+  /* ── Accent (primary call to action) ─────────────────────────────── */
+  --wc-accent: var(--color-wangari-green-400);
+  --wc-accent-strong: var(--color-wangari-green-500);
+  /* Text that sits on the accent. The ported stylesheet paints the button
+     label with --ink, so keep these two in step if the accent darkens. */
+  --wc-on-accent: var(--color-wangari-green-950);
+  --wc-green: var(--color-wangari-green-600); /* focus rings, structure */
+  --wc-info: var(--color-wangari-blue-600); /* informational only      */
+  --wc-danger: var(--color-wangari-red-600); /* form errors only        */
+
+  /* ── Card tints ──────────────────────────────────────────────────── */
+  --wc-tone-1: var(--color-wangari-green-100);
+  --wc-tone-1-strong: var(--color-wangari-green-200);
+  --wc-tone-2: var(--color-wangari-amber-100);
+  --wc-tone-2-strong: var(--color-wangari-amber-300);
+  --wc-tone-3: var(--color-wangari-green-200);
+  --wc-tone-3-strong: var(--color-wangari-green-300);
+  --wc-tone-4: var(--color-wangari-orange-50);
+  --wc-tone-4-strong: var(--color-wangari-orange-300);
+
+  /* ── Photo treatment ─────────────────────────────────────────────── */
+  /* The hero and portrait images sit under a shade gradient. Deriving it
+     from the brand green instead of the original teal keeps the imagery in
+     the same family as the rest of the page. */
+  --wc-shade: var(--color-wangari-green-950);
+  --wc-shade-soft: var(--color-wangari-green-900);
+  --wc-shadow: var(--color-wangari-green-950);
+
+  /* ── Avatars ─────────────────────────────────────────────────────── */
+  /* Illustrative portrait palette. Kept as tokens so the avatar component
+     never spells a colour, and so the set can be tuned in one place. */
+  --wc-avatar-bg-1: var(--color-wangari-green-100);
+  --wc-avatar-bg-2: var(--color-wangari-amber-100);
+  --wc-avatar-bg-3: var(--color-wangari-green-200);
+  --wc-avatar-bg-4: var(--color-wangari-orange-50);
+  --wc-avatar-skin-1: #8d5b3f;
+  --wc-avatar-skin-2: #a9744f;
+  --wc-avatar-skin-3: #6b4229;
+  --wc-avatar-skin-4: #c08a63;
+  --wc-avatar-skin-5: #52301d;
+  --wc-avatar-hair-1: #1b1b1f;
+  --wc-avatar-hair-2: #2f2118;
+  --wc-avatar-hair-3: #4a3a2c;
+  --wc-avatar-hair-4: #3a2418;
+  --wc-avatar-hair-5: #241a12;
+  --wc-avatar-cloth-1: var(--color-wangari-green-700);
+  --wc-avatar-cloth-2: var(--color-wangari-green-600);
+  --wc-avatar-cloth-3: var(--color-wangari-green-800);
+  --wc-avatar-cloth-4: var(--color-wangari-green-500);
+  /* Eyes and mouth. Darker than any skin tone so a 28px face still reads. */
+  --wc-avatar-line: var(--color-wangari-green-950);
+
+  /* ── Testimonial fan ────────────────────────────────────────────── */
+  /* Six card tints, in the order the source stacks them: two light tones,
+     then two deep ones that carry light text, then two soft tones. The
+     tones pair with one of two ink treatments (see mantality-additions.css),
+     so a tint only ever has to be chosen once. */
+  --wc-stack-bg-1: var(--color-wangari-green-200);
+  --wc-stack-bg-2: var(--color-wangari-amber-300);
+  --wc-stack-bg-3: var(--color-wangari-green-700);
+  --wc-stack-bg-4: var(--color-wangari-green-950);
+  --wc-stack-bg-5: var(--color-wangari-orange-50);
+  --wc-stack-bg-6: var(--color-wangari-green-100);
+  --wc-stack-ink: var(--color-wangari-green-900);
+
+  /* ── Compatibility aliases ──────────────────────────────────────── */
+  /* The ported stylesheet was written against these five names. They are
+     kept so nothing upstream has to change, and they resolve to the tokens
+     above — not to literals. */
+  --ink: var(--wc-ink);
+  --base: var(--wc-base);
+  --yellow: var(--wc-accent);
+  --lavender: var(--wc-tone-1-strong);
+  --green: var(--wc-green);
+}
