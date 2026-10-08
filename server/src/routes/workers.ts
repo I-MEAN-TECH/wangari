@@ -13,7 +13,7 @@ function normalizePin(pin: any): string | null {
 }
 
 const router = Router();
-router.use(authMiddleware, requireOwner);
+router.use(authMiddleware, requireFarm);
 
 // GET /api/workers
 router.get("/", async (req: Request, res: Response) => {

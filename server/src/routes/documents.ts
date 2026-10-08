@@ -205,7 +205,7 @@ router.get("/", async (req: Request, res: Response) => {
                 amount: Number(t.amount),
                 status: "recorded",
                 date: t.date,
-                link: "/transactions",
+                link: "/finances",
               });
             }
           })

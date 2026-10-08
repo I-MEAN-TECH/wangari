@@ -109,7 +109,6 @@ const navGroups: NavGroup[] = [
       { label: "Store / Inventory", href: "/inventory", icon: <Package className="h-5 w-5" /> },
       { label: "My Workers", href: "/workers", icon: <Users className="h-5 w-5" /> },
       { label: "Worker Attendance", href: "/attendance", icon: <Users className="h-5 w-5" /> },
-      { label: "Worker View", href: "/worker", icon: <ClipboardList className="h-5 w-5" /> },
     ],
   },
   {

@@ -235,7 +235,7 @@ export default function ReportsPage() {
                     <PieChart>
                       <Pie data={speciesPie} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} strokeWidth={2} stroke="#fff">
                         {speciesPie.map((_, i) => (
-                          <Cell key={i} fill={i === 0 ? GREEN : i === 1 ? LIGHT_GREEN : i === 2 ? "#86EFAC" : MUTED} />
+                          <Cell key={i} fill={["#166534", "#22C55E", "#86EFAC", "#94A3B8", "#F59E0B"][i % 5]} />
                         ))}
                       </Pie>
                       <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #E5E7EB", fontSize: 12 }} />
@@ -244,7 +244,7 @@ export default function ReportsPage() {
                   <div className="space-y-3">
                     {speciesPie.map((e, i) => (
                       <div key={e.name} className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full" style={{ background: [GREEN, LIGHT_GREEN, "var(--color-wangari-green-300)", MUTED][i] }} />
+                        <div className="h-3 w-3 rounded-full" style={{ background: ["#166534", "#22C55E", "#86EFAC", "#94A3B8", "#F59E0B"][i % 5] }} />
                         <span className="text-xs text-wangari-muted">{e.name}</span>
                         <span className="text-xs font-bold text-wangari-heading">{e.value.toLocaleString()}</span>
                       </div>
@@ -275,7 +275,7 @@ export default function ReportsPage() {
                 <div className="space-y-2">
                   {expensePie.sort((a, b) => b.value - a.value).slice(0, 6).map((e, i) => (
                     <div key={e.name} className="flex items-center gap-3">
-                      <div className="h-2.5 rounded-full" style={{ background: [GREEN, LIGHT_GREEN, "var(--color-wangari-green-300)", MUTED, "var(--color-wangari-rule)", "var(--color-wangari-sunken)"][i], width: `${Math.min((e.value / Math.max(...expensePie.map(x => x.value))) * 100, 100)}%` }} />
+                      <div className="h-2.5 rounded-full" style={{ background: ["#166534", "#22C55E", "#86EFAC", "#94A3B8", "#F59E0B", "#3B82F6"][i % 6], width: `${Math.min((e.value / Math.max(...expensePie.map(x => x.value))) * 100, 100)}%` }} />
                       <span className="text-xs text-wangari-muted flex-shrink-0">{e.name}</span>
                       <span className="text-xs font-bold text-wangari-heading ml-auto">KES {e.value.toLocaleString()}</span>
                     </div>

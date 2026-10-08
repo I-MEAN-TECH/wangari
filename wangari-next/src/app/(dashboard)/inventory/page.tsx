@@ -151,113 +151,87 @@ export default function InventoryPage() {
           action={<Button onClick={() => { resetForm(); setShowForm(!showForm); setStep(1); }} className="bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer"><Plus className="h-4 w-4 mr-2" />Add Item</Button>} />
       </motion.div>
 
-      {/* Add/Edit form — step by step */}
+      {/* Add/Edit form — unified single form */}
       <AnimatePresence>
         {showForm && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-            <Card className="border border-wangari-border">
+            <Card className="border border-wangari-border shadow-md">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-sm font-bold text-wangari-heading">{editingItem ? "Edit Item" : "Add Item"}</h3>
-                    <div className="flex gap-1">{[1, 2, 3].map(s => <div key={s} className={`h-1.5 w-8 rounded-full ${step >= s ? "bg-wangari-green-800" : "bg-wangari-border"}`} />)}</div>
-                  </div>
-                  <button onClick={() => { setShowForm(false); resetForm(); }} className="text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-4 w-4" /></button>
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-wangari-border">
+                  <h3 className="text-base font-bold text-wangari-heading">{editingItem ? "Edit Item" : "Add Inventory Item"}</h3>
+                  <button onClick={() => { setShowForm(false); resetForm(); }} className="text-wangari-subtle hover:text-wangari-muted cursor-pointer"><X className="h-5 w-5" /></button>
                 </div>
 
-                {step === 1 && (
-                  <div className="space-y-3">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-wangari-muted">What is the item? *</Label>
-                      <Input placeholder="e.g. Layer Mash, NPK 17:17:17, vaccines, diesel..." value={form.itemName} onChange={e => setForm({ ...form, itemName: e.target.value })} className="h-12 rounded-xl text-base" autoFocus />
+                      <Label className="text-xs font-semibold text-wangari-muted">Item Name *</Label>
+                      <Input placeholder="e.g. Layer Mash, NPK 17:17:17, Vaccines, Diesel..." value={form.itemName} onChange={e => setForm({ ...form, itemName: e.target.value })} className="h-11 rounded-xl text-sm" autoFocus />
                     </div>
+
                     <div className="space-y-1">
                       <Label className="text-xs font-semibold text-wangari-muted">Category</Label>
-                      {/* Quick-pick suggestions */}
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        {SUGGESTED_CATEGORIES.slice(0, 6).map(c => (
-                          <button key={c} onClick={() => setForm({ ...form, category: c })}
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${form.category === c ? "bg-wangari-green-800 text-white" : "bg-wangari-gray-100 text-wangari-gray-600 hover:bg-wangari-border"}`}>{c}</button>
+                      <div className="flex flex-wrap gap-1.5 mb-1.5">
+                        {SUGGESTED_CATEGORIES.slice(0, 5).map(c => (
+                          <button key={c} type="button" onClick={() => setForm({ ...form, category: c })}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${form.category === c ? "bg-wangari-green-800 text-white" : "bg-wangari-gray-100 text-wangari-gray-600 hover:bg-wangari-border"}`}>{c}</button>
                         ))}
                       </div>
-                      {/* Or type custom */}
-                      <Input placeholder="Type a custom category..." value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="h-10 rounded-xl text-sm" />
-                    </div>
-                    <Button onClick={() => form.itemName && setStep(2)} disabled={!form.itemName} className="w-full mt-2 h-11 cursor-pointer">Next</Button>
-                  </div>
-                )}
-
-                {step === 2 && (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-wangari-muted">Quantity *</Label>
-                        <Input type="number" placeholder="0" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} className="h-12 rounded-xl text-lg font-bold text-center" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-wangari-muted">Unit</Label>
-                        <div className="flex flex-wrap gap-1 mb-1">
-                          {SUGGESTED_UNITS.slice(0, 5).map(u => (
-                            <button key={u} onClick={() => setForm({ ...form, unit: u })}
-                              className={`px-2 py-0.5 rounded text-[9px] font-bold cursor-pointer ${form.unit === u ? "bg-wangari-green-800 text-white" : "bg-wangari-gray-100 text-wangari-gray-500"}`}>{u}</button>
-                          ))}
-                        </div>
-                        <Input placeholder="Or type custom unit" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} className="h-9 rounded-lg text-sm" />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-wangari-muted">Cost per unit (KES) *</Label>
-                        <Input type="number" placeholder="0" value={form.unitCost} onChange={e => setForm({ ...form, unitCost: e.target.value })} className="h-12 rounded-xl text-lg font-bold text-center" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-wangari-muted">Alert when below</Label>
-                        <Input type="number" placeholder="0" value={form.reorderLevel} onChange={e => setForm({ ...form, reorderLevel: e.target.value })} className="h-12 rounded-xl text-lg font-bold text-center" />
-                      </div>
-                    </div>
-                    {form.quantity && form.unitCost && (
-                      <div className="rounded-xl bg-wangari-green-50 border border-wangari-green-200 p-3 text-center">
-                        <p className="text-xs text-wangari-muted">Total value</p>
-                        <p className="text-xl font-extrabold text-wangari-green-800">KES {(Number(form.quantity) * Number(form.unitCost)).toLocaleString()}</p>
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <Button onClick={() => setStep(1)} variant="outline" className="flex-1 cursor-pointer">Back</Button>
-                      <Button onClick={() => setStep(3)} disabled={!form.quantity} className="flex-1 h-11 cursor-pointer">Next</Button>
+                      <Input placeholder="Type category..." value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="h-10 rounded-xl text-sm" />
                     </div>
                   </div>
-                )}
 
-                {step === 3 && (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-wangari-muted">Supplier (optional)</Label>
-                        <Input placeholder="e.g. Kenchic, Double F" value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} className="h-10 rounded-xl" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-wangari-muted"><Clock className="h-3 w-3 inline" />Expiry date (optional)</Label>
-                        <Input type="date" value={form.expiryDate} onChange={e => setForm({ ...form, expiryDate: e.target.value })} className="h-10 rounded-xl" />
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-wangari-muted">Notes (optional)</Label>
-                      <Input placeholder="e.g. Store in cool dry place, batch #12345..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="h-10 rounded-xl" />
+                      <Label className="text-xs font-semibold text-wangari-muted">Quantity *</Label>
+                      <Input type="number" placeholder="0" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} className="h-11 rounded-xl text-base font-bold text-center" />
                     </div>
-                    <div className="rounded-xl bg-tone-neutral-bg border border-wangari-border p-4 space-y-2">
-                      <div className="flex justify-between text-xs"><span className="text-wangari-muted">Item</span><span className="font-bold text-wangari-heading">{form.itemName}</span></div>
-                      <div className="flex justify-between text-xs"><span className="text-wangari-muted">Category</span><span className="font-bold text-wangari-heading">{form.category || "—"}</span></div>
-                      <div className="flex justify-between text-xs"><span className="text-wangari-muted">Quantity</span><span className="font-bold text-wangari-heading">{form.quantity} {form.unit}</span></div>
-                      <div className="flex justify-between text-xs"><span className="text-wangari-muted">Unit cost</span><span className="font-bold text-wangari-heading">KES {Number(form.unitCost || 0).toLocaleString()}</span></div>
-                      {form.expiryDate && <div className="flex justify-between text-xs"><span className="text-wangari-muted">Expires</span><span className="font-bold text-wangari-heading">{new Date(form.expiryDate).toLocaleDateString()}</span></div>}
-                      <div className="flex justify-between text-xs border-t border-wangari-border pt-2"><span className="text-wangari-muted">Total value</span><span className="font-extrabold text-wangari-green-800">KES {(Number(form.quantity) * Number(form.unitCost)).toLocaleString()}</span></div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-wangari-muted">Unit</Label>
+                      <Input placeholder="bags, kg, litres..." value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} className="h-11 rounded-xl text-sm" />
                     </div>
-                    <div className="flex gap-2">
-                      <Button onClick={() => setStep(2)} variant="outline" className="flex-1 cursor-pointer">Back</Button>
-                      <Button onClick={handleSubmit} disabled={!form.itemName || !form.quantity} className="flex-1 h-11 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer">{editingItem ? "Update Item" : "Save Item"}</Button>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-wangari-muted">Cost / Unit (KES) *</Label>
+                      <Input type="number" placeholder="0" value={form.unitCost} onChange={e => setForm({ ...form, unitCost: e.target.value })} className="h-11 rounded-xl text-base font-bold text-center" />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-wangari-muted">Low Stock Alert Below</Label>
+                      <Input type="number" placeholder="0" value={form.reorderLevel} onChange={e => setForm({ ...form, reorderLevel: e.target.value })} className="h-11 rounded-xl text-base font-bold text-center" />
                     </div>
                   </div>
-                )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-wangari-muted">Supplier (Optional)</Label>
+                      <Input placeholder="e.g. Unga Feeds, Kenchic, Agropharm" value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} className="h-10 rounded-xl" />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-wangari-muted"><Clock className="h-3 w-3 inline mr-1" />Expiry Date (Optional)</Label>
+                      <Input type="date" value={form.expiryDate} onChange={e => setForm({ ...form, expiryDate: e.target.value })} className="h-10 rounded-xl" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-wangari-muted">Notes (Optional)</Label>
+                    <Input placeholder="Store location, batch number, handling instructions..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="h-10 rounded-xl" />
+                  </div>
+
+                  {form.quantity && form.unitCost && (
+                    <div className="rounded-xl bg-wangari-green-50 border border-wangari-green-200 p-3 flex items-center justify-between">
+                      <span className="text-xs font-bold text-wangari-muted">Calculated Total Inventory Value:</span>
+                      <span className="text-lg font-extrabold text-wangari-green-800">KES {(Number(form.quantity) * Number(form.unitCost)).toLocaleString()}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-wangari-border">
+                    <Button type="button" onClick={() => { setShowForm(false); resetForm(); }} variant="outline" className="cursor-pointer">Cancel</Button>
+                    <Button type="button" onClick={handleSubmit} disabled={!form.itemName || !form.quantity} className="h-11 px-8 bg-wangari-green-800 hover:bg-wangari-green-900 font-bold cursor-pointer">{editingItem ? "Update Item" : "Save Item"}</Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>

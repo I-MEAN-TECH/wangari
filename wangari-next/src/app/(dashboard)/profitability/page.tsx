@@ -7,6 +7,7 @@ import { Trophy, TrendingUp, TrendingDown, Wheat, RefreshCw, Info, Share2 } from
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const fadeUp = { hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
 
@@ -223,6 +224,31 @@ export default function ProfitabilityPage() {
                 })}
               </div>
             </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Visual Profit & Margin Chart */}
+      {!loading && enterprises.length > 0 && (
+        <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+          <Card className="border border-wangari-border p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-extrabold text-wangari-gray-900">Profitability Comparison Chart</h3>
+                <p className="text-xs text-wangari-gray-400">Revenue vs Costs per Enterprise (KES)</p>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={enterprises.map(e => ({ name: e.name, revenue: e.revenue, costs: e.costs, profit: e.profit }))}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748B" }} />
+                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} />
+                <Tooltip formatter={(val: any) => `KES ${Number(val).toLocaleString()}`} contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 12 }} />
+                <Bar dataKey="revenue" fill="#166534" radius={[4, 4, 0, 0]} name="Revenue" />
+                <Bar dataKey="costs" fill="#94A3B8" radius={[4, 4, 0, 0]} name="Costs" />
+                <Bar dataKey="profit" fill="#22C55E" radius={[4, 4, 0, 0]} name="Net Profit" />
+              </BarChart>
+            </ResponsiveContainer>
           </Card>
         </motion.div>
       )}

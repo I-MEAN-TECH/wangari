@@ -49,8 +49,8 @@ export default function ColdChainPage() {
   const loadCrops = React.useCallback(() => {
     api
       .get("/api/crops")
-      .then((c) => {
-        const list = Array.isArray(c) ? c : [];
+      .then((c: any) => {
+        const list = Array.isArray(c) ? c : Array.isArray(c?.crops) ? c.crops : Array.isArray(c?.data) ? c.data : [];
         setCrops(list);
         setLoading(false);
         if (list.length > 0) setCropId(String(list[0].id));

@@ -50,6 +50,17 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
     new Set(["basic"])
   );
   const species = speciesFor(flock);
+  const [inventoryFeeds, setInventoryFeeds] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    import("@/lib/api-client").then(({ default: api }) => {
+      api.get("/api/inventory").then((res: any) => {
+        const items = Array.isArray(res) ? res : res?.items || [];
+        const names = items.map((i: any) => i.itemName || i.name).filter(Boolean);
+        setInventoryFeeds(Array.from(new Set(names)));
+      }).catch(() => {});
+    });
+  }, []);
 
   const [form, setForm] = React.useState({
     name: flock.name || "",
@@ -61,23 +72,39 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
     gender: flock.gender || "mixed",
     genderRatio: flock.genderRatio || "",
     location: flock.location || "",
+    housingType: flock.housingType || "",
     source: flock.source || "",
-    supplierContact: flock.supplierContact || "",
-    costPerAnimal: flock.costPerAnimal?.toString() || "",
+    supplierContact: flock.supplierContact || flock.supplier || "",
+    costPerAnimal: (flock.costPerAnimal || flock.costPerHead || "").toString(),
     targetMarket: flock.targetMarket || "",
     feedType: flock.feedType || "",
     feedSupplier: flock.feedSupplier || "",
-    feedCostPerMonth: flock.feedCostPerMonth?.toString() || "",
+    feedCostPerMonth: (flock.feedCostPerMonth || flock.feedCostMonthly || "").toString(),
     vetName: flock.vetName || "",
     vetPhone: flock.vetPhone || "",
     healthOnArrival: flock.healthOnArrival || "",
     insurancePolicy: flock.insurancePolicy || "",
-    expectedYield: flock.expectedYield || "",
-    expectedRevenue: flock.expectedRevenue?.toString() || "",
+    expectedYield: flock.expectedYield || flock.targetOutput || "",
+    expectedRevenue: (flock.expectedRevenue || flock.targetRevenue || "").toString(),
     expectedWeight: flock.expectedWeight || "",
     notes: flock.notes || "",
   });
 
+  const breedOptions = React.useMemo(() => {
+    const list = species?.breeds || [];
+    const defaults = ["Kienyeji", "Broiler", "Layer", "Sasso", "Friesian", "Ayrshire", "Jersey", "Guernsey", "Toggenburg", "Galla", "Dorper", "Kuroiler", "Rainbow Rooster", "Tilapia", "Catfish", "Other"];
+    const combined = Array.from(new Set([...list, ...defaults]));
+    if (form.breed && !combined.includes(form.breed)) combined.unshift(form.breed);
+    return combined;
+  }, [species, form.breed]);
+
+  const feedOptions = React.useMemo(() => {
+    const list = species?.feedTypes || [];
+    const defaults = ["Layers Mash", "Growers Mash", "Chick Starter", "Broiler Finisher", "Dairy Meal", "Calf Starter", "Pig Feed", "Silage", "Hay"];
+    const combined = Array.from(new Set([...inventoryFeeds, ...list, ...defaults]));
+    if (form.feedType && !combined.includes(form.feedType)) combined.unshift(form.feedType);
+    return combined;
+  }, [species, inventoryFeeds, form.feedType]);
   const toggleSection = (section: FormSection) => {
     setExpandedSections((prev) => {
       const next = new Set(prev);
@@ -203,7 +230,8 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
                         <div>
                           <label className="text-xs font-semibold text-wangari-gray-700 block mb-1.5">Breed</label>
                           <select value={form.breed} onChange={(e) => updateForm("breed", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-wangari-green-500/20 focus:border-wangari-green-500 transition-all">
-                            {species?.breeds.map((b: string) => <option key={b} value={b}>{b}</option>)}
+                            <option value="">Select breed...</option>
+                            {breedOptions.map((b: string) => <option key={b} value={b}>{b}</option>)}
                           </select>
                         </div>
                         <div>
@@ -268,9 +296,14 @@ export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps)
                         <div>
                           <label className="text-xs font-semibold text-wangari-gray-700 block mb-1.5">Feed Type</label>
                           <select value={form.feedType} onChange={(e) => updateForm("feedType", e.target.value)} className="w-full rounded-xl border border-wangari-border px-4 py-2.5 text-sm focus:ring-2 focus:ring-wangari-green-500/20 focus:border-wangari-green-500 transition-all">
-                            <option value="">Select...</option>
-                            {species?.feedTypes.map((ft: string) => <option key={ft} value={ft}>{ft}</option>)}
+                            <option value="">Select feed type...</option>
+                            {feedOptions.map((ft: string) => <option key={ft} value={ft}>{ft}</option>)}
                           </select>
+                          {inventoryFeeds.length === 0 && (
+                            <a href="/inventory" className="text-[11px] font-semibold text-wangari-green-800 hover:underline block mt-1">
+                              + No feeds found in inventory. Tap to add in Inventory
+                            </a>
+                          )}
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-wangari-gray-700 block mb-1.5">Feed Supplier</label>

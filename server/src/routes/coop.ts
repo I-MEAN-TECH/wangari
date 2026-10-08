@@ -412,8 +412,33 @@ router.get("/invites/:code", async (req: Request, res: Response) => {
     usable,
     groupName: invite.group.name,
     county: invite.group.county,
-    reason: usable ? null : invite.status === "accepted" ? "This code has already been used" : "This code is no longer valid",
-  });
+/** PATCH /api/coop/:id — update joinCode or settings for group sponsorship code */
+router.patch("/:id", async (req: Request, res: Response) => {
+  const userId = req.user!.userId!;
+  const groupId = Number(req.params.id);
+  if (!Number.isInteger(groupId)) return res.status(400).json({ error: "Bad group id" });
+
+  const group = await prisma.coopGroup.findUnique({ where: { id: groupId }, select: { chairUserId: true } });
+  if (!group) return res.status(404).json({ error: "Group not found" });
+  if (group.chairUserId !== userId) return res.status(403).json({ error: "Only chairperson can update group details" });
+
+  const data: Record<string, any> = {};
+  if (typeof req.body.joinCode === "string" && req.body.joinCode.trim().length >= 3) {
+    data.joinCode = req.body.joinCode.trim().toUpperCase();
+  }
+  if (typeof req.body.name === "string" && req.body.name.trim().length >= 2) {
+    data.name = req.body.name.trim();
+  }
+
+  try {
+    const updated = await prisma.coopGroup.update({
+      where: { id: groupId },
+      data,
+    });
+    return res.json({ success: true, group: updated });
+  } catch (err: any) {
+    return res.status(400).json({ error: "Code already taken or invalid update" });
+  }
 });
 
 export default router;

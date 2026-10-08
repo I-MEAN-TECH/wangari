@@ -97,6 +97,24 @@ export default function CropsPage() {
   };
   React.useEffect(() => { load(); }, []);
 
+  const [viewMode, setViewMode] = React.useState<"cards" | "list">("cards");
+  const [expandedCropId, setExpandedCropId] = React.useState<number | null>(null);
+
+  const handleTabClick = (key: string, crop: any) => {
+    if (key === "growth") {
+      setApplyForm({ date: new Date().toISOString().split("T")[0], type: "Fertilizer", productName: "Growth Top-dress Fertiliser", quantity: "", unit: "kg", cost: "", phiDays: "" });
+      openModal("apply", crop);
+    } else if (key === "watering") {
+      setApplyForm({ date: new Date().toISOString().split("T")[0], type: "Irrigation", productName: "Field Irrigation", quantity: "", unit: "litres", cost: "", phiDays: "" });
+      openModal("apply", crop);
+    } else if (key === "flower") {
+      setApplyForm({ date: new Date().toISOString().split("T")[0], type: "Fertilizer", productName: "Foliar Spray / Bloom Feed", quantity: "", unit: "kg", cost: "", phiDays: "" });
+      openModal("apply", crop);
+    } else if (key === "harvest") {
+      openModal("harvest", crop);
+    }
+  };
+
   const openModal = (modal: Modal, crop: any) => { setActiveModal(modal); setModalCrop(crop); };
   const closeModal = () => { setActiveModal(null); setModalCrop(null); };
 
@@ -346,9 +364,19 @@ export default function CropsPage() {
         </motion.div>
       )}
 
-      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-wangari-subtle" />
-        <input placeholder="Search crops..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-11 rounded-xl border border-wangari-border pl-10 pr-4 text-sm focus:ring-2 focus:ring-wangari-green-800/20 focus:border-wangari-green-800 transition-all" />
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-wangari-subtle" />
+          <input placeholder="Search crops..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-11 rounded-xl border border-wangari-border pl-10 pr-4 text-sm focus:ring-2 focus:ring-wangari-green-800/20 focus:border-wangari-green-800 transition-all" />
+        </div>
+        <div className="flex gap-1.5 shrink-0 bg-wangari-gray-100 p-1 rounded-xl">
+          <button type="button" onClick={() => setViewMode("cards")} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${viewMode === "cards" ? "bg-white text-wangari-green-800 shadow-sm" : "text-wangari-gray-500"}`}>
+            Grid View
+          </button>
+          <button type="button" onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${viewMode === "list" ? "bg-white text-wangari-green-800 shadow-sm" : "text-wangari-gray-500"}`}>
+            List View
+          </button>
+        </div>
       </motion.div>
 
       {/* Charts */}
@@ -445,112 +473,176 @@ export default function CropsPage() {
         );
       })()}
 
-      {/* Crop cards */}
+      {/* Crop List / Cards */}
       {crops.length === 0 ? <EmptyState title="No crops yet" description="Tap 'Add Crop' to register your first field." /> : (
-        <motion.div initial="hidden" animate="visible" variants={stagger} className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {crops.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.cropType.toLowerCase().includes(search.toLowerCase())).map((crop) => {
-            const totalKg = (crop.harvests || []).reduce((s: number, h: any) => s + Number(h.quantityKg || 0), 0);
-            const growth = getGrowthProgress(crop.plantingDate, crop.expectedHarvest);
-            const daysLeft = crop.expectedHarvest ? Math.ceil((new Date(crop.expectedHarvest).getTime() - Date.now()) / 86400000) : null;
-            const hasActiveIssues = (crop.health || []).some((h: any) => !h.outcome || h.outcome === "ongoing");
-
-            return (
-              <motion.div key={crop.id} variants={fadeUp} whileHover={{ y: -4 }}>
-                <Card className="border border-wangari-border hover:shadow-xl transition-all duration-300">
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-wangari-green-50 text-wangari-green-700"><Leaf className="h-5 w-5" /></div>
-                        <div>
-                          <h3 className="text-base font-bold text-wangari-gray-900">{crop.name}</h3>
-                          <p className="text-xs text-wangari-gray-400">{crop.cropType}{crop.variety ? ` (${crop.variety})` : ""}</p>
-                          {crop.isPerennial && (
-                            <p className="text-[10px] font-semibold text-wangari-green-600 mt-0.5">
-                              🌳 Perennial{crop.maturityYears ? ` · ${crop.maturityYears}y to maturity` : ""}{crop.harvestSeason ? ` · ${crop.harvestSeason}` : ""}
-                            </p>
+        viewMode === "list" ? (
+          <Card className="border border-wangari-border overflow-hidden">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-wangari-gray-50 text-left text-[11px] uppercase tracking-wider text-wangari-gray-500 border-b border-wangari-border">
+                      <th className="p-3">Field / Crop</th>
+                      <th className="p-3">Type</th>
+                      <th className="p-3">Area</th>
+                      <th className="p-3">Growth Stage</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Actions</th>
+                      <th className="p-3 text-right">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-wangari-gray-100">
+                    {crops.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.cropType.toLowerCase().includes(search.toLowerCase())).map((crop) => {
+                      const growth = getGrowthProgress(crop.plantingDate, crop.expectedHarvest);
+                      const isExpanded = expandedCropId === crop.id;
+                      return (
+                        <React.Fragment key={crop.id}>
+                          <tr className="hover:bg-wangari-green-50/30 transition-colors">
+                            <td className="p-3">
+                              <span className="font-bold text-wangari-gray-900 block">{crop.name}</span>
+                              {crop.variety && <span className="text-[10px] text-wangari-gray-400">Var: {crop.variety}</span>}
+                            </td>
+                            <td className="p-3 font-semibold text-wangari-gray-700">{crop.cropType}</td>
+                            <td className="p-3 text-wangari-gray-600">{crop.areaAcres ? `${crop.areaAcres} ac` : "—"}</td>
+                            <td className="p-3">
+                              <Badge className="bg-wangari-green-50 text-wangari-green-800 text-[10px]">{growth.stage}</Badge>
+                            </td>
+                            <td className="p-3">
+                              <Badge className={crop.status === "active" ? "bg-wangari-green-50 text-wangari-green-700" : "bg-wangari-gray-50 text-wangari-gray-500"}>{crop.status}</Badge>
+                            </td>
+                            <td className="p-3">
+                              <div className="flex gap-1">
+                                <button type="button" onClick={() => handleTabClick("growth", crop)} className="px-2 py-1 bg-wangari-green-50 text-wangari-green-800 rounded text-[10px] font-semibold hover:bg-wangari-green-100 cursor-pointer">Growth</button>
+                                <button type="button" onClick={() => handleTabClick("watering", crop)} className="px-2 py-1 bg-wangari-blue-50 text-wangari-blue-800 rounded text-[10px] font-semibold hover:bg-wangari-blue-100 cursor-pointer">Water</button>
+                                <button type="button" onClick={() => handleTabClick("flower", crop)} className="px-2 py-1 bg-wangari-purple-50 text-wangari-purple-800 rounded text-[10px] font-semibold hover:bg-wangari-purple-100 cursor-pointer">Flower</button>
+                                <button type="button" onClick={() => handleTabClick("harvest", crop)} className="px-2 py-1 bg-tone-warn-bg text-tone-warn-text rounded text-[10px] font-semibold hover:bg-wangari-amber-100 cursor-pointer">Harvest</button>
+                              </div>
+                            </td>
+                            <td className="p-3 text-right">
+                              <button type="button" onClick={() => setExpandedCropId(isExpanded ? null : crop.id)} className="text-xs font-bold text-wangari-green-800 hover:underline cursor-pointer">
+                                {isExpanded ? "Hide" : "View More"}
+                              </button>
+                            </td>
+                          </tr>
+                          {isExpanded && (
+                            <tr className="bg-wangari-gray-50/60">
+                              <td colSpan={7} className="p-4">
+                                <div className="space-y-3">
+                                  <CropGuidanceCard crop={crop} />
+                                  <div className="flex gap-2">
+                                    <button type="button" onClick={() => openModal("health", crop)} className="px-3 py-1.5 bg-tone-warn-bg text-tone-warn-text rounded-lg text-xs font-bold cursor-pointer">Report Issue</button>
+                                    <button type="button" onClick={() => openModal("apply", crop)} className="px-3 py-1.5 bg-wangari-blue-50 text-wangari-blue-800 rounded-lg text-xs font-bold cursor-pointer">Apply Input</button>
+                                    <button type="button" onClick={() => openModal("soiltest", crop)} className="px-3 py-1.5 bg-wangari-teal-50 text-wangari-teal-800 rounded-lg text-xs font-bold cursor-pointer">Soil Test</button>
+                                    <button type="button" onClick={() => openBatches(crop)} className="px-3 py-1.5 bg-wangari-purple-50 text-wangari-purple-800 rounded-lg text-xs font-bold cursor-pointer">Batches & Tests</button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
                           )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <motion.div initial="hidden" animate="visible" variants={stagger} className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {crops.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.cropType.toLowerCase().includes(search.toLowerCase())).map((crop) => {
+              const totalKg = (crop.harvests || []).reduce((s: number, h: any) => s + Number(h.quantityKg || 0), 0);
+              const growth = getGrowthProgress(crop.plantingDate, crop.expectedHarvest);
+              const daysLeft = crop.expectedHarvest ? Math.ceil((new Date(crop.expectedHarvest).getTime() - Date.now()) / 86400000) : null;
+              const hasActiveIssues = (crop.health || []).some((h: any) => !h.outcome || h.outcome === "ongoing");
+
+              return (
+                <motion.div key={crop.id} variants={fadeUp} whileHover={{ y: -4 }}>
+                  <Card className="border border-wangari-border hover:shadow-xl transition-all duration-300">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-wangari-green-50 text-wangari-green-700"><Leaf className="h-5 w-5" /></div>
+                          <div>
+                            <h3 className="text-base font-bold text-wangari-gray-900">{crop.name}</h3>
+                            <p className="text-xs text-wangari-gray-400">{crop.cropType}{crop.variety ? ` (${crop.variety})` : ""}</p>
+                            {crop.isPerennial && (
+                              <p className="text-[10px] font-semibold text-wangari-green-600 mt-0.5">
+                                🌳 Perennial{crop.maturityYears ? ` · ${crop.maturityYears}y to maturity` : ""}{crop.harvestSeason ? ` · ${crop.harvestSeason}` : ""}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          {hasActiveIssues && <Badge className="bg-tone-bad-bg text-badge-red-text border-tone-bad-border text-[9px]"><Bug className="h-2.5 w-2.5 mr-0.5" />Issue</Badge>}
+                          <Badge className={crop.status === "active" ? "bg-wangari-green-50 text-wangari-green-700 border-wangari-green-200" : "bg-wangari-gray-50 text-wangari-gray-500"}>{crop.status}</Badge>
                         </div>
                       </div>
-                      <div className="flex gap-1">
-                        {hasActiveIssues && <Badge className="bg-tone-bad-bg text-badge-red-text border-tone-bad-border text-[9px]"><Bug className="h-2.5 w-2.5 mr-0.5" />Issue</Badge>}
-                        <Badge className={crop.status === "active" ? "bg-wangari-green-50 text-wangari-green-700 border-wangari-green-200" : "bg-wangari-gray-50 text-wangari-gray-500"}>{crop.status}</Badge>
-                      </div>
-                    </div>
 
-                    {/* Growth Progress */}
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-semibold text-wangari-gray-400 uppercase">Growth</span>
-                        <span className="text-[10px] font-bold text-wangari-green-800">{growth.stage}</span>
+                      {/* Growth Progress */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-semibold text-wangari-gray-400 uppercase">Growth</span>
+                          <span className="text-[10px] font-bold text-wangari-green-800">{growth.stage}</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-wangari-gray-100">
+                          <div className="h-full rounded-full bg-wangari-green-800 transition-all" style={{ width: `${growth.percent}%` }} />
+                        </div>
                       </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-wangari-gray-100">
-                        <div className="h-full rounded-full bg-wangari-green-800 transition-all" style={{ width: `${growth.percent}%` }} />
-                      </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                      {crop.areaAcres && <div className="rounded-lg bg-wangari-gray-50 p-2"><span className="text-wangari-gray-400">Area</span><p className="font-bold">{crop.areaAcres} acres</p></div>}
-                      {daysLeft !== null && <div className="rounded-lg bg-wangari-gray-50 p-2"><span className="text-wangari-gray-400">Harvest</span><p className="font-bold">{daysLeft > 0 ? `${daysLeft} days` : "Ready"}</p></div>}
-                      {totalKg > 0 && <div className="rounded-lg bg-wangari-green-50 p-2"><span className="text-wangari-green-600">Harvested</span><p className="font-bold text-wangari-green-700">{totalKg.toFixed(0)} kg</p></div>}
-                    </div>
-
-                    {/* What to apply to THIS crop, at the stage it is actually at.
-                        Recording a crop used to end there: the farmer logged maize
-                        and got no fertiliser, pesticide or timing back. This sits on
-                        the card so the answer needs no extra tap. */}
-                    <div className="mb-3">
-                      <CropGuidanceCard crop={crop} />
-                    </div>
-
-                    {/* Lifecycle tabs */}
-                    <div className="mt-3 pt-3 border-t border-wangari-gray-100">
-                      <div className="flex gap-1 mb-2">
-                        {[
-                          { key: "growth", label: "Growth", icon: <Sprout className="h-3 w-3" />, color: "bg-wangari-green-50 text-wangari-green-700" },
-                          { key: "watering", label: "Water", icon: <Droplets className="h-3 w-3" />, color: "bg-wangari-blue-50 text-badge-blue-text" },
-                          { key: "flower", label: "Flower", icon: <Leaf className="h-3 w-3" />, color: "bg-wangari-purple-50 text-wangari-purple-700" },
-                          { key: "harvest", label: "Harvest", icon: <Check className="h-3 w-3" />, color: "bg-tone-warn-bg text-tone-warn-text" },
-                        ].map(tab => {
-                          const isActive = growth.stage.toLowerCase().includes(tab.key) ||
-                            (tab.key === "growth" && ["Germinating", "Vegetative"].includes(growth.stage)) ||
-                            (tab.key === "flower" && ["Flowering", "Fruiting"].includes(growth.stage)) ||
-                            (tab.key === "harvest" && growth.stage === "Ready");
-                          return (
-                            <div key={tab.key} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-semibold transition-all ${isActive ? tab.color + " ring-1 ring-current/20" : "bg-wangari-gray-50 text-wangari-gray-400"}`}>
-                              {tab.icon}{tab.label}
-                            </div>
-                          );
-                        })}
+                      <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                        {crop.areaAcres && <div className="rounded-lg bg-wangari-gray-50 p-2"><span className="text-wangari-gray-400">Area</span><p className="font-bold">{crop.areaAcres} acres</p></div>}
+                        {daysLeft !== null && <div className="rounded-lg bg-wangari-gray-50 p-2"><span className="text-wangari-gray-400">Harvest</span><p className="font-bold">{daysLeft > 0 ? `${daysLeft} days` : "Ready"}</p></div>}
+                        {totalKg > 0 && <div className="rounded-lg bg-wangari-green-50 p-2"><span className="text-wangari-green-600">Harvested</span><p className="font-bold text-wangari-green-700">{totalKg.toFixed(0)} kg</p></div>}
                       </div>
-                      {/* Action buttons */}
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <button onClick={() => openModal("harvest", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-wangari-green-50 text-wangari-green-700 text-[10px] font-semibold hover:bg-wangari-green-100 transition-colors cursor-pointer">
-                          <Check className="h-3.5 w-3.5" />Harvest
-                        </button>
-                        <button onClick={() => openModal("health", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-tone-warn-bg text-tone-warn-text text-[10px] font-semibold hover:bg-wangari-amber-100 transition-colors cursor-pointer">
-                          <Bug className="h-3.5 w-3.5" />Report Issue
-                        </button>
-                        <button onClick={() => openModal("apply", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-wangari-blue-50 text-badge-blue-text text-[10px] font-semibold hover:bg-badge-blue-bg transition-colors cursor-pointer">
-                          <Pill className="h-3.5 w-3.5" />Apply Input
-                        </button>
-                        <button onClick={() => openModal("postharvest", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-wangari-purple-50 text-wangari-purple-700 text-[10px] font-semibold hover:bg-wangari-purple-100 transition-colors cursor-pointer">
-                          <Package className="h-3.5 w-3.5" />Post-Harvest
-                        </button>
-                        <button onClick={() => openModal("soiltest", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-wangari-teal-50 text-wangari-teal-700 text-[10px] font-semibold hover:bg-wangari-teal-100 transition-colors cursor-pointer">
-                          <FlaskConical className="h-3.5 w-3.5" />Soil Test
-                        </button>
-                        <button onClick={() => openBatches(crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-wangari-gray-50 text-wangari-gray-600 text-[10px] font-semibold hover:bg-wangari-gray-100 transition-colors cursor-pointer">
-                          <BarChart3 className="h-3.5 w-3.5" />Batches & Tests
-                        </button>
+
+                      <div className="mb-3">
+                        <CropGuidanceCard crop={crop} />
                       </div>
-                    </div>
-                    <button onClick={() => handleDelete(crop.id)} className="w-full mt-2 text-[10px] text-wangari-gray-400 hover:text-wangari-red-500 cursor-pointer">Delete crop</button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+
+                      {/* Lifecycle tabs */}
+                      <div className="mt-3 pt-3 border-t border-wangari-gray-100">
+                        <div className="flex gap-1 mb-2">
+                          {[
+                            { key: "growth", label: "Growth", icon: <Sprout className="h-3 w-3" />, color: "bg-wangari-green-50 text-wangari-green-700" },
+                            { key: "watering", label: "Water", icon: <Droplets className="h-3 w-3" />, color: "bg-wangari-blue-50 text-badge-blue-text" },
+                            { key: "flower", label: "Flower", icon: <Leaf className="h-3 w-3" />, color: "bg-wangari-purple-50 text-wangari-purple-700" },
+                            { key: "harvest", label: "Harvest", icon: <Check className="h-3 w-3" />, color: "bg-tone-warn-bg text-tone-warn-text" },
+                          ].map(tab => {
+                            const isActive = growth.stage.toLowerCase().includes(tab.key) ||
+                              (tab.key === "growth" && ["Germinating", "Vegetative"].includes(growth.stage)) ||
+                              (tab.key === "flower" && ["Flowering", "Fruiting"].includes(growth.stage)) ||
+                              (tab.key === "harvest" && growth.stage === "Ready");
+                            return (
+                              <button key={tab.key} type="button" onClick={() => handleTabClick(tab.key, crop)} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer hover:opacity-80 ${isActive ? tab.color + " ring-1 ring-current/20" : "bg-wangari-gray-50 text-wangari-gray-400"}`}>
+                                {tab.icon}{tab.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {/* Action buttons */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button onClick={() => openModal("harvest", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-wangari-green-50 text-wangari-green-700 text-[10px] font-semibold hover:bg-wangari-green-100 transition-colors cursor-pointer">
+                            <Check className="h-3.5 w-3.5" />Harvest
+                          </button>
+                          <button onClick={() => openModal("health", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-tone-warn-bg text-tone-warn-text text-[10px] font-semibold hover:bg-wangari-amber-100 transition-colors cursor-pointer">
+                            <Bug className="h-3.5 w-3.5" />Report Issue
+                          </button>
+                          <button onClick={() => openModal("apply", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-wangari-blue-50 text-badge-blue-text text-[10px] font-semibold hover:bg-badge-blue-bg transition-colors cursor-pointer">
+                            <Pill className="h-3.5 w-3.5" />Apply Input
+                          </button>
+                          <button onClick={() => openModal("postharvest", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-wangari-purple-50 text-wangari-purple-700 text-[10px] font-semibold hover:bg-wangari-purple-100 transition-colors cursor-pointer">
+                            <Package className="h-3.5 w-3.5" />Post-Harvest
+                          </button>
+                        </div>
+                      </div>
+                      <button onClick={() => handleDelete(crop.id)} className="w-full mt-2 text-[10px] text-wangari-gray-400 hover:text-wangari-red-500 cursor-pointer">Delete crop</button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )
       )}
 
       {/* Modals */}

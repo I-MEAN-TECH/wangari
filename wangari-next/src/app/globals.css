@@ -331,9 +331,27 @@ select:focus {
 
 /* ─── Print / PDF styles ────────────────────────────────── */
 @media print {
-  .no-print { display: none !important; }
-  body { background: white; }
-  .print-break { page-break-before: always; }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+  aside, header, nav, footer, .no-print, button, [role="navigation"], .sidebar, .bottom-nav {
+    display: none !important;
+  }
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .card, [class*="rounded-"], [class*="border"] {
+    box-shadow: none !important;
+    border-color: #cbd5e1 !important;
+  }
+  .print-break {
+    page-break-before: always !important;
+  }
 }
 
 /* ─── Select Dropdown Animation ──────────────────────────── */

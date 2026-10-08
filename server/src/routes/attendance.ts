@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
-import { requireOwner } from "../middleware/requireOwner.js";
+import { requireFarm, requireOwner } from "../middleware/requireOwner.js";
 import { farmDayStart, farmTime, isFarmToday } from "../lib/farm-day.js";
 
 const router = Router();
-router.use(authMiddleware);
+router.use(authMiddleware, requireFarm);
 
 // GET /api/attendance
 router.get("/", async (req: Request, res: Response) => {

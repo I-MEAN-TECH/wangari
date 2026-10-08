@@ -141,7 +141,7 @@ export default function PlannerPage() {
                               </span>
                             </div>
                             <ul className="mt-1.5 space-y-0.5">
-                              {s.tasks.split(" • ").map((t, j) => (
+                              {(Array.isArray(s.tasks) ? s.tasks : typeof s.tasks === "string" ? s.tasks.split(" • ") : []).map((t, j) => (
                                 <li key={j} className="flex gap-1.5 text-xs text-wangari-gray-600"><span className="text-wangari-green-500">▸</span> {t}</li>
                               ))}
                             </ul>
