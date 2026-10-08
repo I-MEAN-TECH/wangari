@@ -145,8 +145,9 @@ export function FeaturePage({
               transition={{ duration: 0.6 }}
               className="p-8 md:p-12 rounded-3xl bg-white border border-wangari-border shadow-sm relative overflow-hidden"
             >
-              <div className="absolute top-0 left-0 w-2 h-full bg-wangari-green-800" />
-              <p className="text-base sm:text-lg md:text-xl font-medium text-wangari-heading leading-relaxed">
+              {/* Centered top accent bar */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-1 rounded-b-full bg-wangari-green-800" />
+              <p className="text-base sm:text-lg md:text-xl font-medium text-wangari-heading leading-relaxed text-center">
                 &ldquo;{description}&rdquo;
               </p>
             </motion.div>
