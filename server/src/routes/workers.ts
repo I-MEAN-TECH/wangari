@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
-import { requireOwner } from "../middleware/requireOwner.js";
+import { requireFarm } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { generateWorkerPin } from "../lib/farm-code.js";
 import { hashPin } from "../lib/pin.js";

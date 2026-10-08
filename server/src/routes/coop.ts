@@ -412,6 +412,10 @@ router.get("/invites/:code", async (req: Request, res: Response) => {
     usable,
     groupName: invite.group.name,
     county: invite.group.county,
+    reason: usable ? null : invite.status === "accepted" ? "This code has already been used" : "This code is no longer valid",
+  });
+});
+
 /** PATCH /api/coop/:id — update joinCode or settings for group sponsorship code */
 router.patch("/:id", async (req: Request, res: Response) => {
   const userId = req.user!.userId!;
