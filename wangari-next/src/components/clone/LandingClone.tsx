@@ -28,7 +28,7 @@ import {
 const HERO = {
   cta: "See what Wangari does",
   intro: "Record keeping, costs and profit — in your pocket. Even with no bundles at all.",
-  lineOne: "Every egg.",
+  lineOne: "Every harvest.",
   lineTwo: "Every shilling.",
 };
 
