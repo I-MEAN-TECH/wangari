@@ -76,8 +76,8 @@ export function FeaturePage({
   const [selectedCapability, setSelectedCapability] = React.useState<CapabilityItem | null>(null);
 
   return (
-    <div className="font-sans">
-      <main>
+    <div className="wc font-sans">
+      <div>
         {/* ── 1. HERO SECTION (Site Theme Gradient & Glow) ── */}
         <section className="relative overflow-hidden bg-gradient-to-br from-[#0a2318] via-[#0f3826] to-[#04120b] text-white pt-32 pb-24 px-6 md:pt-40 md:pb-32">
           {/* Subtle glowing ambient spheres */}
@@ -133,17 +133,17 @@ export function FeaturePage({
 
         {/* ── 2. INTRO DESCRIPTION ── */}
         <section className="py-16 md:py-20 px-6 bg-wangari-cream border-b border-wangari-border/60">
-          <div className="mx-auto max-w-4xl text-center">
+          <div className="mx-auto max-w-4xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="p-8 md:p-12 rounded-3xl bg-white border border-wangari-border shadow-sm relative overflow-hidden"
+              className="p-10 md:p-14 rounded-3xl bg-white border border-wangari-border shadow-sm relative overflow-hidden text-center"
             >
               {/* Centered top accent bar */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-1 rounded-b-full bg-wangari-green-800" />
-              <p className="text-base sm:text-lg md:text-xl font-medium text-wangari-heading leading-relaxed text-center">
+              <p className="text-base sm:text-lg md:text-2xl font-semibold text-wangari-heading leading-snug text-center mx-auto max-w-2xl">
                 &ldquo;{description}&rdquo;
               </p>
             </motion.div>
@@ -193,12 +193,12 @@ export function FeaturePage({
                 initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="text-3xl md:text-4xl font-extrabold text-wangari-heading tracking-tight mt-4"
+                className="text-3xl md:text-4xl font-extrabold text-wangari-heading tracking-tight leading-tight mt-6 mb-4"
               >
                 Everything built for real farm conditions
               </motion.h2>
-              <p className="mt-3 text-sm md:text-base text-wangari-muted">
-                Tap any card to view detailed walkthrough & impact.
+              <p className="text-sm md:text-base text-wangari-muted leading-relaxed">
+                Tap any card to view detailed walkthrough &amp; impact.
               </p>
             </div>
 
@@ -329,7 +329,7 @@ export function FeaturePage({
                 initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="text-3xl md:text-4xl font-extrabold text-wangari-heading tracking-tight mt-4"
+                className="text-3xl md:text-4xl font-extrabold text-wangari-heading tracking-tight leading-tight mt-6 mb-4"
               >
                 Why farmers choose Wangari
               </motion.h2>
@@ -414,7 +414,7 @@ export function FeaturePage({
             </motion.div>
           </div>
         </section>
-      </main>
+      </div>
 
       {/* ── INTERACTIVE CAPABILITY MODAL DRAWER ── */}
       <AnimatePresence>
