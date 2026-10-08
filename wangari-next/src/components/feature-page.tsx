@@ -37,10 +37,10 @@ const stagger = {
 };
 
 const CARD_TONES = [
-  { bg: "bg-[#F3E8FF]", border: "border-[#E9D5FF]", text: "text-[#6B21A8]", iconBg: "bg-[#E9D5FF]", tag: "lavender" },
-  { bg: "bg-[#FEF08A]/40", border: "border-[#FDE047]", text: "text-[#854D0E]", iconBg: "bg-[#FEF08A]", tag: "yellow" },
-  { bg: "bg-[#DCFCE7]/60", border: "border-[#BBF7D0]", text: "text-[#166534]", iconBg: "bg-[#BBF7D0]", tag: "sage" },
-  { bg: "bg-[#FFEDD5]/60", border: "border-[#FED7AA]", text: "text-[#9A3412]", iconBg: "bg-[#FED7AA]", tag: "peach" },
+  { bg: "bg-white", border: "border-[#E9D5FF]", text: "text-[#6B21A8]", iconBg: "bg-[#F3E8FF]", tag: "lavender" },
+  { bg: "bg-white", border: "border-[#FDE047]/60", text: "text-[#854D0E]", iconBg: "bg-[#FEF9C3]", tag: "yellow" },
+  { bg: "bg-white", border: "border-wangari-border", text: "text-[#166534]", iconBg: "bg-wangari-cream", tag: "cream" },
+  { bg: "bg-white", border: "border-[#FED7AA]/70", text: "text-[#9A3412]", iconBg: "bg-[#FFEDD5]", tag: "peach" },
 ];
 
 export interface CapabilityItem {
@@ -136,7 +136,7 @@ export function FeaturePage({
         </section>
 
         {/* ── 2. INTRO DESCRIPTION ── */}
-        <section className="py-16 md:py-20 px-6 bg-wangari-cream/40 border-b border-wangari-border/60">
+        <section className="py-16 md:py-20 px-6 bg-wangari-cream border-b border-wangari-border/60">
           <div className="mx-auto max-w-4xl text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -155,7 +155,7 @@ export function FeaturePage({
 
         {/* ── 3. METRICS / STATS CARDS ── */}
         {stats && stats.length > 0 && (
-          <section className="py-16 px-6 bg-white border-b border-wangari-border">
+          <section className="py-16 px-6 bg-wangari-cream border-b border-wangari-border">
             <div className="mx-auto max-w-5xl">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                 {stats.map((s, idx) => (
@@ -165,7 +165,7 @@ export function FeaturePage({
                     whileInView={{ opacity: 1, scale: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: idx * 0.1 }}
-                    className="p-6 rounded-2xl border border-wangari-border bg-wangari-cream/30 hover:border-wangari-green-300 hover:shadow-md transition-all duration-300 text-center"
+                    className="p-6 rounded-2xl border border-wangari-border bg-white hover:border-wangari-green-300 hover:shadow-md transition-all duration-300 text-center"
                   >
                     <p className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-wangari-green-800 tracking-tight">
                       {s.value}
@@ -181,14 +181,14 @@ export function FeaturePage({
         )}
 
         {/* ── 4. CAPABILITIES (Interactive Card View) ── */}
-        <section className="py-24 px-6 bg-wangari-cream/20">
+        <section className="py-24 px-6 bg-wangari-cream">
           <div className="mx-auto max-w-6xl">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <motion.span
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="text-xs font-extrabold uppercase tracking-widest text-wangari-green-800 bg-wangari-green-100/80 px-3.5 py-1.5 rounded-full"
+                className="text-xs font-extrabold uppercase tracking-widest text-wangari-green-800 bg-white border border-wangari-border px-3.5 py-1.5 rounded-full"
               >
                 Core Capabilities
               </motion.span>
@@ -317,14 +317,14 @@ export function FeaturePage({
         )}
 
         {/* ── 6. HIGHLIGHTS & BENEFIT CARDS ── */}
-        <section className="py-24 px-6 bg-wangari-cream/40">
+        <section className="py-24 px-6 bg-white">
           <div className="mx-auto max-w-5xl">
             <div className="text-center mb-16">
               <motion.span
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
-                className="text-xs font-extrabold uppercase tracking-widest text-wangari-green-800 bg-wangari-green-100 px-3.5 py-1.5 rounded-full"
+                className="text-xs font-extrabold uppercase tracking-widest text-wangari-green-800 bg-wangari-cream border border-wangari-border px-3.5 py-1.5 rounded-full"
               >
                 Key Advantages
               </motion.span>
@@ -361,15 +361,15 @@ export function FeaturePage({
 
         {/* ── 7. TESTIMONIAL ── */}
         {testimonial && (
-          <section className="py-20 px-6 bg-white border-t border-wangari-border">
+          <section className="py-20 px-6 bg-wangari-cream border-t border-wangari-border">
             <div className="mx-auto max-w-3xl">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                className="rounded-3xl border border-wangari-green-200 bg-wangari-green-50/50 p-8 sm:p-12 text-center relative overflow-hidden"
+                className="rounded-3xl border border-wangari-border bg-white p-8 sm:p-12 text-center relative overflow-hidden"
               >
-                <div className="absolute top-4 right-6 text-6xl text-wangari-green-200/60 font-serif leading-none select-none">
+                <div className="absolute top-4 right-6 text-6xl text-wangari-border font-serif leading-none select-none">
                   &ldquo;
                 </div>
                 <p className="text-base sm:text-lg md:text-xl font-medium text-wangari-heading leading-relaxed italic mb-6 relative z-10">
