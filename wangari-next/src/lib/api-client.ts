@@ -130,9 +130,17 @@ async function request<T = any>(path: string, options: RequestOptions = {}): Pro
   }
 
   if (!res.ok) {
-    const err = new Error(data.error || `Request failed: ${res.status}`) as Error & { status?: number; needsFarm?: boolean };
+    const err = new Error(data.error || `Request failed: ${res.status}`) as Error & {
+      status?: number;
+      needsFarm?: boolean;
+      needsConfirmation?: boolean;
+    };
     err.status = res.status;
     if (data.needsFarm) err.needsFarm = true;
+    // A server-side "are you sure?" (e.g. merging two different species) is a
+    // first-class flag, not something the caller should have to match out of
+    // the message text. Keeps the confirmation path honest if the wording moves.
+    if (data.needsConfirmation) err.needsConfirmation = true;
     throw err;
   }
 

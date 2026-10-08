@@ -222,14 +222,18 @@ app.use("/api/auth", authRoutes);
 app.use("/api/auth", authPhoneRoutes);
 app.use("/api/dashboard", actionEngineRoutes); // /actions first, then falls through to the main dashboard router
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/flocks", flocksRoutes);
-app.use("/api/flocks", flocksUploadRoutes);
+// idempotencyGuard on both mounts: an offline-queued write to /api/flocks is
+// replayed with a clientId, and without the guard a retried transfer, merge or
+// count change could land twice. This is the same protection transactions,
+// sales and production already had — livestock was the gap.
+app.use("/api/flocks", idempotencyGuard, flocksRoutes);
+app.use("/api/flocks", idempotencyGuard, flocksUploadRoutes);
 // ANITRAC animal identity.
 //
 // Mounted on its OWN path, not under /api/flocks: flocksRoutes defines
 // GET /:id, so a nested mount would let "animals" be parsed as a flock id and
 // silently 404. /api/animals keeps the routes unambiguous.
-app.use("/api/animals", animalsRoutes);
+app.use("/api/animals", idempotencyGuard, animalsRoutes);
 // Beekeeping: the hive is the unit, never the bee.
 app.use("/api/hives", hivesRoutes);
 app.use("/api/customers", customersRoutes);

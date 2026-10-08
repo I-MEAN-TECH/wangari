@@ -273,6 +273,7 @@ model Farm {
   coldChainEvents  ColdChainEvent[]
   feedback         Feedback[]
   animalMovements  AnimalMovement[]
+  flockMovements   FlockMovement[]
 
   @@map("farms")
 }
@@ -399,8 +400,50 @@ model Flock {
   healthRecords       HealthRecord[]
   insurancePolicies   InsurancePolicy[]
   transactions Transaction[]
+  movements    FlockMovement[]
 
   @@map("flocks")
+}
+
+/// The herd ledger — WHY a group's head count changed.
+///
+/// `Flock.currentCount` is one number that gets overwritten in place, so a
+/// farmer could never answer "I had 40, now I have 33 — where did seven go?".
+/// A row is written for every change that is not a plain correction: purchase,
+/// birth, transfer between this farm's OWN groups, merge, sale, death. The
+/// count stays the daily source of truth; this is the audit trail beside it,
+/// and it is what makes a group-to-group transfer defensible to a buyer or a
+/// county officer later.
+///
+/// A transfer writes TWO rows — one on each group, with opposite deltas — so
+/// both sides of the same event agree and neither group's history is a guess.
+model FlockMovement {
+  id       Int    @id @default(autoincrement())
+  farmId   Int    @map("farm_id")
+  flockId  Int    @map("flock_id")
+  // Signed: +N into this group, -N out of it.
+  delta    Int
+  // purchase | birth | transfer_in | transfer_out | merged_in | merged_out
+  // | split_in | split_out | sale | death | adjustment
+  reason   String
+  // The OTHER group in a transfer or merge, when there was one. A plain Int,
+  // deliberately NOT a relation: the counterparty may later be merged away or
+  // deleted, and a ledger row must never be orphaned by that. The name is
+  // snapshotted alongside so the row still reads correctly afterwards.
+  counterpartyFlockId Int?    @map("counterparty_flock_id")
+  counterpartyName    String? @map("counterparty_name")
+  countBefore Int     @map("count_before")
+  countAfter  Int     @map("count_after")
+  movedAt     DateTime @map("moved_at") @db.Date
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  farm  Farm  @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  flock Flock @relation(fields: [flockId], references: [id], onDelete: Cascade)
+
+  @@index([farmId, movedAt])
+  @@index([flockId])
+  @@map("flock_movements")
 }
 
 model DailyProduction {

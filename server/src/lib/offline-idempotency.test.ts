@@ -40,6 +40,11 @@ const OFFLINE_REPLAYABLE_WRITES = [
   "transactions",
   "inventory",
   "crops",
+  // Livestock joined the list late: a group-to-group transfer, a merge or a
+  // head-count change replayed twice would double-move animals while every
+  // count still reconciled locally. Kept here so it cannot drift out again.
+  "flocks",
+  "animals",
 ] as const;
 
 const serverSrc = join(dirname(fileURLToPath(import.meta.url)), "..");

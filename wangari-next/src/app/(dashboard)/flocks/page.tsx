@@ -46,6 +46,7 @@ import { ExportReport } from "@/components/flocks/ExportReport";
 import { GrowthChart } from "@/components/flocks/GrowthChart";
 import { VaccinationReminders } from "@/components/flocks/VaccinationReminders";
 import { FlockAnimalsPanel } from "@/components/flocks/FlockAnimalsPanel";
+import { FlockHerdPanel } from "@/components/flocks/FlockHerdPanel";
 import { HivePanel } from "@/components/flocks/HivePanel";
 import { BatchProduction } from "@/components/flocks/BatchProduction";
 import { BreedingRecords } from "@/components/flocks/BreedingRecords";
@@ -234,6 +235,10 @@ export default function FlocksPage() {
     await api.patch(`/api/flocks/${selectedFlock.id}`, {
       mortality: newMortality,
       currentCount: Math.max(0, newCount),
+      // Name the reason so the group's count history reads "Died", not a vague
+      // correction — the server records the delta in the herd ledger.
+      ledgerReason: "death",
+      ledgerNote: reason || undefined,
     });
     // Also record in daily production
     await api.post("/api/production", {
@@ -683,6 +688,18 @@ export default function FlocksPage() {
               <GrowthChart production={production} expectedWeight={flock.expectedWeight || species?.breedDetails[flock.breed]?.matureWeight} />
             </CardContent>
           </Card>
+        </motion.div>
+
+        {/* Herd size: move stock between your own groups, combine two groups,
+            and the count ledger that records why the number changed. Sits above
+            the tag panel because it is the daily habit; tagging is setup. */}
+        <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+          <FlockHerdPanel
+            flock={flock}
+            flocks={flocks}
+            onChanged={loadFlocks}
+            onThisGroupRemoved={() => setSelectedFlock(null)}
+          />
         </motion.div>
 
         {/* ANITRAC ear-tag identity. Additive: flocks are still counted as a
