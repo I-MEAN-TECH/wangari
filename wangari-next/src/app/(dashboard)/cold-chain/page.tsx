@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useToast } from "@/components/shared/toast";
 import api from "@/lib/api-client";
+import { cropLabel } from "@/lib/crop-label";
 
 /**
  * Cold chain readings (gap-analysis row 15).
@@ -132,7 +133,7 @@ export default function ColdChainPage() {
           >
             {crops.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {cropLabel(c)}
               </option>
             ))}
           </select>
