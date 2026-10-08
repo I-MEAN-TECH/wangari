@@ -165,7 +165,7 @@ function Hero() {
           {HERO.cta}
         </ArrowFillButton>
         <p>{HERO.intro}</p>
-        <h1>
+        <h1 suppressHydrationWarning>
           {HERO.lineOne}
           <br />
           {HERO.lineTwo}
