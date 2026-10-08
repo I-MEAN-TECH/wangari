@@ -515,6 +515,23 @@
   color: var(--wc-muted);
 }
 
+/* ── Readability: the ported rule `.wc h1,h2,h3 { letter-spacing: -2.5px }`
+   is tuned for 47–72px display headings. On the small timeline and panel
+   headings below it welds adjacent words together, so give those headings
+   their own tracking. */
+.wc .timeline-item h3 {
+  letter-spacing: 0;
+}
+.wc .timeline-year {
+  letter-spacing: -0.3px;
+}
+.wc .panel h3 {
+  letter-spacing: -0.4px;
+}
+.wc .doc-card h3 {
+  letter-spacing: -0.2px;
+}
+
 .wc .team-card { text-align: center; }
 .wc .team-card .wc-avatar {
   width: 84px;
@@ -1956,29 +1973,48 @@
   }
   
   .wc .approach-image-stage {
-    height: 500px !important;
+    height: auto;
     max-width: 100%;
-    margin: 0 auto 60px;
+    margin: 0 auto 24px;
     width: 100%;
+    position: relative;
+    isolation: isolate;
   }
   
   .wc .approach-portrait {
-    width: 280px !important;
-    height: 350px !important;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    margin: 0 auto 18px;
   }
   
-  /* Hide badges on mobile - they overlap text */
+  /* Badges are flow content beside the description on every size —
+   they never overlap the copy and never run off the screen edges. */
   .wc .approach-badge {
-    display: none !important;
+    display: inline-flex !important;
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: 1;
+    white-space: nowrap;
+  }
+  
+  .wc .approach-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 auto 18px;
   }
   
   .wc .approach-description {
     font-size: 14px;
     line-height: 1.7;
     padding: 0 20px;
-    max-width: 100%;
-    margin-top: 40px;
+    max-width: 680px;
+    margin: 0 auto;
   }
 }
 
@@ -1998,10 +2034,11 @@
   
   .wc .approach-image-stage {
     width: 100%;
-    height: 420px !important;
-    max-width: 320px;
+    height: auto !important;
+    max-width: 100%;
     position: relative;
-    margin: 0 auto 50px;
+    isolation: isolate;
+    margin: 0 auto 24px;
   }
   
   .wc .approach-image-stage::before {
@@ -2014,26 +2051,45 @@
   }
   
   .wc .approach-portrait {
-    width: 260px !important;
-    height: 320px !important;
-    margin: 0 auto;
+    width: 100% !important;
+    max-width: 280px;
+    height: auto !important;
+    margin: 0 auto 18px;
   }
   
   .wc .approach-portrait img {
     border-radius: 130px 130px 20px 20px;
   }
   
-  /* Keep badges hidden on mobile */
+  /* Badges show beside the description on mobile too */
   .wc .approach-badge {
-    display: none !important;
+    display: inline-flex !important;
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    gap: 6px;
+    padding: 7px 11px;
+    font-size: 11px;
+  }
+  
+  .wc .approach-badge svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  
+  .wc .approach-badges {
+    gap: 8px;
+    margin-bottom: 14px;
   }
   
   .wc .approach-description {
     font-size: 13px;
     line-height: 1.6;
     padding: 0 16px;
-    max-width: 100%;
-    margin-top: 30px;
+    max-width: 680px;
+    margin: 0 auto;
   }
 }
 
@@ -2049,9 +2105,9 @@
   }
   
   .wc .approach-image-stage {
-    max-width: 290px;
-    margin: 0 auto 40px;
-    height: 400px !important;
+    max-width: 100%;
+    height: auto !important;
+    margin: 0 auto 18px;
   }
   
   .wc .approach-image-stage::before {
@@ -2060,8 +2116,9 @@
   }
   
   .wc .approach-portrait {
-    width: 240px !important;
-    height: 300px !important;
+    width: 100% !important;
+    max-width: 240px;
+    height: auto !important;
   }
   
   .wc .approach-description {
@@ -2078,8 +2135,8 @@
   }
   
   .wc .approach-image-stage {
-    max-width: 280px;
-    height: 380px !important;
+    max-width: 100%;
+    height: auto !important;
   }
   
   .wc .approach-image-stage::before {
@@ -2088,8 +2145,9 @@
   }
   
   .wc .approach-portrait {
-    width: 230px !important;
-    height: 290px !important;
+    width: 100% !important;
+    max-width: 220px;
+    height: auto !important;
   }
 }
 
@@ -2105,8 +2163,8 @@
   }
   
   .wc .approach-image-stage {
-    max-width: 260px;
-    height: 360px !important;
+    max-width: 100%;
+    height: auto !important;
   }
   
   .wc .approach-image-stage::before {
@@ -2116,8 +2174,9 @@
   }
   
   .wc .approach-portrait {
-    width: 210px !important;
-    height: 270px !important;
+    width: 100% !important;
+    max-width: 200px;
+    height: auto !important;
   }
   
   .wc .approach-description {
@@ -2127,10 +2186,11 @@
   }
 }
 
-/* Show badges only on tablet and desktop */
-@media (min-width: 769px) {
+/* Show badges on every screen size — they now sit beside the
+   description, so hiding them only on mobile is no longer needed. */
+@media (min-width: 0) {
   .wc .approach-badge {
-    display: flex !important;
+    display: inline-flex !important;
   }
 }
 
@@ -2287,6 +2347,28 @@
     margin: 0 auto 20px !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   FEATURE PAGES - TYPOGRAPHY, WORD SPACING & CENTERING FIXES
+   ══════════════════════════════════════════════════════════════════════ */
+.wc .feature-hero-h1,
+.wc h1.feature-hero-h1 {
+  white-space: normal !important;
+  letter-spacing: -0.02em !important;
+  word-spacing: normal !important;
+  text-align: center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  display: block !important;
+}
+
+.wc section h1,
+.wc section h2,
+.wc section h3 {
+  letter-spacing: -0.015em;
+  word-spacing: normal;
+}
+
 
 
 
