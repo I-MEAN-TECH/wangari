@@ -18,8 +18,6 @@ import {
   Info,
 } from "lucide-react";
 
-import { SiteHeader } from "@/components/clone/SiteHeader";
-import { SiteFooter } from "@/components/clone/SiteFooter";
 import { ArrowFillButton } from "@/components/clone/ArrowFillButton";
 
 const fadeUp = {
@@ -78,9 +76,7 @@ export function FeaturePage({
   const [selectedCapability, setSelectedCapability] = React.useState<CapabilityItem | null>(null);
 
   return (
-    <div className="wc font-sans">
-      <SiteHeader />
-
+    <div className="font-sans">
       <main>
         {/* ── 1. HERO SECTION (Site Theme Gradient & Glow) ── */}
         <section className="relative overflow-hidden bg-gradient-to-br from-[#0a2318] via-[#0f3826] to-[#04120b] text-white pt-32 pb-24 px-6 md:pt-40 md:pb-32">
@@ -476,8 +472,6 @@ export function FeaturePage({
           </div>
         )}
       </AnimatePresence>
-
-      <SiteFooter />
     </div>
   );
 }
