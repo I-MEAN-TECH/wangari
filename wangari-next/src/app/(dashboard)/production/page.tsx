@@ -15,6 +15,11 @@ import Link from "next/link";
 
 import { speciesFor } from "@/lib/species-resolve";
 import { BTN_LINK_SM } from "@/components/ui/patterns";
+import {
+  harvestPatternFor,
+  isFrequentlyLogged,
+  HARVEST_PATTERN_META,
+} from "@/lib/crop-harvest-pattern";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
@@ -44,12 +49,74 @@ export default function ProductionPage() {
   const [step, setStep] = React.useState(0); // 0=select flock, 1=enter data, 2=confirm
   const [form, setForm] = React.useState({ flockId: "", eggsCollected: "", milkCollected: "", avgWeight: "", weightGain: "", feedUsed: "", mortality: "", notes: "" });
 
+  // ── Crop output ──────────────────────────────────────────────────────
+  // Daily Output used to be animals only, which is why spinach and avocado
+  // had nowhere to be logged. Leafy crops are cut weekly and tree crops are
+  // picked season after season, so both belong on the screen a farmer opens
+  // every day. Which crops belong here is decided by crop-harvest-pattern,
+  // and what gets saved is the crop's own harvest row (dates + kg + sale),
+  // so the Crops module and Daily Output can never disagree.
+  const [tab, setTab] = React.useState<"animals" | "crops">("animals");
+  const [crops, setCrops] = React.useState<any[]>([]);
+  const [cropsLoading, setCropsLoading] = React.useState(true);
+  const [pickDrafts, setPickDrafts] = React.useState<Record<number, { quantityKg: string; salePrice: string }>>({});
+  const [savingPickId, setSavingPickId] = React.useState<number | null>(null);
+
   const load = () => {
     Promise.all([api.get("/api/production"), api.get("/api/flocks")])
       .then(([p, f]) => { setRecords(Array.isArray(p) ? p : []); setFlocks(Array.isArray(f) ? f : []); setLoading(false); })
       .catch(() => setLoading(false));
   };
-  React.useEffect(() => { load(); }, []);
+  const loadCrops = () => {
+    api.get("/api/crops")
+      .then((d: any) => setCrops(Array.isArray(d) ? d : []))
+      .catch(() => setCrops([]))
+      .finally(() => setCropsLoading(false));
+  };
+
+  React.useEffect(() => { load(); loadCrops(); }, []);
+
+  const loggedCrops = crops.filter((c) => isFrequentlyLogged(c));
+  const singleCrops = crops.filter((c) => !isFrequentlyLogged(c));
+
+  const cropHarvests = loggedCrops.flatMap((c: any) =>
+    (c.harvests || []).map((h: any) => ({ ...h, crop: c }))
+  );
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const pickedThisWeek = cropHarvests.filter((h: any) => new Date(h.date).getTime() >= weekAgo);
+  const cropTotalKg = cropHarvests.reduce((s: number, h: any) => s + Number(h.quantityKg || 0), 0);
+  const cropTotalValue = cropHarvests.reduce((s: number, h: any) => s + Number(h.salePrice || 0), 0);
+
+  const setDraft = (id: number, patch: Partial<{ quantityKg: string; salePrice: string }>) => {
+    setPickDrafts((prev) => {
+      const base = prev[id] ?? { quantityKg: "", salePrice: "" };
+      return { ...prev, [id]: { ...base, ...patch } };
+    });
+  };
+
+  const logPick = async (crop: any) => {
+    const draft = pickDrafts[crop.id];
+    const quantityKg = Number(draft?.quantityKg || 0);
+    if (!quantityKg || quantityKg <= 0) {
+      showToast("Enter how much you picked (kg) first");
+      return;
+    }
+    setSavingPickId(crop.id);
+    try {
+      await api.post(`/api/crops/${crop.id}/harvest`, {
+        date: new Date().toISOString().split("T")[0],
+        quantityKg,
+        salePrice: draft?.salePrice ? Number(draft.salePrice) : null,
+      });
+      setDraft(crop.id, { quantityKg: "", salePrice: "" });
+      showToast(`${quantityKg} kg recorded for ${crop.name}`);
+      loadCrops();
+    } catch (err: any) {
+      showToast(err?.message || "Could not save the pick — please try again");
+    } finally {
+      setSavingPickId(null);
+    }
+  };
 
   const selectedFlock = flocks.find((f: any) => f.id === Number(form.flockId));
   const info = getSpeciesInfo(selectedFlock?.type || null);
@@ -112,6 +179,22 @@ export default function ProductionPage() {
         />
       </motion.div>
 
+      {/* Animals and crops both answer "what came off the farm today?", but they
+          write to different tables — so the switch is explicit rather than
+          pretending a harvest and a milk yield are the same number. */}
+      <div className="flex gap-1 rounded-xl bg-wangari-sunken p-1 w-fit">
+        <button onClick={() => setTab("animals")}
+          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${tab === "animals" ? "bg-white text-wangari-green-800 shadow-sm" : "text-wangari-muted"}`}>
+          Animal output
+        </button>
+        <button onClick={() => setTab("crops")}
+          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${tab === "crops" ? "bg-white text-wangari-green-800 shadow-sm" : "text-wangari-muted"}`}>
+          Crop output
+        </button>
+      </div>
+
+      {tab === "animals" && (
+        <>
       {/* Step-by-step form */}
       <AnimatePresence>
         {showForm && (
@@ -299,6 +382,113 @@ export default function ProductionPage() {
           </div>
         </motion.div>
       )}
+        </>
+      )}
+
+      {/* ── Crop output — continuous pickers and perennial tree crops ────
+          Spinach, sukuma wiki, tomatoes and passion fruit give output week
+          after week from the same plants; avocado, mango, banana, macadamia
+          and coffee are planted once and picked for years. Neither fits the
+          one-shot "Harvest" flow, so both are logged here, straight onto the
+          crop's own harvest record. */}
+      {tab === "crops" && (
+        <div className="space-y-4">
+          {cropsLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" />
+            </div>
+          ) : loggedCrops.length === 0 ? (
+            <div className="text-center py-10 px-4 bg-tone-neutral-bg rounded-2xl border border-dashed border-wangari-border space-y-3">
+              <Leaf className="h-9 w-9 text-wangari-green-700 mx-auto" />
+              <p className="text-sm font-bold text-wangari-heading">Nothing here yields again and again yet</p>
+              <p className="text-xs text-wangari-muted max-w-md mx-auto">
+                Spinach, sukuma wiki, tomatoes, French beans and passion fruit are picked week after week from the
+                same plants. Avocado, mango, banana, macadamia, coffee and tea are planted once and picked for
+                years. Add one and its daily output is logged from here.
+              </p>
+              <Link href="/crops">
+                <Button className="bg-wangari-green-800 hover:bg-wangari-green-900 font-bold text-xs">
+                  <Plus className="h-4 w-4 mr-1.5" /> Add a crop
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <>
+              <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { title: "Crops producing", value: String(loggedCrops.length), icon: <Leaf className="h-5 w-5" /> },
+                  { title: "Picks this week", value: String(pickedThisWeek.length), icon: <TrendingUp className="h-5 w-5" /> },
+                  { title: "Total picked", value: `${cropTotalKg.toLocaleString("en-KE")} kg`, icon: <Wheat className="h-5 w-5" /> },
+                  { title: "Harvest value", value: `KES ${cropTotalValue.toLocaleString("en-KE")}`, icon: <Egg className="h-5 w-5" /> },
+                ].map((kpi) => (
+                  <motion.div key={kpi.title} variants={fadeUp} whileHover={{ y: -4, scale: 1.02 }}>
+                    <Card className="border border-wangari-border hover:shadow-lg hover:border-wangari-green-200 transition-all duration-300">
+                      <CardContent className="pt-6 pb-4 px-5">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-tone-good-bg text-wangari-green-800 mb-3">{kpi.icon}</div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-wangari-muted mb-1">{kpi.title}</p>
+                        <p className="text-2xl font-extrabold text-wangari-heading tracking-tight">{kpi.value}</p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              <div className="space-y-2">
+                {loggedCrops.map((c: any) => {
+                  const pattern = harvestPatternFor(c);
+                  const meta = HARVEST_PATTERN_META[pattern];
+                  const last = (c.harvests || [])[0];
+                  const draft = pickDrafts[c.id] || { quantityKg: "", salePrice: "" };
+                  return (
+                    <Card key={c.id} className="border border-wangari-border">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-bold text-wangari-heading truncate">{c.name}</p>
+                          <Badge variant="outline" className="text-[9px]">{c.cropType}</Badge>
+                          <Badge className={`text-[9px] border ${pattern === "continuous" ? "bg-wangari-green-50 text-wangari-green-800 border-wangari-green-200" : "bg-wangari-purple-50 text-wangari-purple-700 border-wangari-purple-200"}`}>
+                            {meta.label}
+                          </Badge>
+                        </div>
+                        <p className="text-[10px] text-wangari-subtle mt-1">{meta.summary}</p>
+                        <p className="text-[10px] text-wangari-muted mt-1">
+                          {c.areaAcres ? `${Number(c.areaAcres)} acres` : "area not set"}
+                          {last
+                            ? ` · last pick ${Number(last.quantityKg).toLocaleString("en-KE")} kg on ${new Date(last.date).toLocaleDateString("en-KE")}`
+                            : " · no pick recorded yet"}
+                        </p>
+                        <div className="flex flex-wrap items-end gap-2 mt-3">
+                          <div className="w-28">
+                            <Label className="text-[10px] font-semibold text-wangari-muted">Today (kg)</Label>
+                            <Input type="number" inputMode="decimal" placeholder="0" value={draft.quantityKg}
+                              onChange={(e) => setDraft(c.id, { quantityKg: e.target.value })} className="h-9 rounded-lg text-sm font-bold" />
+                          </div>
+                          <div className="w-32">
+                            <Label className="text-[10px] font-semibold text-wangari-muted">Sale value (KES)</Label>
+                            <Input type="number" inputMode="decimal" placeholder="optional" value={draft.salePrice}
+                              onChange={(e) => setDraft(c.id, { salePrice: e.target.value })} className="h-9 rounded-lg text-sm" />
+                          </div>
+                          <Button onClick={() => logPick(c)} disabled={savingPickId === c.id}
+                            className="h-9 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer font-bold text-xs">
+                            {savingPickId === c.id ? "Saving…" : (<><Plus className="h-3.5 w-3.5 mr-1" />Log pick</>)}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {singleCrops.length > 0 && (
+                <p className="text-xs text-wangari-muted">
+                  {singleCrops.length} single-harvest crop{singleCrops.length === 1 ? "" : "s"} (maize, beans, potatoes…)
+                  are recorded on the <Link href="/crops" className="font-bold text-wangari-green-800 hover:underline">Crops</Link> page when you harvest them.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {ToastComponent}
     </div>
   );

@@ -15,19 +15,30 @@ import { useToast } from "@/components/shared/toast";
 import api from "@/lib/api-client";
 import { BTN_LINK_SM } from "@/components/ui/patterns";
 import { cropsSeries as COLORS } from "@/lib/chart-series";
+import { harvestPatternFor, HARVEST_PATTERN_META } from "@/lib/crop-harvest-pattern";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
 
+// The list now covers all three harvest patterns, not just the grain-and-tree
+// staples. Leafy greens that are cut week after week (spinach, Swiss chard,
+// amaranth/terere, nightshade/managu, lettuce, coriander) were missing
+// entirely, so a farmer growing the most common Kenyan kitchen-garden crop
+// could not even register it.
 const CROP_TYPES = [
-  "Maize", "Beans", "Green Grams", "Cowpeas", "Pigeon Peas", "Groundnuts", "Tomatoes", "Kale", "Cabbage", "Onions", "Potatoes", "Sorghum", "Millet", "Wheat", "Sugarcane",
-  "Avocado", "Macadamia", "Mango", "Citrus", "Passion Fruit", "Bananas", "Papaya", "Coffee", "Tea",
+  "Maize", "Beans", "Green Grams", "Cowpeas", "Pigeon Peas", "Groundnuts", "Sorghum", "Millet", "Wheat", "Rice", "Cabbage", "Onions", "Potatoes", "Sweet Potatoes", "Cassava", "Sugarcane",
+  "Tomatoes", "Kale", "Spinach", "Swiss Chard", "Amaranth (Terere)", "Nightshade (Managu)", "Ethiopian Mustard (Kanzira)", "Lettuce", "Coriander (Dhania)", "French Beans", "Green Peppers", "Okra", "Cucumber", "Strawberries",
+  "Avocado", "Macadamia", "Mango", "Citrus", "Passion Fruit", "Bananas", "Papaya", "Guava", "Coffee", "Tea", "Coconut", "Napier Grass",
 ];
 // Perennial orchard crops: produce for years/decades — no single "harvested" end state.
 const PERENNIAL_CROPS = new Set(["Avocado", "Macadamia", "Mango", "Citrus", "Passion Fruit", "Bananas", "Papaya", "Coffee", "Tea"]);
 // Typical years from planting to first commercial harvest (Kenya smallholder guides).
 const MATURITY_YEARS: Record<string, number> = { Avocado: 3, Macadamia: 4, Mango: 4, Citrus: 4, "Passion Fruit": 1, Bananas: 1, Papaya: 1, Coffee: 3, Tea: 3 };
 const GROWTH_STAGES = ["Planted", "Germinating", "Vegetative", "Flowering", "Fruiting", "Ready"];
+// Continuous vs perennial vs single-harvest lives in one place (lib/crop-harvest-pattern)
+// because Daily Output reads the same table — a crop must be classified
+// identically on both screens or a spinach field shows "Harvest in 4 days"
+// here and a weekly picking there.
 const HEALTH_ISSUES = ["Pest", "Disease", "Weed", "Nutrient Deficiency", "Weather Damage"];
 const APPLICATION_TYPES = ["Fertilizer", "Pesticide", "Herbicide", "Irrigation", "Organic Manure"];
 
@@ -85,6 +96,9 @@ export default function CropsPage() {
   const [harvestForm, setHarvestForm] = React.useState({ date: new Date().toISOString().split("T")[0], quantityKg: "", quality: "A", salePrice: "" });
   const [healthForm, setHealthForm] = React.useState({ date: new Date().toISOString().split("T")[0], issueType: "Pest", description: "", severity: "low", treatment: "" });
   const [applyForm, setApplyForm] = React.useState({ date: new Date().toISOString().split("T")[0], type: "Fertilizer", productName: "", quantity: "", unit: "kg", cost: "", phiDays: "" });
+  // Heading for the shared application sheet — set by whichever lifecycle tab
+  // (Growth / Water / Flower) or the Apply Input button opened it.
+  const [applyIntent, setApplyIntent] = React.useState("Record Input Application");
   const [phForm, setPhForm] = React.useState({ harvestDate: new Date().toISOString().split("T")[0], quantityKg: "", grade: "", dryMatterPct: "", treatment: "" });
   const [soilForm, setSoilForm] = React.useState({ date: new Date().toISOString().split("T")[0], labName: "", ph: "", nitrogen: "", phosphorus: "", potassium: "", organicMatterPct: "", recommendation: "" });
   const [phBatches, setPhBatches] = React.useState<any[]>([]);
@@ -100,15 +114,25 @@ export default function CropsPage() {
   const [viewMode, setViewMode] = React.useState<"cards" | "list">("cards");
   const [expandedCropId, setExpandedCropId] = React.useState<number | null>(null);
 
+  // Growth / Water / Flower are not just colour-coded states — each one is a
+  // real farm action the farmer wants to log (a top-dress, an irrigation round,
+  // a bloom feed). Clicking the tab opens the same application form with the
+  // right defaults AND the right heading, so it is obvious the tab did
+  // something and what is about to be recorded. Before this the three tabs all
+  // landed on a generic "Record Input Application" sheet and looked dead.
   const handleTabClick = (key: string, crop: any) => {
+    const today = new Date().toISOString().split("T")[0];
     if (key === "growth") {
-      setApplyForm({ date: new Date().toISOString().split("T")[0], type: "Fertilizer", productName: "Growth Top-dress Fertiliser", quantity: "", unit: "kg", cost: "", phiDays: "" });
+      setApplyIntent("Record Growth Top-dress");
+      setApplyForm({ date: today, type: "Fertilizer", productName: "Growth Top-dress Fertiliser", quantity: "", unit: "kg", cost: "", phiDays: "" });
       openModal("apply", crop);
     } else if (key === "watering") {
-      setApplyForm({ date: new Date().toISOString().split("T")[0], type: "Irrigation", productName: "Field Irrigation", quantity: "", unit: "litres", cost: "", phiDays: "" });
+      setApplyIntent("Record Irrigation / Watering");
+      setApplyForm({ date: today, type: "Irrigation", productName: "Field Irrigation", quantity: "", unit: "litres", cost: "", phiDays: "" });
       openModal("apply", crop);
     } else if (key === "flower") {
-      setApplyForm({ date: new Date().toISOString().split("T")[0], type: "Fertilizer", productName: "Foliar Spray / Bloom Feed", quantity: "", unit: "kg", cost: "", phiDays: "" });
+      setApplyIntent("Record Flowering / Bloom Feed");
+      setApplyForm({ date: today, type: "Fertilizer", productName: "Foliar Spray / Bloom Feed", quantity: "", unit: "kg", cost: "", phiDays: "" });
       openModal("apply", crop);
     } else if (key === "harvest") {
       openModal("harvest", crop);
@@ -121,12 +145,19 @@ export default function CropsPage() {
   const resetForm = () => { setForm({ name: "", cropType: "", variety: "", areaAcres: "", plantingDate: "", expectedHarvest: "", location: "", pricePerKg: "", harvestSeason: "", maturityYears: "" }); setStep(0); setShowForm(false); };
 
   const handleCreate = async () => {
+    // The shared classifier decides "tree or not", so a crop added here is
+    // flagged for the same reason Daily Output treats it as perennial — one
+    // rule, one place. PERENNIAL_CROPS remains only as a fallback for names
+    // the classifier does not know.
+    const isPerennial =
+      harvestPatternFor({ cropType: form.cropType }) === "perennial" ||
+      PERENNIAL_CROPS.has(form.cropType);
     await api.post("/api/crops", {
       ...form,
-      isPerennial: PERENNIAL_CROPS.has(form.cropType),
-      maturityYears: form.maturityYears || (PERENNIAL_CROPS.has(form.cropType) ? String(MATURITY_YEARS[form.cropType] ?? "") : ""),
+      isPerennial,
+      maturityYears: form.maturityYears || (isPerennial ? String(MATURITY_YEARS[form.cropType] ?? "") : ""),
     });
-    import("@/lib/posthog").then(({ trackEvent }) => trackEvent("crop_registered", { crop_type: form.cropType, perennial: PERENNIAL_CROPS.has(form.cropType) }));
+    import("@/lib/posthog").then(({ trackEvent }) => trackEvent("crop_registered", { crop_type: form.cropType, perennial: isPerennial }));
     resetForm(); showToast("Crop registered!"); load();
   };
   const handleDelete = async (id: number) => { if (!confirm("Delete this crop?")) return; await api.delete("/api/crops/" + id); load(); };
@@ -531,7 +562,7 @@ export default function CropsPage() {
                                   <CropGuidanceCard crop={crop} />
                                   <div className="flex gap-2">
                                     <button type="button" onClick={() => openModal("health", crop)} className="px-3 py-1.5 bg-tone-warn-bg text-tone-warn-text rounded-lg text-xs font-bold cursor-pointer">Report Issue</button>
-                                    <button type="button" onClick={() => openModal("apply", crop)} className="px-3 py-1.5 bg-wangari-blue-50 text-wangari-blue-800 rounded-lg text-xs font-bold cursor-pointer">Apply Input</button>
+                                    <button type="button" onClick={() => { setApplyIntent("Record Input Application"); openModal("apply", crop); }} className="px-3 py-1.5 bg-wangari-blue-50 text-wangari-blue-800 rounded-lg text-xs font-bold cursor-pointer">Apply Input</button>
                                     <button type="button" onClick={() => openModal("soiltest", crop)} className="px-3 py-1.5 bg-wangari-teal-50 text-wangari-teal-800 rounded-lg text-xs font-bold cursor-pointer">Soil Test</button>
                                     <button type="button" onClick={() => openBatches(crop)} className="px-3 py-1.5 bg-wangari-purple-50 text-wangari-purple-800 rounded-lg text-xs font-bold cursor-pointer">Batches & Tests</button>
                                   </div>
@@ -554,6 +585,8 @@ export default function CropsPage() {
               const growth = getGrowthProgress(crop.plantingDate, crop.expectedHarvest);
               const daysLeft = crop.expectedHarvest ? Math.ceil((new Date(crop.expectedHarvest).getTime() - Date.now()) / 86400000) : null;
               const hasActiveIssues = (crop.health || []).some((h: any) => !h.outcome || h.outcome === "ongoing");
+              const pattern = harvestPatternFor(crop);
+              const patternMeta = HARVEST_PATTERN_META[pattern];
 
               return (
                 <motion.div key={crop.id} variants={fadeUp} whileHover={{ y: -4 }}>
@@ -565,9 +598,11 @@ export default function CropsPage() {
                           <div>
                             <h3 className="text-base font-bold text-wangari-gray-900">{crop.name}</h3>
                             <p className="text-xs text-wangari-gray-400">{crop.cropType}{crop.variety ? ` (${crop.variety})` : ""}</p>
-                            {crop.isPerennial && (
+                            {pattern !== "single" && (
                               <p className="text-[10px] font-semibold text-wangari-green-600 mt-0.5">
-                                🌳 Perennial{crop.maturityYears ? ` · ${crop.maturityYears}y to maturity` : ""}{crop.harvestSeason ? ` · ${crop.harvestSeason}` : ""}
+                                {pattern === "perennial" ? "🌳" : "♻️"} {patternMeta.label}
+                                {crop.maturityYears ? ` · ${crop.maturityYears}y to maturity` : ""}
+                                {crop.harvestSeason ? ` · ${crop.harvestSeason}` : ""}
                               </p>
                             )}
                           </div>
@@ -591,7 +626,9 @@ export default function CropsPage() {
 
                       <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                         {crop.areaAcres && <div className="rounded-lg bg-wangari-gray-50 p-2"><span className="text-wangari-gray-400">Area</span><p className="font-bold">{crop.areaAcres} acres</p></div>}
-                        {daysLeft !== null && <div className="rounded-lg bg-wangari-gray-50 p-2"><span className="text-wangari-gray-400">Harvest</span><p className="font-bold">{daysLeft > 0 ? `${daysLeft} days` : "Ready"}</p></div>}
+                        {pattern === "single" && daysLeft !== null && <div className="rounded-lg bg-wangari-gray-50 p-2"><span className="text-wangari-gray-400">Harvest</span><p className="font-bold">{daysLeft > 0 ? `${daysLeft} days` : "Ready"}</p></div>}
+                        {pattern === "continuous" && <div className="rounded-lg bg-wangari-green-50 p-2"><span className="text-wangari-green-600">Picking</span><p className="font-bold text-wangari-green-700">Weekly</p></div>}
+                        {pattern === "perennial" && daysLeft !== null && <div className="rounded-lg bg-wangari-purple-50 p-2"><span className="text-wangari-purple-600">Next picking</span><p className="font-bold text-wangari-purple-700">{daysLeft > 0 ? `${daysLeft} days` : "In season"}</p></div>}
                         {totalKg > 0 && <div className="rounded-lg bg-wangari-green-50 p-2"><span className="text-wangari-green-600">Harvested</span><p className="font-bold text-wangari-green-700">{totalKg.toFixed(0)} kg</p></div>}
                       </div>
 
@@ -627,7 +664,7 @@ export default function CropsPage() {
                           <button onClick={() => openModal("health", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-tone-warn-bg text-tone-warn-text text-[10px] font-semibold hover:bg-wangari-amber-100 transition-colors cursor-pointer">
                             <Bug className="h-3.5 w-3.5" />Report Issue
                           </button>
-                          <button onClick={() => openModal("apply", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-wangari-blue-50 text-badge-blue-text text-[10px] font-semibold hover:bg-badge-blue-bg transition-colors cursor-pointer">
+                          <button onClick={() => { setApplyIntent("Record Input Application"); openModal("apply", crop); }} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-wangari-blue-50 text-badge-blue-text text-[10px] font-semibold hover:bg-badge-blue-bg transition-colors cursor-pointer">
                             <Pill className="h-3.5 w-3.5" />Apply Input
                           </button>
                           <button onClick={() => openModal("postharvest", crop)} className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-wangari-purple-50 text-wangari-purple-700 text-[10px] font-semibold hover:bg-wangari-purple-100 transition-colors cursor-pointer">
@@ -653,7 +690,7 @@ export default function CropsPage() {
               <h3 className="text-sm font-bold text-wangari-gray-900 mb-1">
                 {activeModal === "harvest" && "Record Harvest"}
                 {activeModal === "health" && "Report Health Issue"}
-                {activeModal === "apply" && "Record Input Application"}
+                {activeModal === "apply" && applyIntent}
                 {activeModal === "postharvest" && "Post-Harvest Batch"}
                 {activeModal === "soiltest" && "Record Soil Test"}
                 {activeModal === "batches" && "Batches & Soil Tests"}

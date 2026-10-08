@@ -329,15 +329,46 @@ select:focus {
   }
 }
 
-/* ─── Print / PDF styles ────────────────────────────────── */
+/* ─── Print / PDF styles ──────────────────────────────────
+   The farm record is meant to leave the phone as a DOCUMENT — the sheet a
+   bank, SACCO or field agent reads and files — not a screenshot of the app.
+   So the print sheet is reset to a plain paper page: real margins, no app
+   chrome, no fixed sidebar space, and no colour washes that waste ink or
+   vanish against white.
+
+   Two details matter for correctness, not cosmetics:
+   - `@page { margin }` gives the paper its own margins. Without it the
+     browser falls back to its default and long records run to the very edge.
+   - ancestors of <main> are forced to `position: static; transform: none;
+     overflow: visible` because the dashboard shell uses a fixed sidebar and
+     framer-motion leaves `transform`/`opacity` inline on cards. A transformed
+     or clipped ancestor is what turns a print into a cropped screenshot. */
 @media print {
-  body {
+  @page {
+    margin: 12mm;
+  }
+  html, body {
     background: #ffffff !important;
     color: #000000 !important;
     font-size: 11pt !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   aside, header, nav, footer, .no-print, button, [role="navigation"], .sidebar, .bottom-nav {
     display: none !important;
+  }
+  /* Un-clip the print path: a transformed, faded or overflow-hidden wrapper
+     around the record (motion cards, scroll containers) is flattened so the
+     page is not cropped to whatever happened to be on screen. `position` is
+     left alone because charts and sticky headers rely on it. */
+  main, main * {
+    transform: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    animation: none !important;
+    transition: none !important;
   }
   main {
     margin: 0 !important;
@@ -345,9 +376,22 @@ select:focus {
     width: 100% !important;
     max-width: 100% !important;
   }
+  /* The dashboard shell indents itself by the sidebar's 260px at the lg
+     breakpoint. The sidebar is hidden in print, but that indent is not — so
+     without this the sheet is pushed off-centre exactly like a bad screenshot. */
+  .dashboard-shell {
+    padding-left: 0 !important;
+    min-height: 0 !important;
+    display: block !important;
+  }
   .card, [class*="rounded-"], [class*="border"] {
     box-shadow: none !important;
     border-color: #cbd5e1 !important;
+  }
+  /* Keep a record section from being split across two sheets mid-table. */
+  .card, table, tr, section, .print-keep {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
   .print-break {
     page-break-before: always !important;

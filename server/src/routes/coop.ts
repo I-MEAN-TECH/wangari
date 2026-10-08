@@ -44,6 +44,7 @@ async function loadGroupForUser(userId: number, groupId: number) {
       name: true,
       county: true,
       joinCode: true,
+      joinCodeExpiresAt: true,
       status: true,
       chairUserId: true,
       createdAt: true,
@@ -79,13 +80,13 @@ router.get("/", async (req: Request, res: Response) => {
   const ids = [...new Set(memberships.map((m) => m.groupId))];
   const chaired = await prisma.coopGroup.findMany({
     where: { chairUserId: userId },
-    select: { id: true, name: true, county: true, joinCode: true, status: true, createdAt: true },
+    select: { id: true, name: true, county: true, joinCode: true, joinCodeExpiresAt: true, status: true, createdAt: true },
   });
 
   const seen = new Set(chaired.map((g) => g.id));
   const belonging = await prisma.coopGroup.findMany({
     where: { id: { in: ids.filter((id) => !seen.has(id)) } },
-    select: { id: true, name: true, county: true, joinCode: true, status: true, createdAt: true },
+    select: { id: true, name: true, county: true, joinCode: true, joinCodeExpiresAt: true, status: true, createdAt: true },
   });
 
   const all = [...chaired, ...belonging].map((g) => ({
@@ -266,9 +267,20 @@ router.post("/join", async (req: Request, res: Response) => {
   if (!joinCode) return res.status(400).json({ error: "That group code does not look right", field: "joinCode" });
 
   try {
-    const group = await prisma.coopGroup.findUnique({ where: { joinCode }, select: { id: true, name: true, status: true } });
+    const group = await prisma.coopGroup.findUnique({
+      where: { joinCode },
+      select: { id: true, name: true, status: true, joinCodeExpiresAt: true },
+    });
     if (!group || group.status !== "active") {
       return res.status(404).json({ error: "No active group has that code" });
+    }
+    // An expired code fails with a message that names the reason, so a farmer
+    // is not left retyping a code that will never work again. NULL = no expiry.
+    if (group.joinCodeExpiresAt && group.joinCodeExpiresAt.getTime() < Date.now()) {
+      return res.status(410).json({
+        error: "This group code has expired — ask the chairperson for a new one",
+        expired: true,
+      });
     }
 
     const existing = await prisma.coopMembership.findUnique({
@@ -432,6 +444,29 @@ router.patch("/:id", async (req: Request, res: Response) => {
   }
   if (typeof req.body.name === "string" && req.body.name.trim().length >= 2) {
     data.name = req.body.name.trim();
+  }
+  // Lifespan of the join code. `expiresInDays` is the friendly form the UI
+  // sends (7 / 30 / 90 / 365); `null` or `0` means "never expires". An explicit
+  // ISO `joinCodeExpiresAt` is still accepted for anything that wants to set an
+  // exact date. Absent entirely = leave the current expiry untouched, so an
+  // edit to the code alone cannot silently reset a lifespan the chair chose.
+  if (req.body.expiresInDays !== undefined) {
+    const days = Number(req.body.expiresInDays);
+    if (req.body.expiresInDays === null || days === 0) {
+      data.joinCodeExpiresAt = null;
+    } else if (Number.isFinite(days) && days > 0 && days <= 3650) {
+      data.joinCodeExpiresAt = new Date(Date.now() + days * 86400000);
+    } else {
+      return res.status(400).json({ error: "Choose a lifespan between 1 day and 10 years, or 'never'" });
+    }
+  } else if (req.body.joinCodeExpiresAt !== undefined) {
+    if (req.body.joinCodeExpiresAt === null || req.body.joinCodeExpiresAt === "") {
+      data.joinCodeExpiresAt = null;
+    } else {
+      const when = new Date(req.body.joinCodeExpiresAt);
+      if (isNaN(when.getTime())) return res.status(400).json({ error: "That expiry date is not valid" });
+      data.joinCodeExpiresAt = when;
+    }
   }
 
   try {

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Users, Plus, Copy, Check, ShieldCheck, UserPlus, Lock, Trash2, KeyRound } from "lucide-react";
+import { Users, Plus, Copy, Check, ShieldCheck, UserPlus, Lock, Trash2, KeyRound, Link2, CalendarClock } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +49,28 @@ export default function CoopPage() {
   const [groupName, setGroupName] = React.useState("");
   const [county, setCounty] = React.useState("");
   const [joinCode, setJoinCode] = React.useState("");
+
+  // Sponsorship code: the chair can rename the group code and give it a
+  // lifespan, then share it as a link. A code with no expiry is a legitimate
+  // choice (a long-running SACCO), so "never" is a first-class option, not an
+  // absence of one.
+  const [codeDraft, setCodeDraft] = React.useState("");
+  const [expiryChoice, setExpiryChoice] = React.useState<string>("never");
+  const [savingCode, setSavingCode] = React.useState(false);
+  // Built after mount: window is not available while this page renders on the
+  // server, and a link assembled there would bake in the wrong origin.
+  const [origin, setOrigin] = React.useState("");
+
+  React.useEffect(() => {
+    setOrigin(window.location.origin);
+    // A shared join link (/coop?code=KIUMBO-4821) opens the join box already
+    // filled, so a member never retypes a code they were sent.
+    const shared = new URLSearchParams(window.location.search).get("code");
+    if (shared) {
+      setJoinCode(shared.toUpperCase());
+      setShowJoin(true);
+    }
+  }, []);
 
   const loadGroups = React.useCallback(() => {
     api
@@ -139,8 +161,59 @@ export default function CoopPage() {
     }
   };
 
+  const joinLink = origin && detail?.group?.joinCode
+    ? `${origin}/coop?code=${encodeURIComponent(detail.group.joinCode)}`
+    : "";
+
+  // The panel must show the real state, not the last thing selected. A chair
+  // reopening the page sees their saved lifespan, not the default.
+  React.useEffect(() => {
+    const g = detail?.group;
+    if (!g) return;
+    setCodeDraft(g.joinCode || "");
+    if (!g.joinCodeExpiresAt) {
+      setExpiryChoice("never");
+      return;
+    }
+    const days = Math.max(0, Math.round((new Date(g.joinCodeExpiresAt).getTime() - Date.now()) / 86400000));
+    const presets = [7, 30, 90, 365];
+    const nearest = presets.reduce((a, b) => (Math.abs(b - days) < Math.abs(a - days) ? b : a), presets[0]);
+    setExpiryChoice(String(nearest));
+  }, [detail?.group?.id, detail?.group?.joinCode, detail?.group?.joinCodeExpiresAt]);
+
+  const saveJoinCode = async () => {
+    if (!selected) return;
+    setSavingCode(true);
+    try {
+      await api.patch(`/api/coop/${selected}`, {
+        joinCode: codeDraft.trim(),
+        expiresInDays: expiryChoice === "never" ? 0 : Number(expiryChoice),
+      });
+      showToast("Join code updated", "success");
+      loadDetail(selected);
+      loadGroups();
+    } catch (err: any) {
+      showToast(err?.message ?? "Could not update the code", "error");
+    } finally {
+      setSavingCode(false);
+    }
+  };
+
   const isChair = detail?.group?.myRole === "chair";
   const agg = detail?.aggregate;
+
+  // Lifespan shown next to the code itself, so a chair about to read it out at
+  // a meeting can see whether it will still work next week.
+  const expiryStatus = (() => {
+    const exp = detail?.group?.joinCodeExpiresAt;
+    if (!exp) return { label: "Never expires", tone: "bg-wangari-green-100 text-wangari-green-800" };
+    const days = Math.ceil((new Date(exp).getTime() - Date.now()) / 86400000);
+    if (days <= 0) return { label: "Expired", tone: "bg-badge-red-bg text-badge-red-text" };
+    return {
+      label: `Expires in ${days} day${days === 1 ? "" : "s"}`,
+      tone: "bg-tone-warn-bg text-tone-warn-text",
+    };
+  })();
 
   return (
     <div className="space-y-6">
@@ -242,17 +315,72 @@ export default function CoopPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {isChair && (
-                    <div className="flex flex-wrap items-center gap-3 rounded-xl bg-wangari-green-50 p-4">
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-wangari-muted">Join code</p>
-                        <p className="mt-0.5 font-mono text-lg font-bold tracking-widest text-wangari-heading">
-                          {detail.group.joinCode}
-                        </p>
+                    <div className="space-y-3 rounded-xl bg-wangari-green-50 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-wangari-muted">Join code</p>
+                          <p className="mt-0.5 font-mono text-lg font-bold tracking-widest text-wangari-heading">
+                            {detail.group.joinCode}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${expiryStatus.tone}`}>
+                            <CalendarClock className="h-3 w-3" />
+                            {expiryStatus.label}
+                          </span>
+                          <Button variant="outline" size="sm" onClick={() => copy(detail.group.joinCode)}>
+                            {copied === detail.group.joinCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            {copied === detail.group.joinCode ? "Copied" : "Code"}
+                          </Button>
+                          {joinLink && (
+                            <Button variant="outline" size="sm" onClick={() => copy(joinLink)}>
+                              {copied === joinLink ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
+                              {copied === joinLink ? "Copied" : "Link"}
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => copy(detail.group.joinCode)}>
-                        {copied === detail.group.joinCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                        {copied === detail.group.joinCode ? "Copied" : "Copy"}
-                      </Button>
+
+                      <p className="text-[11px] text-wangari-muted">
+                        Share the link and a member lands on the join box with the code already filled in.
+                      </p>
+
+                      <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+                        <div className="space-y-1">
+                          <Label htmlFor="codeEdit" className="text-[11px]">Change the code</Label>
+                          <Input
+                            id="codeEdit"
+                            value={codeDraft}
+                            onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
+                            className="h-10 rounded-xl font-mono uppercase tracking-widest"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="codeLifespan" className="text-[11px]">Stays valid for</Label>
+                          <select
+                            id="codeLifespan"
+                            value={expiryChoice}
+                            onChange={(e) => setExpiryChoice(e.target.value)}
+                            className="h-10 w-full rounded-xl border border-wangari-border bg-white px-3 text-sm sm:w-44"
+                          >
+                            <option value="never">Never expires</option>
+                            <option value="7">7 days</option>
+                            <option value="30">30 days</option>
+                            <option value="90">90 days</option>
+                            <option value="365">1 year</option>
+                          </select>
+                        </div>
+                        <Button
+                          onClick={saveJoinCode}
+                          disabled={savingCode || codeDraft.trim().length < 3}
+                          className="h-10 bg-wangari-green-800 hover:bg-wangari-green-900"
+                        >
+                          {savingCode ? "Saving…" : "Save"}
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-wangari-muted">
+                        After it expires the old code stops working and members see why — only you can issue a new one.
+                      </p>
                     </div>
                   )}
 

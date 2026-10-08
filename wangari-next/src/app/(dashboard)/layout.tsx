@@ -156,7 +156,7 @@ export default function DashboardLayout({
       )}
 
       {/* Main content */}
-      <div className={`${isAI ? "" : "lg:pl-[260px]"} min-h-screen flex flex-col`}>
+      <div className={`dashboard-shell ${isAI ? "" : "lg:pl-[260px]"} min-h-screen flex flex-col`}>
         {/* Truth-teller for a dead API. Mounted above everything so a farmer
             never mistakes an outage for an empty farm. */}
         {!isAI && <MaintenanceNotice />}

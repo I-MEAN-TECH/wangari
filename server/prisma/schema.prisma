@@ -1435,6 +1435,11 @@ model CoopGroup {
   county      String?
   /// Human-readable join code, e.g. "KIUMBO-4821". See lib/coop-code.ts.
   joinCode    String   @unique @map("join_code")
+  /// When the join code stops working, set by the chair. NULL means the code
+  /// stays open — which is why this is nullable rather than defaulted: a
+  /// permanent code is a legitimate choice, and a default would silently
+  /// expire every existing group's code the day this shipped.
+  joinCodeExpiresAt DateTime? @map("join_code_expires_at")
   /// active | dissolved
   status      String   @default("active")
   createdAt   DateTime @default(now()) @map("created_at")

@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FarmRecordCard, type FarmRecordResponse } from "@/components/farm-record/FarmRecordCard";
 import { LenderBrief } from "@/components/farm-record/LenderBrief";
+import { FarmRecordSummary } from "@/components/farm-record/FarmRecordSummary";
 import api from "@/lib/api-client";
 
 /**
@@ -108,7 +109,17 @@ export default function FarmRecordPage() {
         <>
           {/* The farmer's view is the default and stays first. The lender
               template is one tap away, not in the way. */}
-          {forLender ? <LenderBrief record={record} /> : <FarmRecordCard record={record} />}
+          {/* Farmer view: the visual dashboard (cards, KPIs, charts) first, then the
+              record card itself. The summary is `no-print`, so printing still
+              produces the document, not a screenshot of the charts. */}
+          {forLender ? (
+            <LenderBrief record={record} />
+          ) : (
+            <>
+              <FarmRecordSummary record={record} />
+              <FarmRecordCard record={record} />
+            </>
+          )}
 
           <div className="flex gap-2">
             <Button

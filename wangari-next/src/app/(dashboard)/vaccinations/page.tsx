@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Syringe, Plus, X, CheckCircle2, Clock, AlertTriangle, Trash2, Calendar, ChevronRight, DollarSign, User, Hash, Edit3, Check } from "lucide-react";
+import { Syringe, Plus, X, CheckCircle2, Clock, AlertTriangle, Trash2, Calendar, ChevronLeft, ChevronRight, DollarSign, User, Hash, Edit3, Check, List } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,13 @@ export default function VaccinationsPage() {
   const [showForm, setShowForm] = React.useState(false);
   const [formMode, setFormMode] = React.useState<FormMode>("schedule");
   const [filter, setFilter] = React.useState<"all" | "pending" | "completed">("all");
+  // Card view answers "what did I do?"; the calendar answers "what is due when?"
+  // — the two questions a farmer actually asks about vaccination schedules.
+  const [view, setView] = React.useState<"list" | "calendar">("list");
+  const [monthCursor, setMonthCursor] = React.useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const { showToast, ToastComponent } = useToast();
 
@@ -137,6 +144,34 @@ export default function VaccinationsPage() {
     if (filter === "completed" && r.status !== "completed") return false;
     return true;
   });
+
+  // ── Calendar view helpers ────────────────────────────────────────────
+  // Key every vaccination by the local calendar day it belongs to: the day it
+  // is DUE while pending, the day it was GIVEN once done. localKey() uses the
+  // device's own date parts on purpose — toISOString() would shift the day for
+  // anyone east or west of UTC and drop a jab into the wrong cell.
+  const localKey = (input: any) => {
+    const d = new Date(input);
+    if (isNaN(d.getTime())) return "";
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  const byDay = new Map<string, any[]>();
+  for (const r of filtered) {
+    const key = localKey(r.status === "completed" ? (r.completedDate || r.scheduledDate) : r.scheduledDate);
+    if (!key) continue;
+    const bucket = byDay.get(key);
+    if (bucket) bucket.push(r);
+    else byDay.set(key, [r]);
+  }
+  // Monday-first grid, matching Kenyan calendars rather than the US Sunday row.
+  const monthStart = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1);
+  const leadingBlanks = (monthStart.getDay() + 6) % 7;
+  const daysInMonth = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 0).getDate();
+  const calCells: (Date | null)[] = [];
+  for (let i = 0; i < leadingBlanks; i++) calCells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) calCells.push(new Date(monthCursor.getFullYear(), monthCursor.getMonth(), d));
+  const todayKey = localKey(new Date());
+  const monthLabel = monthStart.toLocaleDateString("en-KE", { month: "long", year: "numeric" });
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" /></div>;
 
@@ -346,16 +381,93 @@ export default function VaccinationsPage() {
         ))}
       </motion.div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2">
-        {(["all", "pending", "completed"] as const).map(f => (
-          <button key={f} onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer capitalize ${filter === f ? "bg-wangari-green-800 text-white" : "bg-wangari-sunken text-wangari-muted"}`}>{f}</button>
-        ))}
+      {/* Filter tabs + view switch */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex gap-2">
+          {(["all", "pending", "completed"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer capitalize ${filter === f ? "bg-wangari-green-800 text-white" : "bg-wangari-sunken text-wangari-muted"}`}>{f}</button>
+          ))}
+        </div>
+        <div className="flex gap-1 rounded-xl bg-wangari-sunken p-1">
+          <button onClick={() => setView("list")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === "list" ? "bg-white text-wangari-green-800 shadow-sm" : "text-wangari-muted"}`}>
+            <List className="h-3.5 w-3.5" />List
+          </button>
+          <button onClick={() => setView("calendar")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === "calendar" ? "bg-white text-wangari-green-800 shadow-sm" : "text-wangari-muted"}`}>
+            <Calendar className="h-3.5 w-3.5" />Calendar
+          </button>
+        </div>
       </div>
 
+      {/* Calendar view — shows what is due and what was done on each day */}
+      {view === "calendar" && (
+        <Card className="border border-wangari-border">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-3">
+              <button onClick={() => setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1))}
+                className="p-2 rounded-lg hover:bg-wangari-sunken text-wangari-muted cursor-pointer" aria-label="Previous month">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <p className="text-sm font-bold text-wangari-heading">{monthLabel}</p>
+              <button onClick={() => setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1))}
+                className="p-2 rounded-lg hover:bg-wangari-sunken text-wangari-muted cursor-pointer" aria-label="Next month">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => (
+                <div key={d} className="text-center text-[10px] font-bold uppercase tracking-wide text-wangari-subtle py-1">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {calCells.map((day, i) => {
+                if (!day) return <div key={`b-${i}`} className="min-h-[64px] rounded-lg bg-transparent" />;
+                const key = localKey(day);
+                const items = byDay.get(key) || [];
+                const isToday = key === todayKey;
+                return (
+                  <div key={key}
+                    className={`min-h-[64px] rounded-lg border p-1.5 ${isToday ? "border-wangari-green-400 bg-wangari-green-50/60" : items.length ? "border-wangari-border bg-white" : "border-transparent bg-wangari-sunken/40"}`}>
+                    <div className={`text-[11px] font-bold mb-0.5 ${isToday ? "text-wangari-green-800" : "text-wangari-muted"}`}>{day.getDate()}</div>
+                    <div className="space-y-0.5">
+                      {items.slice(0, 2).map(r => {
+                        const overdueItem = r.status === "pending" && new Date(r.scheduledDate) < now;
+                        return (
+                          <button key={r.id} onClick={() => handleEdit(r)}
+                            title={`${r.vaccineName} — ${r.flock?.name || "Unknown group"}`}
+                            className={`w-full text-left truncate rounded px-1 py-0.5 text-[9px] font-semibold cursor-pointer ${
+                              r.status === "completed"
+                                ? "bg-wangari-green-100 text-wangari-green-800"
+                                : overdueItem
+                                  ? "bg-badge-red-bg text-badge-red-text"
+                                  : "bg-tone-warn-bg text-tone-warn-text"
+                            }`}>
+                            {r.vaccineName}
+                          </button>
+                        );
+                      })}
+                      {items.length > 2 && (
+                        <button onClick={() => { setView("list"); setFilter("all"); }}
+                          className="w-full text-left text-[9px] font-bold text-wangari-green-700 cursor-pointer">+{items.length - 2} more</button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-wangari-border text-[10px] text-wangari-muted">
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded bg-tone-warn-bg border border-tone-warn-border" />Scheduled</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded bg-wangari-green-100 border border-wangari-green-200" />Done</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded bg-badge-red-bg border border-tone-bad-border" />Overdue</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Vaccination cards */}
-      {filtered.length === 0 ? <EmptyState title="No vaccinations" description="Schedule or record vaccinations for your groups." /> : (
+      {view === "calendar" ? null : filtered.length === 0 ? <EmptyState title="No vaccinations" description="Schedule or record vaccinations for your groups." /> : (
         <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-2">
           {filtered.map(r => {
             const isPending = r.status === "pending";
