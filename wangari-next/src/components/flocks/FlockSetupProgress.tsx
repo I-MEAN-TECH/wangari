@@ -17,12 +17,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { speciesFor } from "@/lib/species-resolve";
 import Link from "next/link";
 
+/**
+ * The five steps, and what each one needs to finish.
+ *
+ * `href` is only the fallback for a caller that renders this checklist
+ * standalone. Three of the five steps are finished on the flock itself — the
+ * feed plan and the vet live in the flock's edit form, and the photo is
+ * uploaded in the header right above this card — so the flocks page passes
+ * `onAction` and the row acts in place. Linking those to /flocks or /inventory
+ * left the farmer on a page that could not complete the step, and the item
+ * stayed unchecked however faithfully they followed the instruction.
+ */
+export type SetupStepId = "vaccinations" | "feed" | "vet" | "production" | "photo";
+
 interface FlockSetupProgressProps {
   flock: any;
+  /** Handle a row in place. Without it each row is a plain link. */
+  onAction?: (id: SetupStepId) => void;
 }
 
 interface SetupItem {
-  id: string;
+  id: SetupStepId;
   label: string;
   description: string;
   completed: boolean;
@@ -30,13 +45,10 @@ interface SetupItem {
   icon: any;
 }
 
-export function FlockSetupProgress({ flock }: FlockSetupProgressProps) {
+export function FlockSetupProgress({ flock, onAction }: FlockSetupProgressProps) {
   const [dismissed, setDismissed] = React.useState(false);
 
-  // Only show for first 7 days
-  const ageDays = flock.hatchDate
-    ? Math.floor((Date.now() - new Date(flock.hatchDate).getTime()) / 86400000)
-    : 0;
+  // Only show for first 7 days after the group was added.
   const createdDays = flock.createdAt
     ? Math.floor((Date.now() - new Date(flock.createdAt).getTime()) / 86400000)
     : 0;
@@ -170,11 +182,14 @@ export function FlockSetupProgress({ flock }: FlockSetupProgressProps) {
               <div className="space-y-2">
                 {items.map((item) => {
                   const Icon = item.icon;
+                  const Row: any = onAction ? "button" : Link;
                   return (
-                    <Link
+                    <Row
                       key={item.id}
-                      href={item.href}
-                      className={`flex items-center gap-3 p-2.5 rounded-xl transition-all ${
+                      {...(onAction
+                        ? { type: "button", onClick: () => onAction(item.id) }
+                        : { href: item.href })}
+                      className={`w-full text-left flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer ${
                         item.completed
                           ? "bg-wangari-green-50/50"
                           : "bg-white border border-wangari-gray-100 hover:border-wangari-green-200 hover:bg-wangari-green-50/30"
@@ -206,7 +221,7 @@ export function FlockSetupProgress({ flock }: FlockSetupProgressProps) {
                       {!item.completed && (
                         <ChevronRight className="h-3.5 w-3.5 text-wangari-gray-300 flex-shrink-0" />
                       )}
-                    </Link>
+                    </Row>
                   );
                 })}
               </div>

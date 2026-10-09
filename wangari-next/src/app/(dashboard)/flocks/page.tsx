@@ -37,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import api from "@/lib/api-client";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 import { CreateFlockForm } from "@/components/flocks/CreateFlockForm";
 import { EditFlockForm } from "@/components/flocks/EditFlockForm";
 import { RecordProductionForm } from "@/components/flocks/RecordProductionForm";
@@ -52,6 +53,7 @@ import { BatchProduction } from "@/components/flocks/BatchProduction";
 import { BreedingRecords } from "@/components/flocks/BreedingRecords";
 import { PostCreateWizard } from "@/components/flocks/PostCreateWizard";
 import { FlockSetupProgress } from "@/components/flocks/FlockSetupProgress";
+import type { FormSection } from "@/components/flocks/EditFlockForm";
 import { getSpeciesCategories, getSpeciesIconId } from "@/lib/species-templates";
 import { speciesFor } from "@/lib/species-resolve";
 import { SpeciesGuidanceCard } from "@/components/flocks/SpeciesGuidanceCard";
@@ -146,6 +148,7 @@ function QuickMortality({ flock, onRecord }: { flock: any; onRecord: (deaths: nu
 }
 
 export default function FlocksPage() {
+  const router = useRouter();
   const [flocks, setFlocks] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [showForm, setShowForm] = React.useState(false);
@@ -206,12 +209,21 @@ export default function FlocksPage() {
   };
 
   const [editingFlock, setEditingFlock] = React.useState<any>(null);
+  const [editSection, setEditSection] = React.useState<FormSection | undefined>(undefined);
+
+  /** Open the flock's edit form on one panel — the checklist's feed/vet steps. */
+  const openFlockSection = (flock: any, section: FormSection) => {
+    setEditingFlock(flock);
+    setEditSection(section);
+    setShowEditForm(true);
+  };
 
   const handleEdit = async (data: any) => {
     if (!editingFlock) return;
     await api.patch(`/api/flocks/${editingFlock.id}`, data);
     setShowEditForm(false);
     setEditingFlock(null);
+    setEditSection(undefined);
     loadFlocks();
     setSelectedFlock((prev: any) => prev ? { ...prev, ...data } : prev);
   };
@@ -289,8 +301,9 @@ export default function FlocksPage() {
       {showEditForm && editingFlock && (
         <EditFlockForm
           flock={editingFlock}
+          initialSection={editSection}
           onSubmit={handleEdit}
-          onCancel={() => { setShowEditForm(false); setEditingFlock(null); }}
+          onCancel={() => { setShowEditForm(false); setEditingFlock(null); setEditSection(undefined); }}
         />
       )}
 
@@ -364,6 +377,7 @@ export default function FlocksPage() {
           <div className="flex items-center gap-4 min-w-0">
             <FlockPhoto
               flockId={flock.id}
+              inputId="flock-photo-input"
               photoUrl={flock.photoUrl || null}
               onPhotoUpdate={(url) => {
                 loadFlocks();
@@ -436,8 +450,19 @@ export default function FlocksPage() {
           ))}
         </motion.div>
 
-        {/* Setup Progress (first 7 days) */}
-        <FlockSetupProgress flock={flock} />
+        {/* Setup Progress (first 7 days). Each row finishes its step where the
+            step actually lives instead of sending the farmer to a page that
+            cannot complete it. */}
+        <FlockSetupProgress
+          flock={flock}
+          onAction={(id) => {
+            if (id === "vaccinations") return router.push("/vaccinations");
+            if (id === "production") return setShowProductionForm(true);
+            if (id === "feed") return openFlockSection(flock, "feed");
+            if (id === "vet") return openFlockSection(flock, "vet");
+            if (id === "photo") return document.getElementById("flock-photo-input")?.click();
+          }}
+        />
 
         {/* Quick Mortality Recording */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>

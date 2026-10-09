@@ -24,6 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { speciesTemplates, type SpeciesTemplate } from "@/lib/species-templates";
+import { useToast } from "@/components/shared/toast";
+import api from "@/lib/api-client";
 
 const iconMap: Record<string, any> = { bird: Bird, beef: Beef, droplets: Droplets, flower: Flower };
 
@@ -47,7 +49,8 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
   const [step, setStep] = React.useState(0); // 0=feed, 1=vaccine, 2=milestone
   const [feedSupplier, setFeedSupplier] = React.useState("");
   const [addToInventory, setAddToInventory] = React.useState(false);
-  const [showSchedule, setShowSchedule] = React.useState(true);
+  const [savingFeed, setSavingFeed] = React.useState(false);
+  const { showToast, ToastComponent } = useToast();
 
   // An unidentifiable species gets a different wizard entirely: confirmation
   // that the group was saved, and an invitation to name the species. It does
@@ -87,6 +90,55 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
     );
   }
 
+  /**
+   * Save what the feed step asked for.
+   *
+   * The supplier input and the "auto-add to inventory" checkbox were component
+   * state and no request ever left the browser: a farmer typed their supplier,
+   * the wizard moved on, and `flock.feedType`/`feedSupplier` stayed empty —
+   * which is the pair the setup checklist reads, so "Set up feed types &
+   * supplier" could never complete through this screen.
+   *
+   * The species' own first feed stage is recorded as the feed type, because
+   * that is what the wizard has just shown the farmer. A failure is reported
+   * and never blocks the wizard: the vaccination review that follows is worth
+   * more than the feed supplier.
+   */
+  const saveFeedPlan = async (): Promise<void> => {
+    const supplier = feedSupplier.trim();
+    const primaryFeed = species.feedTypes[0] || null;
+    if (!flock?.id || (!primaryFeed && !supplier)) return;
+
+    setSavingFeed(true);
+    let addedToStore = false;
+    try {
+      await api.patch(`/api/flocks/${flock.id}`, {
+        ...(primaryFeed ? { feedType: primaryFeed } : {}),
+        ...(supplier ? { feedSupplier: supplier } : {}),
+      });
+      if (addToInventory && primaryFeed) {
+        // No quantity was asked for, so the row is created empty rather than
+        // with an invented number; the store screen nags until it is filled in.
+        await api.post("/api/inventory", {
+          itemName: primaryFeed,
+          category: "feed",
+          quantity: 0,
+          unit: "bags",
+          unitCost: 0,
+          supplier: supplier || null,
+        });
+        addedToStore = true;
+      }
+    } catch {
+      showToast("Could not save your feed plan — set it up from the group's Edit screen", "error");
+    } finally {
+      setSavingFeed(false);
+    }
+    if (!addToInventory || addedToStore) {
+      showToast(addedToStore ? `Feed plan saved and ${primaryFeed} added to your store` : "Feed plan saved");
+    }
+  };
+
   const monthlyFeedCost = (Number(species.feedCostEstimate) || 0) * (flock.initialCount || 0);
   const hatchDate = flock.hatchDate ? new Date(flock.hatchDate) : new Date();
   const vaccinations = species.vaccinationSchedule || [];
@@ -120,6 +172,7 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
+      {ToastComponent}
       <Card className="border-2 border-wangari-green-200 bg-gradient-to-br from-white to-wangari-green-50/30 shadow-xl">
         <CardContent className="p-6">
           {/* Success banner */}
@@ -286,10 +339,11 @@ export function PostCreateWizard({ flock, species, onComplete, onSkip }: PostCre
 
                 <div className="mt-6 flex gap-2">
                   <Button
-                    onClick={() => setStep(1)}
+                    onClick={async () => { await saveFeedPlan(); setStep(1); }}
+                    disabled={savingFeed}
                     className="bg-wangari-green-700 hover:bg-wangari-green-800 cursor-pointer"
                   >
-                    Next: Vaccinations <ChevronRight className="h-4 w-4 ml-1" />
+                    {savingFeed ? "Saving…" : <>Next: Vaccinations <ChevronRight className="h-4 w-4 ml-1" /></>}
                   </Button>
                   <Button variant="ghost" onClick={onSkip} className="text-wangari-gray-400 cursor-pointer">
                     Skip all

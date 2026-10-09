@@ -24,6 +24,17 @@ import {
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
 
+/**
+ * The kilos on a weight-metric record.
+ *
+ * A farmer may enter either the day's gain or the group's average weight (the
+ * form offers both), so reading only `weightGain` made a saved 25kg average
+ * render as `0.0kg` — and `0 eggs` before the API sent the flock's species.
+ */
+function weightOf(r: any): number {
+  return Number(r?.weightGain || 0) || Number(r?.avgWeight || 0);
+}
+
 function getSpeciesInfo(type: string | null) {
   if (!type) return { label: "animals", metric: "output", icon: Beef, unit: "units" };
   const t = speciesFor({ type });
@@ -159,7 +170,7 @@ export default function ProductionPage() {
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" /></div>;
 
-  const totalOutput = records.reduce((s, r) => s + (info.metric === "milk" ? Number(r.milkCollected) : info.metric === "weight" ? Number(r.weightGain || 0) : r.eggsCollected || 0), 0);
+  const totalOutput = records.reduce((s, r) => s + (info.metric === "milk" ? Number(r.milkCollected) : info.metric === "weight" ? weightOf(r) : r.eggsCollected || 0), 0);
   const totalMortality = records.reduce((s, r) => s + r.mortality, 0);
   const totalFeed = records.reduce((s, r) => s + Number(r.feedUsed), 0);
   const avgDaily = records.length ? Math.round(totalOutput / records.length) : 0;
@@ -311,6 +322,7 @@ export default function ProductionPage() {
                       <div className="flex justify-between"><span className="text-wangari-gray-500">Group:</span><span className="font-bold">{selectedFlock.name}</span></div>
                       {info.metric === "eggs" && <div className="flex justify-between"><span className="text-wangari-gray-500">Eggs:</span><span className="font-bold text-wangari-green-800">{form.eggsCollected || "0"}</span></div>}
                       {info.metric === "milk" && <div className="flex justify-between"><span className="text-wangari-gray-500">Milk:</span><span className="font-bold text-wangari-green-800">{form.milkCollected || "0"}L</span></div>}
+                      {info.metric === "weight" && form.avgWeight && <div className="flex justify-between"><span className="text-wangari-gray-500">Avg Weight:</span><span className="font-bold text-wangari-green-800">{form.avgWeight}kg</span></div>}
                       {info.metric === "weight" && <div className="flex justify-between"><span className="text-wangari-gray-500">Weight Gain:</span><span className="font-bold text-wangari-green-800">{form.weightGain || "0"}kg</span></div>}
                       {Number(form.mortality) > 0 && <div className="flex justify-between"><span className="text-wangari-gray-500">Deaths:</span><span className="font-bold text-wangari-red-500">{form.mortality}</span></div>}
                       {Number(form.feedUsed) > 0 && <div className="flex justify-between"><span className="text-wangari-gray-500">Feed:</span><span className="font-bold">{form.feedUsed}kg</span></div>}
@@ -356,7 +368,7 @@ export default function ProductionPage() {
               const ft = r.flock ? speciesFor(r.flock) : null;
               const isMilk = ft?.name?.toLowerCase().includes("dairy");
               const isMeat = ["broilers", "cattle_beef", "goats", "sheep", "pigs"].includes(r.flock?.type);
-              const output = isMilk ? `${Number(r.milkCollected || 0).toFixed(1)}L` : isMeat ? `${Number(r.weightGain || 0).toFixed(1)}kg` : `${r.eggsCollected} eggs`;
+              const output = isMilk ? `${Number(r.milkCollected || 0).toFixed(1)}L` : isMeat ? `${weightOf(r).toFixed(1)}kg` : `${r.eggsCollected} eggs`;
               return (
                 <Card key={r.id} className="border border-wangari-border">
                   <CardContent className="p-4">

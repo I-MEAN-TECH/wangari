@@ -10,9 +10,16 @@ interface FlockPhotoProps {
   photoUrl: string | null;
   onPhotoUpdate: (url: string | null) => void;
   size?: "sm" | "md" | "lg";
+  /**
+   * Id for the hidden file input, so a caller can open the picker itself.
+   * The setup checklist's "Take a photo of your setup" step does exactly that;
+   * `.click()` on a `display:none` file input still opens the dialog, and the
+   * tap that started it is the user gesture browsers require.
+   */
+  inputId?: string;
 }
 
-export function FlockPhoto({ flockId, photoUrl, onPhotoUpdate, size = "md" }: FlockPhotoProps) {
+export function FlockPhoto({ flockId, photoUrl, onPhotoUpdate, size = "md", inputId }: FlockPhotoProps) {
   const [uploading, setUploading] = React.useState(false);
   const [preview, setPreview] = React.useState(photoUrl);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -114,6 +121,7 @@ export function FlockPhoto({ flockId, photoUrl, onPhotoUpdate, size = "md" }: Fl
 
       <input
         ref={fileInputRef}
+        id={inputId}
         type="file"
         accept="image/*"
         capture="environment"

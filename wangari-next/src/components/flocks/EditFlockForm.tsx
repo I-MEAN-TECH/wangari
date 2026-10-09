@@ -27,9 +27,17 @@ interface EditFlockFormProps {
   flock: any;
   onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
+  /**
+   * Panel to open on mount, on top of Basic Info.
+   *
+   * The setup checklist sends a farmer here to finish the feed plan or the vet
+   * contact; without this they landed on Basic Info and had to find the panel
+   * themselves, which is how a checklist step reads as a dead end.
+   */
+  initialSection?: FormSection;
 }
 
-type FormSection = "basic" | "location" | "supply" | "feed" | "vet" | "target" | "insurance";
+export type FormSection = "basic" | "location" | "supply" | "feed" | "vet" | "target" | "insurance";
 
 const allSections: FormSection[] = ["basic", "location", "supply", "feed", "vet", "target", "insurance"];
 
@@ -43,11 +51,11 @@ const sectionLabels: Record<FormSection, { label: string; icon: any }> = {
   insurance: { label: "Insurance & Notes", icon: Shield },
 };
 
-export function EditFlockForm({ flock, onSubmit, onCancel }: EditFlockFormProps) {
+export function EditFlockForm({ flock, onSubmit, onCancel, initialSection }: EditFlockFormProps) {
   const { showToast, ToastComponent } = useToast();
   const [loading, setLoading] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState<Set<FormSection>>(
-    new Set(["basic"])
+    new Set<FormSection>(initialSection ? ["basic", initialSection] : ["basic"])
   );
   const species = speciesFor(flock);
   const [inventoryFeeds, setInventoryFeeds] = React.useState<string[]>([]);

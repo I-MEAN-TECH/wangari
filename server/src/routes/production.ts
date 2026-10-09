@@ -13,7 +13,10 @@ router.get("/", async (req: Request, res: Response) => {
       where: { farmId: req.user!.farmId! },
       orderBy: { date: "desc" },
       take: 30,
-      include: { flock: { select: { name: true } } },
+      // `type` travels with the name because the client labels each row by the
+      // species' own output — without it every non-dairy row was shown as
+      // "N eggs", so a goat weight record read "0 eggs".
+      include: { flock: { select: { name: true, type: true } } },
     });
     res.json(data);
   } catch (error) {
