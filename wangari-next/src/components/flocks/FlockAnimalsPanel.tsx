@@ -13,6 +13,7 @@ import {
   CircleHelp,
   CheckCircle2,
   ArrowRightLeft,
+  MoveRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,11 @@ import api from "@/lib/api-client";
  *  - After that the farmer only ever LOOKS at them — plus, since M2, taps a
  *    tag to record where an animal went (the §20 movement ledger) and
  *    downloads the §16 register or the §6 county export.
+ *  - Moving a tagged animal to ANOTHER GROUP happens here, in one tap. It
+ *    re-parents the animal, updates BOTH groups' head counts inside a single
+ *    transaction and writes the count ledger on both sides. The farmer never
+ *    has to go and change the numbers themselves — a tagged animal IS the
+ *    count, so asking for it twice was the bug this closes.
  *
  * Kenya's ANITRAC rollout (2026) makes this worth having: cattle, sheep and
  * goats now carry a 15-digit number starting with 141, and a buyer or county
@@ -89,7 +95,29 @@ const STATUS_ICON: Record<string, React.ComponentType<{ className?: string }>> =
   missing: CircleHelp,
 };
 
-export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
+/**
+ * Offline, `api.post` returns `{ queued: true, offline: true }` instead of a
+ * server reply — the write is stored on the device and replayed later. A notice
+ * must say that plainly rather than interpolating `undefined` into a sentence.
+ */
+function isQueued(res: any): boolean {
+  return !!res && res.queued === true;
+}
+
+/** Today as a date-only value, matching how the rest of the app stores dates. */
+const today = () => new Date().toISOString().slice(0, 10);
+
+export function FlockAnimalsPanel({
+  flockId,
+  flocks,
+  onChanged,
+}: {
+  flockId?: number;
+  /** Every group on the farm, so a tag can be moved to any other one. */
+  flocks?: any[];
+  /** Called after a move, so the screen reloads the group counts. */
+  onChanged?: () => void;
+}) {
   const [animals, setAnimals] = React.useState<Animal[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [adding, setAdding] = React.useState(false);
@@ -108,6 +136,14 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
     permitRef: "",
   });
   const [moveSaving, setMoveSaving] = React.useState(false);
+  // Group move: which animal is being moved to another group, and its inputs.
+  const [transferFor, setTransferFor] = React.useState<number | null>(null);
+  const [transferForm, setTransferForm] = React.useState({
+    toFlockId: "",
+    movedAt: today(),
+    notes: "",
+  });
+  const [transferSaving, setTransferSaving] = React.useState(false);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -163,6 +199,9 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
       setMovementFor(null);
       return;
     }
+    // One form at a time — the two ledgers sit on the same card and would be
+    // easy to confuse if both were open at once.
+    setTransferFor(null);
     setMovementFor(id);
     setMovements([]);
     setMoveForm({
@@ -203,6 +242,71 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
     }
   };
 
+  // ─── Move a tagged animal to another group ─────────────────────────────
+  // One tap on the farmer's side. The SERVER does the rest of the work: it
+  // re-parents the animal, updates both groups' head counts in a single
+  // transaction and writes the count ledger on both sides. The farmer never
+  // edits a count for a move they already described by pointing at the animal.
+
+  /** Groups this animal could move to: live groups, excluding its own. */
+  const othersFor = (a: Animal) =>
+    (flocks || []).filter(
+      (f) => f.status !== "merged" && f.id !== (a.flock?.id ?? flockId)
+    );
+
+  const openTransfer = (a: Animal) => {
+    if (transferFor === a.id) {
+      setTransferFor(null);
+      return;
+    }
+    setTransferFor(a.id);
+    setMovementFor(null);
+    setTransferForm({ toFlockId: "", movedAt: today(), notes: "" });
+    setError(null);
+  };
+
+  const saveTransfer = async (a: Animal) => {
+    // The animal's own group is the source; the picker is the target. A tagged
+    // animal knows where it lives, so the farmer never states it twice.
+    const fromFlockId = a.flock?.id ?? flockId;
+    const toFlockId = Number(transferForm.toFlockId);
+    if (!fromFlockId || !toFlockId) return;
+    setTransferSaving(true);
+    setError(null);
+    try {
+      const res = await api.post<{ moved: number; to: any; warning?: string }>(
+        "/api/flocks/transfer",
+        {
+          fromFlockId,
+          toFlockId,
+          // Named animals, not a head count: the server trusts the tag, so a
+          // stale group count can never block a move the farmer can see.
+          animalIds: [a.id],
+          movedAt: transferForm.movedAt,
+          notes: transferForm.notes || undefined,
+        }
+      );
+      const toName =
+        res?.to?.name ||
+        (flocks || []).find((f) => Number(f.id) === toFlockId)?.name ||
+        "the other group";
+      setNotice(
+        isQueued(res)
+          ? `Saved on this device. ${a.tagNumber} will move to ${toName} when you're back online.`
+          : `${a.tagNumber} moved to ${toName}. Both groups' counts were updated.` +
+              (res?.warning ? ` ${res.warning}` : "")
+      );
+      setTransferFor(null);
+      await load();
+      onChanged?.();
+      setTimeout(() => setNotice(null), 6000);
+    } catch (e: any) {
+      setError(e?.message || "The animal was not moved. Try again.");
+    } finally {
+      setTransferSaving(false);
+    }
+  };
+
   /** Server-side CSV download — the server owns the register's shape. */
   const downloadCsv = async (path: string, label: string) => {
     try {
@@ -221,12 +325,16 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
 
   const downloadList = async () => {
     try {
+      // NOTE the /api prefix. Without it this resolved to a path on the API host
+      // that does not exist and the Export button 404'd silently — the same
+      // class of bug as the four calls that made this whole panel dead on
+      // arrival (see docs/gap-analysis.md). Pinned by flock-herd-routes.test.ts.
       const res = await api.get<{
         farm: any;
         count: number;
         generatedAt: string;
         animals: any[];
-      }>("/animals/traceability/list");
+      }>("/api/animals/traceability/list");
       // A plain-text/CSV download keeps this dependency-free and openable on
       // any phone — a farmer can WhatsApp it straight to a buyer.
       const header = "tag_number,species,breed,sex,status,farm,county,generated";
@@ -383,16 +491,89 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
                     label={STATUS_EN[a.status] || a.status}
                   />
                 </div>
-                {/* §20: tap the movement icon to record where this animal went. */}
-                <button
-                  type="button"
-                  onClick={() => openMovements(a.id)}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-wangari-border px-2 py-2 text-xs font-semibold text-wangari-green-900 hover:bg-wangari-green-50"
-                  aria-expanded={movementFor === a.id}
-                >
-                  <ArrowRightLeft className="h-3.5 w-3.5" aria-hidden />
-                  {movementFor === a.id ? "Close movements" : "Movements"}
-                </button>
+                {/* Two different records, one tap each:
+                    - "Move to group" re-parents the animal and updates BOTH
+                      groups' counts plus the count ledger (server-side).
+                    - "Movements" adds a §20 premises-to-premises row.
+                    Changing group is not changing premises, so they stay apart. */}
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => openTransfer(a)}
+                    disabled={othersFor(a).length === 0}
+                    className="flex items-center justify-center gap-1.5 rounded-lg border border-wangari-border px-2 py-2 text-xs font-semibold text-wangari-green-900 hover:bg-wangari-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-expanded={transferFor === a.id}
+                    aria-label={`Move ${a.tagNumber} to another group`}
+                  >
+                    <MoveRight className="h-3.5 w-3.5" aria-hidden />
+                    {transferFor === a.id ? "Close" : "Move to group"}
+                  </button>
+                  {/* §20: record where this animal went, off the farm. */}
+                  <button
+                    type="button"
+                    onClick={() => openMovements(a.id)}
+                    className="flex items-center justify-center gap-1.5 rounded-lg border border-wangari-border px-2 py-2 text-xs font-semibold text-wangari-green-900 hover:bg-wangari-green-50"
+                    aria-expanded={movementFor === a.id}
+                  >
+                    <ArrowRightLeft className="h-3.5 w-3.5" aria-hidden />
+                    {movementFor === a.id ? "Close" : "Movements"}
+                  </button>
+                </div>
+
+                {/* Move to another group — one action, both groups updated. */}
+                {transferFor === a.id ? (
+                  <div className="mt-3 space-y-3 rounded-xl border border-wangari-green-200 bg-wangari-green-50/40 p-3">
+                    <p className="text-xs font-semibold text-wangari-green-900">
+                      Moving {a.tagNumber} out of {a.flock?.name || "this group"}
+                    </p>
+                    <select
+                      className="h-11 w-full rounded-xl border border-wangari-border bg-white px-3 text-sm"
+                      value={transferForm.toFlockId}
+                      onChange={(e) => setTransferForm((f) => ({ ...f, toFlockId: e.target.value }))}
+                    >
+                      <option value="">Move to…</option>
+                      {othersFor(a).map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.name} ({f.currentCount ?? 0} head)
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="date"
+                      className="h-11 w-full rounded-xl border border-wangari-border px-3 text-sm"
+                      value={transferForm.movedAt}
+                      onChange={(e) => setTransferForm((f) => ({ ...f, movedAt: e.target.value }))}
+                    />
+                    <input
+                      className="h-11 w-full rounded-xl border border-wangari-border px-3 text-sm"
+                      placeholder="Note (optional)"
+                      value={transferForm.notes}
+                      onChange={(e) => setTransferForm((f) => ({ ...f, notes: e.target.value }))}
+                    />
+                    <p className="text-xs text-wangari-muted">
+                      Both groups&apos; counts change and the move is recorded. You do not
+                      have to update the numbers yourself.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        className="flex-1"
+                        size="sm"
+                        disabled={transferSaving || !transferForm.toFlockId}
+                        onClick={() => saveTransfer(a)}
+                      >
+                        {transferSaving ? "Moving..." : "Move animal"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setTransferFor(null)}
+                        aria-label="Cancel"
+                      >
+                        <X className="h-4 w-4" aria-hidden />
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
 
                 {movementFor === a.id ? (
                   <div className="mt-3 space-y-3 rounded-xl border border-wangari-green-200 bg-wangari-green-50/40 p-3">
@@ -465,6 +646,12 @@ export function FlockAnimalsPanel({ flockId }: { flockId?: number }) {
             ))}
           </ul>
         )}
+
+        {animals.length > 0 && (flocks || []).filter((f) => f.status !== "merged").length < 2 ? (
+          <p className="text-center text-xs text-wangari-muted">
+            You need at least two groups before a tag can be moved to another one.
+          </p>
+        ) : null}
 
         {animals.length > 0 ? (
           <p className="text-center text-xs text-wangari-muted">

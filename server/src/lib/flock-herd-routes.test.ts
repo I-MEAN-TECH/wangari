@@ -125,6 +125,49 @@ describe("archived groups leave the active list", () => {
   });
 });
 
+describe("the ANITRAC panel's group move rides the transfer route", () => {
+  const panel = read(
+    "..",
+    "..",
+    "wangari-next",
+    "src",
+    "components",
+    "flocks",
+    "FlockAnimalsPanel.tsx"
+  );
+
+  it("found the panel source", () => {
+    // A silent empty read would make every assertion below vacuous.
+    expect(panel.length).toBeGreaterThan(0);
+  });
+
+  it("moves a tagged animal by naming it, not by a head count", () => {
+    // The head-count path is clamped to what the group is recorded as holding.
+    // A NAMED animal must not be, or a group whose count has drifted to 0 could
+    // never release an animal the farmer is looking at.
+    expect(panel).toMatch(/["'`]\/api\/flocks\/transfer["'`]/);
+    expect(panel).toMatch(/animalIds/);
+    expect(routeIndex("/transfer")).toBeGreaterThan(-1);
+  });
+
+  it("takes the animal's own group as the source, so the farmer states it once", () => {
+    expect(panel).toMatch(/fromFlockId/);
+    expect(panel).toMatch(/a\.flock\?\.id\s*\?\?\s*flockId/);
+  });
+
+  it("calls every endpoint with the /api prefix", () => {
+    // Four calls in this panel once went out without /api, 404'd, and left the
+    // entire feature dead while the suite stayed green (docs/gap-analysis.md).
+    // Only literal paths are checked, and only ones that name an API resource.
+    const literals = [...panel.matchAll(/["'`](\/[^"'`\s]*)/g)].map((m) => m[1]);
+    const apiPaths = literals.filter((p) => /^\/(api|animals|flocks)/.test(p));
+    expect(apiPaths.length).toBeGreaterThan(0);
+    for (const path of apiPaths) {
+      expect(path.startsWith("/api/")).toBe(true);
+    }
+  });
+});
+
 describe("offline replay of livestock writes is idempotent", () => {
   it("guards /api/flocks and /api/animals like the other replayable writes", () => {
     expect(indexSource).toMatch(/app\.use\(\s*"\/api\/flocks",\s*idempotencyGuard/);

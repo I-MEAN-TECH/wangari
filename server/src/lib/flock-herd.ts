@@ -66,6 +66,36 @@ export function movableHead(available: number, requested: number): number {
   return Math.min(have, want);
 }
 
+/**
+ * How many head a move actually takes out of the source group.
+ *
+ * The farmer has two ways to say what moved, and they have to be believed
+ * differently:
+ *
+ *  - TAGGED ANIMALS (`identified`) — each one is a real animal the farmer is
+ *    pointing at, so the number is taken at face value. A group's recorded
+ *    head count is known to lag reality: a herd can be tagged while its count
+ *    still reads 0. Clamping here would refuse to move an animal the farmer can
+ *    see and send them off to "fix" a number first — which is precisely the
+ *    two-step this is meant to remove. The count still cannot go negative,
+ *    because `transferLedger` clamps each side.
+ *  - A BARE NUMBER (`identified` is null) — clamped to what the group is
+ *    recorded as holding, so a mistyped 500 can never invent animals out of a
+ *    group that holds three.
+ */
+export function movedHead(source: {
+  available: number;
+  requested: number;
+  /** Count of individually identified animals, or null for a bare head count. */
+  identified: number | null;
+}): number {
+  if (source.identified !== null) {
+    const n = Math.floor(Number.isFinite(source.identified) ? source.identified : 0);
+    return Math.max(0, n);
+  }
+  return movableHead(source.available, source.requested);
+}
+
 export interface LedgerSide {
   countBefore: number;
   countAfter: number;

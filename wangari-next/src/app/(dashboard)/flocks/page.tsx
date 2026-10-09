@@ -706,7 +706,7 @@ export default function FlocksPage() {
             group exactly as before, this only stores the tag the farmer
             already holds and produces the traceability list. */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-          <FlockAnimalsPanel flockId={flock.id} />
+          <FlockAnimalsPanel flockId={flock.id} flocks={flocks} onChanged={loadFlocks} />
         </motion.div>
 
         {/* Vaccination Schedule */}

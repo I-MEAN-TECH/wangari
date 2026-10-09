@@ -7,7 +7,7 @@ import {
   HERD_REASONS,
   isHerdReason,
   applyDelta,
-  movableHead,
+  movedHead,
   transferLedger,
   mergeLedger,
   speciesCompatible,
@@ -198,7 +198,14 @@ router.post("/transfer", requireOwner, async (req: Request, res: Response) => {
         return res.status(400).json({ error: "How many are you moving? Enter a whole number." });
     }
 
-    const moved = movableHead(from.currentCount, requested);
+    // Tagged animals are believed at face value — the farmer is pointing at
+    // real animals, so a stale head count must not refuse the move. A bare
+    // number is clamped to what the group is recorded as holding. See movedHead().
+    const moved = movedHead({
+      available: from.currentCount,
+      requested,
+      identified: animalIds.length ? tagged.length : null,
+    });
     if (moved === 0)
       return res
         .status(400)
@@ -207,7 +214,12 @@ router.post("/transfer", requireOwner, async (req: Request, res: Response) => {
     const led = transferLedger(from.currentCount, to.currentCount, moved);
     const movedAt = parseDay(req.body?.movedAt);
     const notes = cleanNote(req.body?.notes);
-    const shortfall = requested - moved;
+    // Reported, never silent, in both directions: the farmer asked to move more
+    // than the group was recorded as holding, or they named specific animals and
+    // there were more of those than the count claimed. Either way the count is
+    // now out of step with reality and they should check the group.
+    const shortfall = Math.max(0, requested - moved);
+    const overRecorded = Math.max(0, moved - Math.max(0, from.currentCount));
 
     await prisma.$transaction([
       prisma.flock.update({ where: { id: from.id }, data: { currentCount: led.from.countAfter } }),
@@ -241,10 +253,10 @@ router.post("/transfer", requireOwner, async (req: Request, res: Response) => {
       tagged: tagged.length,
       from: { id: from.id, name: from.name, countBefore: led.from.countBefore, countAfter: led.from.countAfter },
       to: { id: to.id, name: to.name, countBefore: led.to.countBefore, countAfter: led.to.countAfter },
-      // Reported, never silent: the farmer recorded fewer head than they moved,
-      // so the count is now zero and they should check the group.
-      ...(shortfall > 0
-        ? { warning: `"${from.name}" was recorded as holding ${from.currentCount}, so ${moved} moved and its count is now 0.` }
+      ...(shortfall > 0 || overRecorded > 0
+        ? {
+            warning: `"${from.name}" was recorded as holding ${from.currentCount}, so ${moved} moved and its count is now ${led.from.countAfter}. Check the group.`,
+          }
         : {}),
     });
   } catch (error) {

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   applyDelta,
   movableHead,
+  movedHead,
   transferLedger,
   mergeLedger,
   isHerdReason,
@@ -38,6 +39,37 @@ describe("movableHead", () => {
   it("never returns a negative move", () => {
     expect(movableHead(10, -4)).toBe(0);
     expect(movableHead(-2, 5)).toBe(0);
+  });
+});
+
+describe("movedHead", () => {
+  it("believes tagged animals even when the group's count is stale", () => {
+    // The farmer is pointing at real animals; the count saying zero must not
+    // block the move — that is the two-step this exists to remove.
+    expect(movedHead({ available: 0, requested: 1, identified: 1 })).toBe(1);
+    expect(movedHead({ available: 3, requested: 5, identified: 5 })).toBe(5);
+  });
+
+  it("clamps a bare head count to what the group is recorded as holding", () => {
+    expect(movedHead({ available: 3, requested: 5, identified: null })).toBe(3);
+    expect(movedHead({ available: 40, requested: 12, identified: null })).toBe(12);
+  });
+
+  it("never returns a negative or fractional move", () => {
+    expect(movedHead({ available: 10, requested: 4, identified: -4 })).toBe(0);
+    expect(movedHead({ available: 10, requested: 4, identified: 2.7 })).toBe(2);
+  });
+
+  it("a tagged move still cannot push the count below zero", () => {
+    // Believing the animals does not license a negative herd: the clamp lives
+    // in transferLedger, on both sides of the event.
+    const moved = movedHead({ available: 3, requested: 5, identified: 5 });
+    const { from, to } = transferLedger(3, 0, moved);
+    expect(from.countAfter).toBe(0);
+    expect(to.countAfter).toBe(5);
+    // The two sides still agree on how many animals moved.
+    expect(from.delta).toBe(-5);
+    expect(to.delta).toBe(5);
   });
 });
 
