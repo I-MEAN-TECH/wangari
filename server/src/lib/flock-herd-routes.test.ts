@@ -90,6 +90,35 @@ describe("a transfer writes both groups in one action", () => {
     expect(src).toMatch(/not on this farm/);
     expect(src).toMatch(/A merged group cannot be used again/);
   });
+
+  it("writes the §20 movement record for the animals it moved", () => {
+    // The count ledger says the GROUPS changed size. This says WHICH animals
+    // moved and where they went — so the farmer describes the move once, by
+    // pointing at the animal, and is not sent to the movement form afterwards.
+    expect(transferBlock).toMatch(/animalMovement\.createMany/);
+    expect(transferBlock).toMatch(/fromPremises:\s*from\.name/);
+    expect(transferBlock).toMatch(/toPremises:\s*to\.name/);
+  });
+
+  it("takes that reason from the shared vocabulary, not a literal", () => {
+    // A bare "group_move" here could drift from the value the UI labels and the
+    // export prints. lib/animal-movement.ts owns the word.
+    expect(transferBlock).toMatch(/reason:\s*GROUP_MOVE_REASON/);
+    expect(src).toMatch(/from "\.\.\/lib\/animal-movement\.js"/);
+  });
+
+  it("does not flip the animals' status — a group move is not leaving the farm", () => {
+    expect(transferBlock).not.toMatch(/status:\s*"moved"/);
+  });
+
+  it("writes it inside the same transaction as the counts", () => {
+    // Half a move — animals re-parented but the chain not written, or the other
+    // way round — is worse than either one alone.
+    const txStart = transferBlock.indexOf("$transaction");
+    const movementWrite = transferBlock.indexOf("animalMovement");
+    expect(txStart).toBeGreaterThan(-1);
+    expect(movementWrite).toBeGreaterThan(txStart);
+  });
 });
 
 describe("a merge archives, it never deletes", () => {
@@ -153,6 +182,13 @@ describe("the ANITRAC panel's group move rides the transfer route", () => {
   it("takes the animal's own group as the source, so the farmer states it once", () => {
     expect(panel).toMatch(/fromFlockId/);
     expect(panel).toMatch(/a\.flock\?\.id\s*\?\?\s*flockId/);
+  });
+
+  it("can name the server-written group move, so the farmer never sees a raw reason", () => {
+    // `group_move` is not in the picker (a group is not a premises), but it IS
+    // written onto the animal's chain by the server — so the panel has to be
+    // able to label it, or the history reads "group_move".
+    expect(panel).toMatch(/group_move:\s*"[^"]+"/);
   });
 
   it("calls every endpoint with the /api prefix", () => {

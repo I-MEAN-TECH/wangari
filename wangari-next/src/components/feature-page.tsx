@@ -34,11 +34,15 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.08 } },
 };
 
+// The four category tones are this page's own accent palette: two hues that
+// already exist as theme tokens, and two (lavender/peach text and borders)
+// that exist only here. They are registered in theme-palette.test.ts rather
+// than invented as one-off tokens — see RAW_HEX_ALLOWLIST.
 const CARD_TONES = [
-  { bg: "bg-white", border: "border-[#E9D5FF]", text: "text-[#6B21A8]", iconBg: "bg-[#F3E8FF]", tag: "lavender" },
-  { bg: "bg-white", border: "border-[#FDE047]/60", text: "text-[#854D0E]", iconBg: "bg-[#FEF9C3]", tag: "yellow" },
-  { bg: "bg-white", border: "border-wangari-border", text: "text-[#166534]", iconBg: "bg-wangari-cream", tag: "cream" },
-  { bg: "bg-white", border: "border-[#FED7AA]/70", text: "text-[#9A3412]", iconBg: "bg-[#FFEDD5]", tag: "peach" },
+  { bg: "bg-white", border: "border-[#E9D5FF]", text: "text-wangari-purple-800", iconBg: "bg-wangari-purple-100", tag: "lavender" },
+  { bg: "bg-white", border: "border-wangari-yellow-300/60", text: "text-[#854D0E]", iconBg: "bg-badge-yellow-bg", tag: "yellow" },
+  { bg: "bg-white", border: "border-wangari-border", text: "text-wangari-green-800", iconBg: "bg-wangari-cream", tag: "cream" },
+  { bg: "bg-white", border: "border-badge-orange-bg/70", text: "text-[#9A3412]", iconBg: "bg-[#FFEDD5]", tag: "peach" },
 ];
 
 export interface CapabilityItem {

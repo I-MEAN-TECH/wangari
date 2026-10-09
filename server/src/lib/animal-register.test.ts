@@ -9,20 +9,51 @@
  */
 
 import { describe, it, expect } from "vitest";
+import {
+  ALL_MOVEMENT_REASONS,
+  FARMER_MOVEMENT_REASONS,
+  GROUP_MOVE_REASON,
+  isFarmerMovementReason,
+} from "./animal-movement.js";
 
-// The route validates reasons against this exact set — pin it, because the
-// county export groups by these words and the UI offers these buttons.
-const MOVEMENT_REASONS = ["sale", "transfer", "grazing", "vet", "quarantine", "other"] as const;
+// The county export prints these words into an animal's movement chain and the
+// UI offers them as buttons. This used to be a COPY of the route's list, which
+// meant the test could never fail when the route changed — it now reads the real
+// vocabulary, so a reason added in one place and forgotten in another breaks here.
 
 describe("movement reasons", () => {
-  it("offers the six ANITRAC-meaningful reasons and nothing else", () => {
-    expect(MOVEMENT_REASONS).toEqual([
+  it("offers the farmer the six ANITRAC-meaningful reasons and nothing else", () => {
+    expect([...FARMER_MOVEMENT_REASONS]).toEqual([
       "sale", "transfer", "grazing", "vet", "quarantine", "other",
     ]);
   });
 
+  it("keeps the machine-written group move OUT of the farmer's choices", () => {
+    // The movement form's two fields ask for PREMISES. Offering "moved to
+    // another group" there would invite a farmer to type a group name where the
+    // county expects a location, and the chain would then assert a premises
+    // change that never happened.
+    expect(FARMER_MOVEMENT_REASONS).not.toContain(GROUP_MOVE_REASON);
+    expect(isFarmerMovementReason(GROUP_MOVE_REASON)).toBe(false);
+    // …but it IS part of the vocabulary, so it must be labelled and expected.
+    expect(ALL_MOVEMENT_REASONS).toContain(GROUP_MOVE_REASON);
+  });
+
+  it("accepts only the farmer's reasons from the API", () => {
+    expect(isFarmerMovementReason("sale")).toBe(true);
+    expect(isFarmerMovementReason("grazing")).toBe(true);
+    expect(isFarmerMovementReason("bought")).toBe(false);
+    expect(isFarmerMovementReason("Moved to another farm")).toBe(false);
+    expect(isFarmerMovementReason(7)).toBe(false);
+  });
+
   it("never includes invented vocabulary", () => {
-    for (const r of MOVEMENT_REASONS) expect(r).toMatch(/^[a-z]+$/);
+    // No spaces, capitals, hyphens or free text — a closed set exists so a
+    // county officer cannot read one event three ways. An underscore is allowed:
+    // the herd ledger already uses snake_case (transfer_in, merged_out) and
+    // `group_move` reads as exactly what it is.
+    for (const r of ALL_MOVEMENT_REASONS) expect(r).toMatch(/^[a-z]+(_[a-z]+)*$/);
+    expect(new Set(ALL_MOVEMENT_REASONS).size).toBe(ALL_MOVEMENT_REASONS.length);
   });
 });
 
@@ -50,6 +81,14 @@ describe("the status rules that ride a movement", () => {
     for (const r of ["grazing", "vet", "quarantine", "other"]) {
       expect(statusAfter(r, "active")).toBe("active");
     }
+  });
+
+  it("a move between the farm's own groups is a move, not a departure", () => {
+    // Moving a tag from one group to another changes where it is, not whether
+    // it is on the farm. Marking it "moved" would drop it out of the herd list
+    // and make the farmer's own count wrong.
+    expect(statusAfter(GROUP_MOVE_REASON, "active")).toBe("active");
+    expect(statusAfter(GROUP_MOVE_REASON, "sold")).toBe("sold");
   });
 });
 

@@ -4,6 +4,10 @@ import { authMiddleware } from "../middleware/auth.js";
 import { requireFarm } from "../middleware/requireOwner.js";
 import { resolveTagRange, rangeRows } from "../lib/tag-range.js";
 import { buildOwnerRegister, buildCountyExport } from "../lib/animal-register.js";
+import {
+  FARMER_MOVEMENT_REASONS,
+  isFarmerMovementReason,
+} from "../lib/animal-movement.js";
 
 /**
  * Animal identity — ANITRAC traceability.
@@ -473,8 +477,13 @@ router.delete("/:id", async (req: Request, res: Response) => {
 // to the vet, into quarantine. The traceability story a buyer or county
 // officer reads is built from these rows, so the record exists BEFORE the
 // question is asked.
+//
+// A move between the farm's OWN groups is also a movement row, but the farmer
+// never types it: POST /api/flocks/transfer writes it, with its own reason
+// (`group_move`) taken from the group names. That reason is deliberately not
+// accepted here — this endpoint's from/to fields are premises, and a group is
+// not a premises. See lib/animal-movement.ts.
 
-const MOVEMENT_REASONS = new Set(["sale", "transfer", "grazing", "vet", "quarantine", "other"]);
 
 // POST /api/animals/:id/movements — record one movement for one tagged animal
 router.post("/:id/movements", async (req: Request, res: Response) => {
@@ -492,8 +501,8 @@ router.post("/:id/movements", async (req: Request, res: Response) => {
 
     if (typeof fromPremises !== "string" || !fromPremises.trim() || typeof toPremises !== "string" || !toPremises.trim())
       return res.status(400).json({ error: "Both where the animal came from and where it went are required — a movement with one end is a guess." });
-    if (!MOVEMENT_REASONS.has(String(reason)))
-      return res.status(400).json({ error: `Reason must be one of: ${[...MOVEMENT_REASONS].join(", ")}` });
+    if (!isFarmerMovementReason(reason))
+      return res.status(400).json({ error: `Reason must be one of: ${FARMER_MOVEMENT_REASONS.join(", ")}` });
     const date = movedAt ? new Date(String(movedAt)) : new Date();
     if (Number.isNaN(date.getTime()))
       return res.status(400).json({ error: "The movement date could not be read." });

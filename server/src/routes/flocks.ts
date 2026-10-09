@@ -12,6 +12,7 @@ import {
   mergeLedger,
   speciesCompatible,
 } from "../lib/flock-herd.js";
+import { GROUP_MOVE_REASON } from "../lib/animal-movement.js";
 
 const router = Router();
 // requireFarm, not requireOwner: workers may read flocks, but a session with
@@ -229,6 +230,34 @@ router.post("/transfer", requireOwner, async (req: Request, res: Response) => {
             prisma.animal.updateMany({
               where: { id: { in: tagged.map((t) => t.id) }, farmId },
               data: { flockId: to.id },
+            }),
+          ]
+        : []),
+      // §20: the two rows above say the GROUPS changed size. These say which
+      // ANIMALS moved and where they went — the chain a buyer or county officer
+      // reads. Written in the same transaction, because the farmer described
+      // the move once by pointing at the animal and must not be asked to type
+      // the same event into the movement form afterwards.
+      //
+      // The animal's status is deliberately NOT touched: it has not left the
+      // farm. Marking it "moved" would tell the herd list it had, and the
+      // farmer's own count would then be wrong in a way nothing else corrects.
+      // (The manual movement endpoint flips status for `transfer` alone — a
+      // reason that means between PREMISES. See lib/animal-movement.ts.)
+      ...(tagged.length
+        ? [
+            prisma.animalMovement.createMany({
+              data: tagged.map((t) => ({
+                farmId,
+                animalId: t.id,
+                // The group names are what the farmer would have written in the
+                // form's two fields, and they are already known here.
+                fromPremises: from.name,
+                toPremises: to.name,
+                movedAt,
+                reason: GROUP_MOVE_REASON,
+                notes,
+              })),
             }),
           ]
         : []),

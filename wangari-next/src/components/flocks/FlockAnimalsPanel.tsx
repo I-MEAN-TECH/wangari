@@ -72,6 +72,7 @@ const STATUS_EN: Record<string, string> = {
   missing: "Missing",
 };
 
+/** What the farmer can pick when recording a movement by hand. */
 const MOVEMENT_REASONS = [
   { value: "sale", label: "Sold" },
   { value: "transfer", label: "Moved to another farm" },
@@ -80,6 +81,28 @@ const MOVEMENT_REASONS = [
   { value: "quarantine", label: "Quarantine" },
   { value: "other", label: "Other" },
 ];
+
+/**
+ * How a recorded movement is named back to the farmer.
+ *
+ * Separate from the picker above because one reason is written by the SERVER:
+ * `group_move` lands on the animal's chain when a tag is moved between the
+ * farm's own groups (the "Move to group" button), and it is not something the
+ * farmer should ever pick here — the form's two fields ask for PREMISES, and a
+ * group is not a premises.
+ *
+ * It still needs a label. A reason this map cannot name would show the farmer
+ * the raw string "group_move" in the animal's history.
+ */
+const MOVEMENT_LABELS: Record<string, string> = {
+  sale: "Sold",
+  transfer: "Moved to another farm",
+  grazing: "Taken to graze",
+  vet: "Went to the vet",
+  quarantine: "Quarantine",
+  other: "Other",
+  group_move: "Moved to another group",
+};
 
 /**
  * Subject icon per status, so the chip says what happened AND whether it is a
@@ -582,7 +605,7 @@ export function FlockAnimalsPanel({
                         {movements.map((m) => (
                           <li key={m.id} className="text-xs text-wangari-muted">
                             {new Date(m.movedAt).toLocaleDateString()} — {m.fromPremises} →{" "}
-                            {m.toPremises} ({MOVEMENT_REASONS.find((r) => r.value === m.reason)?.label || m.reason})
+                            {m.toPremises} ({MOVEMENT_LABELS[m.reason] || m.reason})
                             {m.permitRef ? ` · permit ${m.permitRef}` : ""}
                           </li>
                         ))}

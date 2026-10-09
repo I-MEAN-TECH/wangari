@@ -14,7 +14,11 @@ Four changes in this batch. Local builds pass (server tsc + Next.js build). DB s
 >   cd .. && node server/deploy/verify-build.mjs /home/saasapp/app/server/dist && \
 >   PM2_ACTION=start node server/deploy/reload-with-env.mjs /home/saasapp/app/.env'"
 >
-> npx vercel deploy --prod --yes     # from the REPO ROOT, never from wangari-next/
+> npx vercel deploy --prod --yes --scope lewis-ndungus-projects
+> # ^ from the REPO ROOT, never from wangari-next/. --scope is required: without
+> #   it the CLI can fail with `Error: Not authorized` while `vercel whoami` and
+> #   `vercel project ls` both look fine, because its default scope is not the
+> #   team that owns this project.
 > ```
 >
 > Five things in there are not obvious, and each was learned the hard way.

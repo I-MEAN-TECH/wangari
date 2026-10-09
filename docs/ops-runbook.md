@@ -13,9 +13,19 @@
 
 ## Golden rules
 
-1. **Never `pm2 restart` on production.** The approved deploy script uses
-   `pm2 reload` — cluster workers recycle one at a time so the API never goes
-   dark.
+1. **Never `pm2 restart` (or a bare `pm2 start`) by hand on production.**
+   Use the approved script. Read this carefully, because what it does is NOT
+   what this rule used to claim: `deploy/update.sh` runs `PM2_ACTION=start`,
+   which re-reads the app definition — so a changed entrypoint takes effect —
+   but restarts **both workers together**, giving a brief gap of a second or two
+   rather than a rolling one-at-a-time recycle. That trade-off is deliberate
+   and is argued in [DEPLOY-HARDENING.md](DEPLOY-HARDENING.md) (point 3): bare
+   `pm2 reload` does not re-read `script`, which is how the box once served an
+   orphan build forever while every deploy "succeeded". The script waits for
+   `/health` to return 200 before it reports success, so the gap is bounded and
+   verified. **Manual** intervention — `pm2 reload wangari-api` in the incident
+   playbook below — does recycle workers one at a time; still never restart by
+   hand.
 2. **Never edit files directly on the VPS.** All changes go through git
    (`main` branch → deploy). The checkout at `/home/saasapp/app` must stay
    clean; if it's dirty, stop and reconcile first.
@@ -59,8 +69,16 @@ Gotchas confirmed the hard way:
 
 ```bash
 # from the REPO ROOT (not wangari-next/) — this is the working invocation
-npx vercel deploy --prod --yes
+npx vercel deploy --prod --yes --scope lewis-ndungus-projects
 ```
+
+**`--scope` is required.** Without it the deploy can fail with the unhelpful
+`Error: Not authorized` even when you are signed in: the CLI's default scope
+may not be the team that owns `wangari`. `vercel whoami` still prints a user
+and `vercel project ls` still lists the project, which makes the message look
+like an account problem rather than a scope one. Diagnose in that order:
+`vercel whoami`, then `vercel teams ls`, then `vercel project ls`, then rerun
+with `--scope <team-slug>`.
 
 The repo root uploads the whole tree, so `.vercelignore` must stay in place
 (a 95 MB scratch file once blew the 100 MB upload limit). Build output

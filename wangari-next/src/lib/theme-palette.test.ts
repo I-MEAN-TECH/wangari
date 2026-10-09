@@ -40,6 +40,22 @@ const RAW_HEX_ALLOWLIST: Record<string, string[]> = {
     "#0B1026", "#101B3F", "#1B2A5E", "#0A0F1D", "#141D33", "#22304D",
     "#0B0A18", "#1C1633", "#2A2350", "#0D1224", "#15203C", "#243457",
   ],
+  // FeaturePage: its four-way category accent palette (the two hues that also
+  // exist as tokens are spelled as tokens; these four exist only here), plus the
+  // cream/green washes in its section gradients. Every one of these is named in
+  // the page's own comments ("Site Theme Cream 90% + Green 10% Accent") — they
+  // are a deliberate one-page palette, not a colour that escaped the theme.
+  // Tokenizing them would mean inventing 13 near-identical near-whites to hold
+  // three decorative gradients, which is a worse reason to grow @theme than a
+  // documented exception is to break this rule.
+  "components/feature-page.tsx": [
+    // category accents: lavender, yellow, peach
+    "#E9D5FF", "#854D0E", "#9A3412", "#FFEDD5",
+    // hero / farmer-experience / bottom-CTA gradient washes + accent glow
+    "#F2F5ED", "#F7F9F3", "#EBF0E4",
+    "#F4F7EF", "#FAFBF8", "#EEF3E7",
+    "#EBF1E5", "#E6ECE0", "#185339",
+  ],
 };
 
 function walk(dir: string, acc: string[] = []): string[] {
