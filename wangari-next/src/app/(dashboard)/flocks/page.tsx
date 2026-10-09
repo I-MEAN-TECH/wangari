@@ -166,12 +166,11 @@ export default function FlocksPage() {
   const [showWizard, setShowWizard] = React.useState(false);
   const [wizardFlock, setWizardFlock] = React.useState<any>(null);
 
-  const loadFlocks = () => {
+  const loadFlocks = () =>
     api.get("/api/flocks").then(d => {
       setFlocks(Array.isArray(d) ? d : []);
       setLoading(false);
     }).catch(() => setLoading(false));
-  };
   React.useEffect(() => { loadFlocks(); }, []);
 
   const filtered = flocks.filter((f: any) => {
@@ -1213,9 +1212,12 @@ export default function FlocksPage() {
           onComplete={() => {
             setShowWizard(false);
             setWizardFlock(null);
-            loadFlocks();
-            // Navigate to the new flock's detail view
-            setSelectedFlock(wizardFlock);
+            // Open the new group only after the refreshed list is in: the wizard
+            // has just written the feed plan, and the detail view prefers the
+            // listed row over the pre-save object it was handed — so opening
+            // immediately showed "Set up feed types & supplier" to a farmer who
+            // had just typed their supplier.
+            loadFlocks().then(() => setSelectedFlock(wizardFlock));
           }}
           onSkip={() => {
             setShowWizard(false);
