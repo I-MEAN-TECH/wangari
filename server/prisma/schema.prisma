@@ -54,6 +54,9 @@ model User {
   tickets       Ticket[]
   feedback      Feedback[]
   crops         Crop[]
+  plots         Plot[]
+  farmLoans     FarmLoan[]
+  loanRepayments LoanRepayment[]
   verifications VerificationCode[]
   subscriptions Subscription[]
   activationEvents ActivationEvent[]
@@ -197,10 +200,70 @@ model DeliveryDeduction {
   // farmer's own SACCO loan being collected at source. The statement groups
   // by this so "what the co-op kept" and "what paid my loan" come apart.
   creditor   String?
+  /// When this deduction is the co-op collecting a loan repayment at source,
+  /// this points at the FarmLoan it pays down. Null = a plain deduction.
+  farmLoanId Int?     @map("farm_loan_id")
 
-  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  delivery   Delivery  @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  farmLoan   FarmLoan? @relation(fields: [farmLoanId], references: [id])
+  loanRepayments LoanRepayment[]
 
   @@map("delivery_deductions")
+}
+
+// C2: the farmer's OWN debt — money the farm owes a lender (SACCO, AFC, an
+// agrovet for inputs, a chama). This is the opposite direction from `Credit`, which
+// is money owed TO the farm by its customers. Wangari records the loan and
+// every repayment; it never makes a credit decision — the lender does.
+model FarmLoan {
+  id                Int       @id @default(autoincrement())
+  farmId            Int       @map("farm_id")
+  lender            String // "Githunguri SACCO", "AFC", "Kilimo Biashara agrovet"
+  loanType          String?   @map("loan_type") // sacco | afc | input_credit | personal | other
+  principal         Decimal   @db.Decimal(12, 2) // KES borrowed
+  interestRatePct  Decimal?  @map("interest_rate_pct") @db.Decimal(5, 2) // annual rate, if known
+  disbursedAt       DateTime? @map("disbursed_at") @db.Date // when money/inputs arrived
+  firstInstalmentDue DateTime? @map("first_instalment_due") @db.Date
+  instalmentCount   Int?      @map("instalment_count") // total number of instalments
+  instalmentAmount  Decimal?  @map("instalment_amount") @db.Decimal(12, 2)
+  amountPaid        Decimal   @default(0) @map("amount_paid") @db.Decimal(12, 2) // sum of all repayments
+  status            String    @default("active") // active | settled | defaulted
+  notes             String?
+  createdBy         Int?      @map("created_by")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  farm         Farm              @relation(fields: [farmId], references: [id])
+  creator      User?             @relation(fields: [createdBy], references: [id])
+  repayments   LoanRepayment[]
+  deductions   DeliveryDeduction[]
+
+  @@index([farmId, status])
+  @@map("farm_loans")
+}
+
+// One repayment against a FarmLoan. A repayment can be cash/M-Pesa the farmer hands
+// over, or a co-op deduction collected at source (then `deliveryDeductionId`
+// links it). `amountPaid` on FarmLoan is the running sum of these rows.
+model LoanRepayment {
+  id                  Int       @id @default(autoincrement())
+  farmLoanId          Int       @map("farm_loan_id")
+  farmId              Int       @map("farm_id")
+  amount              Decimal   @db.Decimal(12, 2)
+  paidAt              DateTime  @map("paid_at") @db.Date
+  source              String    @default("cash") // cash | mpesa | bank | deduction
+  deliveryDeductionId Int?      @map("delivery_deduction_id")
+  notes               String?
+  createdBy           Int?      @map("created_by")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  farmLoan          FarmLoan          @relation(fields: [farmLoanId], references: [id], onDelete: Cascade)
+  farm              Farm            @relation(fields: [farmId], references: [id])
+  deliveryDeduction DeliveryDeduction? @relation(fields: [deliveryDeductionId], references: [id])
+  creator           User?           @relation(fields: [createdBy], references: [id])
+
+  @@index([farmLoanId, paidAt])
+  @@map("loan_repayments")
 }
 
 model Subscription {
@@ -277,6 +340,9 @@ model Farm {
   zktecoLogs       ZKTecoLog[]
   breeding         Breeding[]
   crops            Crop[]
+  plots            Plot[]
+  farmLoans        FarmLoan[]
+  loanRepayments   LoanRepayment[]
   cropHarvests     CropHarvest[]
   cropHealth       CropHealth[]
   cropApplications CropApplication[]
@@ -601,6 +667,42 @@ model Breeding {
   @@map("breeding_records")
 }
 
+/// A distinct place on the farm that crops grow on (farmer-requested gap §2 B1/B2).
+///
+/// A crop farm is not one record with an acreage — it is several distinct plots
+/// with different soil, crops, inputs and pest pressure. Almost every agronomy
+/// gap follows from the missing plot: rotation history, per-plot yield,
+/// pest scouting, and — for coffee — the geolocation an EU buyer can trace a
+/// delivery back to. The plot is the "real place"; crops, harvests and
+/// applications hang off it.
+///
+/// The EUDR framing (never overstate): a Kenyan smallholder's practical deadline
+/// is the day their buyer asks, not a statutory date served on them. We COLLECT
+/// the geolocation and let the farmer hand their buyer a traceable chain — we
+/// never assert a legal obligation. Latitude/longitude follow the farm's same
+/// both-or-neither rule (one coordinate alone is a point in the Indian Ocean),
+/// so partial input is rejected, not silently half-saved.
+model Plot {
+  id         Int      @id @default(autoincrement())
+  farmId     Int      @map("farm_id")
+  name       String // e.g. "Coffee block C"
+  areaValue  Decimal? @map("area_value") @db.Decimal(10, 2)
+  areaUnit   String?  @map("area_unit") // "acre" | "hectare"
+  latitude   Decimal? @map("latitude") @db.Decimal(10, 7)
+  longitude  Decimal? @map("longitude") @db.Decimal(10, 7)
+  soilType   String?  @map("soil_type")
+  notes      String?
+  createdBy  Int?     @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  farm    Farm   @relation(fields: [farmId], references: [id])
+  creator User?  @relation(fields: [createdBy], references: [id])
+  crops   Crop[]
+
+  @@map("plots")
+}
+
 model Crop {
   id              Int       @id @default(autoincrement())
   farmId          Int       @map("farm_id")
@@ -611,7 +713,8 @@ model Crop {
   plantingDate    DateTime? @map("planting_date")
   expectedHarvest DateTime? @map("expected_harvest")
   status          String    @default("active") // active, harvested, failed
-  location        String? // field/plot designation
+  location        String? // free-text field/plot designation (kept for backwards compat)
+  plotId          Int?      @map("plot_id") // the real place this crop stands on (B1)
   soilType        String?   @map("soil_type")
   irrigation      String? // rainfed, drip, sprinkler, flood
   isPerennial     Boolean   @default(false) @map("is_perennial") // true for orchard crops (avocado, macadamia, mango, coffee...)
@@ -625,6 +728,7 @@ model Crop {
 
   farm         Farm              @relation(fields: [farmId], references: [id])
   creator      User?             @relation(fields: [createdBy], references: [id])
+  plot         Plot?             @relation(fields: [plotId], references: [id])
   harvests     CropHarvest[]
   health       CropHealth[]
   applications CropApplication[]

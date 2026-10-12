@@ -25,6 +25,8 @@
 
 **The headline fact you must know:** there is an **Innovation Showcase & Startup Pitches** session — *eight agri-tech startups pitch to a panel of investors and support units* — on **Wednesday 28 October, 15:00**, plus a **Digital Agriculture & Precision Farming seminar** the same morning. This is a potential **pitched-in-front-of-investors moment.** It is the single highest-value thing at this event. **See §4 — act on it this week.**
 
+> **Update, 9 October 2026 — the organiser replied, and the dates are now confirmed.** The AIAE 2026 Team wrote: *"the AIAE 2026 event will take place from 23rd–25th October. We would be happy to review your one-pager to assess eligibility for the Innovation Showcase and Startup Pitches. Please send it over to us."* So: **the event is 23–25 Oct**, the **28 Oct pitch time below is not dependable** (that was the sibling programme's listing), and the **one-pager is the gate** — a named ask from the organiser, not a cold application. Send [aiae-2026-one-pager.md](aiae-2026-one-pager.md) with the email in §8 of that file, and ask which day and time the pitches fall on inside the confirmed window.
+
 ---
 
 ## 2. Who will be in the room (prioritise these)

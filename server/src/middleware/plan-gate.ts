@@ -56,6 +56,8 @@ const ROUTE_MODULE: [string, string][] = [
   ["/api/flocks", "flocks"],
   ["/api/profitability", "profitability"],
   ["/api/crops", "crops"],
+  ["/api/plots", "crops"],
+  ["/api/farm-loans", "finances"],
   ["/api/sales", "sales"],
   ["/api/customers", "customers"],
   ["/api/invoices", "invoices"],

@@ -53,7 +53,7 @@ Plus one structural fact that governs everything: the pitch opportunity is the *
 
 **Week 1 (6–12 Oct) — the highest-leverage move is an email, not code.**
 1. **Email `expo@agriexpo.africa` / call +254 790 888 333 TODAY** and ask to be considered for the **Innovation Showcase & Startup Pitches** and the Digital Agriculture seminar. There are no published criteria — so the application *is* the conversation, and being early is the only lever. Do not wait for a form (a form may not exist).
-2. Confirm the **date truth**: the field plan has the pitch on **Wed 28 Oct**, but the official page says **23–25 Oct**. Ask, in the same email, which day the pitches fall on. Getting this wrong wastes the single highest-value slot.
+2. ✅ **DONE 9 Oct — the date truth is settled, and it is 23–25 Oct.** The AIAE 2026 Team replied in writing: *"the AIAE 2026 event will take place from 23rd–25th October"*, and asked for a **one-pager to assess eligibility for the Innovation Showcase and Startup Pitches**. The Wed 28 Oct assumption in the field plan is wrong; drop it. Asked back, in the same thread: which day and time the pitches fall on within the confirmed window. **Send [aiae-2026-one-pager.md](aiae-2026-one-pager.md) — that page and its PDF are the deliverable this reply is waiting for.**
 3. Pre-book **4–6 meetings** (feed/AKEFEMA, a dairy co-op, a county, the organiser, an investor).
 
 **Week 2 (13–19 Oct) — make the demo undeniable, and make one number move.**

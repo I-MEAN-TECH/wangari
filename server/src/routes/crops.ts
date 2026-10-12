@@ -6,6 +6,14 @@ import { authMiddleware } from "../middleware/auth.js";
 const router = Router();
 router.use(authMiddleware, requireFarm);
 
+/** A plot can only be attached to a crop if it belongs to the SAME farm —
+ * otherwise a crop could masquerade as standing on another tenant's land. */
+async function plotBelongsToFarm(plotId: number, farmId: number): Promise<boolean> {
+  if (!Number.isInteger(plotId) || plotId <= 0) return false;
+  const plot = await prisma.plot.findFirst({ where: { id: plotId, farmId }, select: { id: true } });
+  return !!plot;
+}
+
 // GET /api/crops — list all crops
 router.get("/", async (req: Request, res: Response) => {
   try {
@@ -13,6 +21,7 @@ router.get("/", async (req: Request, res: Response) => {
       where: { farmId: req.user!.farmId! },
       orderBy: { createdAt: "desc" },
       include: {
+        plot: { select: { id: true, name: true, areaValue: true, areaUnit: true } },
         harvests: { orderBy: { date: "desc" }, take: 10 },
         postHarvestBatches: { orderBy: { harvestDate: "desc" } },
         soilTests: { orderBy: { date: "desc" } },
@@ -28,7 +37,7 @@ router.get("/", async (req: Request, res: Response) => {
 // POST /api/crops — create a crop
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { name, cropType, variety, areaAcres, plantingDate, expectedHarvest, location, soilType, irrigation, notes, isPerennial, maturityYears, harvestSeason } = req.body;
+    const { name, cropType, variety, areaAcres, plantingDate, expectedHarvest, location, soilType, irrigation, notes, isPerennial, maturityYears, harvestSeason, plotId } = req.body;
     const crop = await prisma.crop.create({
       data: {
         farmId: req.user!.farmId!,
@@ -39,6 +48,7 @@ router.post("/", async (req: Request, res: Response) => {
         plantingDate: plantingDate ? new Date(plantingDate) : null,
         expectedHarvest: expectedHarvest ? new Date(expectedHarvest) : null,
         location: location || null,
+        plotId: plotId !== undefined && plotId !== "" ? (await plotBelongsToFarm(Number(plotId), req.user!.farmId!) ? Number(plotId) : null) : null,
         soilType: soilType || null,
         irrigation: irrigation || null,
         notes: notes || null,
@@ -62,6 +72,13 @@ router.patch("/:id", async (req: Request, res: Response) => {
     const data: Record<string, any> = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) data[key] = req.body[key] === "" ? null : req.body[key];
+    }
+    // plotId is handled separately so a foreign plot (another farm's) is never
+    // silently attached — it must belong to this same farm or it is rejected.
+    if (req.body.plotId !== undefined) {
+      data.plotId = req.body.plotId === "" || req.body.plotId === null
+        ? null
+        : (await plotBelongsToFarm(Number(req.body.plotId), req.user!.farmId!) ? Number(req.body.plotId) : null);
     }
     if (req.body.isPerennial !== undefined) data.isPerennial = Boolean(req.body.isPerennial);
     if (req.body.maturityYears !== undefined) data.maturityYears = req.body.maturityYears === "" || req.body.maturityYears === null ? null : Number(req.body.maturityYears);

@@ -200,6 +200,10 @@ router.post("/", async (req: Request, res: Response) => {
               // Who the deduction is FOR — co-op vs agrovet vs the farmer's
               // own loan. The statement groups on this distinction.
               creditor: typeof d.creditor === "string" && d.creditor.trim() ? d.creditor.trim() : null,
+              // When the co-op is collecting a loan repayment at source, this
+              // tags the deduction to the FarmLoan it pays down. The farm-loans
+              // route reads these to show what was repaid via deductions.
+              farmLoanId: d.farmLoanId != null && Number.isFinite(Number(d.farmLoanId)) ? Number(d.farmLoanId) : null,
             })),
         },
       },

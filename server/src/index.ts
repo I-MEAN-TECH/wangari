@@ -35,6 +35,8 @@ import aiIntakeRoutes from "./routes/ai-intake.js";
 import breedingRoutes from "./routes/breeding.js";
 import cropsRoutes from "./routes/crops.js";
 import cropPlannerRoutes from "./routes/crop-planner.js";
+import plotsRoutes from "./routes/plots.js";
+import farmLoansRoutes from "./routes/farm-loans.js";
 import profitabilityRoutes from "./routes/profitability.js";
 import invoicesRoutes from "./routes/invoices.js";
 import farmsRoutes from "./routes/farms.js";
@@ -267,6 +269,11 @@ app.use("/api/breeding", breedingRoutes);
 app.use("/api/crops", idempotencyGuard, cropPlannerRoutes);
 app.use("/api/profitability", profitabilityRoutes); // /planner routes before the main crops router
 app.use("/api/crops", idempotencyGuard, cropsRoutes);
+// Plots — the real place crops stand on (farmer-requested gaps §2 B1/B2).
+// Mounted on its OWN path for the same reason /api/animals is: cropsRoutes has
+// a PATCH /health/:id and sub-paths that would swallow an "plots" segment.
+app.use("/api/plots", idempotencyGuard, plotsRoutes);
+app.use("/api/farm-loans", idempotencyGuard, farmLoansRoutes);
 app.use("/api/invoices", invoicesRoutes);
 app.use("/api/quotes", quotesRoutes);
 // Public customer-facing quote responses — token-gated, mounted before nothing special:
