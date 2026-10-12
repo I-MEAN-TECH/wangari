@@ -64,6 +64,10 @@ interface Stmt {
   byBuyer: Record<string, BuyerLine>;
   allTimeOutstanding: number;
   unpaidDeliveries: number;
+  /** Money the buyer let slip past the date they gave — not the same as owed. */
+  arrears?: { total: number; count: number; oldestDays: number | null };
+  /** Deductions split by who took them: the co-op, an agrovet, or a loan. */
+  deductionsByCreditor?: Record<string, number>;
   farm: { name: string; county: string | null; code: string | null; owner: { name: string } } | null;
 }
 
@@ -280,6 +284,49 @@ export default function StatementPage() {
                 </div>
               )}
             </div>
+
+            {/* Arrears: only ever shown against a date the buyer gave, so the
+                line is a fact rather than a grievance. */}
+            {(stmt?.arrears?.count ?? 0) > 0 && (
+              <div className="border-b border-wangari-gray-100 bg-wangari-amber-50 px-6 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-wangari-amber-800">
+                      Past the promised date
+                    </p>
+                    <p className="text-lg font-black text-wangari-amber-600">
+                      {KES(stmt?.arrears?.total ?? 0)}
+                    </p>
+                  </div>
+                  <p className="text-right text-[11px] font-bold text-wangari-amber-800">
+                    {stmt?.arrears?.count} deliver{(stmt?.arrears?.count ?? 0) === 1 ? "y" : "ies"} late
+                    {stmt?.arrears?.oldestDays != null && (
+                      <><br />longest wait {stmt.arrears.oldestDays} days</>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Who the deductions went to. A single deduction total hides the
+                difference between a co-op charge and a loan repayment. */}
+            {Object.keys(stmt?.deductionsByCreditor ?? {}).length > 0 && (
+              <div className="border-b border-wangari-gray-100 px-6 py-4">
+                <p className="text-sm font-black text-wangari-gray-900">Who the deductions went to</p>
+                <table className="mt-2 w-full text-xs">
+                  <tbody>
+                    {Object.entries(stmt?.deductionsByCreditor ?? {}).map(([who, amount]) => (
+                      <tr key={who} className="border-t border-wangari-gray-50">
+                        <td className="py-1.5 font-bold text-wangari-gray-800">{who}</td>
+                        <td className="py-1.5 text-right font-black text-wangari-gray-900">
+                          −{KES(amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {/* Per-buyer: what settles an argument with a co-op */}
             {buyers.length > 0 && (

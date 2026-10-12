@@ -47,6 +47,18 @@ export interface DeliveryStatement {
   outstanding: number;
   allTimeOutstanding?: number;
   unpaidDeliveries?: number;
+  /**
+   * Deliveries the buyer let slip past the date they promised. Kept separate
+   * from plain "outstanding": an unpaid delivery whose due date has not arrived
+   * is not late, and telling a farmer it is would make the card untrustworthy.
+   */
+  arrears?: { total: number; count: number; oldestDays: number | null };
+  /**
+   * Deductions grouped by who the money went to. "The co-op kept KES 4,000" and
+   * "KES 4,000 repaid my SACCO loan" are the same figure and two different
+   * conversations — this is the distinction the farmer is missing today.
+   */
+  deductionsByCreditor?: Record<string, number>;
   byBuyer?: Record<
     string,
     {
@@ -105,6 +117,12 @@ export function StatementCard({
       `Outstanding: ${money(statement.outstanding)}`,
       ``,
       `Total outstanding: ${money(owed)}`,
+      ...(statement.arrears && statement.arrears.count > 0
+        ? [`Past the promised date: ${money(statement.arrears.total)} (${statement.arrears.count} deliveries${statement.arrears.oldestDays != null ? `, longest ${statement.arrears.oldestDays} days` : ""})`]
+        : []),
+      ...Object.entries(statement.deductionsByCreditor ?? {}).map(
+        ([who, amount]) => `Deductions to ${who}: ${money(amount)}`
+      ),
       ...Object.entries(buyers).map(
         ([buyer, c]) => `- ${buyer}: ${money(c.outstanding)} (${c.deliveries} deliveries)`
       ),
@@ -205,6 +223,46 @@ export function StatementCard({
                     tone={c.outstanding > 0.01 ? "warn" : "good"}
                     label={money(c.outstanding)}
                   />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {/* Arrears, with a clock. Only shown when a buyer gave a date and
+            missed it, so the line always means something specific. */}
+        {statement.arrears && statement.arrears.count > 0 ? (
+          <div className="rounded-xl border border-tone-warn-border bg-tone-warn-bg px-4 py-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-tone-warn-text" aria-hidden />
+              <p className="text-sm font-semibold text-tone-warn-text">
+                {money(statement.arrears.total)} past the date you were promised
+              </p>
+            </div>
+            <p className="mt-1 text-xs text-wangari-muted">
+              {statement.arrears.count} deliver{statement.arrears.count === 1 ? "y" : "ies"}
+              {statement.arrears.oldestDays != null
+                ? ` · longest wait ${statement.arrears.oldestDays} days`
+                : ""}
+            </p>
+          </div>
+        ) : null}
+
+        {/* Who took the money. The slip shows one deduction total; this splits
+            it into the co-op's own charges and the farmer's other debts. */}
+        {statement.deductionsByCreditor && Object.keys(statement.deductionsByCreditor).length > 0 ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-wangari-text">
+              <Wallet className="h-4 w-4" aria-hidden />
+              Who the deductions went to
+            </div>
+            <ul className="space-y-1">
+              {Object.entries(statement.deductionsByCreditor).map(([who, amount]) => (
+                <li key={who} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="truncate text-wangari-muted">{who}</span>
+                  <span className="shrink-0 font-mono font-semibold tabular-nums text-wangari-text">
+                    −{money(amount)}
+                  </span>
                 </li>
               ))}
             </ul>

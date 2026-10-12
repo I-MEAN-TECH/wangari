@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { payoutSummary, type DeliveryRow } from "../lib/delivery-quality.js";
 
 const router = Router();
 router.use(authMiddleware, requireOwner);
@@ -153,6 +154,28 @@ router.post("/", async (req: Request, res: Response) => {
     const { nextDocCode } = await import("../lib/doc-codes.js");
     const docCode = await prisma.$transaction((tx: any) => nextDocCode(tx, req.user!.farmId!, "delivery"));
 
+    // Milk-quality parameters arrive exactly as the slip shows them and are
+    // stored as given — we never grade, a co-op's bands are its own terms.
+    // An added-water percentage is stored even though it lowers the payable
+    // volume: the farmer's dispute needs the co-op's own figure recorded.
+    const quality = {
+      fatPct: req.body.fatPct != null && isFinite(Number(req.body.fatPct)) ? Number(req.body.fatPct) : null,
+      snfPct: req.body.snfPct != null && isFinite(Number(req.body.snfPct)) ? Number(req.body.snfPct) : null,
+      density: req.body.density != null && isFinite(Number(req.body.density)) ? Number(req.body.density) : null,
+      addedWaterPct: req.body.addedWaterPct != null && isFinite(Number(req.body.addedWaterPct)) ? Number(req.body.addedWaterPct) : null,
+      tpc: req.body.tpc != null && isFinite(Number(req.body.tpc)) ? Math.round(Number(req.body.tpc)) : null,
+      gradedBy: typeof req.body.gradedBy === "string" && req.body.gradedBy.trim() ? req.body.gradedBy.trim() : null,
+    };
+    // The promised payment date starts the arrears clock. No date, no clock,
+    // and we never let the UI paint a delivery "late" on a date never given.
+    let payBy: Date | null = null;
+    if (typeof req.body.payBy === "string" && req.body.payBy.trim()) {
+      payBy = new Date(req.body.payBy);
+      if (isNaN(payBy.getTime())) {
+        return res.status(400).json({ error: "payBy is not a valid date" });
+      }
+    }
+
     const delivery = await prisma.delivery.create({
       data: {
         farmId: req.user!.farmId!,
@@ -165,11 +188,19 @@ router.post("/", async (req: Request, res: Response) => {
         receiptRef: receiptRef || null,
         unitPrice: price,
         expectedPay,
+        ...quality,
+        payBy,
         createdBy: req.user!.userId,
         deductions: {
           create: (Array.isArray(deductions) ? deductions : [])
             .filter((d: any) => d && d.label && Number(d.amount) > 0)
-            .map((d: any) => ({ label: String(d.label), amount: Number(d.amount) })),
+            .map((d: any) => ({
+              label: String(d.label),
+              amount: Number(d.amount),
+              // Who the deduction is FOR — co-op vs agrovet vs the farmer's
+              // own loan. The statement groups on this distinction.
+              creditor: typeof d.creditor === "string" && d.creditor.trim() ? d.creditor.trim() : null,
+            })),
         },
       },
       include: { deductions: true },
@@ -198,6 +229,20 @@ router.patch("/:id", async (req: Request, res: Response) => {
       data.expectedPay = Number(existing.quantity) * price;
     }
     if (req.body.notes !== undefined) data.notes = req.body.notes || null;
+    // Quality fields are editable — a slip arrives after the delivery often.
+    for (const k of ["fatPct", "snfPct", "density", "addedWaterPct"] as const) {
+      if (req.body[k] !== undefined) data[k] = req.body[k] != null && isFinite(Number(req.body[k])) ? Number(req.body[k]) : null;
+    }
+    if (req.body.tpc !== undefined) data.tpc = req.body.tpc != null && isFinite(Number(req.body.tpc)) ? Math.round(Number(req.body.tpc)) : null;
+    if (req.body.gradedBy !== undefined) data.gradedBy = typeof req.body.gradedBy === "string" && req.body.gradedBy.trim() ? req.body.gradedBy.trim() : null;
+    if (req.body.payBy !== undefined) {
+      if (req.body.payBy === null || req.body.payBy === "") data.payBy = null;
+      else {
+        const d = new Date(req.body.payBy);
+        if (isNaN(d.getTime())) return res.status(400).json({ error: "payBy is not a valid date" });
+        data.payBy = d;
+      }
+    }
 
     const updated = await prisma.delivery.update({ where: { id: existing.id }, data, include: { deductions: true } });
     res.json(updated);
@@ -280,17 +325,32 @@ router.get("/statement", async (req: Request, res: Response) => {
       select: {
         expectedPay: true,
         paidAmount: true,
-        deductions: { select: { amount: true } },
+        payBy: true,
+        unitPrice: true,
+        quantity: true,
+        deductions: { select: { amount: true, creditor: true, label: true } },
       },
     });
-    const allTimeOutstanding = allTime.reduce((s, d) => {
-      const ded = d.deductions.reduce((x, dd) => x + Number(dd.amount), 0);
-      return s + Number(d.expectedPay ?? 0) - ded - Number(d.paidAmount ?? 0);
-    }, 0);
-    const unpaidDeliveries = allTime.filter((d) => {
-      const ded = d.deductions.reduce((x, dd) => x + Number(dd.amount), 0);
-      return Number(d.expectedPay ?? 0) - ded - Number(d.paidAmount ?? 0) > 0.01;
-    }).length;
+    // Arrears maths lives in the pure lib, tested without a database —
+    // the route's job is only to fetch rows in the shape the lib declares.
+    const allRows: DeliveryRow[] = allTime.map((d: any) => ({
+      commodity: "any",
+      quantity: Number(d.quantity),
+      unit: "any",
+      unitPrice: d.unitPrice != null ? Number(d.unitPrice) : null,
+      expectedPay: d.expectedPay != null ? Number(d.expectedPay) : null,
+      paidAmount: d.paidAmount != null ? Number(d.paidAmount) : null,
+      date: new Date(),
+      payBy: d.payBy ? new Date(d.payBy) : null,
+      deductions: d.deductions.map((dd: any) => ({
+        label: dd.label,
+        amount: Number(dd.amount),
+        creditor: dd.creditor ?? null,
+      })),
+    }));
+    const arrearsSummary = payoutSummary(allRows);
+    const allTimeOutstanding = arrearsSummary.outstanding;
+    const unpaidDeliveries = arrearsSummary.lines.filter((l) => l.outstanding > 0.01).length;
 
     res.json({
       month,
@@ -307,15 +367,41 @@ router.get("/statement", async (req: Request, res: Response) => {
       byBuyer,
       allTimeOutstanding,
       unpaidDeliveries,
+      // Arrears, now with a clock: which deliveries slipped past the date the
+      // buyer gave, for how much, and how long the oldest has waited.
+      arrears: {
+        total: arrearsSummary.arrearsTotal,
+        count: arrearsSummary.arrearsCount,
+        oldestDays: arrearsSummary.oldestArrearsDays,
+      },
+      // Deductions grouped by who they were for — "what the co-op kept" vs
+      // "what paid my loan" is exactly the distinction a farmer argues with.
+      deductionsByCreditor: arrearsSummary.deductionsByCreditor,
       farm: await prisma.farm.findUnique({
         where: { id: farmId },
         select: { name: true, county: true, code: true, owner: { select: { name: true } } },
       }),
+      // The per-delivery slip, including the quality the co-op measured and the
+      // date they promised to pay by. A statement that shows a deduction but
+      // not the butterfat it was argued over is not the document that settles
+      // the argument.
       deliveryList: deliveries.map((d) => ({
         id: d.id, date: d.date, commodity: d.commodity, quantity: Number(d.quantity),
         unit: d.unit, buyer: d.buyer, expectedPay: d.expectedPay ? Number(d.expectedPay) : null,
+        paidAmount: d.paidAmount != null ? Number(d.paidAmount) : null,
+        payBy: d.payBy,
         status: d.status,
-        deductions: d.deductions.map((dd) => ({ label: dd.label, amount: Number(dd.amount) })),
+        fatPct: d.fatPct != null ? Number(d.fatPct) : null,
+        snfPct: d.snfPct != null ? Number(d.snfPct) : null,
+        density: d.density != null ? Number(d.density) : null,
+        addedWaterPct: d.addedWaterPct != null ? Number(d.addedWaterPct) : null,
+        tpc: d.tpc,
+        gradedBy: d.gradedBy,
+        deductions: d.deductions.map((dd) => ({
+          label: dd.label,
+          amount: Number(dd.amount),
+          creditor: dd.creditor ?? null,
+        })),
       })),
       expenseList: transactions.map((t) => ({ category: t.category, amount: Number(t.amount), description: t.description, date: t.date })),
     });

@@ -14,6 +14,7 @@ import api from "@/lib/api-client";
 import Link from "next/link";
 
 import { speciesFor } from "@/lib/species-resolve";
+import { PerCowMilkPanel } from "@/components/production/PerCowMilkPanel";
 import { BTN_LINK_SM } from "@/components/ui/patterns";
 import {
   harvestPatternFor,
@@ -394,6 +395,11 @@ export default function ProductionPage() {
           </div>
         </motion.div>
       )}
+          {/* Per-cow milk — detail on top of the flock total, never a
+              replacement for it. See PerCowMilkPanel for why the coverage
+              line matters more than the per-cow average. */}
+          <PerCowMilkPanel />
+
         </>
       )}
 

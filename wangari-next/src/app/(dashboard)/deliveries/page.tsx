@@ -57,7 +57,32 @@ interface Statement {
   }>;
   allTimeOutstanding?: number;
   unpaidDeliveries?: number;
+  /** Deliveries that slipped past the date the buyer gave. */
+  arrears?: { total: number; count: number; oldestDays: number | null };
+  /** Deductions grouped by who they were for — co-op vs agrovet vs the farmer's own loan. */
+  deductionsByCreditor?: Record<string, number>;
   farm?: { name: string; county: string | null; code: string | null; owner: { name: string } } | null;
+}
+
+/**
+ * Milk-quality fields shown only where they can exist. QBMP band pricing is a
+ * DAIRY term, so asking a maize farmer for butterfat would be noise — the
+ * block appears when the farmer picked milk (or is selling by the litre).
+ */
+const isMilkDelivery = (commodity: string) => commodity === "milk";
+
+/** Whether a promised payment date has passed — the arrears clock, on screen. */
+const isOverdue = (payBy: string | Date) => new Date(payBy).getTime() < Date.now();
+
+/** One-line summary of what the slip said, or null when nothing was tested. */
+function qualitySummary(d: any): string | null {
+  const bits: string[] = [];
+  if (d.fatPct != null) bits.push(`Fat ${Number(d.fatPct)}%`);
+  if (d.snfPct != null) bits.push(`SNF ${Number(d.snfPct)}%`);
+  if (d.density != null) bits.push(`Density ${Number(d.density)}`);
+  if (d.addedWaterPct != null && Number(d.addedWaterPct) > 0) bits.push(`Added water ${Number(d.addedWaterPct)}%`);
+  if (d.tpc != null) bits.push(`TPC ${Number(d.tpc).toLocaleString()}`);
+  return bits.length ? bits.join(" · ") : null;
 }
 
 export default function DeliveriesPage() {
@@ -75,8 +100,16 @@ export default function DeliveriesPage() {
     buyer: "",
     receiptRef: "",
     unitPrice: "",
+    payBy: "",
+    fatPct: "",
+    snfPct: "",
+    density: "",
+    addedWaterPct: "",
+    tpc: "",
+    gradedBy: "",
     deductionLabel: "",
     deductionAmount: "",
+    deductionCreditor: "",
   });
 
   const month = new Date().toISOString().slice(0, 7);
@@ -106,16 +139,43 @@ export default function DeliveriesPage() {
   const submit = async () => {
     if (!form.quantity || !form.buyer) { showToast("Enter the quantity and buyer", "error"); return; }
     const deductions = form.deductionAmount && Number(form.deductionAmount) > 0
-      ? [{ label: form.deductionLabel || "Deduction", amount: Number(form.deductionAmount) }] : [];
+      ? [{
+          label: form.deductionLabel || "Deduction",
+          amount: Number(form.deductionAmount),
+          // Who the money went to. "The co-op kept it" and "it repaid my SACCO
+          // loan" are the two things a farmer gets confused about, so the
+          // creditor travels with the deduction into the statement.
+          creditor: form.deductionCreditor || undefined,
+        }] : [];
+    // Quality is stored exactly as the slip shows it. Empty stays empty — a
+    // "not tested" field must not be sent as 0, which would read as real data.
+    const num = (v: string) => (v.trim() !== "" ? Number(v) : undefined);
+    const quality = isMilkDelivery(form.commodity)
+      ? {
+          fatPct: num(form.fatPct),
+          snfPct: num(form.snfPct),
+          density: num(form.density),
+          addedWaterPct: num(form.addedWaterPct),
+          tpc: num(form.tpc),
+          gradedBy: form.gradedBy || undefined,
+        }
+      : {};
     try {
       await api.post("/api/deliveries", {
         date: form.date, commodity: form.commodity, quantity: Number(form.quantity),
         buyer: form.buyer, receiptRef: form.receiptRef || undefined,
-        unitPrice: form.unitPrice ? Number(form.unitPrice) : undefined, deductions,
+        unitPrice: form.unitPrice ? Number(form.unitPrice) : undefined,
+        payBy: form.payBy || undefined,
+        ...quality,
+        deductions,
       });
       showToast("Delivery recorded — your money trail is building", "success");
       setShowForm(false);
-      setForm({ ...form, quantity: "", buyer: "", receiptRef: "", unitPrice: "", deductionLabel: "", deductionAmount: "" });
+      setForm({
+        ...form, quantity: "", buyer: "", receiptRef: "", unitPrice: "", payBy: "",
+        fatPct: "", snfPct: "", density: "", addedWaterPct: "", tpc: "", gradedBy: "",
+        deductionLabel: "", deductionAmount: "", deductionCreditor: "",
+      });
       load();
     } catch { showToast("Failed to record delivery", "error"); }
   };
@@ -224,10 +284,48 @@ export default function DeliveriesPage() {
                 <div><Label>Delivered to (buyer)</Label><Input placeholder="e.g. Brookside, factory name, broker" value={form.buyer} onChange={(e) => setForm({ ...form, buyer: e.target.value })} /></div>
                 <div><Label>Receipt / slip no. (optional)</Label><Input placeholder="from the delivery book" value={form.receiptRef} onChange={(e) => setForm({ ...form, receiptRef: e.target.value })} /></div>
                 <div><Label>Price per {current.unit} (optional)</Label><Input type="number" step="0.5" placeholder="KES" value={form.unitPrice} onChange={(e) => setForm({ ...form, unitPrice: e.target.value })} /></div>
+                <div>
+                  <Label>Payment expected by (optional)</Label>
+                  <Input type="date" value={form.payBy} onChange={(e) => setForm({ ...form, payBy: e.target.value })} />
+                  {/* The date starts the arrears clock. Blank means no promise
+                      was made, so nothing is ever painted "late". */}
+                  <p className="mt-1 text-[11px] text-muted-foreground">When the buyer said they would pay — measured against this, "unpaid for three months" becomes a fact rather than a feeling</p>
+                </div>
               </div>
+
+              {/* Milk test results: the QBMP parameters as the co-op slip shows
+                  them. We never grade — band pricing is the co-op's term — we
+                  just keep the farmer's copy of the measurement, because a
+                  deduction is the thing they end up arguing about. */}
+              {isMilkDelivery(form.commodity) && (
+                <div className="rounded-xl border border-dashed p-3 space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">Milk test results (optional)</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Copy them off the co-op slip. Leave blank if they did not test — blank stays blank, it never becomes zero.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div><Label>Butterfat %</Label><Input type="number" step="0.01" placeholder="e.g. 3.8" value={form.fatPct} onChange={(e) => setForm({ ...form, fatPct: e.target.value })} /></div>
+                    <div><Label>SNF %</Label><Input type="number" step="0.01" placeholder="e.g. 8.5" value={form.snfPct} onChange={(e) => setForm({ ...form, snfPct: e.target.value })} /></div>
+                    <div><Label>Density</Label><Input type="number" step="0.001" placeholder="e.g. 1.03" value={form.density} onChange={(e) => setForm({ ...form, density: e.target.value })} /></div>
+                    <div><Label>Added water %</Label><Input type="number" step="0.01" placeholder="e.g. 0" value={form.addedWaterPct} onChange={(e) => setForm({ ...form, addedWaterPct: e.target.value })} /></div>
+                    <div><Label>TPC (cfu/ml)</Label><Input type="number" placeholder="e.g. 200000" value={form.tpc} onChange={(e) => setForm({ ...form, tpc: e.target.value })} /></div>
+                    <div><Label>Tested by (optional)</Label><Input placeholder="e.g. co-op lab" value={form.gradedBy} onChange={(e) => setForm({ ...form, gradedBy: e.target.value })} /></div>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:col-span-2">
                 <div><Label>Deduction label (optional)</Label><Input placeholder="e.g. AI service, agrovet" value={form.deductionLabel} onChange={(e) => setForm({ ...form, deductionLabel: e.target.value })} /></div>
                 <div><Label>Deduction amount (optional)</Label><Input type="number" placeholder="KES" value={form.deductionAmount} onChange={(e) => setForm({ ...form, deductionAmount: e.target.value })} /></div>
+                <div>
+                  <Label>Deduction is for (optional)</Label>
+                  <Input placeholder="e.g. the co-op, agrovet, SACCO loan" value={form.deductionCreditor} onChange={(e) => setForm({ ...form, deductionCreditor: e.target.value })} />
+                  {/* "What the co-op kept" and "what repaid my loan" are the
+                      same number on the slip and two different arguments. */}
+                  <p className="mt-1 text-[11px] text-muted-foreground">Who took it — the statement groups deductions by this</p>
+                </div>
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
@@ -266,6 +364,19 @@ export default function DeliveriesPage() {
                         {ded > 0 ? ` · −KES ${ded.toLocaleString()} deductions` : ""}
                         {d.status === "paid" && d.paidAmount ? ` · paid KES ${Number(d.paidAmount).toLocaleString()}` : ""}
                       </p>
+                      {/* The test result the farmer will be arguing about, shown
+                          on the row itself so they never have to open the slip. */}
+                      {qualitySummary(d) && (
+                        <p className="text-xs text-tone-good-text">{qualitySummary(d)}</p>
+                      )}
+                      {/* Late only against a date the buyer actually gave. */}
+                      {d.payBy && d.status !== "paid" && (
+                        <p className={`text-xs ${isOverdue(d.payBy) ? "font-medium text-tone-warn-text" : "text-muted-foreground"}`}>
+                          {isOverdue(d.payBy)
+                            ? `Expected by ${new Date(d.payBy).toLocaleDateString()} — still not paid`
+                            : `Expected by ${new Date(d.payBy).toLocaleDateString()}`}
+                        </p>
+                      )}
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-semibold">{d.expectedPay != null ? money(net) : "—"}</p>
