@@ -44,7 +44,9 @@ function block(from: string, to: string): string {
 }
 
 const transferBlock = block('router.post("/transfer"', 'router.post("/merge"');
-const mergeBlock = block('router.post("/merge"', 'router.post("/:id/count"');
+const mergeManyBlock = block('router.post("/merge-many"', 'router.post("/:id/count"');
+// The pairwise merge now ends where merge-many begins, not at /:id/count.
+const mergeBlock = block('router.post("/merge"', 'router.post("/merge-many"');
 
 describe("the herd routes exist and are not shadowed by /:id", () => {
   it("found the routes in the source", () => {
@@ -60,6 +62,14 @@ describe("the herd routes exist and are not shadowed by /:id", () => {
     expect(routeIndex("/merge")).toBeGreaterThan(-1);
     expect(routeIndex("/transfer")).toBeLessThan(byId);
     expect(routeIndex("/merge")).toBeLessThan(byId);
+  });
+
+  it("registers /merge-many before the /:id catch-all", () => {
+    // "merge-many" would otherwise be parsed as a flock id, exactly as the
+    // Compare button once was — see route-shadowing.test.ts.
+    const byId = routeIndex("/:id");
+    expect(routeIndex("/merge-many")).toBeGreaterThan(-1);
+    expect(routeIndex("/merge-many")).toBeLessThan(byId);
   });
 
   it("serves the per-group count change and the ledger", () => {
@@ -151,6 +161,101 @@ describe("a merge archives, it never deletes", () => {
 describe("archived groups leave the active list", () => {
   it("filters status merged out of the list endpoint", () => {
     expect(src).toMatch(/status:\s*\{\s*not:\s*"merged"\s*\}/);
+  });
+});
+
+/**
+ * Three branches that have all moved to one location is a single decision.
+ * Forcing it through the pairwise /merge meant the farmer fired it once per
+ * branch, read a confirmation each time, and could simply stop halfway —
+ * leaving the third branch still sitting as its own group.
+ */
+describe("three or more groups can be combined in one action", () => {
+  it("the route exists and found its source", () => {
+    expect(mergeManyBlock.length).toBeGreaterThan(500);
+  });
+
+  it("takes a target and an ARRAY of sources", () => {
+    expect(mergeManyBlock).toMatch(/targetFlockId/);
+    expect(mergeManyBlock).toMatch(/sourceFlockIds/);
+  });
+
+  it("insists on at least two other groups", () => {
+    // One other group is the pairwise merge's job. Accepting it here would
+    // silently duplicate two code paths for the same event.
+    expect(mergeManyBlock).toMatch(/sourceIds\.length < 2/);
+  });
+
+  it("de-duplicates the selection", () => {
+    // The same group ticked twice would be absorbed twice, and the second
+    // pass would try to archive an already-archived group.
+    expect(mergeManyBlock).toMatch(/new Set/);
+  });
+
+  it("refuses when the group being kept is also ticked", () => {
+    expect(mergeManyBlock).toMatch(/cannot also be one of the groups being combined/);
+  });
+
+  it("refuses an already-merged group on either side", () => {
+    expect(mergeManyBlock).toMatch(/A merged group cannot be used again/);
+  });
+
+  it("archives every absorbed group rather than deleting it", () => {
+    expect(mergeManyBlock).not.toMatch(/flock\.delete/);
+    expect(mergeManyBlock).toMatch(/status:\s*"merged"/);
+  });
+
+  it("writes a merged_in and merged_out row per absorbed group", () => {
+    expect(mergeManyBlock).toMatch(/reason:\s*"merged_in"/);
+    expect(mergeManyBlock).toMatch(/reason:\s*"merged_out"/);
+  });
+
+  it("threads a running count so the ledger reconciles with the final total", () => {
+    // Each source must see the count the previous one left behind, or two
+    // sources report the same countBefore and the ledger stops matching the
+    // total it sits beside.
+    expect(mergeManyBlock).toMatch(/runningCount/);
+    expect(mergeManyBlock).toMatch(/countBefore,\s*countAfter/);
+  });
+
+  it("does NOT sweep production across with a bare updateMany", () => {
+    // DailyProduction is unique on [flockId, date]. A plain updateMany would
+    // abort the whole merge the moment two groups both logged the same day.
+    expect(mergeManyBlock).not.toMatch(/dailyProduction\.updateMany/);
+    expect(mergeManyBlock).toMatch(/targetByDate/);
+    // Colliding days are summed — but only the additive fields. Averaging an
+    // average is not addition, so the weight columns must not be touched.
+    expect(mergeManyBlock).toMatch(/mortality:\s*\{\s*increment/);
+    const collisionUpdate = mergeManyBlock.slice(
+      mergeManyBlock.indexOf("data: {\n                eggsCollected:")
+    );
+    expect(collisionUpdate.slice(0, 400)).not.toMatch(/avgWeight|weightGain/);
+  });
+
+  it("can set the survivor's location in the same transaction", () => {
+    expect(mergeManyBlock).toMatch(/newLocation/);
+    expect(mergeManyBlock).toMatch(/location:\s*newLocation/);
+  });
+
+  it("re-parents animals into a named batch per absorbed group", () => {
+    // "These came from the Nyeri branch" stays readable afterwards.
+    expect(mergeManyBlock).toMatch(/tx\.flockBatch\.create/);
+    expect(mergeManyBlock).toMatch(/sourceFlockName:\s*source\.name/);
+  });
+
+  it("asks once before combining mixed species", () => {
+    expect(mergeManyBlock).toMatch(/confirmMixedSpecies/);
+    expect(mergeManyBlock).toMatch(/needsConfirmation/);
+  });
+
+  it("takes the mixed-species warning from a group that ACTUALLY conflicts", () => {
+    // Reading it off sources[0] alone returned `error: null` whenever the
+    // first group matched the survivor and a later one did not — a 400 with
+    // no message, which on a phone reads as "the button is broken".
+    expect(mergeManyBlock).toMatch(/sources\.find\(/);
+    expect(mergeManyBlock).toMatch(/const compat = mismatch/);
+    // And the response must never be built from a note that can be null.
+    expect(mergeManyBlock).not.toMatch(/sources\[0\]\?\.category/);
   });
 });
 

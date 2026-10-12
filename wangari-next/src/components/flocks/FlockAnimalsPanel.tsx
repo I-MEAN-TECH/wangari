@@ -146,6 +146,16 @@ export function FlockAnimalsPanel({
   const [adding, setAdding] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [tag, setTag] = React.useState<AnitracTagValue | null>(null);
+  // Is this tag a NEW animal, or a tag for one already counted?
+  //
+  // Two honest answers and the farmer has to pick, because they are different
+  // writes: a cattle farmer with one cow who registers a second tag is
+  // recording an ARRIVAL, while a farmer tagging a herd of twelve they
+  // already counted is adding detail on top of a number that is already
+  // right. Making them open "change the count" separately is the two-step
+  // that gets skipped, and the register then says two cows while the herd
+  // screen says one — invisible until a buyer asks for the list.
+  const [isNewAnimal, setIsNewAnimal] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
   // Movement ledger state: which animal's form is open, and its inputs.
@@ -194,9 +204,16 @@ export function FlockAnimalsPanel({
       await api.post("/api/animals", {
         tagNumber: tag.tagNumber,
         flockId,
+        // The one field that decides whether the group's head count moves.
+        ...(isNewAnimal && flockId ? { addToFlock: true, reason: "purchase" } : {}),
       });
-      setNotice("Tags saved. They now appear on the traceability list.");
+      setNotice(
+        isNewAnimal && flockId
+          ? "Animal registered, and the group's head count was updated."
+          : "Tags saved. They now appear on the traceability list."
+      );
       setTag(null);
+      setIsNewAnimal(false);
       setAdding(false);
       await load();
       setTimeout(() => setNotice(null), 4000);
@@ -461,6 +478,42 @@ export function FlockAnimalsPanel({
               onChange={setTag}
               onConfirm={saving ? undefined : save}
             />
+            {/* Only asked when there IS a group to add to — a tag with no
+                group is just detail, and offering to move a count that does
+                not exist would be a dead tap. */}
+            {flockId ? (
+              <div className="mt-3">
+                <p className="mb-1.5 text-xs font-semibold text-wangari-green-900">
+                  Is this a new animal?
+                </p>
+                <div className="flex gap-2">
+                  {(
+                    [
+                      { on: true, label: "Yes — I bought or bred it" },
+                      { on: false, label: "No — already counted" },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={String(opt.on)}
+                      type="button"
+                      onClick={() => setIsNewAnimal(opt.on)}
+                      className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
+                        isNewAnimal === opt.on
+                          ? "border-wangari-green-800 bg-wangari-green-800 text-white"
+                          : "border-wangari-border bg-white text-wangari-green-900"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-xs text-wangari-muted">
+                  {isNewAnimal
+                    ? "The group's head count will go up by one as well, so the tag list and the herd screen agree."
+                    : "Good — the tag is added to the list and the head count stays as it is."}
+                </p>
+              </div>
+            ) : null}
             <div className="mt-3 flex gap-2">
               <Button
                 className="flex-1"

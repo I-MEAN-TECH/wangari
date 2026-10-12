@@ -132,6 +132,18 @@ export function FlockHerdPanel({
     otherId: "",
     keep: "this" as "this" | "other",
     confirmMixedSpecies: false,
+    // Keep the absorbed group as a named batch inside the survivor, instead of
+    // only flattening its count into one number. Off by default: most merges
+    // really are "these were always the same group", and a batch the farmer
+    // never asked for is just clutter.
+    asBatch: false,
+    // "Three branches, now one location" — set it here instead of a second
+    // trip to Edit after the merge.
+    newLocation: "",
+    // Groups chosen for a MANY-into-one merge. Three branches that moved to
+    // one location is a single decision, not three pairwise merges the farmer
+    // has to fire one after another — and stop halfway through.
+    sourceIds: [] as number[],
   });
 
   const loadLedger = React.useCallback(async () => {
@@ -160,7 +172,7 @@ export function FlockHerdPanel({
     setError(null);
     setCountForm((f) => ({ ...f, amount: "", notes: "" }));
     setTransferForm((f) => ({ ...f, toFlockId: "", count: "", notes: "" }));
-    setMergeForm((f) => ({ ...f, otherId: "", confirmMixedSpecies: false }));
+    setMergeForm((f) => ({ ...f, otherId: "", confirmMixedSpecies: false, asBatch: false, newLocation: "", sourceIds: [] }));
   };
 
   /** Count change — add or remove head with a reason. */
@@ -223,6 +235,48 @@ export function FlockHerdPanel({
   };
 
   const saveMerge = async () => {
+    // ── Many-into-one: the farmer ticked two or more other groups ────────
+    // A single decision, one call. The pairwise path below still handles the
+    // "combine with exactly one" case, including "keep the other group".
+    if (mergeForm.sourceIds.length >= 2) {
+      setBusy(true);
+      setError(null);
+      try {
+        const res = await api.post<{
+          mergedHead: number;
+          target: any;
+          archived: { id: number; name: string }[];
+          warning?: string;
+        }>("/api/flocks/merge-many", {
+          targetFlockId: flock.id,
+          sourceFlockIds: mergeForm.sourceIds,
+          asBatch: mergeForm.asBatch,
+          confirmMixedSpecies: mergeForm.confirmMixedSpecies,
+          ...(mergeForm.newLocation.trim() ? { location: mergeForm.newLocation.trim() } : {}),
+        });
+        flash(
+          isQueued(res)
+            ? "Saved on this device. The groups will be combined when you're back online."
+            : `Combined ${(res?.archived?.length || 0) + 1} groups into ${
+                res?.target?.name || flock.name
+              }. ${res?.mergedHead ?? 0} head moved in.` + (res?.warning ? ` ${res.warning}` : "")
+        );
+        resetForms();
+        onChanged();
+        loadLedger();
+      } catch (e: any) {
+        if (e?.needsConfirmation || /different species/i.test(e?.message || "")) {
+          setError(e.message);
+          setMergeForm((f) => ({ ...f, confirmMixedSpecies: true }));
+        } else {
+          setError(e?.message || "The groups were not combined. Try again.");
+        }
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
     const other = others.find((f) => String(f.id) === mergeForm.otherId);
     if (!other) return;
     // "keep this" → current group survives; otherwise the picked one survives.
@@ -231,12 +285,14 @@ export function FlockHerdPanel({
     setBusy(true);
     setError(null);
     try {
-      const res = await api.post<{ archived: any; target: any; warning?: string }>(
+      const res = await api.post<{ archived: any; target: any; batch?: any; warning?: string }>(
         "/api/flocks/merge",
         {
           sourceFlockId,
           targetFlockId,
           confirmMixedSpecies: mergeForm.confirmMixedSpecies,
+          asBatch: mergeForm.asBatch,
+          ...(mergeForm.newLocation.trim() ? { location: mergeForm.newLocation.trim() } : {}),
         }
       );
       // If THIS group was the one absorbed it no longer exists, so the detail
@@ -249,7 +305,9 @@ export function FlockHerdPanel({
           ? `Saved on this device. The groups will be combined when you're back online.`
           : `Combined. ${res?.archived?.name || other.name} was archived into ${
               res?.target?.name || flock.name
-            }.` + (res?.warning ? ` ${res.warning}` : "")
+            }.` +
+              (res?.batch ? ` Kept as the batch "${res.batch.name}" inside the combined group.` : "") +
+              (res?.warning ? ` ${res.warning}` : "")
       );
       resetForms();
       onChanged();
@@ -466,16 +524,74 @@ export function FlockHerdPanel({
           </div>
         ) : null}
 
-        {/* ── Combine two groups ───────────────────────────────────────── */}
+        {/* ── Combine groups ──────────────────────────────────────────── */}
         {mode === "merge" ? (
           <div className="space-y-3 rounded-2xl border border-wangari-green-200 bg-wangari-green-50/40 p-3">
             <div className="flex items-start gap-2 rounded-xl border border-tone-warn-border bg-tone-warn-bg px-3 py-2 text-xs font-medium text-tone-warn-text">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
               <span>
-                One group is combined into the other. The group that is absorbed keeps
-                its history but is archived — it will leave your active list.
+                {mergeForm.sourceIds.length >= 2
+                  ? `${mergeForm.sourceIds.length + 1} groups become one. Each absorbed group keeps its history as a named batch.`
+                  : "One group is combined into the other. The group that is absorbed keeps its history but is archived — it will leave your active list."}
               </span>
             </div>
+
+            {/* Three branches that moved to one location is ONE decision, not
+                three pairwise merges fired one after another. Offered only
+                when there are actually 2+ other groups to pick. */}
+            {others.length >= 2 ? (
+              <fieldset className="rounded-xl border border-wangari-border bg-white p-3">
+                <legend className="px-1 text-xs font-semibold text-wangari-gray-700">
+                  Combine several groups at once?
+                </legend>
+                <p className="mb-2 text-xs text-wangari-muted">
+                  Tick two or more to gather them into {flock.name} in a single step — for
+                  example when separate branches have moved to one location.
+                </p>
+                <ul className="space-y-1.5">
+                  {others.map((f) => {
+                    const ticked = mergeForm.sourceIds.includes(f.id);
+                    return (
+                      <li key={f.id}>
+                        <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-wangari-gray-700 hover:bg-wangari-gray-50">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-wangari-border"
+                            checked={ticked}
+                            onChange={(e) =>
+                              setMergeForm((mf) => {
+                                const sourceIds = e.target.checked
+                                  ? [...mf.sourceIds, f.id]
+                                  : mf.sourceIds.filter((id) => id !== f.id);
+                                return {
+                                  ...mf,
+                                  confirmMixedSpecies: false,
+                                  sourceIds,
+                                  // Cross into "several at once" and keeping
+                                  // each branch as a named batch becomes the
+                                  // default: a farmer gathering three branches
+                                  // into one place wants to still tell them
+                                  // apart afterwards. They can untick it.
+                                  asBatch: sourceIds.length >= 2 ? true : mf.asBatch,
+                                };
+                              })
+                            }
+                          />
+                          <span className="flex-1">{f.name}</span>
+                          <span className="text-wangari-gray-400">{f.currentCount ?? 0} head</span>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </fieldset>
+            ) : null}
+
+            {/* The single-group path, hidden once the farmer has ticked two
+                or more — showing both at once would be two ways to say the
+                same thing. */}
+            {mergeForm.sourceIds.length < 2 ? (
+              <>
             <select
               className="h-11 w-full rounded-xl border border-wangari-border bg-white px-3 text-sm"
               value={mergeForm.otherId}
@@ -498,6 +614,26 @@ export function FlockHerdPanel({
                 Keep the other group (absorb {flock.name})
               </option>
             </select>
+              </>
+            ) : null}
+            <label className="flex items-start gap-2 rounded-xl border border-wangari-border bg-white px-3 py-2.5 text-xs text-wangari-gray-700">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-wangari-border"
+                checked={mergeForm.asBatch}
+                onChange={(e) => setMergeForm((f) => ({ ...f, asBatch: e.target.checked }))}
+              />
+              <span>
+                Keep the absorbed group as a separate batch inside the combined group
+                (so you can still tell them apart later, e.g. different ages or purchase dates).
+              </span>
+            </label>
+            <input
+              className="h-11 w-full rounded-xl border border-wangari-border px-3 text-sm"
+              placeholder="New location for the combined group (optional)"
+              value={mergeForm.newLocation}
+              onChange={(e) => setMergeForm((f) => ({ ...f, newLocation: e.target.value }))}
+            />
             {mergeForm.confirmMixedSpecies ? (
               <p className="text-xs font-semibold text-tone-warn-text">
                 Confirmed: these are different species. Tap Combine again to proceed.

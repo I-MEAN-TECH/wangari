@@ -7,6 +7,7 @@ import {
   HERD_REASONS,
   isHerdReason,
   applyDelta,
+  movableHead,
   movedHead,
   transferLedger,
   mergeLedger,
@@ -316,6 +317,21 @@ router.post("/merge", requireOwner, async (req: Request, res: Response) => {
     const movedAt = parseDay(req.body?.movedAt);
     const notes = cleanNote(req.body?.notes);
 
+    // Three groups in different branches, now one location: let the merge set
+    // it directly instead of making the farmer remember a manual edit after.
+    const newLocation = typeof req.body?.location === "string" && req.body.location.trim()
+      ? req.body.location.trim()
+      : null;
+
+    // "Keep as a batch" — the farmer wants ONE flock, but still wants to tell
+    // the absorbed group's animals apart internally (different acquisition
+    // date, different starting health, etc). Instead of only flattening the
+    // count, record the absorbed group's identity as a FlockBatch on the
+    // target, and park its animals in that batch rather than leaving them
+    // batch-less. The count still flattens into one total either way —
+    // Flock.currentCount is always the single source of truth.
+    const asBatch = req.body?.asBatch === true;
+
     // Production history is the one table with a per-flock unique key
     // ([flockId, date]), so it cannot simply be re-parented when both groups
     // logged the same day. Non-colliding days move across; a colliding day is
@@ -335,9 +351,33 @@ router.post("/merge", requireOwner, async (req: Request, res: Response) => {
     // Longer than Prisma's 5s default: merging a group with hundreds of
     // production days performs one write per day, and a timeout mid-merge would
     // leave half the animals moved and half the history behind.
-    await prisma.$transaction(async (tx) => {
+    const txResult = await prisma.$transaction(async (tx) => {
+      // When keeping the absorbed group's identity as a batch, create it FIRST
+      // and re-parent the source's animals straight into it in the same write
+      // that moves their flockId — never a separate pass over "target's
+      // batch-less animals", which would also catch animals the target already
+      // had before this merge.
+      let newBatchId: number | null = null;
+      if (asBatch && led.target.delta > 0) {
+        const batch = await tx.flockBatch.create({
+          data: {
+            farmId,
+            flockId: target.id,
+            name: source.name,
+            currentCount: led.target.delta,
+            acquiredOn: movedAt,
+            sourceFlockName: source.name,
+            notes: notes || `Merged from "${source.name}" on ${movedAt.toISOString().slice(0, 10)}`,
+          },
+        });
+        newBatchId = batch.id;
+      }
+
       // Identities and their records follow the animals into the surviving group.
-      await tx.animal.updateMany({ where: { flockId: source.id, farmId }, data: { flockId: target.id } });
+      await tx.animal.updateMany({
+        where: { flockId: source.id, farmId },
+        data: { flockId: target.id, ...(newBatchId ? { batchId: newBatchId } : {}) },
+      });
       await tx.vaccination.updateMany({ where: { flockId: source.id }, data: { flockId: target.id } });
       await tx.breeding.updateMany({ where: { flockId: source.id, farmId }, data: { flockId: target.id } });
       await tx.healthRecord.updateMany({ where: { flockId: source.id, farmId }, data: { flockId: target.id } });
@@ -365,7 +405,10 @@ router.post("/merge", requireOwner, async (req: Request, res: Response) => {
         }
       }
 
-      await tx.flock.update({ where: { id: target.id }, data: { currentCount: led.target.countAfter } });
+      await tx.flock.update({
+        where: { id: target.id },
+        data: { currentCount: led.target.countAfter, ...(newLocation ? { location: newLocation } : {}) },
+      });
       await tx.flock.update({ where: { id: source.id }, data: { currentCount: 0, status: "merged" } });
 
       await tx.flockMovement.create({
@@ -382,6 +425,8 @@ router.post("/merge", requireOwner, async (req: Request, res: Response) => {
           countBefore: led.source.countBefore, countAfter: led.source.countAfter, movedAt, notes,
         },
       });
+
+      return { newBatchId };
     }, { timeout: 20000 });
 
     res.json({
@@ -390,6 +435,7 @@ router.post("/merge", requireOwner, async (req: Request, res: Response) => {
       archived: { id: source.id, name: source.name },
       productionDaysMoved: movedDays,
       productionDaysSummed: mergedDays,
+      ...(txResult?.newBatchId ? { batch: { id: txResult.newBatchId, name: source.name } } : {}),
       ...(compat.note ? { warning: compat.note } : {}),
     });
   } catch (error) {
@@ -398,7 +444,200 @@ router.post("/merge", requireOwner, async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/flocks/merge-many — combine THREE OR MORE groups into one.
+//
+// Three branches, one location, now one group. The pairwise /merge above can
+// only absorb one group per call, so consolidating three meant the farmer
+// fired it twice, read two confirmations, and — worst case — stopped after the
+// second and left the third branch still sitting as its own group. iLivestock
+// documents exactly this as "select 2 or more groups, then Merge", and it is
+// the operation a farmer relocating a herd actually performs.
+//
+// Each absorbed group becomes a NAMED BATCH on the survivor by default, so
+// "these came from the Nyeri branch" stays readable afterwards. Setting
+// `asBatch: false` flattens them instead, for the farmer who genuinely wants
+// one undifferentiated herd at the new location.
+//
+// Registered BEFORE the "/:id" catch-all, same rule as /transfer and /merge.
+router.post("/merge-many", requireOwner, async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+
+    const targetId = Number(req.body?.targetFlockId);
+    const rawSources: unknown[] = Array.isArray(req.body?.sourceFlockIds) ? req.body.sourceFlockIds : [];
+    // De-duplicated: the same group tapped twice would otherwise be absorbed
+    // twice, and the second pass would try to archive an archived group.
+    const sourceIds = [...new Set(rawSources.map((n) => Number(n)))]
+      .filter((n) => Number.isInteger(n) && n > 0);
+
+    if (!Number.isInteger(targetId) || targetId <= 0)
+      return res.status(400).json({ error: "Pick the group the others will join." });
+    if (sourceIds.length < 2)
+      return res.status(400).json({ error: "Pick at least two other groups to combine." });
+    if (sourceIds.includes(targetId))
+      return res.status(400).json({ error: "The group you keep cannot also be one of the groups being combined." });
+
+    const wanted = [...sourceIds, targetId];
+    const found = await prisma.flock.findMany({ where: { id: { in: wanted }, farmId } });
+    const target = found.find((f) => f.id === targetId);
+    if (!target) return res.status(400).json({ error: "That group is not on this farm." });
+    if (target.status === "merged")
+      return res.status(400).json({ error: "A merged group cannot be used again. Pick another group." });
+
+    const sources = sourceIds
+      .map((id) => found.find((f) => f.id === id))
+      .filter((f): f is NonNullable<typeof f> => !!f);
+    if (sources.length !== sourceIds.length)
+      return res.status(400).json({ error: "One of those groups is not on this farm." });
+    if (sources.some((s) => s.status === "merged"))
+      return res.status(400).json({ error: "A merged group cannot be used again. Pick another group." });
+
+    // Same mixed-species guard as the pairwise merge, checked against the
+    // survivor once rather than per source — the farmer confirms once.
+    //
+    // The note has to come from a group that actually CONFLICTS. Reading it
+    // off sources[0] alone returned `error: null` whenever the first group
+    // matched the survivor but a later one did not — a 400 with no message,
+    // which on a phone reads as "the button is broken".
+    const mismatch = sources.find((s) => !speciesCompatible(target.category, s.category).compatible);
+    const compat = mismatch ? speciesCompatible(target.category, mismatch.category) : null;
+    if (compat && req.body?.confirmMixedSpecies !== true)
+      return res.status(400).json({ error: compat.note, needsConfirmation: true });
+
+    const asBatch = req.body?.asBatch !== false;
+    const newLocation = typeof req.body?.location === "string" && req.body.location.trim()
+      ? req.body.location.trim()
+      : null;
+    const movedAt = parseDay(req.body?.movedAt);
+
+    // The survivor's running count, threaded through the loop so each source
+    // sees the count the previous one left behind — otherwise two sources
+    // would each be told the same countBefore and the ledger would not
+    // reconcile with the final total.
+    let runningCount = target.currentCount;
+    let totalAbsorbed = 0;
+    const archived: { id: number; name: string }[] = [];
+
+    await prisma.$transaction(async (tx) => {
+      for (const source of sources) {
+        const countBefore = runningCount;
+        const countAfter = applyDelta(countBefore, source.currentCount);
+        const absorbed = countAfter - countBefore;
+        totalAbsorbed += absorbed;
+        runningCount = countAfter;
+
+        let newBatchId: number | null = null;
+        if (asBatch && absorbed > 0) {
+          const batch = await tx.flockBatch.create({
+            data: {
+              farmId,
+              flockId: target.id,
+              name: source.name,
+              currentCount: absorbed,
+              acquiredOn: movedAt,
+              sourceFlockName: source.name,
+              notes: `Merged from "${source.name}" on ${movedAt.toISOString().slice(0, 10)}`,
+            },
+          });
+          newBatchId = batch.id;
+        }
+
+        // Identities and their records follow the animals into the survivor.
+        await tx.animal.updateMany({
+          where: { flockId: source.id, farmId },
+          data: { flockId: target.id, ...(newBatchId ? { batchId: newBatchId } : {}) },
+        });
+        await tx.vaccination.updateMany({ where: { flockId: source.id }, data: { flockId: target.id } });
+        await tx.breeding.updateMany({ where: { flockId: source.id, farmId }, data: { flockId: target.id } });
+        await tx.healthRecord.updateMany({ where: { flockId: source.id, farmId }, data: { flockId: target.id } });
+        await tx.insurancePolicy.updateMany({ where: { flockId: source.id, farmId }, data: { flockId: target.id } });
+
+        // Production has a per-flock unique key on [flockId, date], so it can
+        // NOT be swept across with a plain updateMany — two groups that both
+        // logged 12 May would collide and abort the whole merge. Non-colliding
+        // days move; a colliding day is summed into the survivor's row
+        // (additive fields only — an average weight is not additive).
+        const sourceProduction = await tx.dailyProduction.findMany({ where: { flockId: source.id, farmId } });
+        const targetDays = await tx.dailyProduction.findMany({
+          where: { flockId: target.id },
+          select: { id: true, date: true },
+        });
+        const targetByDate = new Map(
+          targetDays.map((p: { id: number; date: Date }) => [p.date.toISOString().slice(0, 10), p.id]),
+        );
+        for (const p of sourceProduction) {
+          const key = p.date.toISOString().slice(0, 10);
+          const existingId = targetByDate.get(key);
+          if (existingId) {
+            await tx.dailyProduction.update({
+              where: { id: existingId },
+              data: {
+                eggsCollected: { increment: p.eggsCollected },
+                milkCollected: { increment: p.milkCollected },
+                mortality: { increment: p.mortality },
+                feedUsed: { increment: p.feedUsed },
+                ...(p.waterUsed !== null ? { waterUsed: { increment: p.waterUsed } } : {}),
+              },
+            });
+            await tx.dailyProduction.delete({ where: { id: p.id } });
+            // The survivor now has this date; a later source colliding on the
+            // same date must sum into it too rather than re-move it.
+            targetByDate.set(key, existingId);
+          } else {
+            await tx.dailyProduction.update({ where: { id: p.id }, data: { flockId: target.id } });
+            targetByDate.set(key, p.id);
+          }
+        }
+
+        await tx.flockMovement.create({
+          data: {
+            farmId, flockId: target.id, delta: absorbed, reason: "merged_in",
+            counterpartyFlockId: source.id, counterpartyName: source.name,
+            countBefore, countAfter, movedAt, notes: null,
+          },
+        });
+        await tx.flockMovement.create({
+          data: {
+            farmId, flockId: source.id, delta: -source.currentCount || 0, reason: "merged_out",
+            counterpartyFlockId: target.id, counterpartyName: target.name,
+            countBefore: source.currentCount, countAfter: 0, movedAt, notes: null,
+          },
+        });
+
+        // Archive, never delete — its ledger rows are the record of this merge.
+        await tx.flock.update({ where: { id: source.id }, data: { currentCount: 0, status: "merged" } });
+        archived.push({ id: source.id, name: source.name });
+      }
+
+      await tx.flock.update({
+        where: { id: target.id },
+        data: { currentCount: runningCount, ...(newLocation ? { location: newLocation } : {}) },
+      });
+    }, { timeout: 30000 });
+
+    res.json({
+      mergedHead: totalAbsorbed,
+      target: { id: target.id, name: target.name, countAfter: runningCount },
+      archived,
+      combinedCount: archived.length + 1,
+      ...(newLocation ? { location: newLocation } : {}),
+      ...(compat ? { warning: compat.note } : {}),
+    });
+  } catch (error) {
+    console.error("Merge many flocks error:", error);
+    res.status(500).json({ error: "Failed to combine the groups" });
+  }
+});
+
 // POST /api/flocks/:id/count — change a group's head count WITH a reason.
+//
+// `batchId` is optional and is what keeps the sub-groups honest. A death or a
+// sale recorded against the flock ALONE drops the flock total while every
+// batch keeps its old count, so the parts stop adding up to the whole — and
+// the panel could only report that disagreement, never fix it, because moving
+// head between two batches leaves their sum exactly where it was. Naming the
+// group the loss happened in moves both numbers in one transaction, so the
+// two can never drift apart at the moment the farmer records the event.
 router.post("/:id/count", requireOwner, async (req: Request, res: Response) => {
   try {
     const farmId = req.user!.farmId!;
@@ -411,11 +650,31 @@ router.post("/:id/count", requireOwner, async (req: Request, res: Response) => {
     if (!isHerdReason(req.body?.reason))
       return res.status(400).json({ error: `Reason must be one of: ${HERD_REASONS.join(", ")}` });
 
+    // Which group inside the flock this happened to, when the farmer says.
+    const batchId = req.body?.batchId != null ? Number(req.body.batchId) : null;
+    let batch = null as null | { id: number; name: string; currentCount: number };
+    if (batchId != null) {
+      const found = await loadBatch(farmId, batchId);
+      if ("error" in found) return res.status(400).json({ error: found.error });
+      if (found.batch.flockId !== flock.id)
+        return res.status(400).json({ error: "That group belongs to a different flock." });
+      batch = found.batch;
+    }
+
     const countBefore = flock.currentCount;
     const countAfter = applyDelta(countBefore, delta);
+    // The batch's own share, clamped the same way so the two never disagree.
+    const batchBefore = batch ? batch.currentCount : null;
+    const batchAfter = batch ? applyDelta(batch.currentCount, delta) : null;
 
     const [updated] = await prisma.$transaction([
       prisma.flock.update({ where: { id: flock.id }, data: { currentCount: countAfter } }),
+      // The batch moves by the SAME clamped delta as the flock, not by the
+      // requested one — otherwise a flock clamped at zero leaves the batch
+      // still holding head that no longer exist.
+      ...(batch != null && batchAfter != null && batchBefore != null
+        ? [prisma.flockBatch.update({ where: { id: batch.id }, data: { currentCount: batchAfter } })]
+        : []),
       prisma.flockMovement.create({
         data: {
           farmId, flockId: flock.id,
@@ -425,12 +684,23 @@ router.post("/:id/count", requireOwner, async (req: Request, res: Response) => {
           reason: req.body.reason,
           countBefore, countAfter,
           movedAt: parseDay(req.body?.movedAt),
-          notes: cleanNote(req.body?.notes),
+          // Naming the group in the note is what makes the row readable later:
+          // "3 died" and "3 died in Bought-in-October" are different records.
+          notes: batch
+            ? [`${batch.name}.`, cleanNote(req.body?.notes)].filter(Boolean).join(" ")
+            : cleanNote(req.body?.notes),
         },
       }),
     ]);
 
-    res.json({ flock: updated, countBefore, countAfter });
+    res.json({
+      flock: updated,
+      countBefore,
+      countAfter,
+      ...(batch != null && batchAfter != null && batchBefore != null
+        ? { batch: { id: batch.id, name: batch.name, countBefore: batchBefore, countAfter: batchAfter } }
+        : {}),
+    });
   } catch (error) {
     console.error("Adjust flock count error:", error);
     res.status(500).json({ error: "Failed to update the count" });
@@ -457,6 +727,263 @@ router.get("/:id/movements", async (req: Request, res: Response) => {
   }
 });
 
+// ─── Batches: sub-groups inside ONE flock, for a farmer's own organisation ──
+// "One flock, but I still want to tell the original 300 apart from the 200 I
+// bought in October." Flock.currentCount stays the single total; a batch's
+// count is a partition of it, not a second ledger. All of these must be
+// registered before the "/:id" catch-all, same reasoning as /transfer and
+// /merge above — see flock-herd-routes.test.ts.
+
+/** Load a batch that belongs to this farm, or the error to send back. */
+async function loadBatch(farmId: number, batchId: number) {
+  if (!Number.isInteger(batchId) || batchId <= 0) return { error: "A batch is required." } as const;
+  const batch = await prisma.flockBatch.findFirst({ where: { id: batchId, farmId } });
+  if (!batch) return { error: "That batch is not on this farm." } as const;
+  if (batch.status === "merged") return { error: "A merged batch cannot be used again. Pick another batch." } as const;
+  return { batch } as const;
+}
+
+// GET /api/flocks/:id/batches — list the sub-groups inside one flock.
+router.get("/:id/batches", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const flock = await prisma.flock.findFirst({ where: { id: Number(req.params.id), farmId } });
+    if (!flock) return res.status(404).json({ error: "Flock not found" });
+    const batches = await prisma.flockBatch.findMany({
+      where: { flockId: flock.id, farmId, status: { not: "merged" } },
+      orderBy: [{ createdAt: "desc" }],
+    });
+    res.json({ flock: { id: flock.id, name: flock.name, currentCount: flock.currentCount }, batches });
+  } catch (error) {
+    console.error("List flock batches error:", error);
+    res.status(500).json({ error: "Failed to load the batches" });
+  }
+});
+
+// POST /api/flocks/:id/batches — create a batch inside one flock.
+//
+// A batch is a sub-group the farmer keeps inside ONE flock: "the original
+// 300" vs "the 200 I bought in October". It is never a way to invent animals,
+// so it has two modes and the caller must say which one it means:
+//
+//  - RELABELLING stock the flock already holds (`addToFlock` false/omitted).
+//    The batch partitions an existing total. Nothing else changes.
+//  - RECORDING new stock arriving (`addToFlock: true`). The old contract made
+//    the client fire a second POST /:id/count to keep the flock total honest.
+//    Two client calls are not atomic — and an offline device replays them
+//    separately, so a dropped signal could leave a 200-bird batch inside a
+//    flock still totalling 300, which is exactly the disagreement the ledger
+//    exists to prevent. Both writes now happen in one transaction here.
+router.post("/:id/batches", requireOwner, async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const flock = await prisma.flock.findFirst({ where: { id: Number(req.params.id), farmId } });
+    if (!flock) return res.status(404).json({ error: "Flock not found" });
+
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    if (!name) return res.status(400).json({ error: "Name the batch, e.g. \"Bought October 2026\"." });
+    const count = Number(req.body?.count);
+    if (!Number.isInteger(count) || count < 0)
+      return res.status(400).json({ error: "Enter how many head are in this batch." });
+
+    // Only real arrivals may move the flock total. Relabelling is free.
+    const addToFlock = req.body?.addToFlock === true;
+    // "purchase" is the default, not the only answer: a farmer whose layers
+    // hatched a clutch is recording a BIRTH, and calling it a purchase would
+    // put a cost against an animal that cost nothing — which then shows up
+    // wrong in the profit figures.
+    const reason = addToFlock ? (req.body?.reason ?? "purchase") : null;
+    if (addToFlock && !isHerdReason(reason))
+      return res.status(400).json({ error: `Reason must be one of: ${HERD_REASONS.join(", ")}` });
+    // A count that only moves because head died or were sold is not "new
+    // stock arriving", whatever the caller claims. Those belong on the count
+    // route, against a group.
+    if (addToFlock && (reason === "sale" || reason === "death"))
+      return res.status(400).json({ error: "Record a sale or a death against the group, not as a new group." });
+
+    // `count === 0` with addToFlock would write a zero-delta ledger row — a
+    // row that says something happened when nothing did. Relabelling is the
+    // mode that wants a zero, so point the farmer at it.
+    if (addToFlock && count === 0)
+      return res.status(400).json({ error: "Enter how many head arrived. To only name a group, leave new stock off." });
+
+    const countBefore = flock.currentCount;
+    const countAfter = addToFlock ? applyDelta(countBefore, count) : countBefore;
+
+    const [batch] = await prisma.$transaction([
+      prisma.flockBatch.create({
+        data: {
+          farmId,
+          flockId: flock.id,
+          name,
+          currentCount: count,
+          acquiredOn: parseDay(req.body?.acquiredOn),
+          notes: cleanNote(req.body?.notes),
+        },
+      }),
+      // Written only when head actually arrived, so the ledger never carries a
+      // row for a pure rename.
+      ...(addToFlock
+        ? [
+            prisma.flock.update({ where: { id: flock.id }, data: { currentCount: countAfter } }),
+            prisma.flockMovement.create({
+              data: {
+                farmId,
+                flockId: flock.id,
+                // The delta that actually landed, after clamping, so the ledger
+                // reconciles with the count it sits beside.
+                delta: countAfter - countBefore,
+                reason,
+                countBefore,
+                countAfter,
+                movedAt: parseDay(req.body?.acquiredOn),
+                notes: `New group "${name}". ${cleanNote(req.body?.notes) || ""}`.trim(),
+              },
+            }),
+          ]
+        : []),
+    ]);
+
+    // `flock` here is the created batch (first element of the transaction).
+    const created = batch as { id: number };
+    if (addToFlock) {
+      res.status(201).json({
+        batch: created,
+        countBefore,
+        countAfter,
+        flock: { id: flock.id, name: flock.name, currentCount: countAfter },
+      });
+      return;
+    }
+    res.status(201).json({ batch });
+  } catch (error) {
+    console.error("Create flock batch error:", error);
+    res.status(500).json({ error: "Failed to create the batch" });
+  }
+});
+
+// PATCH /api/flocks/batches/:batchId — rename a batch or edit its notes.
+// Does not touch the count: use the transfer/merge routes below for that, so
+// the flock's total and the sum of its batches can never silently disagree.
+router.patch("/batches/:batchId", requireOwner, async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const found = await loadBatch(farmId, Number(req.params.batchId));
+    if ("error" in found) return res.status(400).json({ error: found.error });
+
+    const data: Record<string, unknown> = {};
+    if (typeof req.body?.name === "string" && req.body.name.trim()) data.name = req.body.name.trim();
+    if (req.body?.acquiredOn !== undefined) data.acquiredOn = parseDay(req.body.acquiredOn);
+    if (req.body?.notes !== undefined) data.notes = cleanNote(req.body.notes);
+
+    const batch = await prisma.flockBatch.update({ where: { id: found.batch.id }, data });
+    res.json({ batch });
+  } catch (error) {
+    console.error("Update flock batch error:", error);
+    res.status(500).json({ error: "Failed to update the batch" });
+  }
+});
+
+// POST /api/flocks/batches/transfer — move head between two batches of the
+// SAME flock. Moving between batches of DIFFERENT flocks is not this route —
+// that is a group-to-group move and belongs on /api/flocks/transfer instead,
+// so the flock-level ledger always has the full picture.
+router.post("/batches/transfer", requireOwner, async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const fromId = Number(req.body?.fromBatchId);
+    const toId = Number(req.body?.toBatchId);
+    if (fromId === toId) return res.status(400).json({ error: "Pick two different batches." });
+
+    const [fromFound, toFound] = await Promise.all([loadBatch(farmId, fromId), loadBatch(farmId, toId)]);
+    if ("error" in fromFound) return res.status(400).json({ error: fromFound.error });
+    if ("error" in toFound) return res.status(400).json({ error: toFound.error });
+    const { batch: from } = fromFound;
+    const { batch: to } = toFound;
+    if (from.flockId !== to.flockId)
+      return res.status(400).json({ error: "Those batches belong to different flocks — use the group transfer instead." });
+
+    const requested = Number(req.body?.count);
+    const moved = movableHead(from.currentCount, requested);
+    if (moved <= 0) return res.status(400).json({ error: "Enter how many are moving." });
+
+    const led = transferLedger(from.currentCount, to.currentCount, moved);
+    await prisma.$transaction([
+      prisma.flockBatch.update({ where: { id: from.id }, data: { currentCount: led.from.countAfter } }),
+      prisma.flockBatch.update({ where: { id: to.id }, data: { currentCount: led.to.countAfter } }),
+      prisma.animal.updateMany({
+        where: { batchId: from.id, farmId },
+        data: { batchId: to.id },
+      }),
+    ]);
+
+    res.json({ moved, from: { id: from.id, countAfter: led.from.countAfter }, to: { id: to.id, countAfter: led.to.countAfter } });
+  } catch (error) {
+    console.error("Transfer batch stock error:", error);
+    res.status(500).json({ error: "Failed to move the stock between batches" });
+  }
+});
+
+// POST /api/flocks/batches/merge — combine two batches of the SAME flock into
+// one. Mirrors /api/flocks/merge's archive-not-delete rule: the absorbed
+// batch's history is not thrown away, it is just no longer a live batch.
+router.post("/batches/merge", requireOwner, async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const sourceId = Number(req.body?.sourceBatchId);
+    const targetId = Number(req.body?.targetBatchId);
+    if (sourceId === targetId) return res.status(400).json({ error: "Pick two different batches." });
+
+    const [sourceFound, targetFound] = await Promise.all([loadBatch(farmId, sourceId), loadBatch(farmId, targetId)]);
+    if ("error" in sourceFound) return res.status(400).json({ error: sourceFound.error });
+    if ("error" in targetFound) return res.status(400).json({ error: targetFound.error });
+    const { batch: source } = sourceFound;
+    const { batch: target } = targetFound;
+    if (source.flockId !== target.flockId)
+      return res.status(400).json({ error: "Those batches belong to different flocks — use the group merge instead." });
+
+    const led = mergeLedger(source.currentCount, target.currentCount);
+    await prisma.$transaction([
+      prisma.animal.updateMany({ where: { batchId: source.id, farmId }, data: { batchId: target.id } }),
+      prisma.flockBatch.update({ where: { id: target.id }, data: { currentCount: led.target.countAfter } }),
+      prisma.flockBatch.update({ where: { id: source.id }, data: { currentCount: 0, status: "merged" } }),
+    ]);
+
+    res.json({
+      mergedHead: led.target.delta,
+      target: { id: target.id, name: target.name, countAfter: led.target.countAfter },
+      archived: { id: source.id, name: source.name },
+    });
+  } catch (error) {
+    console.error("Merge flock batches error:", error);
+    res.status(500).json({ error: "Failed to combine the batches" });
+  }
+});
+
+// DELETE /api/flocks/batches/:batchId — dissolve a batch WITHOUT losing the
+// animals. Its head count and any tagged animals fold back into the flock's
+// general (batch-less) pool — the flock total never changes, only the
+// internal bookkeeping does. Use this when the sub-grouping is no longer
+// useful, e.g. the two batches have become the same age and the distinction
+// stopped mattering.
+router.delete("/batches/:batchId", requireOwner, async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const found = await loadBatch(farmId, Number(req.params.batchId));
+    if ("error" in found) return res.status(400).json({ error: found.error });
+    const { batch } = found;
+
+    await prisma.$transaction([
+      prisma.animal.updateMany({ where: { batchId: batch.id, farmId }, data: { batchId: null } }),
+      prisma.flockBatch.update({ where: { id: batch.id }, data: { currentCount: 0, status: "merged" } }),
+    ]);
+    res.json({ dissolved: { id: batch.id, name: batch.name } });
+  } catch (error) {
+    console.error("Dissolve flock batch error:", error);
+    res.status(500).json({ error: "Failed to remove the batch" });
+  }
+});
+
 // GET /api/flocks/:id — get single flock with full details
 router.get("/:id", async (req: Request, res: Response) => {
   try {
@@ -465,6 +992,7 @@ router.get("/:id", async (req: Request, res: Response) => {
       include: {
         vaccinations: { orderBy: { scheduledDate: "asc" } },
         production: { orderBy: { date: "desc" }, take: 90 },
+        batches: { where: { status: { not: "merged" } }, orderBy: { createdAt: "desc" } },
       },
     });
     if (!data) {

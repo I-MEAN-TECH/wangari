@@ -1,9 +1,11 @@
 import { Router, Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireFarm } from "../middleware/requireOwner.js";
 import { resolveTagRange, rangeRows } from "../lib/tag-range.js";
 import { buildOwnerRegister, buildCountyExport } from "../lib/animal-register.js";
+import { applyDelta, HERD_REASONS, isHerdReason } from "../lib/flock-herd.js";
 import {
   FARMER_MOVEMENT_REASONS,
   isFarmerMovementReason,
@@ -356,6 +358,60 @@ router.post("/", async (req: Request, res: Response) => {
       status: "active",
     };
 
+    // ── Does registering this tag also change the group's head count? ────
+    //
+    // Two honest modes, and the farmer has to say which:
+    //
+    //  - RELABELLING. "My herd is 12. Here are the 12 tags." The count is
+    //    already right; the tags are detail ON TOP of it. Nothing else moves.
+    //    This is the default and the rule this router was built on —
+    //    Flock.currentCount is the daily source of truth and a tag is
+    //    optional detail.
+    //  - A NEW ANIMAL. "I bought a second cow." A cattle farmer with one cow
+    //    who registers the new tag is not relabelling — they are recording an
+    //    arrival. Forcing them to ALSO open "change the count" and enter 1
+    //    there is the two-step that gets skipped, so the register then says
+    //    two cows while the herd screen says one. That disagreement is
+    //    invisible until a buyer or a county officer asks for the list.
+    //
+    // `addToFlock` makes ONE write do both. It never invents head: the same
+    // clamped-delta rule as POST /:id/count applies, and the ledger row is
+    // written in the same transaction so the count and its reason agree.
+    const addToFlock = req.body?.addToFlock === true;
+    const reason = req.body?.reason ?? "purchase";
+    if (addToFlock && !isHerdReason(reason))
+      return res.status(400).json({ error: `Reason must be one of: ${HERD_REASONS.join(", ")}` });
+    if (addToFlock && shared.flockId == null)
+      return res.status(400).json({ error: "Pick the group this animal belongs to." });
+
+    // Write the count + ledger alongside however many animals this call makes.
+    const moveCountFor = async (tx: Prisma.TransactionClient, n: number) => {
+      if (!addToFlock || n <= 0 || shared.flockId == null) return null;
+      const flock = await tx.flock.findFirst({
+        where: { id: shared.flockId, farmId },
+        select: { id: true, name: true, currentCount: true },
+      });
+      if (!flock) return null;
+      const countBefore = flock.currentCount;
+      const countAfter = applyDelta(countBefore, n);
+      await tx.flock.update({ where: { id: flock.id }, data: { currentCount: countAfter } });
+      await tx.flockMovement.create({
+        data: {
+          farmId,
+          flockId: flock.id,
+          // The delta that actually landed, so the ledger reconciles with the
+          // count it sits beside — same rule as every other herd write.
+          delta: countAfter - countBefore,
+          reason,
+          countBefore,
+          countAfter,
+          movedAt: new Date(),
+          notes: n === 1 ? "New animal registered by tag" : `${n} new animals registered by tag`,
+        },
+      });
+      return { flockId: flock.id, flockName: flock.name, countBefore, countAfter };
+    };
+
     // Range mode: "I bought 40 tags, 1410001 to 1410040"
     if (tagStart || tagEnd) {
       const range = expandRange(tagStart, tagEnd);
@@ -374,7 +430,12 @@ router.post("/", async (req: Request, res: Response) => {
           .json({ error: "All those tags are already registered on this farm" });
 
       const warnings = tagWarnings(fresh[0]);
-      await prisma.animal.createMany({ data: fresh.map((t) => ({ ...shared, tagNumber: t })) });
+      const countMove = await prisma.$transaction(async (tx) => {
+        await tx.animal.createMany({ data: fresh.map((t) => ({ ...shared, tagNumber: t })) });
+        // N new animals registered — the count moves by N, not by the range
+        // width, so tags already on this farm can never inflate the herd.
+        return moveCountFor(tx, fresh.length);
+      });
 
       return res.status(201).json({
         created: fresh.length,
@@ -382,6 +443,7 @@ router.post("/", async (req: Request, res: Response) => {
         firstTag: fresh[0],
         lastTag: fresh[fresh.length - 1],
         warnings,
+        ...(countMove ? { flock: { id: countMove.flockId, name: countMove.flockName, currentCount: countMove.countAfter } } : {}),
       });
     }
 
@@ -401,7 +463,11 @@ router.post("/", async (req: Request, res: Response) => {
         .status(409)
         .json({ error: "That tag number is already on this farm" });
 
-    const animal = await prisma.animal.create({ data: { ...shared, tagNumber: tag } });
+    const animal = await prisma.$transaction(async (tx) => {
+      const created = await tx.animal.create({ data: { ...shared, tagNumber: tag } });
+      await moveCountFor(tx, 1);
+      return created;
+    });
     res.status(201).json({ animal, warnings: tagWarnings(tag) });
   } catch (error) {
     console.error("Create animal error:", error);

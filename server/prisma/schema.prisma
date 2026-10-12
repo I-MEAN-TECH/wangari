@@ -266,6 +266,7 @@ model Farm {
   quotes           Quote[]
   newsSends        NewsArticleSend[]
   animals          Animal[]
+  flockBatches     FlockBatch[]
   hives            Hive[]
   healthRecords    HealthRecord[]
   insurancePolicies InsurancePolicy[]
@@ -401,8 +402,47 @@ model Flock {
   insurancePolicies   InsurancePolicy[]
   transactions Transaction[]
   movements    FlockMovement[]
+  batches      FlockBatch[]
 
   @@map("flocks")
+}
+
+/// A sub-group inside one flock — "the original 300" vs "the 200 I bought in
+/// October" — for a farmer who wants ONE flock (one total count, one place to
+/// manage it) but still wants to tell its history apart internally.
+///
+/// This is deliberately NOT another Flock. A Flock is the unit that appears in
+/// the farmer's list and carries the species/category guard on merges; a batch
+/// only exists inside one flock and is never listed on its own. `Flock.
+/// currentCount` remains the single source of truth for the flock's total — a
+/// batch's `currentCount` is a partition of that total, not a second ledger.
+///
+/// Created two ways: directly by the farmer ("add a batch"), or automatically
+/// when a flock-to-flock merge is done with `asBatch: true` — see
+/// routes/flocks.ts — so combining three branches' groups into one flock does
+/// not have to mean losing the fact that they arrived separately.
+model FlockBatch {
+  id              Int       @id @default(autoincrement())
+  farmId          Int       @map("farm_id")
+  flockId         Int       @map("flock_id")
+  name            String
+  currentCount    Int       @map("current_count")
+  acquiredOn      DateTime? @map("acquired_on") @db.Date
+  // Set when this batch was created BY a merge, so its origin stays readable
+  // without having to resolve the now-archived flock it came from.
+  sourceFlockName String?   @map("source_flock_name")
+  notes           String?
+  status          String    @default("active") // active | merged
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  farm    Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  flock   Flock    @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  animals Animal[]
+
+  @@index([farmId])
+  @@index([flockId])
+  @@map("flock_batches")
 }
 
 /// The herd ledger — WHY a group's head count changed.
@@ -715,6 +755,9 @@ model Animal {
   id        Int       @id @default(autoincrement())
   farmId    Int       @map("farm_id")
   flockId   Int?      @map("flock_id")
+  // Optional sub-group within that flock. Always NULL for farmers who never
+  // use batches — this is strictly additive, nothing existing changes shape.
+  batchId   Int?      @map("batch_id")
   tagNumber String    @map("tag_number") // ANITRAC: 15 digits, starts with 141
   species   String?
   breed     String?
@@ -728,6 +771,7 @@ model Animal {
 
   farm        Farm          @relation(fields: [farmId], references: [id], onDelete: Cascade)
   flock       Flock?        @relation(fields: [flockId], references: [id], onDelete: SetNull)
+  batch       FlockBatch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
   vaccinations Vaccination[]
   healthRecords HealthRecord[]
   movements   AnimalMovement[]
@@ -735,6 +779,7 @@ model Animal {
   @@unique([farmId, tagNumber])
   @@index([farmId, status])
   @@index([flockId])
+  @@index([batchId])
   @@map("animals")
 }
 

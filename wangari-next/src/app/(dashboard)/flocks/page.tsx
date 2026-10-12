@@ -48,6 +48,7 @@ import { GrowthChart } from "@/components/flocks/GrowthChart";
 import { VaccinationReminders } from "@/components/flocks/VaccinationReminders";
 import { FlockAnimalsPanel } from "@/components/flocks/FlockAnimalsPanel";
 import { FlockHerdPanel } from "@/components/flocks/FlockHerdPanel";
+import { FlockBatchesPanel } from "@/components/flocks/FlockBatchesPanel";
 import { HivePanel } from "@/components/flocks/HivePanel";
 import { BatchProduction } from "@/components/flocks/BatchProduction";
 import { BreedingRecords } from "@/components/flocks/BreedingRecords";
@@ -712,6 +713,14 @@ export default function FlocksPage() {
               <GrowthChart production={production} expectedWeight={flock.expectedWeight || species?.breedDetails[flock.breed]?.matureWeight} />
             </CardContent>
           </Card>
+        </motion.div>
+
+        {/* Sub-groups inside this ONE flock — "the original 300" vs "the 200
+            I bought in October". Sits above the herd panel because it answers
+            the question farmers ask first: do I keep these separate or not?
+            Strictly additive: a flock with no batches renders no extra work. */}
+        <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+          <FlockBatchesPanel flock={flock} onChanged={loadFlocks} />
         </motion.div>
 
         {/* Herd size: move stock between your own groups, combine two groups,
