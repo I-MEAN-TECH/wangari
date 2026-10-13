@@ -44,9 +44,9 @@ const STATS: Stat[] = [
     text: "text-wangari-teal-600",
   },
   {
-    value: "KES 1,500",
+    value: "KES 950",
     label: "Starter Monthly",
-    description: "Full farm OS for less than one crate of eggs",
+    description: "Full farm OS for less than one crate of eggs — Core plan is free forever",
     icon: TrendingUp,
     chip: "from-wangari-lime-500 to-wangari-green-600",
     glow: "group-hover:shadow-[0_8px_40px_-8px_rgba(132,204,22,0.45)]",

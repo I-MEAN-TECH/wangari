@@ -120,8 +120,12 @@ const FAQS = [
     a: "No. If you can send a text message, you can use Wangari. Most farmers record a full day in three taps.",
   },
   {
-    q: "What does it cost?",
-    a: "Starter is KES 950 a month, and the first 14 days are free — no card, no commitment.",
+    q: "Is there a free plan?",
+    a: "Yes — Wangari Core is free forever. You get 1 flock + 1 plot, a daily diary, delivery logging, and WhatsApp input. No card, no expiry.",
+  },
+  {
+    q: "What does the paid plan cost?",
+    a: "Starter is KES 950 a month (or KES 2,400 for a 90-day season pass). Growth is KES 2,900 a month for unlimited animals and full AI. Every paid plan starts with 14 days free — no card required.",
   },
   {
     q: "Can I keep records for more than one flock?",

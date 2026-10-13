@@ -25,10 +25,10 @@ const VALUES = [
 ];
 
 const STATS = [
-  { value: "7", label: "farm hubs, poultry to crops" },
-  { value: "100%", label: "works with no data bundles" },
-  { value: "KES 950", label: "per month, Starter plan" },
-  { value: "14 days", label: "free, no card needed" },
+  { value: "Free", label: "Core plan — always free, no card" },
+  { value: "KES 950", label: "/ month — Starter plan" },
+  { value: "KES 2,900", label: "/ month — Growth plan" },
+  { value: "14 days", label: "free trial on paid plans, no card" },
 ];
 
 const MILESTONES = [
