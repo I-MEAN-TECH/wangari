@@ -430,6 +430,13 @@
   color: var(--wc-green);
 }
 .wc .pricing-card.is-popular .pricing-note { color: var(--wc-accent); }
+.wc .pricing-micro-anchor {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--wc-muted, #888);
+  letter-spacing: 0.02em;
+}
+.wc .pricing-card.is-popular .pricing-micro-anchor { color: color-mix(in srgb, var(--wc-base) 60%, transparent); }
 .wc .pricing-desc {
   margin: 14px 0 0;
   font-size: 12px;

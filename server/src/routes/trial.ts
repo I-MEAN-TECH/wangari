@@ -90,14 +90,24 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
     }
 
     let hasAccess = false;
+    let tier: "trial" | "subscription" | "free_core" | "none" = "none";
     let accessReason: string = "none";
 
     if (activeSub) {
       hasAccess = true;
+      tier = "subscription";
       accessReason = "subscription";
     } else if (trialStatus === "active") {
       hasAccess = true;
+      tier = "trial";
       accessReason = "trial";
+    } else {
+      // Soft downgrade: trial expired, no sub — free_core grants access to
+      // _always modules (finances, inventory, dashboard). The UI must NOT
+      // redirect away from those pages; only gated module routes get 403.
+      tier = "free_core";
+      hasAccess = true; // soft access
+      accessReason = "free_core";
     }
 
     const selectedHubs: string[] = user.selectedHubs
@@ -115,26 +125,29 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
 
     const moduleAccess: Record<string, boolean> = {};
     for (const [module, hub] of Object.entries(MODULE_HUB_MAP)) {
-      // Hard lock: no active subscription AND no trial time left = EVERY module
-      // is locked (padlock in the sidebar, server APIs already 403 via auth
-      // middleware). Nothing is exempt — not even "_always" modules.
-      if (!hasAccess) {
+      if (tier === "none") {
+        // Fully locked — should not happen in practice (we always set free_core)
         moduleAccess[module] = false;
         continue;
       }
+      if (tier === "trial") {
+        // Trial: everything open, including workers.
+        moduleAccess[module] = true;
+        continue;
+      }
+      if (tier === "free_core") {
+        // Soft downgrade: _always modules open, gated modules locked.
+        moduleAccess[module] = hub === "_always";
+        continue;
+      }
+      // Paid subscription path:
       if (module === "workers") {
-        moduleAccess[module] = trialStatus === "active" || (activeSub != null && isGrowthOrEnterprise);
-      } else if (hub === "_always" || (activeSub != null && isGrowthOrEnterprise)) {
+        moduleAccess[module] = isGrowthOrEnterprise;
+      } else if (hub === "_always" || isGrowthOrEnterprise) {
         moduleAccess[module] = true;
       } else if (isStarter) {
-        // Starter: allow modules belonging to the user's chosen hub(s) only.
-        // An empty list means the choice was never finished, so it must not
-        // lock everything — see moduleAllowed() in middleware/plan-gate.ts,
-        // which must agree with this or the sidebar padlocks lie.
         moduleAccess[module] =
           selectedHubs.length === 0 ? hub !== "team" : selectedHubs.includes(hub);
-      } else if (hasAccess) {
-        moduleAccess[module] = true;
       } else {
         moduleAccess[module] = false;
       }
@@ -165,7 +178,8 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
       },
       subscription,
       hasAccess,
-      locked: !hasAccess,
+      tier,
+      locked: tier === "none",
       accessReason,
       selectedHubs,
       modules: moduleAccess,

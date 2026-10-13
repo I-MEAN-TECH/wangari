@@ -84,7 +84,7 @@ const ROUTE_MODULE: [string, string][] = [
 interface PlanContext {
   ok: boolean;
   allowed: boolean;
-  reason: "trial" | "subscription" | "no-access" | "unauthorized";
+  reason: "trial" | "subscription" | "no-access" | "free_core" | "unauthorized";
   planId?: string;
   module?: string;
 }
@@ -150,7 +150,10 @@ async function resolveContext(identity: Identity): Promise<{ ctx: PlanContext; h
   if (trialActive) {
     ctx = { ok: true, allowed: true, reason: "trial" };
   } else if (!activeSub) {
-    ctx = { ok: true, allowed: false, reason: "no-access" };
+    // Soft downgrade: no sub + trial expired = free_core (finances, inventory,
+    // dashboard stay open; all other modules are locked). This is the "reverse
+    // trial" promised in the pricing FAQ.
+    ctx = { ok: true, allowed: false, reason: "free_core" };
   } else {
     ctx = { ok: true, allowed: false, reason: "subscription", planId: (activeSub.plan || "").toLowerCase() };
   }
@@ -167,6 +170,12 @@ async function resolveContext(identity: Identity): Promise<{ ctx: PlanContext; h
 // rule, and both the 403s and the AI's refusals are derived from it.
 export function moduleAllowed(ctx: PlanContext, hubs: string[], module: string): boolean {
   if (ctx.reason === "trial") return true;
+  // Free-core: trial expired, no subscription. _always modules stay open (finances,
+  // inventory, dashboard). Everything else is locked — prompts upgrade.
+  if (ctx.reason === "free_core") {
+    const hub = MODULE_HUB_MAP[module] || "_always";
+    return hub === "_always";
+  }
   if (ctx.reason !== "subscription" || !ctx.planId) return false;
   const isGrowthOrEnterprise = /growth|enterprise/.test(ctx.planId);
   if (isGrowthOrEnterprise) return true;
@@ -231,7 +240,9 @@ export function planGate(req: Request, res: Response, next: NextFunction) {
         error:
           ctx.reason === "no-access"
             ? "Your trial has expired. Please subscribe to continue using Wangari."
-            : `The ${module} module is not included in your current plan${ctx.planId ? ` (${ctx.planId.replace(/_/g, " ")})` : ""}. Upgrade to unlock it.`,
+            : ctx.reason === "free_core"
+              ? `The ${module} module requires a subscription. Your finances and inventory stay free — subscribe to unlock the rest.`
+              : `The ${module} module is not included in your current plan${ctx.planId ? ` (${ctx.planId.replace(/_/g, " ")})` : ""}. Upgrade to unlock it.`,
         moduleLocked: true,
         module,
         upgradeRequired: true,

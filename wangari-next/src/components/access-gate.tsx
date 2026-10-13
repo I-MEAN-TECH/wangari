@@ -12,10 +12,13 @@ import { useRouter, usePathname } from "next/navigation";
  * auth middleware; this is the client-side mirror so no locked page ever
  * renders.
  */
-const ALLOWED = ["/dashboard", "/subscription"];
+// Pages always accessible, even on free_core (no subscription).
+const ALWAYS_ALLOWED = ["/dashboard", "/subscription", "/finances", "/inventory", "/transactions"];
+// Pages that require an active trial or subscription.
+const SUBSCRIPTION_REQUIRED = true;
 
-function isAllowed(pathname: string) {
-  return ALLOWED.some((p) => pathname === p || pathname.startsWith(p + "/"));
+function isAlwaysAllowed(pathname: string) {
+  return ALWAYS_ALLOWED.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
 export function AccessGate({ children }: { children: React.ReactNode }) {
@@ -23,16 +26,19 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [checked, setChecked] = React.useState(false);
   const lockedRef = React.useRef(false);
+  const tierRef = React.useRef<"trial" | "subscription" | "free_core" | "none">("trial");
 
   const check = React.useCallback(async () => {
     try {
       const { default: api } = await import("@/lib/api-client");
       const d = await api.get("/api/trial/status");
-      lockedRef.current = !!d?.locked;
+      tierRef.current = d?.tier ?? (d?.locked ? "none" : "free_core");
+      lockedRef.current = d?.tier === "none";
     } catch {
       // Network/API failure must never lock a paying user out of the UI —
       // the server still enforces real access on every API call.
       lockedRef.current = false;
+      tierRef.current = "free_core";
     }
     setChecked(true);
   }, []);
@@ -57,7 +63,17 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
   }, [check]);
 
   React.useEffect(() => {
-    if (checked && lockedRef.current && !isAllowed(pathname)) {
+    if (!checked) return;
+    const tier = tierRef.current;
+    // Hard lock (tier === "none") should never happen now that free_core is the
+    // floor, but keep it as a safety net.
+    if (tier === "none" && !isAlwaysAllowed(pathname)) {
+      router.replace("/subscription");
+      return;
+    }
+    // Free-core: only redirect if user is trying to open a gated page.
+    // _always pages (dashboard, finances, inventory, transactions) are open.
+    if (tier === "free_core" && !isAlwaysAllowed(pathname)) {
       router.replace("/subscription");
     }
   }, [checked, pathname, router]);

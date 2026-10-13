@@ -53,7 +53,7 @@ const FALLBACK: PricingContent = {
   heroTitle: "Start free. Upgrade when you see results.",
   heroSubtitle:
     "Choose the plan that fits your farm. Every plan includes mobile access and daily profit reports. Start with a 14-day free trial — no credit card required.",
-  annualBadge: "Save 17%",
+  annualBadge: "Save 33% · 4 Months Free",
   plans: [
     {
       name: "Starter",
@@ -120,10 +120,12 @@ const FALLBACK: PricingContent = {
     },
   ],
   faqs: [
-    { q: "Is there a free trial?", a: "Yes — every plan starts with a 14-day free trial. All features included. No credit card required. Cancel anytime." },
+    { q: "Is there a free trial?", a: "Yes — every plan starts with a 14-day free trial. All features unlocked. No credit card required. Cancel anytime." },
     { q: "Can I switch plans later?", a: "Absolutely. Upgrade or downgrade anytime. Your data is always preserved." },
     { q: "What payment methods do you accept?", a: "We accept M-Pesa, Visa, Mastercard, and bank transfers through Paystack." },
-    { q: "What happens to my data if I cancel?", a: "We never delete your data. If you cancel, you get read-only access. Come back anytime and your data is there." },
+    { q: "What happens to my data if I cancel?", a: "We never delete your data. If you cancel, your finances, inventory, and dashboard stay open for free in read-only mode — so you can still see your numbers and come back whenever you are ready." },
+    { q: "Do you offer seasonal billing?", a: "Yes. Ask us about 60-day and 120-day passes timed to harvest seasons — one M-Pesa payment, no monthly reminders." },
+    { q: "How much does it cost per day?", a: "The Growth plan is about KES 150/day — less than a loaf of bread. Most farmers recover that from a single sale they would have missed without the profit alerts." },
   ],
 };
 
@@ -173,7 +175,7 @@ export default function PricingPage() {
         <div className="pricing-grid">
           {content.plans.map((plan) => {
             const Icon = PLAN_ICONS[plan.icon] ?? Zap;
-            const monthlyPrice = annual ? Math.round(plan.price * 0.83) : plan.price;
+            const monthlyPrice = annual ? Math.round(plan.price * 0.67) : plan.price;
             const saving = plan.annualPrice ? plan.price * 12 - plan.annualPrice : 0;
             const href = plan.ctaHref.startsWith("mailto:")
               ? plan.ctaHref
@@ -198,6 +200,12 @@ export default function PricingPage() {
                   {monthlyPrice.toLocaleString()}
                   <small>{plan.period}</small>
                 </div>
+
+                {plan.paystackKey ? (
+                  <p className="pricing-micro-anchor">
+                    ≈ KES {Math.round(monthlyPrice / 30).toLocaleString()}/day
+                  </p>
+                ) : null}
 
                 {annual && plan.annualPrice ? (
                   <p className="pricing-note">
