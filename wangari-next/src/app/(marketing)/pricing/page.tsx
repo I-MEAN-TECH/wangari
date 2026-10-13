@@ -175,7 +175,11 @@ export default function PricingPage() {
         <div className="pricing-grid">
           {content.plans.map((plan) => {
             const Icon = PLAN_ICONS[plan.icon] ?? Zap;
-            const monthlyPrice = annual ? Math.round(plan.price * 0.67) : plan.price;
+            const monthlyPrice = annual
+              ? plan.annualPrice
+                ? Math.round(plan.annualPrice / 12)
+                : Math.round(plan.price * 0.67)
+              : plan.price;
             const saving = plan.annualPrice ? plan.price * 12 - plan.annualPrice : 0;
             const href = plan.ctaHref.startsWith("mailto:")
               ? plan.ctaHref

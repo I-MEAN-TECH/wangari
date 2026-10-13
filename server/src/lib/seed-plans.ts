@@ -8,9 +8,9 @@ import { prisma } from "../db.js";
  */
 const DEFAULT_PLANS = [
   { id: "starter_monthly",  name: "Starter Monthly",      description: "Starter plan - KES 1,500/month",                               amount:  150000, days:  30, sortOrder: 1 },
-  { id: "starter_annual",   name: "Starter Annual",       description: "Starter plan - KES 8,040/year (save 33% · 4 months free)",     amount:  804000, days: 365, sortOrder: 2 },
+  { id: "starter_annual",   name: "Starter Annual",       description: "Starter plan - KES 12,000/year (save 33% · 4 months free)",    amount: 1200000, days: 365, sortOrder: 2 },
   { id: "growth_monthly",   name: "Growth Monthly",       description: "Growth plan - KES 4,500/month",                                amount:  450000, days:  30, sortOrder: 3 },
-  { id: "growth_annual",    name: "Growth Annual",        description: "Growth plan - KES 24,120/year (save 33% · 4 months free)",     amount: 2412000, days: 365, sortOrder: 4 },
+  { id: "growth_annual",    name: "Growth Annual",        description: "Growth plan - KES 36,000/year (save 33% · 4 months free)",    amount: 3600000, days: 365, sortOrder: 4 },
   // Seasonal harvest passes — one M-Pesa payment, no monthly reminders.
   { id: "growth_60day",     name: "Growth 60-Day Pass",   description: "Growth plan - KES 9,000 for 60 days (harvest season pass)",    amount:  900000, days:  60, sortOrder: 5 },
   { id: "growth_120day",    name: "Growth 120-Day Pass",  description: "Growth plan - KES 16,000 for 120 days (harvest + sales pass)", amount: 1600000, days: 120, sortOrder: 6 },
