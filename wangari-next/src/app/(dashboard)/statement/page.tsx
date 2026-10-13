@@ -68,11 +68,77 @@ interface Stmt {
   arrears?: { total: number; count: number; oldestDays: number | null };
   /** Deductions split by who took them: the co-op, an agrovet, or a loan. */
   deductionsByCreditor?: Record<string, number>;
+  /**
+   * The per-delivery slip. This is the part a co-op clerk reads: on which date,
+   * how much, at what butterfat, and what date they promised to pay by. Until
+   * now the route computed all of it and no surface rendered a line of it.
+   */
+  deliveryList?: DeliveryLine[];
+  /** B7: what the farm was actually paid per unit, across its whole history. */
+  realised?: Realised;
+  priceByBuyer?: BuyerPrice[];
+  /** A7: butterfat against the price received, on the farmer's OWN median. */
+  qualityVsPrice?: QualityVsPrice;
+  priceByGrade?: GradePrice[];
   farm: { name: string; county: string | null; code: string | null; owner: { name: string } } | null;
+}
+
+interface DeliveryLine {
+  id: number;
+  date: string;
+  commodity: string;
+  quantity: number;
+  unit: string;
+  buyer: string | null;
+  expectedPay: number | null;
+  paidAmount: number | null;
+  payBy: string | null;
+  status: string;
+  fatPct: number | null;
+  snfPct: number | null;
+  density: number | null;
+  addedWaterPct: number | null;
+  tpc: number | null;
+  gradedBy: string | null;
+  deductions: { label: string | null; amount: number; creditor: string | null }[];
+}
+
+interface Realised {
+  deliveries: number;
+  quantity: number;
+  unit: string | null;
+  pricedQuantity: number;
+  unpricedQuantity: number;
+  value: number;
+  pricePerUnit: number | null;
+}
+
+interface BuyerPrice extends Realised {
+  buyer: string;
+  commodity: string;
+}
+
+interface QualityVsPrice {
+  medianFatPct: number | null;
+  atOrAbove: { deliveries: number; pricePerUnit: number | null; quantity: number };
+  below: { deliveries: number; pricePerUnit: number | null; quantity: number };
+  basis: string;
+}
+
+interface GradePrice {
+  cropType: string;
+  grade: string;
+  quantityKg: number;
+  pricedQuantityKg: number;
+  value: number;
+  pricePerKg: number | null;
 }
 
 const KES = (n: number) => "KES " + Math.round(n).toLocaleString("en-KE");
 const r2 = (n: number) => Math.round(n * 100) / 100;
+const pct = (n: number) => `${r2(n)}%`;
+const shortDate = (d: string) =>
+  new Date(d).toLocaleDateString("en-KE", { day: "numeric", month: "short" });
 
 const VERDICTS: Record<Economics["verdict"], { label: string; chip: string; text: string }> = {
   profitable: { label: "Making money", chip: "bg-wangari-green-100 text-wangari-green-800", text: "text-wangari-green-700" },
@@ -354,6 +420,197 @@ export default function StatementPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* B7: what you were actually paid per unit, citing the base it
+                rests on. The quantity with no price recorded is stated beside
+                the average, never folded into it at zero: an average over the
+                deliveries that happen to carry a price is not an average, and
+                a co-op can dismantle a number that hides its base. */}
+            {stmt?.realised && stmt.realised.pricePerUnit != null && (
+              <div className="border-b border-wangari-gray-100 px-6 py-4">
+                <p className="text-sm font-black text-wangari-gray-900">What you were paid</p>
+                <p className="mt-1 text-lg font-black text-wangari-gray-900">
+                  {KES(r2(stmt.realised.pricePerUnit))}
+                  <span className="ml-1 text-xs font-bold text-wangari-gray-500">
+                    per {stmt.realised.unit ?? "unit"}
+                  </span>
+                </p>
+                <p className="mt-0.5 text-[11px] text-wangari-gray-500">
+                  {Math.round(stmt.realised.pricedQuantity).toLocaleString()} {stmt.realised.unit ?? "units"} across{" "}
+                  {stmt.realised.deliveries} deliver{stmt.realised.deliveries === 1 ? "y" : "ies"} with a price recorded.
+                </p>
+                {stmt.realised.unpricedQuantity > 0 && (
+                  <p className="mt-1 text-[11px] font-bold text-wangari-amber-700">
+                    {Math.round(stmt.realised.unpricedQuantity).toLocaleString()} {stmt.realised.unit ?? "units"} has no
+                    price on the ticket and is not in this average.
+                  </p>
+                )}
+                {(stmt.priceByBuyer ?? []).length > 1 && (
+                  <table className="mt-2 w-full text-xs">
+                    <thead>
+                      <tr className="text-left text-[10px] uppercase tracking-wider text-wangari-gray-400">
+                        <th className="py-1 font-black">Buyer</th>
+                        <th className="py-1 text-right font-black">Qty</th>
+                        <th className="py-1 text-right font-black">Paid per unit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(stmt.priceByBuyer ?? []).map((b) => (
+                        <tr key={`${b.buyer}-${b.commodity}`} className="border-t border-wangari-gray-50">
+                          <td className="py-1.5 font-bold text-wangari-gray-800">
+                            {b.buyer}
+                            {b.commodity !== "milk" && <span className="ml-1 text-[10px] text-wangari-gray-400">{b.commodity}</span>}
+                          </td>
+                          <td className="py-1.5 text-right text-wangari-gray-600">{Math.round(b.pricedQuantity).toLocaleString()}</td>
+                          <td className="py-1.5 text-right font-black text-wangari-gray-900">
+                            {b.pricePerUnit != null ? KES(r2(b.pricePerUnit)) : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+
+            {/* A7: butterfat against the price received. Split on the farmer's
+                own middle reading, because a co-op's payment bands are their
+                commercial term and we are not told them. The basis line is not
+                decoration — it is the sentence that stops this being read as a
+                payment rule. */}
+            {stmt?.qualityVsPrice && stmt.qualityVsPrice.medianFatPct != null && (
+              <div className="border-b border-wangari-gray-100 px-6 py-4">
+                <p className="text-sm font-black text-wangari-gray-900">Butterfat and price</p>
+                <p className="mt-0.5 text-[11px] text-wangari-gray-500">
+                  The middle butterfat of your own deliveries was {pct(stmt.qualityVsPrice.medianFatPct)}.
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {[
+                    { label: `At or above ${pct(stmt.qualityVsPrice.medianFatPct)}`, group: stmt.qualityVsPrice.atOrAbove },
+                    { label: `Below ${pct(stmt.qualityVsPrice.medianFatPct)}`, group: stmt.qualityVsPrice.below },
+                  ].map((row) => (
+                    <div key={row.label} className="rounded-xl border border-wangari-gray-100 bg-wangari-gray-50/60 px-3 py-2.5">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-wangari-gray-400">{row.label}</p>
+                      <p className="mt-0.5 text-base font-black text-wangari-gray-900">
+                        {row.group.pricePerUnit != null ? KES(r2(row.group.pricePerUnit)) : "—"}
+                        <span className="ml-1 text-[10px] font-bold text-wangari-gray-500">per unit</span>
+                      </p>
+                      <p className="text-[10px] text-wangari-gray-400">
+                        {row.group.deliveries} deliver{row.group.deliveries === 1 ? "y" : "ies"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11px] text-wangari-gray-500">{stmt.qualityVsPrice.basis}</p>
+              </div>
+            )}
+
+            {/* B7 continued: grade lives on the harvest, not the lorry ticket,
+                so this is the only place a per-grade price can come from. An
+                ungraded harvest is shown rather than dropped — how much of the
+                crop goes ungraded is usually where the money is. */}
+            {(stmt?.priceByGrade ?? []).length > 0 && (
+              <div className="border-b border-wangari-gray-100 px-6 py-4">
+                <p className="text-sm font-black text-wangari-gray-900">Price by grade</p>
+                <table className="mt-2 w-full text-xs">
+                  <thead>
+                    <tr className="text-left text-[10px] uppercase tracking-wider text-wangari-gray-400">
+                      <th className="py-1 font-black">Crop</th>
+                      <th className="py-1 font-black">Grade</th>
+                      <th className="py-1 text-right font-black">Kg</th>
+                      <th className="py-1 text-right font-black">Per kg</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(stmt?.priceByGrade ?? []).map((g) => (
+                      <tr key={`${g.cropType}-${g.grade}`} className="border-t border-wangari-gray-50">
+                        <td className="py-1.5 font-bold capitalize text-wangari-gray-800">{g.cropType}</td>
+                        <td className="py-1.5 capitalize text-wangari-gray-600">{g.grade}</td>
+                        <td className="py-1.5 text-right text-wangari-gray-600">{Math.round(g.quantityKg).toLocaleString()}</td>
+                        <td className="py-1.5 text-right font-black text-wangari-gray-900">
+                          {g.pricePerKg != null ? KES(r2(g.pricePerKg)) : "not sold yet"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* The per-delivery slip. This is the section a co-op clerk reads
+                line by line, and the reason the statement exists: a date, a
+                quantity, the butterfat the co-op itself measured, and the date
+                they promised to pay. A blank means the reading was not taken —
+                never zero, which would read as a fault in the farmer's milk. */}
+            {(stmt?.deliveryList ?? []).length > 0 && (
+              <div className="border-b border-wangari-gray-100 px-6 py-4">
+                <p className="text-sm font-black text-wangari-gray-900">Every delivery this month</p>
+                <table className="mt-2 w-full text-xs">
+                  <thead>
+                    <tr className="text-left text-[10px] uppercase tracking-wider text-wangari-gray-400">
+                      <th className="py-1 font-black">Date</th>
+                      <th className="py-1 font-black">Buyer</th>
+                      <th className="py-1 text-right font-black">Qty</th>
+                      <th className="py-1 text-right font-black">Fat</th>
+                      <th className="py-1 text-right font-black">SNF</th>
+                      <th className="py-1 text-right font-black">Gross</th>
+                      <th className="py-1 text-right font-black">Paid</th>
+                      <th className="py-1 text-right font-black">Owed</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(stmt?.deliveryList ?? []).map((d) => {
+                      const ded = d.deductions.reduce((s, x) => s + Number(x.amount), 0);
+                      const owed = Number(d.expectedPay ?? 0) - ded - Number(d.paidAmount ?? 0);
+                      const notes = [
+                        d.addedWaterPct != null && d.addedWaterPct > 0 ? `added water ${pct(d.addedWaterPct)}` : null,
+                        d.density != null ? `density ${r2(d.density)}` : null,
+                        d.tpc != null ? `TPC ${d.tpc}` : null,
+                        d.gradedBy ? `graded by ${d.gradedBy}` : null,
+                        ...d.deductions.map((x) => `${x.creditor ?? x.label ?? "deduction"} −${KES(x.amount)}`),
+                      ].filter(Boolean) as string[];
+                      return (
+                        <React.Fragment key={d.id}>
+                          <tr className="border-t border-wangari-gray-50">
+                            <td className="py-1.5 whitespace-nowrap text-wangari-gray-600">{shortDate(d.date)}</td>
+                            <td className="py-1.5 font-bold text-wangari-gray-800">{d.buyer ?? "—"}</td>
+                            <td className="py-1.5 text-right text-wangari-gray-600">
+                              {Math.round(Number(d.quantity)).toLocaleString()} <span className="text-[10px]">{d.unit}</span>
+                            </td>
+                            <td className={`py-1.5 text-right font-black ${d.fatPct != null ? "text-wangari-gray-900" : "text-wangari-gray-300"}`}>
+                              {d.fatPct != null ? pct(d.fatPct) : "—"}
+                            </td>
+                            <td className={`py-1.5 text-right ${d.snfPct != null ? "text-wangari-gray-700" : "text-wangari-gray-300"}`}>
+                              {d.snfPct != null ? pct(d.snfPct) : "—"}
+                            </td>
+                            <td className="py-1.5 text-right text-wangari-gray-800">{KES(Number(d.expectedPay ?? 0))}</td>
+                            <td className="py-1.5 text-right text-wangari-gray-600">{KES(Number(d.paidAmount ?? 0))}</td>
+                            <td className={`py-1.5 text-right font-black ${owed > 0.01 ? "text-wangari-amber-600" : "text-wangari-green-700"}`}>
+                              {KES(owed)}
+                            </td>
+                          </tr>
+                          {(notes.length > 0 || d.payBy) && (
+                            <tr>
+                              <td colSpan={8} className="pb-1.5 text-[10px] leading-relaxed text-wangari-gray-500">
+                                {notes.join(" · ")}
+                                {d.payBy && (
+                                  <span className="ml-1 font-bold text-wangari-gray-600">
+                                    promised by {new Date(d.payBy).toLocaleDateString("en-KE")}
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <p className="mt-1.5 text-[11px] text-wangari-gray-400">
+                  A dash means the reading was not taken on that ticket — not zero.
+                </p>
               </div>
             )}
 

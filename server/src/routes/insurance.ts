@@ -3,6 +3,7 @@ import { prisma } from "../db.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { resolveTagRange } from "../lib/tag-range.js";
+import { claimPosition, claimSummary, type ClaimRecord } from "../lib/insurance-claim.js";
 
 /**
  * Index-insurance policy register (gap-analysis row 13).
@@ -26,6 +27,170 @@ const STATUSES = ["active", "expired", "claimed", "lapsed"];
 
 /** Policies expiring within this window are surfaced as "ending soon". */
 const EXPIRY_WARNING_DAYS = 30;
+
+const EVENT_TYPES = ["drought", "flood", "pest", "disease", "fire", "price", "other"];
+const CLAIM_STATUSES = ["submitted", "approved", "paid", "rejected"];
+
+function numOrNull(v: unknown): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function claimDay(raw: unknown): Date | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return null;
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+function toClaim(r: {
+  id: number; policyId: number | null; claimRef: string | null; incidentOn: Date;
+  eventType: string; measuredLossUnits: number | null; expectedAmount: unknown;
+  receivedAmount: unknown; receivedOn: Date | null; status: string; notes: string | null;
+}, insurer?: string | null, policyNumber?: string | null): ClaimRecord {
+  return {
+    id: r.id,
+    policyId: r.policyId,
+    insurer: insurer ?? null,
+    policyNumber: policyNumber ?? null,
+    claimRef: r.claimRef,
+    incidentOn: new Date(r.incidentOn),
+    eventType: r.eventType,
+    measuredLossUnits: r.measuredLossUnits,
+    expectedAmount: r.expectedAmount != null ? Number(r.expectedAmount) : null,
+    receivedAmount: r.receivedAmount != null ? Number(r.receivedAmount) : null,
+    receivedOn: r.receivedOn ? new Date(r.receivedOn) : null,
+    status: r.status,
+    notes: r.notes,
+  };
+}
+
+/**
+ * GET /api/insurance/claims — what was claimed, promised and actually paid.
+ *
+ * Registered before the policy routes because `/claims` is a literal path: were
+ * it registered after a `/:id` route it would be read as an id. Express only
+ * matches one segment for `/:id`, so this is belt and braces, but the ordering
+ * rule is worth holding everywhere rather than auditing per route.
+ */
+router.get("/claims", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const rows = await prisma.insuranceClaim.findMany({
+      where: { farmId },
+      orderBy: { incidentOn: "desc" },
+      take: 200,
+    });
+
+    const policyIds = [...new Set(rows.map((r) => r.policyId).filter((id): id is number => id != null))];
+    const policies = policyIds.length
+      ? await prisma.insurancePolicy.findMany({
+          where: { id: { in: policyIds }, farmId },
+          select: { id: true, insurer: true, policyNumber: true },
+        })
+      : [];
+    const byId = new Map(policies.map((p) => [p.id, p]));
+
+    const now = new Date();
+    return res.json({
+      claims: rows.map((r) => {
+        const p = r.policyId != null ? byId.get(r.policyId) : undefined;
+        const record = toClaim(r, p?.insurer ?? null, p?.policyNumber ?? null);
+        return { ...record, position: claimPosition(record, now) };
+      }),
+      summary: claimSummary(
+        rows.map((r) => {
+          const p = r.policyId != null ? byId.get(r.policyId) : undefined;
+          return toClaim(r, p?.insurer ?? null, p?.policyNumber ?? null);
+        }),
+        now
+      ),
+    });
+  } catch (error) {
+    console.error("Insurance claims error:", error);
+    return res.status(500).json({ error: "Failed" });
+  }
+});
+
+// POST /api/insurance/claims — file what happened, and what was paid.
+router.post("/claims", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const incidentOn = claimDay(req.body?.incidentOn);
+    if (!incidentOn) return res.status(400).json({ error: "When did it happen?", field: "incidentOn" });
+
+    const policyId = req.body?.policyId ? Number(req.body.policyId) : null;
+    if (policyId != null) {
+      // The policy must be this farm's, or a claim could be filed against a
+      // stranger's cover and its insurer name read back.
+      const policy = await prisma.insurancePolicy.findFirst({ where: { id: policyId, farmId }, select: { id: true } });
+      if (!policy) return res.status(400).json({ error: "That policy is not on this farm", field: "policyId" });
+    }
+
+    const claim = await prisma.insuranceClaim.create({
+      data: {
+        farmId,
+        policyId,
+        claimRef: req.body?.claimRef?.trim() || null,
+        incidentOn,
+        eventType: EVENT_TYPES.includes(req.body?.eventType) ? req.body.eventType : "other",
+        // The farmer's own count. Never converted into money here — see the lib.
+        measuredLossUnits: numOrNull(req.body?.measuredLossUnits),
+        expectedAmount: numOrNull(req.body?.expectedAmount),
+        receivedAmount: numOrNull(req.body?.receivedAmount),
+        receivedOn: claimDay(req.body?.receivedOn),
+        status: CLAIM_STATUSES.includes(req.body?.status) ? req.body.status : "submitted",
+        notes: req.body?.notes?.trim() || null,
+        createdBy: req.user!.userId ?? null,
+      },
+    });
+    return res.status(201).json(claim);
+  } catch (error) {
+    console.error("Insurance claim create error:", error);
+    return res.status(500).json({ error: "Failed" });
+  }
+});
+
+// PATCH /api/insurance/claims/:id — the decision, and the money.
+router.patch("/claims/:id", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const id = Number(req.params.id);
+    const existing = await prisma.insuranceClaim.findFirst({ where: { id, farmId }, select: { id: true } });
+    if (!existing) return res.status(404).json({ error: "Claim not found" });
+
+    const updated = await prisma.insuranceClaim.update({
+      where: { id },
+      data: {
+        ...(req.body?.status !== undefined && CLAIM_STATUSES.includes(req.body.status) ? { status: req.body.status } : {}),
+        ...(req.body?.receivedAmount !== undefined ? { receivedAmount: numOrNull(req.body.receivedAmount) } : {}),
+        ...(req.body?.receivedOn !== undefined ? { receivedOn: claimDay(req.body.receivedOn) } : {}),
+        ...(req.body?.expectedAmount !== undefined ? { expectedAmount: numOrNull(req.body.expectedAmount) } : {}),
+        ...(req.body?.measuredLossUnits !== undefined ? { measuredLossUnits: numOrNull(req.body.measuredLossUnits) } : {}),
+        ...(req.body?.notes !== undefined ? { notes: req.body.notes?.trim() || null } : {}),
+      },
+    });
+    return res.json(updated);
+  } catch (error) {
+    console.error("Insurance claim update error:", error);
+    return res.status(500).json({ error: "Failed" });
+  }
+});
+
+// DELETE /api/insurance/claims/:id
+router.delete("/claims/:id", async (req: Request, res: Response) => {
+  try {
+    const removed = await prisma.insuranceClaim.deleteMany({
+      where: { id: Number(req.params.id), farmId: req.user!.farmId! },
+    });
+    if (!removed.count) return res.status(404).json({ error: "Claim not found" });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Insurance claim delete error:", error);
+    return res.status(500).json({ error: "Failed" });
+  }
+});
 
 router.get("/", async (req: Request, res: Response) => {
   try {

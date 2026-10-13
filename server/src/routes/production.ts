@@ -305,15 +305,25 @@ router.get("/repro", async (req: Request, res: Response) => {
   try {
     const rows = await prisma.breeding.findMany({
       where: { farmId: req.user!.farmId! },
-      orderBy: { matingDate: "desc" },
+      // mate date is nullable, so the sort needs somewhere for heat-only rows to
+      // go: newest first on whichever date the row actually carries.
+      orderBy: [{ matingDate: "desc" }, { heatObservedAt: "desc" }],
       select: {
         damName: true, matingDate: true, expectedBirth: true, actualBirth: true,
         offspringCount: true, offspringAlive: true, method: true, status: true,
+        heatObservedAt: true, heatSigns: true, dryOffDate: true,
       },
     });
+    // Every date is passed through as-is (null stays null) rather than defaulted:
+    // `matingDate` is nullable now that a heat row can exist before any service,
+    // and `new Date(null)` is an Invalid Date that would silently poison the
+    // interval arithmetic downstream.
     const events: BreedingEvent[] = rows.map((r) => ({
       damName: r.damName,
-      matingDate: new Date(r.matingDate),
+      matingDate: r.matingDate ? new Date(r.matingDate) : null,
+      heatObservedAt: r.heatObservedAt ? new Date(r.heatObservedAt) : null,
+      heatSigns: r.heatSigns,
+      dryOffDate: r.dryOffDate ? new Date(r.dryOffDate) : null,
       expectedBirth: r.expectedBirth ? new Date(r.expectedBirth) : null,
       actualBirth: r.actualBirth ? new Date(r.actualBirth) : null,
       offspringCount: r.offspringCount,

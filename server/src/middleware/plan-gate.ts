@@ -57,7 +57,15 @@ const ROUTE_MODULE: [string, string][] = [
   ["/api/profitability", "profitability"],
   ["/api/crops", "crops"],
   ["/api/plots", "crops"],
+  ["/api/scouting", "crops"],
+  ["/api/input-vouchers", "crops"],
   ["/api/farm-loans", "finances"],
+  // The money tools sit under `finances`, which is always available — a farmer
+  // locked out of the plan is a farmer who cannot budget their way to a renewal.
+  ["/api/reconciliation", "finances"],
+  ["/api/cash-flow", "finances"],
+  ["/api/savings", "finances"],
+  ["/api/assets", "finances"],
   ["/api/sales", "sales"],
   ["/api/customers", "customers"],
   ["/api/invoices", "invoices"],

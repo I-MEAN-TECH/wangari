@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, Plus, Trash2, Tag, AlertTriangle, Clock, Wallet } from "lucide-react";
+import { ShieldCheck, Plus, Trash2, Tag, AlertTriangle, Clock, Wallet, FileText, HandCoins, X } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,14 +36,53 @@ const PRODUCT_TYPES = [
 
 const kes = (n: unknown) => `KES ${Number(n ?? 0).toLocaleString("en-KE")}`;
 
+const EVENT_TYPES = [
+  { id: "drought", label: "Drought" },
+  { id: "flood", label: "Flood" },
+  { id: "pest", label: "Pest" },
+  { id: "disease", label: "Disease" },
+  { id: "fire", label: "Fire" },
+  { id: "price", label: "Price crash" },
+  { id: "other", label: "Other" },
+];
+
+const CLAIM_STATUS = [
+  { id: "submitted", label: "Filed" },
+  { id: "approved", label: "Approved" },
+  { id: "paid", label: "Money received" },
+  { id: "rejected", label: "Rejected" },
+];
+
+const OUTCOME_CLS: Record<string, string> = {
+  awaiting: "border-wangari-border text-wangari-muted",
+  approved: "border-tone-good-border text-tone-good-text",
+  paid: "border-tone-good-border text-tone-good-text",
+  rejected: "border-tone-bad-border text-tone-bad-text",
+};
+
 export default function InsurancePage() {
   const [policies, setPolicies] = React.useState<any[]>([]);
   const [summary, setSummary] = React.useState<any>(null);
   const [flocks, setFlocks] = React.useState<any[]>([]);
+  const [claims, setClaims] = React.useState<any[]>([]);
+  const [claimSummary, setClaimSummary] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [showForm, setShowForm] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [showClaimForm, setShowClaimForm] = React.useState(false);
+  const [payingFor, setPayingFor] = React.useState<number | null>(null);
+  const [payoutForm, setPayoutForm] = React.useState({ receivedAmount: "", receivedOn: new Date().toISOString().slice(0, 10), status: "paid" });
   const { showToast, ToastComponent } = useToast();
+
+  const [claimForm, setClaimForm] = React.useState({
+    policyId: "",
+    incidentOn: new Date().toISOString().slice(0, 10),
+    eventType: "drought",
+    claimRef: "",
+    measuredLossUnits: "",
+    expectedAmount: "",
+    notes: "",
+  });
 
   const [form, setForm] = React.useState({
     insurer: "",
@@ -61,15 +100,74 @@ export default function InsurancePage() {
   });
 
   const load = React.useCallback(() => {
-    Promise.all([api.get("/api/insurance"), api.get("/api/insurance/summary"), api.get("/api/flocks")])
-      .then(([p, s, f]) => {
+    Promise.all([
+      api.get("/api/insurance"),
+      api.get("/api/insurance/summary"),
+      api.get("/api/flocks"),
+      api.get("/api/insurance/claims").catch(() => ({ claims: [], summary: null })),
+    ])
+      .then(([p, s, f, c]: any) => {
         setPolicies(Array.isArray(p?.policies) ? p.policies : []);
         setSummary(s);
         setFlocks(Array.isArray(f) ? f : []);
+        setClaims(Array.isArray(c?.claims) ? c.claims : []);
+        setClaimSummary(c?.summary ?? null);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const fileClaim = async () => {
+    if (!claimForm.incidentOn) {
+      showToast("When did it happen?");
+      return;
+    }
+    try {
+      await api.post("/api/insurance/claims", {
+        policyId: claimForm.policyId ? Number(claimForm.policyId) : null,
+        incidentOn: claimForm.incidentOn,
+        eventType: claimForm.eventType,
+        claimRef: claimForm.claimRef.trim() || null,
+        // The farmer's own count of what was lost. Never converted into money by
+        // us: valuing stock needs a market price we would have to choose for
+        // them, and any figure we chose would become the number they quote.
+        measuredLossUnits: claimForm.measuredLossUnits === "" ? null : Number(claimForm.measuredLossUnits),
+        expectedAmount: claimForm.expectedAmount === "" ? null : Number(claimForm.expectedAmount),
+        notes: claimForm.notes.trim() || null,
+      });
+      showToast("Claim filed", "success");
+      setShowClaimForm(false);
+      setClaimForm((f) => ({ ...f, claimRef: "", measuredLossUnits: "", expectedAmount: "", notes: "" }));
+      load();
+    } catch (err: any) {
+      showToast(err?.message ?? "Could not file the claim");
+    }
+  };
+
+  const savePayout = async (id: number) => {
+    try {
+      await api.patch(`/api/insurance/claims/${id}`, {
+        status: payoutForm.status,
+        receivedAmount: payoutForm.receivedAmount === "" ? null : Number(payoutForm.receivedAmount),
+        receivedOn: payoutForm.receivedAmount === "" ? null : payoutForm.receivedOn,
+      });
+      setPayingFor(null);
+      setPayoutForm({ receivedAmount: "", receivedOn: new Date().toISOString().slice(0, 10), status: "paid" });
+      showToast("Claim updated", "success");
+      load();
+    } catch {
+      showToast("Could not update the claim");
+    }
+  };
+
+  const removeClaim = async (id: number) => {
+    try {
+      await api.delete(`/api/insurance/claims/${id}`);
+      load();
+    } catch {
+      showToast("Could not delete the claim");
+    }
+  };
 
   React.useEffect(() => {
     load();
@@ -402,6 +500,205 @@ export default function InsurancePage() {
           ))}
         </div>
       )}
+
+      {/* C5: what was claimed, what was promised, and what actually arrived.
+          Index cover pays on a TRIGGER — rainfall, an area yield — not on what
+          happened on this farm, so the measured loss and the payout are kept
+          apart on purpose. Converting one into the other is how a farmer ends
+          up quoting a number their insurer never agreed to. */}
+      <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <HandCoins className="h-5 w-5" />
+                Claims and payouts
+              </CardTitle>
+              <CardDescription>
+                What you claimed, what you were told to expect, and what arrived. We never price a loss — valuing six dead
+                cows needs a market price we would be choosing for you.
+              </CardDescription>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setShowClaimForm((s) => !s)}>
+              {showClaimForm ? <X className="mr-1 h-3.5 w-3.5" /> : <Plus className="mr-1 h-3.5 w-3.5" />}
+              {showClaimForm ? "Close" : "File a claim"}
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {claimSummary && claimSummary.claims > 0 && (
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl bg-wangari-sunken px-3 py-2.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-wangari-muted">Claims filed</p>
+                  <p className="mt-0.5 text-lg font-bold text-wangari-heading">{claimSummary.claims}</p>
+                </div>
+                <div className="rounded-xl bg-wangari-sunken px-3 py-2.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-wangari-muted">Money received</p>
+                  <p className="mt-0.5 text-lg font-bold text-wangari-heading">{kes(claimSummary.received)}</p>
+                </div>
+                <div className="rounded-xl bg-wangari-sunken px-3 py-2.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-wangari-muted">Still open</p>
+                  <p className="mt-0.5 text-lg font-bold text-wangari-heading">
+                    {(claimSummary.awaiting ?? 0) + (claimSummary.approved ?? 0)}
+                    {claimSummary.oldestOpenDays != null && (
+                      <span className="ml-2 text-[11px] font-normal text-wangari-muted">
+                        longest {claimSummary.oldestOpenDays} days
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* The anti-promise line, printed rather than implied. */}
+            {claimSummary?.basis && claimSummary.claims > 0 && (
+              <p className="text-[11px] text-wangari-muted">
+                {claimSummary.basis}
+                {claimSummary.shortfall > 0 && claimSummary.shortfallPct != null
+                  ? ` Across your claims the payout has been ${claimSummary.shortfallPct}% below what you were told to expect.`
+                  : ""}
+              </p>
+            )}
+
+            {showClaimForm && (
+              <div className="space-y-3 rounded-xl border border-dashed border-wangari-border p-3">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>Which policy</Label>
+                    <select
+                      value={claimForm.policyId}
+                      onChange={(e) => setClaimForm((f) => ({ ...f, policyId: e.target.value }))}
+                      className="h-11 w-full rounded-xl border border-wangari-border bg-white px-3 text-sm"
+                    >
+                      <option value="">Not tied to one policy</option>
+                      {policies.map((p) => (
+                        <option key={p.id} value={p.id}>{p.insurer} · {p.policyNumber}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>When did it happen</Label>
+                    <Input type="date" className="h-11 rounded-xl" value={claimForm.incidentOn} onChange={(e) => setClaimForm((f) => ({ ...f, incidentOn: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>What happened</Label>
+                    <select
+                      value={claimForm.eventType}
+                      onChange={(e) => setClaimForm((f) => ({ ...f, eventType: e.target.value }))}
+                      className="h-11 w-full rounded-xl border border-wangari-border bg-white px-3 text-sm"
+                    >
+                      {EVENT_TYPES.map((t) => (
+                        <option key={t.id} value={t.id}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>What you lost (your own count)</Label>
+                    <Input type="number" inputMode="numeric" placeholder="head, kg, trees — not money" value={claimForm.measuredLossUnits} onChange={(e) => setClaimForm((f) => ({ ...f, measuredLossUnits: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>What you were told to expect (KES)</Label>
+                    <Input type="number" inputMode="decimal" placeholder="optional" value={claimForm.expectedAmount} onChange={(e) => setClaimForm((f) => ({ ...f, expectedAmount: e.target.value }))} />
+                    <p className="text-[10px] text-wangari-muted">Only if the insurer actually gave you a figure.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Claim number</Label>
+                    <Input placeholder="from the insurer" value={claimForm.claimRef} onChange={(e) => setClaimForm((f) => ({ ...f, claimRef: e.target.value }))} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <Input placeholder="Optional" value={claimForm.notes} onChange={(e) => setClaimForm((f) => ({ ...f, notes: e.target.value }))} />
+                </div>
+                <Button onClick={fileClaim}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  File the claim
+                </Button>
+              </div>
+            )}
+
+            {claims.length === 0 ? (
+              <p className="text-sm text-wangari-muted">
+                No claims recorded. When something happens, file it here the same day — a claim filed from memory two
+                months later is a claim the insurer can argue with.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {claims.map((c) => (
+                  <div key={c.id} className="rounded-xl border border-wangari-border p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-wangari-heading">
+                          {EVENT_TYPES.find((t) => t.id === c.eventType)?.label ?? c.eventType}
+                          <span className="ml-2 text-xs font-normal text-wangari-muted">
+                            {new Date(c.incidentOn).toLocaleDateString("en-KE")}
+                            {c.insurer ? ` · ${c.insurer}` : ""}
+                            {c.claimRef ? ` · ${c.claimRef}` : ""}
+                          </span>
+                        </p>
+                        <p className="text-xs text-wangari-muted">
+                          {c.measuredLossUnits != null ? `You counted ${c.measuredLossUnits} lost` : "No loss count recorded"}
+                          {c.expectedAmount != null ? ` · told to expect ${kes(c.expectedAmount)}` : ""}
+                        </p>
+                        {/* The one sentence the lib writes, so the screen and the
+                            API can never disagree about what the numbers mean. */}
+                        {c.position?.statement && (
+                          <p className="mt-0.5 text-xs text-wangari-heading">{c.position.statement}</p>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Badge variant="outline" className={`text-[10px] ${OUTCOME_CLS[c.position?.outcome ?? "awaiting"]}`}>
+                          {CLAIM_STATUS.find((s) => s.id === c.status)?.label ?? c.status}
+                          {c.position?.openDays != null && c.status !== "paid" && c.status !== "rejected"
+                            ? ` · ${c.position.openDays} days open`
+                            : ""}
+                        </Badge>
+                        {c.status !== "paid" && (
+                          <Button size="sm" variant="outline" onClick={() => { setPayingFor(payingFor === c.id ? null : c.id); setPayoutForm((f) => ({ ...f, receivedAmount: c.receivedAmount != null ? String(c.receivedAmount) : "" })); }}>
+                            Record money
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" onClick={() => removeClaim(c.id)} aria-label="Delete claim">
+                          <Trash2 className="h-3.5 w-3.5 text-tone-bad-text" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {payingFor === c.id && (
+                      <div className="mt-3 grid gap-3 rounded-xl bg-wangari-sunken p-3 sm:grid-cols-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs">What did they do?</Label>
+                          <select
+                            value={payoutForm.status}
+                            onChange={(e) => setPayoutForm((f) => ({ ...f, status: e.target.value }))}
+                            className="h-10 w-full rounded-lg border border-wangari-border bg-white px-3 text-sm"
+                          >
+                            {CLAIM_STATUS.map((s) => (
+                              <option key={s.id} value={s.id}>{s.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">Money received (KES)</Label>
+                          <Input type="number" inputMode="decimal" placeholder="0 if nothing yet" value={payoutForm.receivedAmount} onChange={(e) => setPayoutForm((f) => ({ ...f, receivedAmount: e.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">When it arrived</Label>
+                          <Input type="date" value={payoutForm.receivedOn} onChange={(e) => setPayoutForm((f) => ({ ...f, receivedOn: e.target.value }))} />
+                        </div>
+                        <div className="flex items-end">
+                          <Button size="sm" onClick={() => savePayout(c.id)}>Save</Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }

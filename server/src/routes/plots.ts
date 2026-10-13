@@ -4,6 +4,7 @@ import { requireFarm } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { parseGps } from "../lib/kiamis.js";
 import { buildPlotTrace } from "../lib/plot-trace.js";
+import { rotation, yieldVariance } from "../lib/plot-history.js";
 
 const router = Router();
 router.use(authMiddleware, requireFarm);
@@ -164,6 +165,83 @@ router.get("/:id/trace", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Plot trace error:", error);
     res.status(500).json({ error: "Failed to build plot trace" });
+  }
+});
+
+// GET /api/plots/:id/history — what this plot grew, in order, and what it gave
+// (B4 rotation + B6 yield against the farmer's own expectation).
+//
+// Placed BEFORE GET /:id, which would otherwise swallow "history". The whole
+// point of mounting plots on its own path was to keep ordering simple, and this
+// is the one place it still has to be got right.
+const ACRES_PER_HECTARE = 2.47105;
+
+router.get("/:id/history", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const plot = await prisma.plot.findFirst({
+      where: { id: Number(req.params.id), farmId },
+      include: {
+        crops: {
+          orderBy: { plantingDate: "asc" },
+          include: { harvests: { orderBy: { date: "asc" } } },
+        },
+      },
+    });
+    if (!plot) return res.status(404).json({ error: "Plot not found" });
+
+    // The plot's area is the fallback denominator, and it may be recorded in
+    // hectares. Converting here rather than in the lib keeps the conversion in
+    // one place with the reason beside it, and the response states which unit the
+    // farmer originally used so nothing is silently rewritten.
+    const areaUnit = (plot.areaUnit || "acre").toLowerCase();
+    const plotAcres =
+      plot.areaValue == null
+        ? null
+        : areaUnit.startsWith("hec")
+          ? Math.round(Number(plot.areaValue) * ACRES_PER_HECTARE * 100) / 100
+          : Number(plot.areaValue);
+
+    const crops = plot.crops.map((c) => ({
+      cropId: c.id,
+      name: c.name,
+      cropType: c.cropType,
+      variety: c.variety,
+      areaAcres: c.areaAcres != null ? Number(c.areaAcres) : null,
+      plantingDate: c.plantingDate ? new Date(c.plantingDate) : null,
+      status: c.status,
+      expectedYieldKg: c.expectedYieldKg != null ? Number(c.expectedYieldKg) : null,
+      harvests: c.harvests.map((h) => ({
+        id: h.id,
+        date: new Date(h.date),
+        quantityKg: Number(h.quantityKg),
+        quality: h.quality,
+        salePrice: h.salePrice != null ? Number(h.salePrice) : null,
+      })),
+    }));
+
+    const history = rotation(crops);
+    return res.json({
+      plot: {
+        id: plot.id,
+        name: plot.name,
+        areaValue: plot.areaValue != null ? Number(plot.areaValue) : null,
+        areaUnit, // as the farmer recorded it
+        areaAcres: plotAcres,
+        latitude: plot.latitude != null ? Number(plot.latitude) : null,
+        longitude: plot.longitude != null ? Number(plot.longitude) : null,
+        soilType: plot.soilType,
+      },
+      rotation: history,
+      yields: crops.map((c) => yieldVariance(c, plotAcres)),
+      // Every figure above is arithmetic over this plot's own records, and the
+      // response says so once instead of leaving each number to imply it.
+      basis:
+        "Rotation order comes from the planting dates you recorded. Yield is your own harvests, compared with your own expected figure — an estimate, not a scale reading.",
+    });
+  } catch (error) {
+    console.error("Plot history error:", error);
+    return res.status(500).json({ error: "Failed to build the plot history" });
   }
 });
 

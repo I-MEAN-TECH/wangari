@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CropGuidanceCard } from "@/components/crops/CropGuidanceCard";
+import { CropScoutingPanel } from "@/components/crops/CropScoutingPanel";
+import { InputVoucherPanel } from "@/components/crops/InputVoucherPanel";
 import { useToast } from "@/components/shared/toast";
 import api from "@/lib/api-client";
 import { BTN_LINK_SM } from "@/components/ui/patterns";
@@ -88,7 +90,11 @@ export default function CropsPage() {
   // Create form
   const [showForm, setShowForm] = React.useState(false);
   const [step, setStep] = React.useState(0);
-  const [form, setForm] = React.useState({ name: "", cropType: "", variety: "", areaAcres: "", plantingDate: "", expectedHarvest: "", location: "", pricePerKg: "", harvestSeason: "", maturityYears: "" });
+  // `plotId` and `expectedYieldKg` are the two fields the backend already
+  // accepted and nothing ever sent (gaps B1/B6): without the plot a crop cannot
+  // appear in rotation history or the EUDR trace, and without the farmer's own
+  // expectation there is nothing for a harvest to be honestly compared with.
+  const [form, setForm] = React.useState({ name: "", cropType: "", variety: "", areaAcres: "", plantingDate: "", expectedHarvest: "", location: "", pricePerKg: "", harvestSeason: "", maturityYears: "", plotId: "", expectedYieldKg: "" });
 
   // Action modals
   const [activeModal, setActiveModal] = React.useState<Modal>(null);
@@ -105,9 +111,14 @@ export default function CropsPage() {
   const [soilTests, setSoilTests] = React.useState<any[]>([]);
   const [insights, setInsights] = React.useState<any>({ phiAlerts: [], reminders: [], profitability: [] });
 
+  // Plots are loaded here so both the crop form's picker and the voucher panel
+  // can name a piece of ground rather than an id.
+  const [plots, setPlots] = React.useState<any[]>([]);
+
   const load = () => {
     api.get("/api/crops").then(d => { setCrops(Array.isArray(d) ? d : []); setLoading(false); }).catch(() => setLoading(false));
     api.get("/api/crops/insights").then(d => setInsights(d)).catch(() => {});
+    api.get("/api/plots").then(d => setPlots(Array.isArray(d) ? d : [])).catch(() => setPlots([]));
   };
   React.useEffect(() => { load(); }, []);
 
@@ -142,7 +153,7 @@ export default function CropsPage() {
   const openModal = (modal: Modal, crop: any) => { setActiveModal(modal); setModalCrop(crop); };
   const closeModal = () => { setActiveModal(null); setModalCrop(null); };
 
-  const resetForm = () => { setForm({ name: "", cropType: "", variety: "", areaAcres: "", plantingDate: "", expectedHarvest: "", location: "", pricePerKg: "", harvestSeason: "", maturityYears: "" }); setStep(0); setShowForm(false); };
+  const resetForm = () => { setForm({ name: "", cropType: "", variety: "", areaAcres: "", plantingDate: "", expectedHarvest: "", location: "", pricePerKg: "", harvestSeason: "", maturityYears: "", plotId: "", expectedYieldKg: "" }); setStep(0); setShowForm(false); };
 
   const handleCreate = async () => {
     // The shared classifier decides "tree or not", so a crop added here is
@@ -262,6 +273,37 @@ export default function CropsPage() {
                       <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-gray-500">📅 Planting Date</Label><Input type="date" value={form.plantingDate} onChange={e => setForm({ ...form, plantingDate: e.target.value })} className="h-11 rounded-xl" /></div>
                       <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-gray-500">🎯 Expected Harvest</Label><Input type="date" value={form.expectedHarvest} onChange={e => setForm({ ...form, expectedHarvest: e.target.value })} className="h-11 rounded-xl" /></div>
                       <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-gray-500">📍 Location</Label><Input placeholder="e.g. Behind house" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} className="h-11 rounded-xl" /></div>
+                      {/* Which piece of ground. A plot is what makes rotation
+                          history, the yield comparison and an EUDR trace
+                          possible, so this is a first-class field and not a
+                          note. Optional: a farmer with one field should not be
+                          made to create a plot before planting. */}
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-wangari-gray-500">🗺️ Plot / block</Label>
+                        <select
+                          value={form.plotId}
+                          onChange={e => setForm({ ...form, plotId: e.target.value })}
+                          className="h-11 w-full rounded-xl border border-wangari-border bg-white px-3 text-sm"
+                        >
+                          <option value="">Not set — one field</option>
+                          {plots.map((p: any) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}{p.areaValue ? ` (${p.areaValue} ${p.areaUnit ?? "acres"})` : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-[10px] text-wangari-gray-400">
+                          Add plots on <a href="/plots" className="font-semibold text-wangari-green-800 hover:underline">My Plots</a> to trace a harvest back to the ground it grew on.
+                        </p>
+                      </div>
+                      {/* The farmer's OWN expectation. Never a variety's
+                          potential from a research station: a variance against
+                          a district average is not a target for this field. */}
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-wangari-gray-500">🎯 Expected yield (kg)</Label>
+                        <Input type="number" placeholder="your own guess is fine" value={form.expectedYieldKg} onChange={e => setForm({ ...form, expectedYieldKg: e.target.value })} className="h-11 rounded-xl" />
+                        <p className="text-[10px] text-wangari-gray-400">Blank is fine — with no figure there is simply no comparison.</p>
+                      </div>
                       <div className="space-y-1"><Label className="text-xs font-semibold text-wangari-gray-500">💰 Price per kg (KES)</Label><Input type="number" placeholder="e.g. 50" value={form.pricePerKg} onChange={e => setForm({ ...form, pricePerKg: e.target.value })} className="h-11 rounded-xl" /></div>
                       {PERENNIAL_CROPS.has(form.cropType) && (
                         <>
@@ -859,6 +901,17 @@ export default function CropsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* B3: the scouting walk, where a count beats a feeling. */}
+      <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+        <CropScoutingPanel crops={crops} />
+      </motion.div>
+
+      {/* B5: voucher redemptions, kept apart from income on purpose. */}
+      <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+        <InputVoucherPanel crops={crops} plots={plots} />
+      </motion.div>
+
       {ToastComponent}
     </div>
   );

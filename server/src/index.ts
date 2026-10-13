@@ -37,6 +37,12 @@ import cropsRoutes from "./routes/crops.js";
 import cropPlannerRoutes from "./routes/crop-planner.js";
 import plotsRoutes from "./routes/plots.js";
 import farmLoansRoutes from "./routes/farm-loans.js";
+import scoutingRoutes from "./routes/scouting.js";
+import inputVoucherRoutes from "./routes/input-vouchers.js";
+import reconciliationRoutes from "./routes/reconciliation.js";
+import cashFlowRoutes from "./routes/cash-flow.js";
+import savingsRoutes from "./routes/savings.js";
+import assetRoutes from "./routes/assets.js";
 import profitabilityRoutes from "./routes/profitability.js";
 import invoicesRoutes from "./routes/invoices.js";
 import farmsRoutes from "./routes/farms.js";
@@ -274,6 +280,21 @@ app.use("/api/crops", idempotencyGuard, cropsRoutes);
 // a PATCH /health/:id and sub-paths that would swallow an "plots" segment.
 app.use("/api/plots", idempotencyGuard, plotsRoutes);
 app.use("/api/farm-loans", idempotencyGuard, farmLoansRoutes);
+
+// ── The gaps from docs/farmer-requested-gaps.md, each on its own path ───────
+// Every one of these reads or writes a table that already exists; they are
+// separate routers because the domains are separate, not because the data is.
+// Scouting writes crop_health and vouchers write input_vouchers, so they are
+// mounted on their own paths for the same shadowing reason /api/plots and
+// /api/animals are: the crops router already owns a deep set of sub-paths.
+app.use("/api/scouting", idempotencyGuard, scoutingRoutes);
+app.use("/api/input-vouchers", idempotencyGuard, inputVoucherRoutes);
+// Money tools. Reconciliation and the projection read the ledger and write only
+// their own links and plan rows — neither creates a transaction.
+app.use("/api/reconciliation", idempotencyGuard, reconciliationRoutes);
+app.use("/api/cash-flow", idempotencyGuard, cashFlowRoutes);
+app.use("/api/savings", idempotencyGuard, savingsRoutes);
+app.use("/api/assets", assetRoutes);
 app.use("/api/invoices", invoicesRoutes);
 app.use("/api/quotes", quotesRoutes);
 // Public customer-facing quote responses — token-gated, mounted before nothing special:

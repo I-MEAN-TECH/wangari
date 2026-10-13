@@ -34,6 +34,9 @@ import {
   Search,
   FileText,
   GraduationCap,
+  MapPin,
+  Landmark,
+  PiggyBank,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -82,6 +85,9 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "My Animals", href: "/flocks", icon: <PawPrint className="h-5 w-5" /> },
       { label: "My Crops", href: "/crops", icon: <Leaf className="h-5 w-5" /> },
+      // Plots (gaps B1–B4) sit directly under Crops: a plot is where a crop is
+      // grown, and the crop form's plot picker is one tap away from here.
+      { label: "My Plots", href: "/plots", icon: <MapPin className="h-5 w-5" /> },
       // Cold chain readings (row 15) sit beside Crops because a batch is
       // created there.
       { label: "Cold Chain", href: "/cold-chain", icon: <Thermometer className="h-5 w-5" /> },
@@ -105,6 +111,14 @@ const navGroups: NavGroup[] = [
       { label: "Market Prices", href: "/market-prices", icon: <Scale className="h-5 w-5" /> },
       { label: "Insurance", href: "/insurance", icon: <ShieldCheck className="h-5 w-5" /> },
       { label: "Income & Expenses", href: "/finances", icon: <DollarSign className="h-5 w-5" /> },
+      // The farmer's OWN debt (gap C2) — the opposite direction from Income,
+      // which is money owed TO the farm. Under its own name because "loans I
+      // owe" and "loans they owe me" must never share a screen.
+      { label: "My Loans", href: "/loans", icon: <Landmark className="h-5 w-5" /> },
+      // Reconciliation, forward view, chama and the asset register (gaps
+      // C3/C4/C7/C8) — four tools on one page, because each is small and they
+      // all read the records the farmer already keeps.
+      { label: "Money Tools", href: "/money", icon: <PiggyBank className="h-5 w-5" /> },
       { label: "Sales", href: "/sales", icon: <ShoppingCart className="h-5 w-5" /> },
       { label: "Store / Inventory", href: "/inventory", icon: <Package className="h-5 w-5" /> },
       { label: "My Workers", href: "/workers", icon: <Users className="h-5 w-5" /> },

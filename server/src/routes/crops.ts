@@ -37,7 +37,7 @@ router.get("/", async (req: Request, res: Response) => {
 // POST /api/crops — create a crop
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { name, cropType, variety, areaAcres, plantingDate, expectedHarvest, location, soilType, irrigation, notes, isPerennial, maturityYears, harvestSeason, plotId } = req.body;
+    const { name, cropType, variety, areaAcres, plantingDate, expectedHarvest, location, soilType, irrigation, notes, isPerennial, maturityYears, harvestSeason, plotId, expectedYieldKg } = req.body;
     const crop = await prisma.crop.create({
       data: {
         farmId: req.user!.farmId!,
@@ -47,6 +47,12 @@ router.post("/", async (req: Request, res: Response) => {
         areaAcres: areaAcres ? Number(areaAcres) : null,
         plantingDate: plantingDate ? new Date(plantingDate) : null,
         expectedHarvest: expectedHarvest ? new Date(expectedHarvest) : null,
+        // B6: the farmer's OWN expectation for this crop. Never a variety's
+        // potential from a research station — that is guidance for a district,
+        // and a per-plot variance against it would blame the farmer for it.
+        expectedYieldKg: expectedYieldKg != null && expectedYieldKg !== "" && isFinite(Number(expectedYieldKg))
+          ? Number(expectedYieldKg)
+          : null,
         location: location || null,
         plotId: plotId !== undefined && plotId !== "" ? (await plotBelongsToFarm(Number(plotId), req.user!.farmId!) ? Number(plotId) : null) : null,
         soilType: soilType || null,
@@ -79,6 +85,13 @@ router.patch("/:id", async (req: Request, res: Response) => {
       data.plotId = req.body.plotId === "" || req.body.plotId === null
         ? null
         : (await plotBelongsToFarm(Number(req.body.plotId), req.user!.farmId!) ? Number(req.body.plotId) : null);
+    }
+    // B6: the expectation is the farmer's to revise — a season that starts badly
+    // has a new honest number, and the variance should be measured against it.
+    if (req.body.expectedYieldKg !== undefined) {
+      data.expectedYieldKg = req.body.expectedYieldKg === "" || req.body.expectedYieldKg === null
+        ? null
+        : isFinite(Number(req.body.expectedYieldKg)) ? Number(req.body.expectedYieldKg) : null;
     }
     if (req.body.isPerennial !== undefined) data.isPerennial = Boolean(req.body.isPerennial);
     if (req.body.maturityYears !== undefined) data.maturityYears = req.body.maturityYears === "" || req.body.maturityYears === null ? null : Number(req.body.maturityYears);

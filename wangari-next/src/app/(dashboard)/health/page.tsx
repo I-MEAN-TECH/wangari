@@ -54,6 +54,7 @@ export default function HealthPage() {
   const [flocks, setFlocks] = React.useState<any[]>([]);
   const [animals, setAnimals] = React.useState<any[]>([]);
   const [outbreaks, setOutbreaks] = React.useState<any[]>([]);
+  const [withdrawals, setWithdrawals] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [showForm, setShowForm] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -67,6 +68,10 @@ export default function HealthPage() {
     flockId: "",
     animalId: "",
     cost: "",
+    // A6: the last day this animal's milk or eggs may not be sold. Comes from
+    // the vet or the label, never computed here from a guessed drug half-life.
+    withdrawalUntil: "",
+    withdrawalNote: "",
     notes: "",
   });
 
@@ -76,12 +81,14 @@ export default function HealthPage() {
       api.get("/api/flocks"),
       api.get("/api/animals"),
       api.get("/api/health-records/outbreaks"),
+      api.get("/api/health-records/withdrawals").catch(() => null),
     ])
-      .then(([r, f, a, o]) => {
+      .then(([r, f, a, o, w]) => {
         setRecords(Array.isArray(r) ? r : []);
         setFlocks(Array.isArray(f) ? f : []);
         setAnimals(Array.isArray(a) ? a : []);
         setOutbreaks(Array.isArray(o?.candidates) ? o.candidates : []);
+        setWithdrawals(w);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -92,7 +99,7 @@ export default function HealthPage() {
   }, [load]);
 
   const resetForm = () => {
-    setForm({ type: "observation", condition: "", action: "", vetName: "", flockId: "", animalId: "", cost: "", notes: "" });
+    setForm({ type: "observation", condition: "", action: "", vetName: "", flockId: "", animalId: "", cost: "", withdrawalUntil: "", withdrawalNote: "", notes: "" });
   };
 
   const submit = async () => {
@@ -107,6 +114,8 @@ export default function HealthPage() {
         flockId: form.flockId ? Number(form.flockId) : null,
         animalId: form.animalId ? Number(form.animalId) : null,
         cost: form.cost === "" ? null : Number(form.cost),
+        withdrawalUntil: form.withdrawalUntil || null,
+        withdrawalNote: form.withdrawalNote.trim() || null,
         notes: form.notes.trim() || null,
       });
       showToast("Saved", "success");
@@ -181,6 +190,76 @@ export default function HealthPage() {
                     {o.animalCount} animals
                   </Badge>
                 </div>
+              ))}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* A6: the live window. A treated cow sold into the co-op inside its
+          withdrawal period is a rejected consignment, so this is the one health
+          fact that has to be visible without opening anything. */}
+      {(withdrawals?.active?.length ?? 0) > 0 && (
+        <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+          <Card className="border-badge-red-text/30 bg-badge-red-bg/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-badge-red-text">
+                <AlertTriangle className="h-5 w-5" />
+                Do not sell milk or eggs from these animals yet
+              </CardTitle>
+              <CardDescription>
+                Counted from the last day you were given. The window ends on that date, so the last day still counts.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {withdrawals.active.map((w: any) => (
+                <div key={w.record.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-wangari-heading">
+                      {w.label ?? w.record.condition}
+                      {w.label ? <span className="ml-2 text-xs text-wangari-muted">{w.record.condition}</span> : null}
+                    </p>
+                    {w.record.withdrawalNote && (
+                      <p className="text-[11px] text-wangari-muted">{w.record.withdrawalNote}</p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="danger">
+                      {w.daysRemaining} day{w.daysRemaining === 1 ? "" : "s"} left
+                    </Badge>
+                    <p className="mt-0.5 text-[10px] text-wangari-muted">
+                      safe from {new Date(w.until).toLocaleDateString("en-KE")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* The other half of the same problem: silence is not clearance. A
+          treatment with no date on file is surfaced as a question for the vet,
+          never as a safe animal. */}
+      {(withdrawals?.unrecorded?.length ?? 0) > 0 && (
+        <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+          <Card className="border-badge-orange-text/30 bg-badge-orange-bg/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-badge-orange-text">
+                <AlertTriangle className="h-5 w-5" />
+                No withdrawal date recorded
+              </CardTitle>
+              <CardDescription>
+                We never guess a withdrawal period from a drug name — half-lives and dosing make any number we derived a
+                plausible fiction. Ask your vet, then put the date on the record.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-1.5">
+              {withdrawals.unrecorded.slice(0, 6).map((w: any) => (
+                <p key={w.record.id} className="text-xs text-wangari-muted">
+                  <span className="font-medium text-wangari-heading">{w.label ?? `Animal #${w.record.animalId ?? "—"}`}</span>
+                  {" · "}{w.record.condition} · treated {new Date(w.record.observedAt).toLocaleDateString("en-KE")}
+                </p>
               ))}
             </CardContent>
           </Card>
@@ -283,6 +362,43 @@ export default function HealthPage() {
                   />
                 </div>
               </div>
+
+              {/* A6: the withdrawal window. Shown for a treatment, which is the
+                  record a drug was given on — asking a farmer who noticed a
+                  limp when the milk is safe again would be noise. Optional on
+                  purpose: the vet may give the number later, and blocking the
+                  health record on it would mean the record never gets written. */}
+              {form.type === "treatment" && (
+                <div className="space-y-3 rounded-xl border border-dashed p-3">
+                  <div>
+                    <p className="text-sm font-medium">Can you sell the milk or eggs?</p>
+                    <p className="text-[11px] text-wangari-muted">
+                      Use the date on the label or the one your vet gave you. Leave it blank if you do not know yet —
+                      we will ask you again rather than assume it is safe.
+                    </p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="withdrawalUntil">Safe to sell from</Label>
+                      <Input
+                        id="withdrawalUntil"
+                        type="date"
+                        value={form.withdrawalUntil}
+                        onChange={(e) => setForm((f) => ({ ...f, withdrawalUntil: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="withdrawalNote">What it applies to</Label>
+                      <Input
+                        id="withdrawalNote"
+                        value={form.withdrawalNote}
+                        onChange={(e) => setForm((f) => ({ ...f, withdrawalNote: e.target.value }))}
+                        placeholder='e.g. "milk 3 days", "eggs 7 days"'
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="cost">Cost (KES)</Label>

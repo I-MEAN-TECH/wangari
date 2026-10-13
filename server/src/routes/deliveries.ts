@@ -3,6 +3,8 @@ import { prisma } from "../db.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { payoutSummary, type DeliveryRow } from "../lib/delivery-quality.js";
+import { byBuyer as realisedByBuyer, byGrade, qualityVsPrice, realisedPrice, type PricedDelivery } from "../lib/price-realised.js";
+import { activeWithdrawals, withdrawalAdvice, type WithdrawalRecord } from "../lib/withdrawal.js";
 
 const router = Router();
 router.use(authMiddleware, requireOwner);
@@ -73,6 +75,69 @@ const UNIT_BY_COMMODITY: Record<string, string> = {
   mango: "kg",
   other: "kg",
 };
+
+/**
+ * GET /api/deliveries/withdrawal-check?commodity=milk
+ *
+ * The one question the delivery form has to ask before it lets a farmer sell
+ * milk from a treated cow: is anything still inside its withdrawal window?
+ *
+ * Deliberately its own tiny endpoint rather than part of the form's load: this is
+ * checked when the commodity is chosen, and the answer can change between opening
+ * the form and saving it.
+ *
+ * The lib returns "no advice" for anything that is not milk or eggs — a maize
+ * delivery has no withdrawal rule, and a generic warning would train the farmer
+ * to ignore the one that matters.
+ */
+router.get("/withdrawal-check", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const commodity = typeof req.query.commodity === "string" ? req.query.commodity : "milk";
+    const now = new Date();
+
+    const rows = await prisma.healthRecord.findMany({
+      where: { farmId, observedAt: { gte: new Date(now.getTime() - 60 * 86400000) } },
+      orderBy: { observedAt: "desc" },
+      select: {
+        id: true, animalId: true, flockId: true, condition: true, action: true,
+        observedAt: true, withdrawalUntil: true, withdrawalNote: true,
+        animal: { select: { tagNumber: true } },
+        flock: { select: { name: true } },
+      },
+    });
+
+    const records: WithdrawalRecord[] = rows.map((r) => ({
+      id: r.id,
+      animalId: r.animalId,
+      flockId: r.flockId,
+      condition: r.condition,
+      action: r.action,
+      observedAt: new Date(r.observedAt),
+      withdrawalUntil: r.withdrawalUntil ? new Date(r.withdrawalUntil) : null,
+      withdrawalNote: r.withdrawalNote,
+    }));
+    const label = new Map(rows.map((r) => [r.id, r.animal?.tagNumber ?? r.flock?.name ?? null]));
+
+    const advice = withdrawalAdvice(records, commodity, now);
+    res.json({
+      commodity,
+      advice: {
+        ...advice,
+        animals: advice.animals.map((a) => {
+          const record = records.find((r) => r.animalId === a.animalId);
+          return { ...a, label: record ? label.get(record.id) ?? null : null };
+        }),
+      },
+      // Which records the answer was built from, so a farmer can check it rather
+      // than take our word for it.
+      activeCount: activeWithdrawals(records, now).length,
+    });
+  } catch (error) {
+    console.error("Withdrawal check error:", error);
+    res.status(500).json({ error: "Failed to check withdrawal windows" });
+  }
+});
 
 // GET /api/deliveries/suggestions — what THIS farm actually produces, ranked
 // animals first then crops, each with the right selling unit. The form uses
@@ -279,7 +344,7 @@ router.get("/statement", async (req: Request, res: Response) => {
     const end = new Date(Date.UTC(y, m, 1));
     const farmId = req.user!.farmId!;
 
-    const [deliveries, transactions] = await Promise.all([
+    const [deliveries, transactions, harvests] = await Promise.all([
       prisma.delivery.findMany({
         where: { farmId, date: { gte: start, lt: end } },
         include: { deductions: true },
@@ -288,6 +353,12 @@ router.get("/statement", async (req: Request, res: Response) => {
       prisma.transaction.findMany({
         where: { farmId, type: "expense", date: { gte: start, lt: end } },
         select: { category: true, amount: true, description: true, date: true },
+      }),
+      // B7: grade lives on the HARVEST, not on the lorry ticket — coffee is graded
+      // on the batch, so a realised price per grade has to come from here.
+      prisma.cropHarvest.findMany({
+        where: { farmId, date: { gte: start, lt: end } },
+        select: { quantityKg: true, salePrice: true, quality: true, crop: { select: { cropType: true } } },
       }),
     ]);
 
@@ -327,6 +398,14 @@ router.get("/statement", async (req: Request, res: Response) => {
       where: { farmId },
       // Prisma allows EITHER include OR select, never both.
       select: {
+        id: true,
+        date: true,
+        commodity: true,
+        unit: true,
+        buyer: true,
+        fatPct: true,
+        snfPct: true,
+        status: true,
         expectedPay: true,
         paidAmount: true,
         payBy: true,
@@ -335,6 +414,25 @@ router.get("/statement", async (req: Request, res: Response) => {
         deductions: { select: { amount: true, creditor: true, label: true } },
       },
     });
+
+    // The realised-price view (B7) and the butterfat comparison (A7) both run on
+    // the farmer's whole history, not one month: three paired readings is the
+    // minimum that says anything, and a single month of a smallholder's deliveries
+    // often has fewer.
+    const priced: PricedDelivery[] = allTime.map((d: any) => ({
+      id: d.id,
+      date: new Date(d.date),
+      commodity: d.commodity,
+      quantity: Number(d.quantity),
+      unit: d.unit,
+      unitPrice: d.unitPrice != null ? Number(d.unitPrice) : null,
+      buyer: d.buyer || "Unknown",
+      fatPct: d.fatPct != null ? Number(d.fatPct) : null,
+      snfPct: d.snfPct != null ? Number(d.snfPct) : null,
+      expectedPay: d.expectedPay != null ? Number(d.expectedPay) : null,
+      paidAmount: d.paidAmount != null ? Number(d.paidAmount) : null,
+      status: d.status,
+    }));
     // Arrears maths lives in the pure lib, tested without a database —
     // the route's job is only to fetch rows in the shape the lib declares.
     const allRows: DeliveryRow[] = allTime.map((d: any) => ({
@@ -381,6 +479,23 @@ router.get("/statement", async (req: Request, res: Response) => {
       // Deductions grouped by who they were for — "what the co-op kept" vs
       // "what paid my loan" is exactly the distinction a farmer argues with.
       deductionsByCreditor: arrearsSummary.deductionsByCreditor,
+      // B7: what each buyer actually paid per unit, worst-paid first. The weighted
+      // average excludes deliveries with no price recorded, and reports how much
+      // quantity that left out rather than folding it in at zero.
+      realised: priced.length ? realisedPrice(priced) : null,
+      priceByBuyer: priced.length ? realisedByBuyer(priced).slice(0, 8) : [],
+      // A7: butterfat against the price received, using the farmer's OWN median
+      // fat as the split — never a co-op's payment bands, which we are not told.
+      qualityVsPrice: priced.length ? qualityVsPrice(priced, "milk") : null,
+      // B7: realised price per grade, from the harvests recorded this month.
+      priceByGrade: byGrade(
+        harvests.map((h: any) => ({
+          cropType: h.crop?.cropType ?? "other",
+          quality: h.quality ?? null,
+          quantityKg: Number(h.quantityKg),
+          salePrice: h.salePrice != null ? Number(h.salePrice) : null,
+        }))
+      ),
       farm: await prisma.farm.findUnique({
         where: { id: farmId },
         select: { name: true, county: true, code: true, owner: { select: { name: true } } },

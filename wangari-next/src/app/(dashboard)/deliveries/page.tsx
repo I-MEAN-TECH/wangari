@@ -71,6 +71,9 @@ interface Statement {
  */
 const isMilkDelivery = (commodity: string) => commodity === "milk";
 
+/** Milk and eggs are the two products a withdrawal window actually protects. */
+const isMilkOrEggs = (commodity: string) => commodity === "milk" || commodity === "eggs";
+
 /** Whether a promised payment date has passed — the arrears clock, on screen. */
 const isOverdue = (payBy: string | Date) => new Date(payBy).getTime() < Date.now();
 
@@ -110,7 +113,15 @@ export default function DeliveriesPage() {
     deductionLabel: "",
     deductionAmount: "",
     deductionCreditor: "",
+    // C1/C2: which of the farmer's OWN loans this deduction pays down. The
+    // route has accepted `farmLoanId` since farm loans shipped and no form ever
+    // sent it, so "the co-op collected my SACCO loan at source" could not be
+    // linked to the loan it repaid.
+    deductionFarmLoanId: "",
   });
+
+  const [loans, setLoans] = React.useState<any[]>([]);
+  const [withdrawal, setWithdrawal] = React.useState<any>(null);
 
   const month = new Date().toISOString().slice(0, 7);
 
@@ -119,12 +130,14 @@ export default function DeliveriesPage() {
       api.get("/api/deliveries"),
       api.get(`/api/deliveries/statement?month=${month}`),
       api.get("/api/deliveries/suggestions").catch(() => ({ suggestions: [] })),
+      api.get("/api/farm-loans").catch(() => []),
     ])
-      .then(([d, s, sug]: any) => {
+      .then(([d, s, sug, ln]: any) => {
         const list = Array.isArray(d) ? d : [];
         setDeliveries(list);
         setStatement(s);
         setSuggestions(sug?.suggestions ?? []);
+        setLoans(Array.isArray(ln) ? ln.filter((l: any) => l.status !== "repaid") : []);
         // A farmer arriving from the first-run card has come here to log
         // something, not to browse a history they don't have yet. So open the
         // form ready for them — one tap instead of two, and no hunting for a
@@ -136,6 +149,22 @@ export default function DeliveriesPage() {
   };
   React.useEffect(load, []);
 
+  // A6: the question that has to be answered before milk from a treated cow can
+  // be delivered. Asked when the commodity changes, because the answer can
+  // change between opening the form and saving it.
+  React.useEffect(() => {
+    if (!isMilkOrEggs(form.commodity)) {
+      setWithdrawal(null);
+      return;
+    }
+    let alive = true;
+    api
+      .get(`/api/deliveries/withdrawal-check?commodity=${form.commodity === "eggs" ? "eggs" : "milk"}`)
+      .then((d: any) => { if (alive) setWithdrawal(d?.advice ?? null); })
+      .catch(() => { if (alive) setWithdrawal(null); });
+    return () => { alive = false; };
+  }, [form.commodity]);
+
   const submit = async () => {
     if (!form.quantity || !form.buyer) { showToast("Enter the quantity and buyer", "error"); return; }
     const deductions = form.deductionAmount && Number(form.deductionAmount) > 0
@@ -146,6 +175,9 @@ export default function DeliveriesPage() {
           // loan" are the two things a farmer gets confused about, so the
           // creditor travels with the deduction into the statement.
           creditor: form.deductionCreditor || undefined,
+          // Tags the deduction to the loan it repays, so the loan shows what was
+          // collected at source instead of only what the farmer paid by hand.
+          farmLoanId: form.deductionFarmLoanId ? Number(form.deductionFarmLoanId) : undefined,
         }] : [];
     // Quality is stored exactly as the slip shows it. Empty stays empty — a
     // "not tested" field must not be sent as 0, which would read as real data.
@@ -174,7 +206,7 @@ export default function DeliveriesPage() {
       setForm({
         ...form, quantity: "", buyer: "", receiptRef: "", unitPrice: "", payBy: "",
         fatPct: "", snfPct: "", density: "", addedWaterPct: "", tpc: "", gradedBy: "",
-        deductionLabel: "", deductionAmount: "", deductionCreditor: "",
+        deductionLabel: "", deductionAmount: "", deductionCreditor: "", deductionFarmLoanId: "",
       });
       load();
     } catch { showToast("Failed to record delivery", "error"); }
@@ -316,6 +348,31 @@ export default function DeliveriesPage() {
                 </div>
               )}
 
+              {/* A6: what the withdrawal window says about THIS delivery. Only
+                  rendered when the answer is worth reading — a warning about a
+                  rule that does not apply trains the farmer to ignore the one
+                  that does. */}
+              {isMilkOrEggs(form.commodity) && withdrawal?.message && (
+                <div className={`rounded-xl border px-4 py-3 ${withdrawal.blocked ? "border-tone-bad-border bg-tone-bad-bg" : "border-tone-warn-border bg-tone-warn-bg"}`}>
+                  <p className={`flex items-start gap-2 text-sm font-semibold ${withdrawal.blocked ? "text-tone-bad-text" : "text-tone-warn-text"}`}>
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    {withdrawal.message}
+                  </p>
+                  {withdrawal.blocked && (
+                    <ul className="mt-1.5 space-y-0.5">
+                      {withdrawal.animals.map((a: any) => (
+                        <li key={`${a.animalId}-${a.condition}`} className="text-[11px] text-muted-foreground">
+                          {a.label ?? `Animal #${a.animalId ?? "—"}`} · {a.condition} · clears {new Date(a.until).toLocaleDateString("en-KE")}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    You can still record this delivery — the record is yours, and a rejection letter needs it.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:col-span-2">
                 <div><Label>Deduction label (optional)</Label><Input placeholder="e.g. AI service, agrovet" value={form.deductionLabel} onChange={(e) => setForm({ ...form, deductionLabel: e.target.value })} /></div>
                 <div><Label>Deduction amount (optional)</Label><Input type="number" placeholder="KES" value={form.deductionAmount} onChange={(e) => setForm({ ...form, deductionAmount: e.target.value })} /></div>
@@ -326,6 +383,28 @@ export default function DeliveriesPage() {
                       same number on the slip and two different arguments. */}
                   <p className="mt-1 text-[11px] text-muted-foreground">Who took it — the statement groups deductions by this</p>
                 </div>
+                {/* Only offered when the farmer has a loan on file, because a
+                    picker over an empty list is a dropdown that teaches nothing. */}
+                {loans.length > 0 && (
+                  <div className="md:col-span-3">
+                    <Label>Was this a loan repayment? (optional)</Label>
+                    <select
+                      value={form.deductionFarmLoanId}
+                      onChange={(e) => setForm({ ...form, deductionFarmLoanId: e.target.value })}
+                      className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm"
+                    >
+                      <option value="">No — this was not repaying a loan</option>
+                      {loans.map((l: any) => (
+                        <option key={l.id} value={l.id}>
+                          {l.lender}{l.balance != null ? ` — KES ${Number(l.balance).toLocaleString()} left` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Tagging it means the loan shows what the co-op collected at source, not just what you paid by hand
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>

@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { activeWithdrawals, unrecordedWithdrawals, withdrawalAdvice, type WithdrawalRecord } from "../lib/withdrawal.js";
 
 /**
  * Per-animal health and disease log (gap-analysis row 5).
@@ -16,6 +17,77 @@ const router = Router();
 router.use(authMiddleware, requireOwner);
 
 const TYPES = ["observation", "treatment", "diagnosis", "death", "check"];
+
+/** A withdrawal date, pinned to a calendar day. Null for absent or unparseable. */
+function withdrawalDay(raw: unknown): Date | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return null;
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+/**
+ * GET /api/health-records/withdrawals — which animals' milk or eggs are still
+ * protected today, and which treatments have no date to count from.
+ *
+ * This is the query the delivery form calls before it lets a farmer sell milk
+ * that is inside a window. It reads the last 60 days and lets the pure lib decide
+ * what is live — a record from two seasons ago is not a live window.
+ */
+router.get("/withdrawals", async (req: Request, res: Response) => {
+  try {
+    const farmId = req.user!.farmId!;
+    const since = new Date(Date.now() - 60 * 86400000);
+
+    const rows = await prisma.healthRecord.findMany({
+      where: { farmId, observedAt: { gte: since } },
+      orderBy: { observedAt: "desc" },
+      select: {
+        id: true, animalId: true, flockId: true, condition: true, action: true,
+        observedAt: true, withdrawalUntil: true, withdrawalNote: true,
+        animal: { select: { id: true, tagNumber: true, species: true } },
+        flock: { select: { id: true, name: true } },
+      },
+    });
+
+    const records: WithdrawalRecord[] = rows.map((r) => ({
+      id: r.id,
+      animalId: r.animalId,
+      flockId: r.flockId,
+      condition: r.condition,
+      action: r.action,
+      observedAt: new Date(r.observedAt),
+      withdrawalUntil: r.withdrawalUntil ? new Date(r.withdrawalUntil) : null,
+      withdrawalNote: r.withdrawalNote,
+    }));
+
+    const labels = new Map(
+      rows.map((r) => [
+        r.id,
+        r.animal?.tagNumber ?? r.flock?.name ?? null,
+      ])
+    );
+    const decorate = (s: ReturnType<typeof activeWithdrawals>[number]) => ({
+      ...s,
+      label: labels.get(s.record.id) ?? null,
+    });
+
+    const now = new Date();
+    const kind = typeof req.query.product === "string" ? req.query.product : "milk";
+
+    return res.json({
+      active: activeWithdrawals(records, now).map(decorate),
+      unrecorded: unrecordedWithdrawals(records, now).map(decorate),
+      // The one line the delivery form shows, already written by the lib so the
+      // screen and the API can never disagree about what it says.
+      advice: withdrawalAdvice(records, kind, now),
+      windowDays: 60,
+    });
+  } catch (error) {
+    console.error("Withdrawals error:", error);
+    return res.status(500).json({ error: "Failed" });
+  }
+});
 
 /** GET /api/health-records — recent records, newest first. */
 router.get("/", async (req: Request, res: Response) => {
@@ -106,6 +178,12 @@ router.post("/", async (req: Request, res: Response) => {
         vetName: req.body?.vetName?.trim() || null,
         observedAt: req.body?.observedAt ? new Date(req.body.observedAt) : new Date(),
         cost: req.body?.cost != null && req.body.cost !== "" ? Number(req.body.cost) : null,
+        // A6: the last day this animal's milk or eggs may not be sold. Optional on
+        // purpose — the farmer may not know it yet, and blocking the health record
+        // on a number they will get from the vet later would mean the record never
+        // gets written. An unknown window is surfaced as a question, not a pass.
+        withdrawalUntil: withdrawalDay(req.body?.withdrawalUntil),
+        withdrawalNote: req.body?.withdrawalNote?.trim() || null,
         notes: req.body?.notes?.trim() || null,
       },
     });
@@ -141,6 +219,10 @@ router.patch("/:id", async (req: Request, res: Response) => {
         ...(req.body?.cost !== undefined ? { cost: req.body.cost === "" ? null : Number(req.body.cost) } : {}),
         ...(req.body?.resolvedAt ? { resolvedAt: new Date(req.body.resolvedAt) } : {}),
         ...(req.body?.resolvedAt === null ? { resolvedAt: null } : {}),
+        // Editable, and settable to null: the date on the drug label is read after
+        // the fact as often as before it, and a wrong date has to be removable.
+        ...(req.body?.withdrawalUntil !== undefined ? { withdrawalUntil: withdrawalDay(req.body.withdrawalUntil) } : {}),
+        ...(req.body?.withdrawalNote !== undefined ? { withdrawalNote: req.body.withdrawalNote?.trim() || null } : {}),
       },
     });
     return res.json(updated);

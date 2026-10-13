@@ -361,6 +361,10 @@ model Farm {
   feedback         Feedback[]
   animalMovements  AnimalMovement[]
   flockMovements   FlockMovement[]
+  inputVouchers    InputVoucher[]
+  insuranceClaims  InsuranceClaim[]
+  savingsEntries   SavingsEntry[]
+  budgetItems      BudgetItem[]
 
   @@map("farms")
 }
@@ -472,6 +476,17 @@ model Flock {
   tagTo            String?  @map("tag_to")
   taggedCount      Int?     @map("tagged_count")
   taggedOn         DateTime? @map("tagged_on")
+  /// C8: asset-register fields. A herd IS capital — the biggest one most
+  /// smallholders own — and `costPerAnimal`/`totalInvestment` already record
+  /// what it cost. These three let a book value be computed honestly:
+  /// `acquiredOn` starts the clock, `usefulLifeYears` is the farmer's own
+  /// expectation for the class of stock, and `salvageValue` is what it is worth
+  /// at the end. All optional: with none of them set, the register shows cost and
+  /// says book value is not computable rather than depreciating on a default we
+  /// invented.
+  acquiredOn       DateTime? @map("acquired_on") @db.Date
+  usefulLifeYears  Int?      @map("useful_life_years")
+  salvageValue     Decimal?  @map("salvage_value") @db.Decimal(12, 2)
   notes            String?
 
   createdBy Int?     @map("created_by")
@@ -651,13 +666,26 @@ model Breeding {
   sireBreed      String?   @map("sire_breed")
   damName        String?   @map("dam_name")
   damBreed       String?   @map("dam_breed")
-  matingDate     DateTime  @map("mating_date")
+  /// Nullable so a HEAT (A4) can live on this timeline before any service
+  /// happened. A heat with no mating date is a real, useful observation — it is
+  /// how a farmer knows when to expect the next one — and forcing a service date
+  /// onto it would mean either inventing one or losing the record.
+  matingDate     DateTime? @map("mating_date")
+  /// A4: the day the animal was seen in heat, and what was actually seen
+  /// (standing, mucus, bellowing). Structured, not free text, because the whole
+  /// value is arithmetic: 21 days later is the next expected heat.
+  heatObservedAt DateTime? @map("heat_observed_at") @db.Date
+  heatSigns      String?   @map("heat_signs")
+  /// A3: the day milking stopped ahead of the next calving. Days-in-milk and
+  /// the dry period are what a farmer actually manages by, and neither is
+  /// derivable from a calving date alone.
+  dryOffDate     DateTime? @map("dry_off_date") @db.Date
   expectedBirth  DateTime? @map("expected_birth")
   actualBirth    DateTime? @map("actual_birth")
   offspringCount Int?      @map("offspring_count")
   offspringAlive Int?      @map("offspring_alive")
   method         String? // natural, ai, ivf
-  status         String    @default("pending") // pending, confirmed, born, failed
+  status         String    @default("pending") // heat, pending, confirmed, born, failed, dried_off
   notes          String?
   createdAt      DateTime  @default(now()) @map("created_at")
 
@@ -721,6 +749,12 @@ model Crop {
   maturityYears   Int?      @map("maturity_years") // years from planting to first commercial harvest (macadamia 3-5, avocado 3-4)
   yearsInProduction Int?    @map("years_in_production") // completed production seasons (perennial crops only)
   harvestSeason   String?   @map("harvest_season") // e.g. "Apr-Sep" (avocado), "Mar-Jun" (mango main crop)
+  /// B6: what the farmer EXPECTS this crop to give, in kg. A number they state,
+  /// not one we infer from a variety table — because a "potential yield" from a
+  /// research station is guidance for a district and a promise to nobody. The
+  /// variance view compares their own figure with their own harvest, and says
+  /// "estimate" wherever it could be mistaken for a forecast.
+  expectedYieldKg Decimal?  @map("expected_yield_kg") @db.Decimal(10, 2)
   notes           String?
   createdBy       Int?      @map("created_by")
   createdAt       DateTime  @default(now()) @map("created_at")
@@ -767,6 +801,18 @@ model CropHealth {
   severity    String    @default("low") // low, medium, high
   treatment   String?
   treatedDate DateTime? @map("treated_date")
+  /// B3: structured scouting. "High" is a feeling; "14 of 50 plants infested"
+  /// is a fact a farmer can act on and compare to last week. The two counts are
+  /// what make an incidence percentage computable without a second table.
+  sampleSize     Int?      @map("sample_size")
+  affectedCount  Int?      @map("affected_count")
+  /// e.g. larva | adult | egg | egg_mass — coffee berry borer and fall armyworm
+  /// are treated differently at different stages, so the stage is part of the
+  /// record rather than prose inside `description`.
+  pestStage   String?   @map("pest_stage")
+  /// When the farmer intends to look again. A scouting record with no follow-up
+  /// is a diary entry; this is what turns it into a loop.
+  followUpOn  DateTime? @map("follow_up_on") @db.Date
   outcome     String? // resolved, ongoing, failed
   notes       String?
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -983,6 +1029,16 @@ model Transaction {
   // flock's name in profitability.ts. Optional; ON DELETE SET NULL.
   flockId       Int?     @map("flock_id")
   cropId        Int?     @map("crop_id")
+  /// C3: the delivery this income finally settled, once the farmer (or we, on
+  /// their behalf) matched the M-Pesa receipt to the milk they delivered. Null =
+  /// unmatched, which is the honest default: an unmatched receipt is why a
+  /// farmer believes they were not paid.
+  deliveryId    Int?     @map("delivery_id")
+  matchedAt     DateTime? @map("matched_at")
+  /// How the match was made: "manual" (the farmer confirmed it), "reference"
+  /// (receipt numbers agreed) or "proposed" (we suggested, nobody confirmed yet).
+  /// A confirmed match is never silently overwritten by a later proposal.
+  matchedBy     String?  @map("matched_by")
   createdBy     Int?     @map("created_by")
   createdAt     DateTime @default(now()) @map("created_at")
 
@@ -1574,6 +1630,15 @@ model HealthRecord {
   observedAt DateTime  @default(now()) @map("observed_at") @db.Date
   resolvedAt DateTime? @map("resolved_at") @db.Date
   cost       Decimal?  @db.Decimal(12, 2)
+  /// A6: the last day this animal's milk or eggs may not be sold. A treated cow
+  /// sold into the co-op inside the withdrawal window is a food-safety problem
+  /// AND a payment problem (the milk is rejected, or worse, it is not). Stored
+  /// as the date the farmer was given, never computed from a guessed drug
+  /// half-life — the vet's or the label's number is the authority, not ours.
+  withdrawalUntil DateTime? @map("withdrawal_until") @db.Date
+  /// What the withdrawal applies to — "milk 3 days", "eggs 7 days". Free text
+  /// because that is how a drug label and a rural vet both state it.
+  withdrawalNote String? @map("withdrawal_note")
   notes      String?
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
@@ -1630,10 +1695,153 @@ model InsurancePolicy {
 
   farm  Farm   @relation(fields: [farmId], references: [id], onDelete: Cascade)
   flock Flock? @relation(fields: [flockId], references: [id], onDelete: SetNull)
+  claims InsuranceClaim[]
 
   @@index([farmId, status])
   @@index([endDate])
   @@map("insurance_policies")
+}
+
+/// C5: what the insurer actually paid — which is NOT the farmer's loss.
+///
+/// Index insurance pays on a TRIGGER (rainfall, an area yield), not on what
+/// happened on this farm. Those two numbers are routinely different in both
+/// directions and the gap is where trust dies: a farmer told "you are covered"
+/// who receives a third of the loss they measured stops believing any of it.
+/// So this model keeps `measuredLossUnits` (their own count) and
+/// `expectedAmount`/`receivedAmount` (what was promised and what arrived)
+/// side by side and never computes one from the other.
+model InsuranceClaim {
+  id                Int       @id @default(autoincrement())
+  farmId            Int       @map("farm_id")
+  policyId          Int?      @map("policy_id")
+  claimRef          String?   @map("claim_ref")
+  incidentOn        DateTime  @map("incident_on") @db.Date
+  /// drought | flood | pest | disease | fire | price | other
+  eventType         String    @map("event_type")
+  /// The farmer's own count of what they lost (head, kg, trees). Units are
+  /// whatever the policy is written in — we do not normalise them.
+  measuredLossUnits Int?      @map("measured_loss_units")
+  expectedAmount    Decimal?  @map("expected_amount") @db.Decimal(12, 2)
+  receivedAmount    Decimal?  @map("received_amount") @db.Decimal(12, 2)
+  receivedOn        DateTime? @map("received_on") @db.Date
+  status            String    @default("submitted") // submitted | approved | paid | rejected
+  notes             String?
+  createdBy         Int?      @map("created_by")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  farm   Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  policy InsurancePolicy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
+
+  @@index([farmId, incidentOn])
+  @@map("insurance_claims")
+}
+
+/// B5: the fertiliser e-voucher, RECORDED rather than integrated.
+///
+/// The KIAMIS export already proves eligibility; this records what happened
+/// after it. The value is not the voucher — it is that a subsidy must never be
+/// counted as cash income. The farmer pays `farmerContribution` and the voucher
+/// covers the rest, so keeping both means the real input cost stays visible
+/// instead of a government transfer quietly understating what a crop cost.
+///
+/// `cropId` and `plotId` are plain integers with NO relation on purpose: a
+/// voucher is redeemed at a dealer against an entitlement derived from declared
+/// acreage, and the record has to survive the crop being deleted or the plot
+/// renamed. A lookup at read time is cheap; a ledger row removed by a cascade is
+/// data loss.
+model InputVoucher {
+  id                 Int      @id @default(autoincrement())
+  farmId             Int      @map("farm_id")
+  /// nfsp | kcep_cral | county | other — free text, because programmes change
+  /// name between seasons and a hard-coded list would block next season.
+  program            String   @default("nfsp")
+  dealer             String?
+  /// The face value the programme covered. NOT income.
+  voucherValue       Decimal  @map("voucher_value") @db.Decimal(12, 2)
+  /// What the farmer actually paid in cash. THIS is the input cost.
+  farmerContribution Decimal  @default(0) @map("farmer_contribution") @db.Decimal(12, 2)
+  quantityKg         Decimal? @map("quantity_kg") @db.Decimal(10, 2)
+  inputName          String?  @map("input_name")
+  redeemedOn         DateTime @map("redeemed_on") @db.Date
+  cropId             Int?     @map("crop_id")
+  plotId             Int?     @map("plot_id")
+  notes              String?
+  createdBy          Int?     @map("created_by")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId, redeemedOn])
+  @@index([farmId, cropId])
+  @@map("input_vouchers")
+}
+
+/// C7: the chama / table-banking ledger.
+///
+/// `CoopGroup` covers membership, join codes and expiry — not money. A chama is
+/// a different thing from a co-operative: members contribute on a fixed day,
+/// borrow from the pot, and repay with interest, and the statement a member
+/// wants is "what have I put in and what do I still owe".
+///
+/// One flat table of SIGNED-BY-TYPE movements rather than three tables, because
+/// a chama book records every one of them on the same page in date order and a
+/// member's balance is one running sum. A row here is never a loan product and
+/// never accrues interest on its own — `lib/savings-ledger.ts` derives the
+/// member position from the entries exactly as written.
+model SavingsEntry {
+  id          Int      @id @default(autoincrement())
+  farmId      Int      @map("farm_id")
+  /// Ties to CoopGroup when the group is one in the app; plain int and optional,
+  /// because most chamas are not and must still be recordable.
+  coopGroupId Int?     @map("coop_group_id")
+  groupName   String   @map("group_name")
+  memberName  String   @map("member_name")
+  /// contribution | withdrawal | loan_out | repayment
+  entryType   String   @map("entry_type")
+  amount      Decimal  @db.Decimal(12, 2)
+  occurredOn  DateTime @map("occurred_on") @db.Date
+  counterparty String?
+  notes       String?
+  createdBy   Int?     @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId, occurredOn])
+  @@index([farmId, groupName])
+  @@map("savings_entries")
+}
+
+/// C4: the farmer's own plan, which is what turns the ledger into a forecast.
+///
+/// A budget is not a ledger and this is not a second place money is recorded —
+/// no row here is ever counted as spent or received. It exists so the forward
+/// view has something to look forward TO: school fees in December, a bag of
+/// fertiliser in March. `lib/cash-flow.ts` combines these with the money the
+/// farmer is already owed, their loan instalments, and their own trailing costs,
+/// and labels every projected figure as a projection.
+model BudgetItem {
+  id        Int      @id @default(autoincrement())
+  farmId    Int      @map("farm_id")
+  label     String
+  /// inflow | outflow — one field rather than a signed amount, because a farmer
+  /// entering "-4000" for a cost is a support call waiting to happen.
+  direction String   @default("outflow")
+  amount    Decimal  @db.Decimal(12, 2)
+  dueOn     DateTime @map("due_on") @db.Date
+  category  String?
+  /// once | weekly | monthly | seasonal — how a repeated plan item recurs.
+  recurring String?
+  notes     String?
+  createdBy Int?     @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId, dueOn])
+  @@map("budget_items")
 }
 
 /// MARKET PRICE BENCHMARK (gap-analysis row 14).
