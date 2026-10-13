@@ -121,7 +121,7 @@ const FAQS = [
   },
   {
     q: "What does it cost?",
-    a: "Starter is KES 1,500 a month, and the first 14 days are free — no card, no commitment.",
+    a: "Starter is KES 950 a month, and the first 14 days are free — no card, no commitment.",
   },
   {
     q: "Can I keep records for more than one flock?",

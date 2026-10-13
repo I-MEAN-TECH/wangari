@@ -49,51 +49,54 @@ interface PricingContent {
 // Fallbacks = today's content. Shown while loading or if the CMS blob is
 // missing — the page can never render empty.
 const FALLBACK: PricingContent = {
-  heroKicker: "Pricing",
-  heroTitle: "Start free. Upgrade when you see results.",
+  heroKicker: "Fair, Transparent Pricing",
+  heroTitle: "Stop losing money to feed waste and co-op errors.",
   heroSubtitle:
-    "Choose the plan that fits your farm. Every plan includes mobile access and daily profit reports. Start with a 14-day free trial — no credit card required.",
+    "Track every litre, egg, and bag on your phone. Wangari catches payment shortfalls and feed run-outs before they eat your profit. Start free for 14 days — no card required.",
   annualBadge: "Save 33% · 4 Months Free",
   plans: [
     {
       name: "Starter",
       paystackKey: "starter_monthly",
-      price: 1500,
-      annualPrice: 12000,
+      price: 950,
+      annualPrice: 7600,
       period: "/month",
-      description: "Perfect for small farms just getting started with digital records.",
+      description: "Mixed farming setup — all livestock & crop types up to 500 birds or 5 cows.",
       icon: "zap",
       popular: false,
       features: [
-        "1 hub of your choice",
-        "Inventory tracking (always included)",
-        "WhatsApp bot for data entry",
-        "Daily profit summary",
-        "Basic reports",
-        "Mobile access",
+        "Mixed farming (all livestock & crops)",
+        "Up to 500 birds or 5 cattle",
+        "Feed stockout & expiry alerts",
+        "Delivery payout clock & arrears tracker",
+        "Break-even cost benchmark badge",
+        "WhatsApp bot for quick daily logs",
+        "Daily profit summary & mobile access",
+        "M-Pesa payment friendly",
       ],
-      cta: "Subscribe Now",
+      cta: "Start 14-day free trial",
       ctaHref: "/register",
     },
     {
       name: "Growth",
       paystackKey: "growth_monthly",
-      price: 4500,
-      annualPrice: 36000,
+      price: 2900,
+      annualPrice: 23200,
       period: "/month",
-      description: "For serious farmers who want real profit visibility across their operation.",
+      description: "For serious commercial farms wanting full profit visibility and automation.",
       icon: "shield",
       popular: true,
       features: [
-        "3 hubs of your choice",
-        "Inventory tracking (always included)",
-        "AI assistant (ask questions in plain language)",
-        "Advanced reports + PDF export",
+        "Unlimited livestock head & crop acreage",
+        "Full Action Engine alerts & forecasts",
+        "Official Co-op statement audit PDF",
+        "AI assistant agronomist",
+        "Multi-worker logins & task tracking",
+        "Advanced reports + Excel/PDF export",
         "Vaccination & low-stock reminders",
-        "Daily profit reports",
         "WhatsApp bot for data entry",
       ],
-      cta: "Subscribe Now",
+      cta: "Start 14-day free trial",
       ctaHref: "/register",
     },
     {
@@ -120,12 +123,11 @@ const FALLBACK: PricingContent = {
     },
   ],
   faqs: [
-    { q: "Is there a free trial?", a: "Yes — every plan starts with a 14-day free trial. All features unlocked. No credit card required. Cancel anytime." },
-    { q: "Can I switch plans later?", a: "Absolutely. Upgrade or downgrade anytime. Your data is always preserved." },
+    { q: "Is there a free trial?", a: "Yes — every plan starts with a 14-day free trial with all features unlocked. No credit card required. Cancel anytime." },
+    { q: "What happens if I don't subscribe after 14 days?", a: "Your account gracefully downgrades to Wangari Free Core. Your records, finances, and inventory remain open forever for free in read-only mode so you never lose your history." },
     { q: "What payment methods do you accept?", a: "We accept M-Pesa, Visa, Mastercard, and bank transfers through Paystack." },
-    { q: "What happens to my data if I cancel?", a: "We never delete your data. If you cancel, your finances, inventory, and dashboard stay open for free in read-only mode — so you can still see your numbers and come back whenever you are ready." },
-    { q: "Do you offer seasonal billing?", a: "Yes. Ask us about 60-day and 120-day passes timed to harvest seasons — one M-Pesa payment, no monthly reminders." },
-    { q: "How much does it cost per day?", a: "The Growth plan is about KES 150/day — less than a loaf of bread. Most farmers recover that from a single sale they would have missed without the profit alerts." },
+    { q: "Do you offer seasonal passes?", a: "Yes. We offer 90-day and 120-day passes timed to harvest seasons (KES 2,400 for Starter, KES 7,500 for Growth) — one M-Pesa payment, no recurring commitments." },
+    { q: "How much does it cost per day?", a: "The Starter plan is about KES 30/day — less than the price of a single egg. Growth is KES 95/day and recovers its cost the first time it catches a co-op deduction error." },
   ],
 };
 
@@ -135,7 +137,7 @@ const PLAN_ICONS = { zap: Zap, shield: Shield, sparkles: Sparkles } as const;
 const INCLUDED = [
   { value: "14 days", copy: "free on every plan, no card needed" },
   { value: "0 bundles", copy: "records save on the phone and sync later" },
-  { value: "Cancel anytime", copy: "your data stays yours, read-only after" },
+  { value: "Free Core", copy: "your data is never locked, read-only forever" },
 ];
 
 export default function PricingPage() {
@@ -154,9 +156,9 @@ export default function PricingPage() {
         eyebrow={content.heroKicker}
         title={
           <>
-            Start free.
+            Stop losing money to
             <br />
-            Upgrade when you see <span className="serif-word">results.</span>
+            feed waste &amp; <span className="serif-word">co-op errors.</span>
           </>
         }
         lead={content.heroSubtitle}
@@ -207,7 +209,9 @@ export default function PricingPage() {
 
                 {plan.paystackKey ? (
                   <p className="pricing-micro-anchor">
-                    ≈ KES {Math.round(monthlyPrice / 30).toLocaleString()}/day
+                    {plan.name.toLowerCase().includes("starter")
+                      ? `≈ KES ${Math.round(monthlyPrice / 30).toLocaleString()}/day — less than 1 egg`
+                      : `≈ KES ${Math.round(monthlyPrice / 30).toLocaleString()}/day — catches 1 co-op error`}
                   </p>
                 ) : null}
 
@@ -232,9 +236,7 @@ export default function PricingPage() {
                   <ArrowFillButton href={href} className="button primary">
                     {plan.ctaHref.startsWith("mailto:")
                       ? plan.cta
-                      : loggedIn
-                        ? plan.cta
-                        : "Start 14-day free trial"}
+                      : "Start 14-day free trial"}
                   </ArrowFillButton>
                 </div>
               </article>

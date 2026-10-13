@@ -27,7 +27,7 @@ const VALUES = [
 const STATS = [
   { value: "7", label: "farm hubs, poultry to crops" },
   { value: "100%", label: "works with no data bundles" },
-  { value: "KES 1,500", label: "per month, Starter plan" },
+  { value: "KES 950", label: "per month, Starter plan" },
   { value: "14 days", label: "free, no card needed" },
 ];
 
