@@ -155,9 +155,12 @@ app.use(
 );
 
 // ─── Rate Limiting ────────────────────────────────────────
+const isTestEnv = () => process.env.NODE_ENV === "test";
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
+  skip: isTestEnv,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many requests, please try again later" },
@@ -168,6 +171,7 @@ app.use("/api/", limiter);
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
+  skip: isTestEnv,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many login attempts, please try again later" },
@@ -181,6 +185,7 @@ app.use("/api/worker/login", authLimiter);
 const otpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
+  skip: isTestEnv,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many attempts. Please wait a few minutes and try again." },

@@ -47,34 +47,69 @@ const INCOME_CATEGORIES = [
 ];
 
 
+const LANDED_COST_CATS = ["animal_feed", "fertilizer", "seeds"];
+
 export default function FinancesPage() {
   const [txs, setTxs] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [showForm, setShowForm] = React.useState(false);
   const { showToast, ToastComponent } = useToast();
-  const [form, setForm] = React.useState({ type: "expense", description: "", amount: "", category: "animal_feed", paymentMethod: "cash" });
+  const [form, setForm] = React.useState({
+    type: "expense", description: "", amount: "", category: "animal_feed", paymentMethod: "cash",
+    quantity: "", unitCost: "", supplierName: "",
+  });
   const [editingTx, setEditingTx] = React.useState<any>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = React.useState<number | null>(null);
+
+  // auto-compute amount from qty × unitCost when both present
+  const computedAmount = React.useMemo(() => {
+    const q = Number(form.quantity);
+    const u = Number(form.unitCost);
+    if (q > 0 && u > 0 && !form.amount) return String(Math.round(q * u * 100) / 100);
+    return form.amount;
+  }, [form.quantity, form.unitCost, form.amount]);
+
+  const showLandedCost = form.type === "expense" && LANDED_COST_CATS.includes(form.category);
 
   const load = () => {
     api.get("/api/transactions").then(d => { setTxs(Array.isArray(d) ? d : []); setLoading(false); }).catch(() => setLoading(false));
   };
   React.useEffect(() => { load(); }, []);
 
-  const handleDelete = async (id: number) => { if (!confirm("Delete this transaction?")) return; await api.delete("/api/transactions/" + id); load(); };
+  const handleDelete = async (id: number) => {
+    await api.delete("/api/transactions/" + id);
+    setConfirmDeleteId(null);
+    showToast("Deleted");
+    load();
+  };
   const handleSubmit = async () => {
+    const payload: any = { ...form, amount: Number(computedAmount || form.amount) };
+    if (showLandedCost) {
+      if (form.quantity) payload.quantity = Number(form.quantity);
+      if (form.unitCost) payload.unitCost = Number(form.unitCost);
+      if (form.supplierName.trim()) payload.supplierName = form.supplierName.trim();
+    } else {
+      delete payload.quantity; delete payload.unitCost; delete payload.supplierName;
+    }
     if (editingTx) {
-      await api.patch(`/api/transactions/${editingTx.id}`, { ...form, amount: Number(form.amount) });
+      await api.patch(`/api/transactions/${editingTx.id}`, payload);
       setEditingTx(null);
     } else {
-      await api.post("/api/transactions", { ...form, amount: Number(form.amount), date: new Date().toISOString() });
+      await api.post("/api/transactions", { ...payload, date: new Date().toISOString() });
     }
-    setForm({ type: "expense", description: "", amount: "", category: "animal_feed", paymentMethod: "cash" });
-    setShowForm(false); showToast(editingTx ? "Transaction updated!" : "Transaction saved!"); load();
+    setForm({ type: "expense", description: "", amount: "", category: "animal_feed", paymentMethod: "cash", quantity: "", unitCost: "", supplierName: "" });
+    setShowForm(false); showToast(editingTx ? "Updated!" : "Saved!"); load();
   };
 
   const handleEdit = (tx: any) => {
     setEditingTx(tx);
-    setForm({ type: tx.type, description: tx.description || "", amount: String(tx.amount), category: tx.category || "animal_feed", paymentMethod: tx.paymentMethod || "cash" });
+    setForm({
+      type: tx.type, description: tx.description || "", amount: String(tx.amount),
+      category: tx.category || "animal_feed", paymentMethod: tx.paymentMethod || "cash",
+      quantity: tx.quantity ? String(tx.quantity) : "",
+      unitCost: tx.unitCost ? String(tx.unitCost) : "",
+      supplierName: tx.supplierName || "",
+    });
     setShowForm(true);
   };
 
@@ -167,13 +202,8 @@ export default function FinancesPage() {
                   </button>
                 </div>
               </div>
-              {/* Step 2: Amount */}
-              <div className="space-y-1 mt-4">
-                <Label className="text-sm font-bold text-wangari-gray-700">How much? (KES)</Label>
-                <Input type="number" placeholder="0" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} className="h-14 rounded-xl text-2xl font-bold text-center" />
-              </div>
-              {/* Step 3: Category as icon grid */}
-              <div className="space-y-2 mt-3">
+              {/* Step 2: Category */}
+              <div className="space-y-2 mt-4">
                 <Label className="text-sm font-bold text-wangari-gray-700">What is it for?</Label>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {categories.map(c => (
@@ -186,7 +216,45 @@ export default function FinancesPage() {
                   ))}
                 </div>
               </div>
-              <Button onClick={handleSubmit} disabled={!form.amount} className="w-full mt-4 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer disabled:opacity-50 h-14 text-base font-bold">
+
+              {/* Step 3: Landed cost fields (feed / fertilizer / seeds only) */}
+              {showLandedCost && (
+                <div className="mt-3 rounded-xl border border-wangari-green-200 bg-wangari-green-50/40 p-3 space-y-3">
+                  <p className="text-xs font-semibold text-wangari-green-900">📦 Quantity &amp; Unit Cost — used to track stock automatically</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-wangari-gray-700">Quantity (kg / bags)</Label>
+                      <Input type="number" placeholder="e.g. 50" value={form.quantity}
+                        onChange={e => setForm({ ...form, quantity: e.target.value, amount: "" })} className="h-11 rounded-xl" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-wangari-gray-700">Unit Cost (KES)</Label>
+                      <Input type="number" placeholder="e.g. 85" value={form.unitCost}
+                        onChange={e => setForm({ ...form, unitCost: e.target.value, amount: "" })} className="h-11 rounded-xl" />
+                    </div>
+                  </div>
+                  {computedAmount && Number(computedAmount) > 0 && (
+                    <p className="text-xs text-wangari-green-800 font-semibold">Total: KES {Number(computedAmount).toLocaleString()}</p>
+                  )}
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-wangari-gray-700">Supplier (optional)</Label>
+                    <Input placeholder="e.g. Unga Ltd" value={form.supplierName}
+                      onChange={e => setForm({ ...form, supplierName: e.target.value })} className="h-11 rounded-xl" />
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Amount (editable; auto-filled from qty × cost) */}
+              <div className="space-y-1 mt-3">
+                <Label className="text-sm font-bold text-wangari-gray-700">
+                  {showLandedCost ? "Total Amount (KES)" : "How much? (KES)"}
+                </Label>
+                <Input type="number" placeholder="0" value={computedAmount}
+                  onChange={e => setForm({ ...form, amount: e.target.value, quantity: "", unitCost: "" })}
+                  className="h-12 rounded-xl text-lg font-bold" />
+              </div>
+
+              <Button onClick={handleSubmit} disabled={!computedAmount && !form.amount} className="w-full mt-4 bg-wangari-green-800 hover:bg-wangari-green-900 cursor-pointer disabled:opacity-50 h-12 text-base font-bold">
                 {form.type === "income" ? "Save Income" : "Save Expense"}
               </Button>
             </CardContent>
@@ -304,19 +372,35 @@ export default function FinancesPage() {
           <CardContent className="p-3 space-y-2">
             {txs.slice(0, 25).map((t: any) => {
               const isIncome = t.type === "income";
-              return (                  <div key={t.id} className="flex items-center justify-between p-3 rounded-xl bg-wangari-gray-50">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isIncome ? "bg-wangari-green-50 text-wangari-green-600" : "bg-tone-bad-bg text-wangari-red-500"}`}>{isIncome ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}</div>
-                    <div>
-                      <p className="text-xs font-bold text-wangari-gray-900">{t.description || "Transaction"}</p>
-                      <p className="text-[10px] text-wangari-gray-400">{new Date(t.date).toLocaleDateString()} - {(t.category || "other").replace(/_/g, " ")}</p>
+              return (
+                <div key={t.id} className="rounded-xl bg-wangari-gray-50 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isIncome ? "bg-wangari-green-50 text-wangari-green-600" : "bg-tone-bad-bg text-wangari-red-500"}`}>{isIncome ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}</div>
+                      <div>
+                        <p className="text-xs font-bold text-wangari-gray-900">{t.description || "Transaction"}</p>
+                        <p className="text-[10px] text-wangari-gray-400">
+                          {new Date(t.date).toLocaleDateString()} · {(t.category || "other").replace(/_/g, " ")}
+                          {t.quantity && t.unitCost ? ` · ${Number(t.quantity)} × KES ${Number(t.unitCost)}/unit` : ""}
+                          {t.supplierName ? ` · ${t.supplierName}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <p className={`text-sm font-extrabold ${isIncome ? "text-wangari-green-700" : "text-wangari-gray-600"}`}>{isIncome ? "+" : "-"}KES {Number(t.amount).toLocaleString()}</p>
+                      <button onClick={() => handleEdit(t)} className="text-wangari-gray-400 hover:text-wangari-green-800 cursor-pointer"><Pencil className="h-3 w-3" /></button>
+                      <button onClick={() => setConfirmDeleteId(t.id)} className="text-wangari-gray-400 hover:text-wangari-red-500 cursor-pointer"><Trash2 className="h-3 w-3" /></button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <p className={`text-sm font-extrabold ${isIncome ? "text-wangari-green-700" : "text-wangari-gray-600"}`}>{isIncome ? "+" : "-"}KES {Number(t.amount).toLocaleString()}</p>
-                    <button onClick={() => handleEdit(t)} className="text-wangari-gray-400 hover:text-wangari-green-800 cursor-pointer"><Pencil className="h-3 w-3" /></button>
-                    <button onClick={() => handleDelete(t.id)} className="text-wangari-gray-400 hover:text-wangari-red-500 cursor-pointer"><Trash2 className="h-3 w-3" /></button>
-                  </div>
+                  {confirmDeleteId === t.id && (
+                    <div className="flex items-center justify-between rounded-lg border border-tone-bad-border bg-tone-bad-bg px-3 py-2">
+                      <p className="text-xs font-semibold text-tone-bad-text">Delete this entry?</p>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleDelete(t.id)} className="text-xs font-bold text-wangari-red-600 hover:underline">Yes, delete</button>
+                        <button onClick={() => setConfirmDeleteId(null)} className="text-xs text-wangari-gray-500 hover:underline">Cancel</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

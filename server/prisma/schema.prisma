@@ -176,16 +176,28 @@ model Delivery {
   payBy       DateTime? @map("pay_by") @db.Date
   status      String   @default("pending") // pending | paid | disputed
   paidAmount  Decimal? @map("paid_amount") @db.Decimal(12, 2)
+  paidAt      DateTime? @map("paid_at")
   notes       String?
-  createdBy   Int?     @map("created_by")
-  createdAt   DateTime @default(now()) @map("created_at")
+  // Egg / produce quality grading
+  crackedCount Int?     @map("cracked_count")
+  dirtyCount   Int?     @map("dirty_count")
+  gradedCount  Int?     @map("graded_count")
+  // Payment terms & expected payout date (ERPNext gap #6)
+  paymentTerms        String?   @map("payment_terms")
+  expectedPaymentDate DateTime? @map("expected_payment_date") @db.Date
+  // Optional buyer relation
+  customerId   Int?     @map("customer_id")
+  createdBy    Int?     @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   farm       Farm                @relation(fields: [farmId], references: [id])
+  customer   Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
   deductions DeliveryDeduction[]
 
   @@index([farmId, date])
   @@index([farmId, payBy])
   @@index([farmId, commodity])
+  @@index([farmId, customerId])
   @@map("deliveries")
 }
 
@@ -1039,6 +1051,10 @@ model Transaction {
   /// (receipt numbers agreed) or "proposed" (we suggested, nobody confirmed yet).
   /// A confirmed match is never silently overwritten by a later proposal.
   matchedBy     String?  @map("matched_by")
+  /// Landed unit-cost economics: quantity bought/sold (e.g. 50kg, 2 bags) and unit cost (KES/unit)
+  quantity      Decimal? @db.Decimal(12, 2)
+  unitCost      Decimal? @map("unit_cost") @db.Decimal(12, 2)
+  supplierName  String?  @map("supplier_name")
   createdBy     Int?     @map("created_by")
   createdAt     DateTime @default(now()) @map("created_at")
 
@@ -1098,11 +1114,12 @@ model Customer {
   totalCredit Decimal  @default(0) @map("total_credit") @db.Decimal(12, 2)
   createdAt   DateTime @default(now()) @map("created_at")
 
-  farm     Farm      @relation(fields: [farmId], references: [id])
+  farm     Farm       @relation(fields: [farmId], references: [id])
   sales    Sale[]
   credits  Credit[]
   invoices Invoice[]
   quotes   Quote[]
+  deliveries Delivery[]
 
   @@map("customers")
 }

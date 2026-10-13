@@ -6,13 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   HandCoins, FileWarning, TrendingDown, TrendingUp, Wheat, Package, Syringe, Baby,
   ShieldAlert, CalendarX, ClipboardList, ListTodo, CalendarClock, ChevronRight,
-  RefreshCw, Sparkles, AlertOctagon, CircleCheck,
+  RefreshCw, Sparkles, AlertOctagon, CircleCheck, Bug, Clock, CloudSun,
 } from "lucide-react";
 import { CARD_PANEL_P5 } from "@/components/ui/patterns";
 
 const ICONS: Record<string, any> = {
   HandCoins, FileWarning, TrendingDown, TrendingUp, Wheat, Package, Syringe, Baby,
-  ShieldAlert, CalendarX, ClipboardList, ListTodo, CalendarClock,
+  ShieldAlert, CalendarX, ClipboardList, ListTodo, CalendarClock, Bug, Clock, CloudSun,
 };
 
 const PRIORITY_STYLES: Record<string, { ring: string; chip: string; label: string }> = {
@@ -31,6 +31,8 @@ interface Action {
   moneyImpact?: string;
   href: string;
   cta: string;
+  section?: "livestock" | "crops" | "finance" | "tasks" | "health" | "general";
+  subject?: string;
 }
 
 export function ActionCenter() {
@@ -136,6 +138,11 @@ export function ActionCenter() {
                     <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${style.chip}`}>
                       {style.label}
                     </span>
+                    {a.section && (
+                      <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-wangari-stone-100 text-wangari-stone-600">
+                        {a.section}
+                      </span>
+                    )}
                     <p className="text-sm font-extrabold text-wangari-heading leading-snug">{a.title}</p>
                   </div>
                   <p className="mt-0.5 text-xs leading-relaxed text-wangari-muted">{a.detail}</p>

@@ -22,6 +22,55 @@ jobs:
       - name: Typecheck
         working-directory: server
         run: npx tsc --noEmit
+      - name: Unit tests
+        working-directory: server
+        run: npm test
+
+  gaps-e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: wangari
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: wangari
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        working-directory: server
+        run: npm install --no-audit --no-fund
+      - name: Generate Prisma client
+        working-directory: server
+        run: npx prisma generate
+      - name: Apply DB schema
+        working-directory: server
+        run: npx prisma db push --skip-generate
+        env:
+          DATABASE_URL: postgresql://wangari:password@localhost:5432/wangari
+      - name: Run E2E Gaps Verification
+        working-directory: server
+        run: |
+          npm run dev &
+          for i in {1..30}; do
+            curl -s http://127.0.0.1:3999/health && break || sleep 1
+          done
+          node scripts/verify-gaps-e2e.mjs http://127.0.0.1:3999/api
+        env:
+          DATABASE_URL: postgresql://wangari:password@localhost:5432/wangari
+          PORT: 3999
+          JWT_SECRET: dev_secret_for_ci_test_suite_12345
+          NODE_ENV: test
 
   frontend:
     runs-on: ubuntu-latest

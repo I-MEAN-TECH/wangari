@@ -77,10 +77,22 @@ router.post("/", async (req: Request, res: Response) => {
 
     // Inventory link: feed used pulls from stock and books the expense.
     const feedUsed = Number(req.body.feedUsed || 0);
-    if (feedUsed > 0 && req.body.inventoryItemId) {
-      const item = await prisma.inventory.findFirst({
-        where: { id: Number(req.body.inventoryItemId), farmId: req.user!.farmId! },
-      });
+    if (feedUsed > 0) {
+      const item = req.body.inventoryItemId
+        ? await prisma.inventory.findFirst({
+            where: { id: Number(req.body.inventoryItemId), farmId: req.user!.farmId! },
+          })
+        : await prisma.inventory.findFirst({
+            where: {
+              farmId: req.user!.farmId!,
+              OR: [
+                { category: "feed" },
+                { itemName: { contains: "feed", mode: "insensitive" } },
+              ],
+              quantity: { gt: 0 },
+            },
+            orderBy: { quantity: "desc" },
+          });
       if (item) {
         const newQty = Math.max(0, Number(item.quantity) - feedUsed);
         await prisma.$transaction([

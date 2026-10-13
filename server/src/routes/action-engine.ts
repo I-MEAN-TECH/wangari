@@ -12,6 +12,8 @@ import { saleTiming, BASELINE_DAYS as SALE_TIMING_LOOKBACK } from "../lib/sale-t
 import { feedTrend, TREND_WINDOW_DAYS as FEED_TREND_WINDOW, type FeedTrend } from "../lib/feed-trend.js";
 import { flockReplacement } from "../lib/flock-replacement.js";
 import { EGGS_PER_TRAY } from "./deliveries.js";
+import { activeWithdrawals, unrecordedWithdrawals, type WithdrawalRecord } from "../lib/withdrawal.js";
+import { findActiveMilestones } from "../lib/crop-stages.js";
 
 /**
  * Action Engine — turns the farm's own data into a prioritized list of
@@ -20,13 +22,13 @@ import { EGGS_PER_TRAY } from "./deliveries.js";
  *
  * Every rule reads ONLY existing models (Flock, DailyProduction, Crop,
  * CropApplication, Breeding, Inventory, Credit, Invoice, Sale, WorkerTask,
- * Vaccination) so it works for every farm that already records.
+ * Vaccination, HealthRecord, Delivery, CropHealth) so it works for every farm that already records.
  */
 
 const router = Router();
 router.use(authMiddleware, requireOwner);
 
-interface Action {
+export interface Action {
   id: string;
   priority: "critical" | "high" | "medium" | "info";
   icon: string;
@@ -35,6 +37,8 @@ interface Action {
   moneyImpact?: string;
   href: string;
   cta: string;
+  section?: "livestock" | "crops" | "finance" | "tasks" | "health" | "general";
+  subject?: string;
 }
 
 // GET /api/dashboard/actions
@@ -44,6 +48,7 @@ router.get("/actions", async (req: Request, res: Response) => {
     const now = new Date();
     const today = new Date(now); today.setHours(0, 0, 0, 0);
     const weekAgo = new Date(today.getTime() - 7 * 86400000);
+    const twoWeeksAgo = new Date(today.getTime() - 14 * 86400000);
     const actions: Action[] = [];
 
     const [
@@ -51,10 +56,11 @@ router.get("/actions", async (req: Request, res: Response) => {
       openTasks, pendingBreedings, recentApplications, todayProd,
       prodInWindow, prodOldest, prodNewest, recentMoney,
       trendProd, feedBill, feedKg90,
+      activeHealthRecords, scoutingFollowUps, overdueDeliveries,
     ] = await Promise.all([
       prisma.flock.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, currentCount: true, type: true, category: true, createdAt: true, hatchDate: true, costPerAnimal: true, totalInvestment: true } }),
       prisma.crop.findMany({ where: { farmId, status: "active" }, select: { id: true, name: true, cropType: true, plantingDate: true, expectedHarvest: true } }),
-      prisma.dailyProduction.findMany({ where: { farmId, date: { gte: weekAgo } }, orderBy: { date: "asc" } }),
+      prisma.dailyProduction.findMany({ where: { farmId, date: { gte: twoWeeksAgo } }, orderBy: { date: "asc" } }),
       prisma.inventory.findMany({ where: { farmId }, select: { id: true, itemName: true, quantity: true, unit: true, reorderLevel: true, category: true } }),
       prisma.credit.findMany({ where: { farmId, status: { in: ["pending", "partial"] } }, include: { customer: { select: { name: true } } } }),
       prisma.invoice.findMany({ where: { farmId, paymentStatus: { in: ["pending", "partial"] } }, select: { id: true, invoiceNumber: true, totalAmount: true, amountPaid: true, dueDate: true, customer: { select: { name: true } } } }),
@@ -100,6 +106,23 @@ router.get("/actions", async (req: Request, res: Response) => {
         where: { farmId, date: { gte: new Date(now.getTime() - 90 * 86400000) } },
         _sum: { feedUsed: true },
       }),
+      // Health / Food-safety: animals currently treated or in withdrawal
+      prisma.healthRecord.findMany({
+        where: { farmId, resolvedAt: null },
+        include: { animal: { select: { tagNumber: true } }, flock: { select: { name: true } } },
+      }),
+      // Crop scouting follow-ups due today or earlier
+      prisma.cropHealth.findMany({
+        where: { farmId, followUpOn: { lte: today }, NOT: { outcome: "resolved" } },
+        include: { crop: { select: { name: true } } },
+        take: 5,
+      }),
+      // Overdue co-op / buyer delivery payouts (agreed payBy date elapsed)
+      prisma.delivery.findMany({
+        where: { farmId, status: "pending", payBy: { not: null, lt: today } },
+        orderBy: { payBy: "asc" },
+        take: 5,
+      }),
     ]);
 
     const recentProdAll = prodInWindow;
@@ -124,6 +147,8 @@ router.get("/actions", async (req: Request, res: Response) => {
         moneyImpact: `+KES ${outstanding.toLocaleString()} recoverable`,
         href: "/finances",
         cta: "Record payment",
+        section: "finance",
+        subject: c.customer?.name || "Customer",
       });
     }
     for (const inv of unpaidInvoices) {
@@ -139,11 +164,94 @@ router.get("/actions", async (req: Request, res: Response) => {
         moneyImpact: `+KES ${outstanding.toLocaleString()}`,
         href: "/invoices",
         cta: "View invoice",
+        section: "finance",
+        subject: inv.customer?.name || "Invoice",
       });
     }
 
-    // ─── 2. Production drop detection (7d vs prior 7d per flock) ──
-    const priorWeek = new Date(today.getTime() - 14 * 86400000);
+    // ─── 2. Overdue Co-op Deliveries (promised payBy elapsed) ───
+    if (overdueDeliveries.length > 0) {
+      const totalOverdueKes = overdueDeliveries.reduce((sum, d) => sum + Number(d.expectedPay || 0), 0);
+      const firstBuyer = overdueDeliveries[0].buyer;
+      actions.push({
+        id: "overdue-deliveries",
+        priority: "high",
+        icon: "Clock",
+        title: `${overdueDeliveries.length} co-op deliver${overdueDeliveries.length === 1 ? "y" : "ies"} overdue for payout`,
+        detail: `Promised payout date for ${firstBuyer} has passed. Verify payout status.`,
+        moneyImpact: totalOverdueKes > 0 ? `KES ${Math.round(totalOverdueKes).toLocaleString()} expected` : undefined,
+        href: "/deliveries",
+        cta: "Review deliveries",
+        section: "finance",
+        subject: firstBuyer,
+      });
+    }
+
+    // ─── 3. Food safety: active withdrawals (meat/milk/eggs) ────
+    const withdrawalInputs: WithdrawalRecord[] = activeHealthRecords.map((h) => ({
+      id: h.id,
+      animalId: h.animalId,
+      flockId: h.flockId,
+      condition: h.condition,
+      action: h.action,
+      observedAt: h.observedAt,
+      withdrawalUntil: h.withdrawalUntil,
+      withdrawalNote: h.withdrawalNote,
+    }));
+    const currentWithdrawals = activeWithdrawals(withdrawalInputs, now);
+    for (const w of currentWithdrawals) {
+      const matched = activeHealthRecords.find((h) => h.id === w.record.id);
+      const targetName = matched?.animal?.tagNumber
+        ? `Animal #${matched.animal.tagNumber}`
+        : matched?.flock?.name || "Livestock";
+      actions.push({
+        id: `withdrawal-${w.record.id}`,
+        priority: "critical",
+        icon: "ShieldAlert",
+        title: `Withdrawal active: ${targetName} (${w.daysRemaining}d left)`,
+        detail: `Milk, eggs or meat must not be sold until ${w.until ? w.until.toISOString().slice(0, 10) : "cleared"}. Treated for ${w.record.condition}.`,
+        href: "/health",
+        cta: "View health record",
+        section: "health",
+        subject: targetName,
+      });
+    }
+    const unrecorded = unrecordedWithdrawals(withdrawalInputs, now);
+    if (unrecorded.length > 0) {
+      const u = unrecorded[0];
+      const matched = activeHealthRecords.find((h) => h.id === u.record.id);
+      const targetName = matched?.animal?.tagNumber
+        ? `Animal #${matched.animal.tagNumber}`
+        : matched?.flock?.name || "Livestock";
+      actions.push({
+        id: `withdrawal-unrecorded-${u.record.id}`,
+        priority: "info",
+        icon: "ShieldAlert",
+        title: `Check withdrawal date: ${targetName}`,
+        detail: `Treated for ${u.record.condition} without a recorded safe date. Confirm with your vet.`,
+        href: "/health",
+        cta: "Update record",
+        section: "health",
+        subject: targetName,
+      });
+    }
+
+    // ─── 4. Pest & disease scouting follow-ups ──────────────────
+    for (const sh of scoutingFollowUps) {
+      actions.push({
+        id: `scout-followup-${sh.id}`,
+        priority: "high",
+        icon: "Bug",
+        title: `Scouting follow-up: ${sh.crop?.name || "Crop"} (${sh.issueType})`,
+        detail: `Check if previous treatment worked. Count plants again to see if pest or disease dropped.`,
+        href: "/crops",
+        cta: "Follow up scouting",
+        section: "crops",
+        subject: sh.crop?.name || "Crop",
+      });
+    }
+
+    // ─── 5. Production drop detection (7d vs prior 7d per flock) ──
     const byFlock = new Map<number, { thisWeek: number; lastWeek: number; lastDate: Date }>();
     for (const f of flocks) byFlock.set(f.id, { thisWeek: 0, lastWeek: 0, lastDate: new Date(0) });
     // "Output" is species-aware: eggs for poultry, litres for dairy, kg of
@@ -163,8 +271,13 @@ router.get("/actions", async (req: Request, res: Response) => {
       const e = byFlock.get(p.flockId);
       if (!e) continue;
       const f = flocks.find(x => x.id === p.flockId);
-      if (p.date >= weekAgo) e.thisWeek += outputOf(p, metricOf(f?.type));
-      e.lastDate = p.date > e.lastDate ? p.date : e.lastDate;
+      const val = outputOf(p, metricOf(f?.type));
+      if (p.date >= weekAgo) {
+        e.thisWeek += val;
+        e.lastDate = p.date > e.lastDate ? p.date : e.lastDate;
+      } else {
+        e.lastWeek += val;
+      }
     }
     for (const f of flocks) {
       const e = byFlock.get(f.id)!;
@@ -178,6 +291,8 @@ router.get("/actions", async (req: Request, res: Response) => {
           detail: "Missing records make every other alert blind. Log even a zero day — zeros are data.",
           href: "/production",
           cta: "Record output",
+          section: "livestock",
+          subject: f.name,
         });
       }
       const drop = e.lastWeek > 0 ? (e.lastWeek - e.thisWeek) / e.lastWeek : 0;
@@ -191,12 +306,20 @@ router.get("/actions", async (req: Request, res: Response) => {
           moneyImpact: `~KES ${Math.round(((e.lastWeek - e.thisWeek) / 7) * 15).toLocaleString()}/week at risk`,
           href: "/flocks",
           cta: "Investigate flock",
+          section: "livestock",
+          subject: f.name,
         });
       }
     }
 
-    // ─── 3. Feed stock-out forecast ─────────────────────────
-    const dailyFeed = recentProd.reduce((s, p) => s + Number(p.feedUsed || 0), 0) / 7;
+    // ─── 6. Feed stock-out forecast ─────────────────────────
+    const recordedDailyFeed = recentProd.filter(p => p.date >= weekAgo).reduce((s, p) => s + Number(p.feedUsed || 0), 0) / 7;
+    const totalPoultry = flocks
+      .filter(f => f.category === "poultry" || ["layers", "broilers", "kienyeji", "ducks", "turkeys"].includes(f.type || ""))
+      .reduce((sum, f) => sum + (f.currentCount || 0), 0);
+    const estimatedDailyFeed = totalPoultry > 0 ? totalPoultry * 0.125 : 0;
+    const dailyFeed = recordedDailyFeed > 0 ? recordedDailyFeed : estimatedDailyFeed;
+
     for (const item of lowStock) {
       const isFeed = item.category === "feed" || /feed/i.test(item.itemName);
       const qty = Number(item.quantity);
@@ -209,7 +332,7 @@ router.get("/actions", async (req: Request, res: Response) => {
             priority: daysLeft <= 3 ? "critical" : "high",
             icon: "Wheat",
             title: `Feed runs out in ~${daysLeft} day${daysLeft === 1 ? "" : "s"} (${item.itemName})`,
-            detail: `At current consumption (~${Math.round(dailyFeed)}kg/day across the farm). A day without feed costs more than a week of price shopping.`,
+            detail: `At ${recordedDailyFeed > 0 ? "current" : "flock size"} consumption (~${Math.round(dailyFeed)}kg/day across the farm). A day without feed costs more than a week of price shopping.`,
             moneyImpact: "Production stops when feed does",
             href: "/inventory",
             cta: "Restock feed",
@@ -307,11 +430,30 @@ router.get("/actions", async (req: Request, res: Response) => {
           moneyImpact: "Price timing window",
           href: "/crops",
           cta: "Plan the sale",
+          section: "crops",
+          subject: c.name,
         });
       }
     }
 
-    // ─── 7. Zero-day check (nothing recorded today) ─────────
+    // ─── 7. Crop Stage Milestones (ERPNext cycle templates) ─
+    const cropMilestones = findActiveMilestones(crops, today);
+    for (const cm of cropMilestones) {
+      actions.push({
+        id: `crop-milestone-${cm.stageKey}`,
+        priority: cm.priority,
+        icon: cm.category === "weeding" ? "Wheat" : cm.category === "fertilizer" ? "Package" : cm.category === "pest_control" ? "Bug" : "Wheat",
+        title: cm.title,
+        detail: cm.detail,
+        moneyImpact: cm.moneyImpact,
+        href: "/crops",
+        cta: cm.cta,
+        section: "crops",
+        subject: cm.cropName,
+      });
+    }
+
+    // ─── 8. Zero-day check (nothing recorded today) ─────────
     if (flocks.length > 0 && todayProd.length === 0 && now.getHours() >= 12) {
       actions.push({
         id: `zero-day-${today.getTime()}`,
@@ -447,6 +589,7 @@ router.get("/actions", async (req: Request, res: Response) => {
       // Weekly output in each commodity's PRICING unit (trays, litres).
       const weekly: Record<string, number> = { eggs: 0, milk: 0 };
       for (const p of recentProd) {
+        if (p.date < weekAgo) continue;
         const f = flocks.find((x) => x.id === p.flockId);
         const metric = metricOf(f?.type);
         if (metric === "eggs") weekly.eggs += Number(p.eggsCollected || 0) / EGGS_PER_TRAY;

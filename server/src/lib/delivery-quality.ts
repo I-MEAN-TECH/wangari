@@ -190,3 +190,40 @@ export function milkQualityView(d: DeliveryRow, on: Date = new Date()): MilkQual
     impliedFatKg, waterPenaltyLitres: waterPenalty,
   };
 }
+
+export interface EggQualityView {
+  crackedCount: number | null;
+  dirtyCount: number | null;
+  gradedCount: number | null;
+  defectCount: number;
+  defectRatePct: number | null;
+  cleanTrays: number | null;
+}
+
+export function eggQualityView(d: {
+  quantity: number;
+  unit?: string;
+  crackedCount?: number | null;
+  dirtyCount?: number | null;
+  gradedCount?: number | null;
+}): EggQualityView {
+  const cracked = d.crackedCount ?? null;
+  const dirty = d.dirtyCount ?? null;
+  const graded = d.gradedCount ?? null;
+  const defectCount = (cracked ?? 0) + (dirty ?? 0);
+  const total = Number(d.quantity);
+  const isTrays = typeof d.unit === "string" && d.unit.toLowerCase().includes("tray");
+  const totalEggs = isTrays ? total * 30 : total;
+  const defectRatePct = totalEggs > 0 && (cracked != null || dirty != null)
+    ? round2((defectCount / totalEggs) * 100)
+    : null;
+  const cleanTrays = graded != null ? round2(graded / 30) : null;
+  return {
+    crackedCount: cracked,
+    dirtyCount: dirty,
+    gradedCount: graded,
+    defectCount,
+    defectRatePct,
+    cleanTrays,
+  };
+}

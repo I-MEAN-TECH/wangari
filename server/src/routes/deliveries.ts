@@ -194,7 +194,10 @@ router.get("/", async (req: Request, res: Response) => {
       where: { farmId: req.user!.farmId!, ...(commodity ? { commodity } : {}) },
       orderBy: { date: "desc" },
       take: 60,
-      include: { deductions: true },
+      include: {
+        deductions: true,
+        customer: { select: { id: true, name: true, phone: true } },
+      },
     });
     res.json(data);
   } catch (error) {
@@ -205,16 +208,27 @@ router.get("/", async (req: Request, res: Response) => {
 // POST /api/deliveries — log a delivery (the daily 30-second action)
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { date, commodity, quantity, unit, buyer, receiptRef, unitPrice, notes, deductions } = req.body;
+    const { date, commodity, quantity, unit, buyer, receiptRef, unitPrice, notes, deductions, customerId } = req.body;
     // Accept any commodity — the list is now dynamic (driven by the farm's
     // real flocks/crops via /suggestions). Validate shape instead of a
     // hard-coded list, and default the unit by commodity family.
-    if (!quantity || !buyer || typeof commodity !== "string" || !commodity.trim()) {
-      return res.status(400).json({ error: "quantity, buyer and a commodity are required" });
+    if (!quantity || (!buyer && !customerId) || typeof commodity !== "string" || !commodity.trim()) {
+      return res.status(400).json({ error: "quantity, buyer (or customerId) and a commodity are required" });
     }
     const qty = Number(quantity);
     const price = unitPrice != null ? Number(unitPrice) : null;
     const expectedPay = price != null ? qty * price : null;
+
+    let buyerName = typeof buyer === "string" && buyer.trim() ? buyer.trim() : "Buyer";
+    let customerIdNum: number | null = null;
+    if (customerId != null && Number.isFinite(Number(customerId))) {
+      customerIdNum = Number(customerId);
+      const cust = await prisma.customer.findFirst({
+        where: { id: customerIdNum, farmId: req.user!.farmId! },
+        select: { name: true },
+      });
+      if (cust) buyerName = cust.name;
+    }
 
     const { nextDocCode } = await import("../lib/doc-codes.js");
     const docCode = await prisma.$transaction((tx: any) => nextDocCode(tx, req.user!.farmId!, "delivery"));
@@ -230,7 +244,38 @@ router.post("/", async (req: Request, res: Response) => {
       addedWaterPct: req.body.addedWaterPct != null && isFinite(Number(req.body.addedWaterPct)) ? Number(req.body.addedWaterPct) : null,
       tpc: req.body.tpc != null && isFinite(Number(req.body.tpc)) ? Math.round(Number(req.body.tpc)) : null,
       gradedBy: typeof req.body.gradedBy === "string" && req.body.gradedBy.trim() ? req.body.gradedBy.trim() : null,
+      // Egg / produce quality grading
+      crackedCount: req.body.crackedCount != null && isFinite(Number(req.body.crackedCount)) ? Math.round(Number(req.body.crackedCount)) : null,
+      dirtyCount: req.body.dirtyCount != null && isFinite(Number(req.body.dirtyCount)) ? Math.round(Number(req.body.dirtyCount)) : null,
+      gradedCount: req.body.gradedCount != null && isFinite(Number(req.body.gradedCount)) ? Math.round(Number(req.body.gradedCount)) : null,
     };
+    let paymentTerms: string | null = typeof req.body.paymentTerms === "string" && req.body.paymentTerms.trim() ? req.body.paymentTerms.trim() : null;
+    let expectedPaymentDate: Date | null = null;
+    if (typeof req.body.expectedPaymentDate === "string" && req.body.expectedPaymentDate.trim()) {
+      expectedPaymentDate = new Date(req.body.expectedPaymentDate);
+      if (isNaN(expectedPaymentDate.getTime())) {
+        return res.status(400).json({ error: "expectedPaymentDate is not a valid date" });
+      }
+    }
+
+    const deliveryDate = date ? new Date(date) : new Date();
+
+    // Auto-calculate expected payment date if paymentTerms is given without an explicit date
+    if (paymentTerms && !expectedPaymentDate && !req.body.payBy) {
+      const base = new Date(deliveryDate);
+      if (paymentTerms === "immediate") {
+        expectedPaymentDate = base;
+      } else if (paymentTerms === "net_7") {
+        expectedPaymentDate = new Date(base.getTime() + 7 * 86400000);
+      } else if (paymentTerms === "net_15") {
+        expectedPaymentDate = new Date(base.getTime() + 15 * 86400000);
+      } else if (paymentTerms === "net_30") {
+        expectedPaymentDate = new Date(base.getTime() + 30 * 86400000);
+      } else if (paymentTerms === "monthly") {
+        expectedPaymentDate = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+      }
+    }
+
     // The promised payment date starts the arrears clock. No date, no clock,
     // and we never let the UI paint a delivery "late" on a date never given.
     let payBy: Date | null = null;
@@ -240,20 +285,25 @@ router.post("/", async (req: Request, res: Response) => {
         return res.status(400).json({ error: "payBy is not a valid date" });
       }
     }
+    if (!payBy && expectedPaymentDate) payBy = expectedPaymentDate;
+    if (!expectedPaymentDate && payBy) expectedPaymentDate = payBy;
 
     const delivery = await prisma.delivery.create({
       data: {
         farmId: req.user!.farmId!,
         docCode,
-        date: date ? new Date(date) : new Date(),
+        date: deliveryDate,
         commodity,
         quantity: qty,
         unit: unit || (UNIT_BY_COMMODITY[commodity] ?? "kg"),
-        buyer,
+        buyer: buyerName,
+        customerId: customerIdNum,
         receiptRef: receiptRef || null,
         unitPrice: price,
         expectedPay,
         ...quality,
+        paymentTerms,
+        expectedPaymentDate,
         payBy,
         createdBy: req.user!.userId,
         deductions: {
@@ -272,7 +322,7 @@ router.post("/", async (req: Request, res: Response) => {
             })),
         },
       },
-      include: { deductions: true },
+      include: { deductions: true, customer: { select: { id: true, name: true, phone: true } } },
     });
     res.status(201).json(delivery);
   } catch (error) {
@@ -290,7 +340,15 @@ router.patch("/:id", async (req: Request, res: Response) => {
     if (!existing) return res.status(404).json({ error: "Not found" });
 
     const data: Record<string, any> = {};
-    if (req.body.status && ["pending", "paid", "disputed"].includes(req.body.status)) data.status = req.body.status;
+    if (req.body.status && ["pending", "paid", "disputed"].includes(req.body.status)) {
+      data.status = req.body.status;
+      if (req.body.status === "paid") {
+        data.paidAt = req.body.paidAt ? new Date(req.body.paidAt) : (existing.paidAt || new Date());
+      }
+    }
+    if (req.body.paidAt !== undefined) {
+      data.paidAt = req.body.paidAt ? new Date(req.body.paidAt) : null;
+    }
     if (req.body.paidAmount !== undefined) data.paidAmount = Number(req.body.paidAmount);
     if (req.body.unitPrice !== undefined) {
       const price = Number(req.body.unitPrice);
@@ -302,18 +360,85 @@ router.patch("/:id", async (req: Request, res: Response) => {
     for (const k of ["fatPct", "snfPct", "density", "addedWaterPct"] as const) {
       if (req.body[k] !== undefined) data[k] = req.body[k] != null && isFinite(Number(req.body[k])) ? Number(req.body[k]) : null;
     }
+    for (const k of ["crackedCount", "dirtyCount", "gradedCount"] as const) {
+      if (req.body[k] !== undefined) data[k] = req.body[k] != null && isFinite(Number(req.body[k])) ? Math.round(Number(req.body[k])) : null;
+    }
     if (req.body.tpc !== undefined) data.tpc = req.body.tpc != null && isFinite(Number(req.body.tpc)) ? Math.round(Number(req.body.tpc)) : null;
     if (req.body.gradedBy !== undefined) data.gradedBy = typeof req.body.gradedBy === "string" && req.body.gradedBy.trim() ? req.body.gradedBy.trim() : null;
+    if (req.body.customerId !== undefined) {
+      if (req.body.customerId === null || req.body.customerId === "") {
+        data.customerId = null;
+      } else {
+        const cId = Number(req.body.customerId);
+        const cust = await prisma.customer.findFirst({
+          where: { id: cId, farmId: req.user!.farmId! },
+          select: { id: true, name: true },
+        });
+        if (cust) {
+          data.customerId = cust.id;
+          data.buyer = cust.name;
+        }
+      }
+    }
+    if (req.body.paymentTerms !== undefined) {
+      data.paymentTerms = typeof req.body.paymentTerms === "string" && req.body.paymentTerms.trim() ? req.body.paymentTerms.trim() : null;
+    }
+    if (req.body.expectedPaymentDate !== undefined) {
+      if (req.body.expectedPaymentDate === null || req.body.expectedPaymentDate === "") {
+        data.expectedPaymentDate = null;
+      } else {
+        const d = new Date(req.body.expectedPaymentDate);
+        if (isNaN(d.getTime())) return res.status(400).json({ error: "expectedPaymentDate is not a valid date" });
+        data.expectedPaymentDate = d;
+      }
+    }
     if (req.body.payBy !== undefined) {
-      if (req.body.payBy === null || req.body.payBy === "") data.payBy = null;
-      else {
+      if (req.body.payBy === null || req.body.payBy === "") {
+        data.payBy = null;
+        if (req.body.expectedPaymentDate === undefined) data.expectedPaymentDate = null;
+      } else {
         const d = new Date(req.body.payBy);
         if (isNaN(d.getTime())) return res.status(400).json({ error: "payBy is not a valid date" });
         data.payBy = d;
+        if (req.body.expectedPaymentDate === undefined) data.expectedPaymentDate = d;
       }
     }
 
-    const updated = await prisma.delivery.update({ where: { id: existing.id }, data, include: { deductions: true } });
+    const updated = await prisma.delivery.update({
+      where: { id: existing.id },
+      data,
+      include: { deductions: true, customer: { select: { id: true, name: true, phone: true } } },
+    });
+
+    // Auto-create / match income transaction when delivery is settled (ERPNext payment entry pattern)
+    if (existing.status !== "paid" && data.status === "paid") {
+      const alreadyLinked = await prisma.transaction.findFirst({
+        where: { farmId: req.user!.farmId!, deliveryId: existing.id },
+      });
+      if (!alreadyLinked) {
+        const cat = existing.commodity === "milk" ? "milk" : existing.commodity === "eggs" ? "eggs" : "crop_sales";
+        const amt = data.paidAmount ?? existing.paidAmount ?? existing.expectedPay ?? 0;
+        if (Number(amt) > 0) {
+          await prisma.transaction.create({
+            data: {
+              farmId: req.user!.farmId!,
+              type: "income",
+              category: cat,
+              costBucket: "revenue",
+              amount: amt,
+              date: data.paidAt || new Date(),
+              deliveryId: existing.id,
+              matchedAt: new Date(),
+              matchedBy: "automatic",
+              description: `Payout for ${existing.quantity} ${existing.unit} of ${existing.commodity} (${existing.buyer})`,
+              reference: existing.receiptRef || null,
+              createdBy: req.user!.userId,
+            },
+          });
+        }
+      }
+    }
+
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: "Failed to update delivery" });

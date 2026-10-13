@@ -1,29 +1,21 @@
 "use client";
 
 import * as React from "react";
-import { Tag, CheckCircle2, AlertTriangle, ScanLine } from "lucide-react";
-import { BigKeypad } from "./big-keypad";
+import { Tag, CheckCircle2, AlertTriangle, ScanLine, Hash, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * AnitracTag — enter an ANITRAC ear-tag number without reading or typing.
+ * AnitracTag — enter an ANITRAC ear-tag number.
  *
- * RESEARCH (Oct 2026, Kenya): the government launched ANITRAC in July 2026.
- * Every cattle, sheep and goat carries a number of **not more than 15 digits
- * that starts with the 141 country prefix** (visual tag on the left ear, RFID
- * microchip on the right). So a tag is pure digits — which is why this is
- * built on a keypad, not a keyboard.
+ * REDESIGN (Oct 2026): replaced the full-screen BigKeypad with a compact inline
+ * text input. The keypad wasted 400px+ of vertical space on a screen that also
+ * has "is this a new animal?" below it. A farmer taps the input, the phone
+ * keyboard appears (numeric via inputMode="numeric"), and the tag is entered in
+ * half the taps. Range mode uses two side-by-side inputs instead of stacking
+ * two keypads. Validation feedback is a single badge line, not a full card.
  *
- * HOW A FARMER ACTUALLY USES IT:
- *  - They have the tag number on the animal (or the paperwork).
- *  - They tap the digits on the big keypad. 15 taps, no typing, no reading.
- *  - `141` is pre-filled because it is the same for every animal in Kenya, so
- *    the farmer only ever enters the 12 digits that actually differ.
- *  - A range mode handles the common "I bought 40 tags, 1410001 to 1410040"
- *    case, so nobody taps 600 times.
- *
- * This screen is ALSO the answer to "how do we record data on most animals at
- * once" — see the note at the bottom.
+ * Exported functions (validateTag, expandTagRange, shouldWarnRange) and types
+ * (AnitracTagValue) are unchanged — callers and tests don't break.
  */
 
 /** Kenya's ANITRAC prefix, and the max tag length per the 2026 rollout. */
@@ -140,6 +132,27 @@ export interface AnitracTagInputProps {
   className?: string;
 }
 
+/** Inline validation badge — one line, colour + icon + words. */
+function ValidationBadge({ check }: { check: { ok: boolean; tone: "good" | "warn" | "bad"; message: string } }) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold",
+        check.tone === "good" && "bg-tone-good-bg text-tone-good-text",
+        check.tone === "warn" && "bg-tone-warn-bg text-tone-warn-text",
+        check.tone === "bad" && "bg-tone-bad-bg text-tone-bad-text",
+      )}
+    >
+      {check.tone === "good" ? (
+        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      ) : (
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      )}
+      {check.message}
+    </div>
+  );
+}
+
 export function AnitracTagInput({
   value,
   onChange,
@@ -149,13 +162,12 @@ export function AnitracTagInput({
 }: AnitracTagInputProps) {
   const [advanced, setAdvanced] = React.useState(value.mode === "range");
   const check = validateTag(value.tagNumber);
-  const endCheck = validateTag(value.rangeEnd || "");
+  const endCheck = advanced ? validateTag(value.rangeEnd || "") : null;
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // Start every farmer from the correct Kenya prefix so they only tap the 12
-  // digits that differ between animals. A farmer can clear it if they must.
   const setDigits = React.useCallback(
-    (digits: string, which: "tagNumber" | "rangeEnd" = "tagNumber") => {
-      const clean = digits.replace(/\D/g, "").slice(0, ANITRAC_MAX_DIGITS);
+    (raw: string, which: "tagNumber" | "rangeEnd" = "tagNumber") => {
+      const clean = raw.replace(/\D/g, "").slice(0, ANITRAC_MAX_DIGITS);
       if (which === "tagNumber") {
         onChange({ ...value, tagNumber: clean, mode: advanced ? "range" : "exact" });
       } else {
@@ -169,48 +181,61 @@ export function AnitracTagInput({
     validateTag(value.tagNumber).ok &&
     (value.mode === "exact" || validateTag(value.rangeEnd || "").ok);
 
+  // Auto-focus the input when mounted
+  React.useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      <div className="flex items-center gap-2 rounded-2xl bg-wangari-green-50 px-4 py-3">
-        <Tag className="h-6 w-6 text-wangari-green-800" aria-hidden />
-        <p className="text-sm font-semibold text-wangari-green-900">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-wangari-green-100">
+          <Tag className="h-4 w-4 text-wangari-green-800" aria-hidden />
+        </div>
+        <p className="text-sm font-bold text-wangari-green-900">
           ANITRAC tag number
         </p>
       </div>
 
-      <BigKeypad
-        value={value.tagNumber}
-        onChange={(v) => setDigits(v)}
-        onConfirm={ready ? onConfirm : undefined}
-        label={`Starts with ${ANITRAC_PREFIX}`}
-        maxLength={ANITRAC_MAX_DIGITS}
-        confirmLabel="Save tag"
-      />
-
-      {/* Status is colour + icon first, so it reads without reading. */}
-      {value.tagNumber ? (
-        <div
-          className={cn(
-            "flex items-start gap-2 rounded-2xl border px-4 py-3",
-            check.tone === "good" &&
-              "border-tone-good-border bg-tone-good-bg text-tone-good-text",
-            check.tone === "warn" &&
-              "border-tone-warn-border bg-tone-warn-bg text-tone-warn-text",
-            check.tone === "bad" &&
-              "border-tone-bad-border bg-tone-bad-bg text-tone-bad-text"
-          )}
-        >
-          {check.tone === "good" ? (
-            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
-          ) : (
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
-          )}
-          <p className="text-sm font-medium">{check.message}</p>
+      {/* Tag input — compact inline field with prefix hint */}
+      <div className="space-y-2">
+        <div className="relative">
+          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-wangari-muted">
+            <Hash className="h-4 w-4" aria-hidden />
+            <span className="text-xs font-medium">141</span>
+          </div>
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            autoComplete="off"
+            maxLength={ANITRAC_MAX_DIGITS}
+            placeholder="Enter tag number"
+            value={value.tagNumber}
+            onChange={(e) => setDigits(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && ready && onConfirm) onConfirm();
+            }}
+            className={cn(
+              "h-14 w-full rounded-xl border-2 bg-white pl-16 pr-4 font-mono text-lg font-bold tabular-nums tracking-wider",
+              "outline-none transition-colors",
+              !value.tagNumber && "border-wangari-border focus:border-wangari-green-500",
+              value.tagNumber && check.tone === "good" && "border-tone-good-border bg-tone-good-bg/30",
+              value.tagNumber && check.tone === "warn" && "border-tone-warn-border bg-tone-warn-bg/30",
+              value.tagNumber && check.tone === "bad" && "border-tone-bad-border bg-tone-bad-bg/30",
+            )}
+          />
         </div>
-      ) : null}
 
+        {/* Validation badge */}
+        {value.tagNumber ? <ValidationBadge check={check} /> : null}
+      </div>
+
+      {/* Range mode — two fields side by side */}
       {allowRange ? (
-        <div className="rounded-2xl border border-dashed border-wangari-green-300 bg-white p-3">
+        <div className="space-y-2">
           <button
             type="button"
             onClick={() => {
@@ -223,47 +248,49 @@ export function AnitracTagInput({
               });
             }}
             className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-2xl py-3",
-              "text-sm font-bold transition-colors",
+              "flex w-full items-center justify-center gap-2 rounded-xl border border-dashed py-2.5",
+              "text-xs font-bold transition-colors",
               advanced
-                ? "bg-wangari-green-800 text-white"
-                : "bg-wangari-cream text-wangari-green-800 hover:bg-wangari-green-50"
+                ? "border-wangari-green-500 bg-wangari-green-50 text-wangari-green-800"
+                : "border-wangari-border bg-white text-wangari-muted hover:bg-wangari-cream hover:text-wangari-green-800"
             )}
           >
-            <ScanLine className="h-5 w-5" aria-hidden />
+            <ScanLine className="h-4 w-4" aria-hidden />
             {advanced ? "Single tag" : "More (tag range)"}
           </button>
 
           {advanced ? (
-            <div className="mt-3 flex flex-col gap-3">
-              <p className="text-center text-xs text-wangari-muted">
-                Enter the first and last number — for example 1410001 to
-                1410040
+            <div className="space-y-2 rounded-xl border border-wangari-green-200 bg-wangari-green-50/40 p-3">
+              <p className="text-xs text-wangari-muted text-center">
+                Enter the first and last tag — for example 1410001 to 1410040
               </p>
-              <BigKeypad
-                value={value.rangeEnd || ""}
-                onChange={(v) => setDigits(v, "rangeEnd")}
-                onConfirm={ready ? onConfirm : undefined}
-                label="Last number"
-                maxLength={ANITRAC_MAX_DIGITS}
-                confirmLabel="Save all"
-              />
-              {value.rangeEnd ? (
-                <p
-                  className={cn(
-                    "text-center text-sm font-semibold",
-                    endCheck.ok ? "text-tone-good-text" : "text-tone-bad-text"
-                  )}
-                >
-                  {endCheck.message}
-                </p>
-              ) : null}
+              <div className="flex items-center gap-2">
+                {/* First tag already entered above — show it as a read-only chip */}
+                <div className="flex-1 rounded-lg border border-wangari-border bg-white px-3 py-2.5 font-mono text-sm font-semibold tabular-nums text-wangari-green-900 truncate">
+                  {value.tagNumber || "First tag"}
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-wangari-muted" aria-hidden />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
+                  maxLength={ANITRAC_MAX_DIGITS}
+                  placeholder="Last tag"
+                  value={value.rangeEnd || ""}
+                  onChange={(e) => setDigits(e.target.value, "rangeEnd")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && ready && onConfirm) onConfirm();
+                  }}
+                  className="h-11 flex-1 rounded-lg border-2 border-wangari-border bg-white px-3 font-mono text-sm font-semibold tabular-nums tracking-wider outline-none focus:border-wangari-green-500"
+                />
+              </div>
+              {value.rangeEnd ? <ValidationBadge check={endCheck!} /> : null}
             </div>
           ) : null}
         </div>
       ) : null}
 
-      {/* Why this is simple enough to actually be used. */}
       <p className="px-1 text-center text-xs leading-relaxed text-wangari-muted">
         You only enter a tag once. After that you keep recording the herd as
         a count — the way you already count the group.

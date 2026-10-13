@@ -4,6 +4,7 @@ import {
   payoutSummary,
   effectiveUnitPriceKes,
   milkQualityView,
+  eggQualityView,
   type DeliveryRow,
 } from "./delivery-quality.js";
 
@@ -180,6 +181,42 @@ describe("milkQualityView — the QBMP parameters without pretending to grade", 
   it("implied fat is per-delivery, on a messy quantity too", () => {
     const v = milkQualityView(row({ quantity: 173, fatPct: 3.25 }));
     expect(v.impliedFatKg).toBe(5.62); // 173 × 3.25 / 100, rounded to paisa
+  });
+});
+
+describe("eggQualityView — egg grading and defect calculation", () => {
+  it("calculates defects and defect rate for tray unit (30 eggs/tray)", () => {
+    const res = eggQualityView({
+      quantity: 10,
+      unit: "trays",
+      crackedCount: 9,
+      dirtyCount: 6,
+      gradedCount: 285,
+    });
+    // 10 trays = 300 eggs. Defects = 9 + 6 = 15 eggs (5%)
+    expect(res.defectCount).toBe(15);
+    expect(res.defectRatePct).toBe(5);
+    expect(res.cleanTrays).toBe(9.5);
+  });
+
+  it("calculates defects when unit is individual eggs", () => {
+    const res = eggQualityView({
+      quantity: 200,
+      unit: "eggs",
+      crackedCount: 4,
+      dirtyCount: 2,
+      gradedCount: 194,
+    });
+    expect(res.defectCount).toBe(6);
+    expect(res.defectRatePct).toBe(3);
+    expect(res.cleanTrays).toBe(6.47);
+  });
+
+  it("returns null defectRatePct when quality fields are unmeasured", () => {
+    const res = eggQualityView({ quantity: 50, unit: "eggs" });
+    expect(res.defectCount).toBe(0);
+    expect(res.defectRatePct).toBeNull();
+    expect(res.cleanTrays).toBeNull();
   });
 });
 

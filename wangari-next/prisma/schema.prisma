@@ -18,6 +18,19 @@ model User {
   role             String    @default("farm_owner")
   profileComplete  Boolean   @default(false) @map("profile_complete")
   emailVerified    DateTime? @map("email_verified")
+  /// Hashed 4-digit PIN used for phone-only sign-in (no email, no password).
+  /// Null means this account has never set one. See lib/phone-pin.ts.
+  phonePin         String?   @map("phone_pin")
+  /// When the phone was proven to belong to this user. A phone-only account
+  /// with a null phoneVerifiedAt has NOT proven ownership of its number.
+  phoneVerifiedAt  DateTime? @map("phone_verified_at")
+  /// How this account signs in: email_password | phone_pin | google
+  authMethod       String?   @map("auth_method")
+  /// KIAMIS identity — the farmer's national ID number, digits only.
+  /// NULL = not given. Sensitive: ordinary profile reads return only a masked
+  /// hint; the full number leaves the server solely through the owner's own
+  /// KIAMIS export (routes/kiamis.ts).
+  nationalId       String?   @map("national_id")
   trialStartsAt    DateTime? @map("trial_starts_at")
   trialEndsAt      DateTime? @map("trial_ends_at")
   selectedHubs     String?   @map("selected_hubs")
@@ -26,6 +39,7 @@ model User {
   tokenVersion     Int       @default(0) @map("token_version")
   totpSecret       String?   @map("totp_secret")
   totpEnabledAt    DateTime? @map("totp_enabled_at")
+  lastMfaNudgedAt  DateTime? @map("last_mfa_nudged_at")
   recoveryCodes    String?   @map("recovery_codes") // JSON array of bcrypt-hashed codes
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
@@ -38,11 +52,35 @@ model User {
   workers       Worker[]
   auditLogs     AuditLog[]
   tickets       Ticket[]
+  feedback      Feedback[]
   crops         Crop[]
+  plots         Plot[]
+  farmLoans     FarmLoan[]
+  loanRepayments LoanRepayment[]
   verifications VerificationCode[]
   subscriptions Subscription[]
+  activationEvents ActivationEvent[]
+  ownedCoops       CoopGroup[] @relation("CoopChair")
+  coopInvitesSent  CoopInvite[] @relation("CoopInviter")
 
   @@map("users")
+}
+
+model ActivationEvent {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  /// signup | onboarding_completed | first_record | active
+  stage     String
+  /// UTC calendar day, YYYY-MM-DD. One row per user per stage per day, so a
+  /// farmer who opens the app 40 times counts as one day of returning — not 40.
+  day       String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stage, day])
+  @@index([stage])
+  @@map("activation_events")
 }
 
 model VerificationCode {
@@ -50,6 +88,7 @@ model VerificationCode {
   userId    Int       @map("user_id")
   code      String
   purpose   String    @default("email_verification")
+  attempts  Int       @default(0) // failed verification tries; code burns at 5
   expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime  @default(now()) @map("created_at")
@@ -58,6 +97,23 @@ model VerificationCode {
 
   @@index([userId, purpose])
   @@map("verification_codes")
+}
+
+// Failed PIN attempts, keyed by phone number.
+//
+// This has to live in the database rather than a Map in the route module. The
+// API runs under `pm2` in cluster mode with two workers, so an in-process
+// counter is split across two disjoint maps: consecutive attempts on one account
+// land on different workers, neither ever reaches five, and the lockout that the
+// 4-digit PIN depends on silently never fires. A restart wipes it too. In the DB
+// it is one row every worker reads and writes.
+model PhonePinAttempt {
+  phone     String    @id
+  count     Int       @default(0)
+  lockedUntil DateTime? @map("locked_until")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("phone_pin_attempts")
 }
 
 // Pricing source of truth — seeded from code once, editable in DB afterwards.
@@ -70,6 +126,8 @@ model Plan {
   days        Int
   active      Boolean @default(true)
   sortOrder   Int     @default(0)
+
+  promoCodes PromoCode[]
 
   @@map("plans")
 }
@@ -93,6 +151,7 @@ model SiteContent {
 model Delivery {
   id          Int      @id @default(autoincrement())
   farmId      Int      @map("farm_id")
+  docCode     String?  @map("doc_code")
   date        DateTime @db.Date
   commodity   String
   quantity    Decimal  @db.Decimal(12, 2) // litres / kg
@@ -101,17 +160,44 @@ model Delivery {
   receiptRef  String?  @map("receipt_ref") // slip/receipt number from the buyer
   unitPrice   Decimal? @map("unit_price") @db.Decimal(12, 2) // KES per unit, if known
   expectedPay Decimal? @map("expected_pay") @db.Decimal(12, 2) // gross expected for this delivery
+  // Milk-quality test results exactly as the co-op slip shows them (QBMP:
+  // fat is priced per kg delivered; measured added water is deducted from the
+  // volume paid). Storage only — band pricing is the co-op's term, not ours.
+  fatPct        Decimal? @map("fat_pct") @db.Decimal(5, 2)
+  snfPct        Decimal? @map("snf_pct") @db.Decimal(5, 2)
+  density       Decimal? @map("density") @db.Decimal(5, 3)
+  addedWaterPct Decimal? @map("added_water_pct") @db.Decimal(5, 2)
+  /// Total plate count (cfu/ml) where the co-op reports it.
+  tpc           Int?     @map("tpc")
+  /// Who ran the test — the co-op's own label, so a disputed result is checkable.
+  gradedBy      String?  @map("graded_by")
+  /// When the buyer promised to pay. Null = no promise, so no arrears clock:
+  /// we never make a delivery "late" against a date that was never given.
+  payBy       DateTime? @map("pay_by") @db.Date
   status      String   @default("pending") // pending | paid | disputed
   paidAmount  Decimal? @map("paid_amount") @db.Decimal(12, 2)
+  paidAt      DateTime? @map("paid_at")
   notes       String?
-  createdBy   Int?     @map("created_by")
-  createdAt   DateTime @default(now()) @map("created_at")
+  // Egg / produce quality grading
+  crackedCount Int?     @map("cracked_count")
+  dirtyCount   Int?     @map("dirty_count")
+  gradedCount  Int?     @map("graded_count")
+  // Payment terms & expected payout date (ERPNext gap #6)
+  paymentTerms        String?   @map("payment_terms")
+  expectedPaymentDate DateTime? @map("expected_payment_date") @db.Date
+  // Optional buyer relation
+  customerId   Int?     @map("customer_id")
+  createdBy    Int?     @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   farm       Farm                @relation(fields: [farmId], references: [id])
+  customer   Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
   deductions DeliveryDeduction[]
 
   @@index([farmId, date])
+  @@index([farmId, payBy])
   @@index([farmId, commodity])
+  @@index([farmId, customerId])
   @@map("deliveries")
 }
 
@@ -122,10 +208,74 @@ model DeliveryDeduction {
   deliveryId Int     @map("delivery_id")
   label      String // "AI service", "Agrovet credit", "Transport"
   amount     Decimal @db.Decimal(12, 2)
+  // Who the deduction is deducted FOR — the co-op, an agrovet, or the
+  // farmer's own SACCO loan being collected at source. The statement groups
+  // by this so "what the co-op kept" and "what paid my loan" come apart.
+  creditor   String?
+  /// When this deduction is the co-op collecting a loan repayment at source,
+  /// this points at the FarmLoan it pays down. Null = a plain deduction.
+  farmLoanId Int?     @map("farm_loan_id")
 
-  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  delivery   Delivery  @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  farmLoan   FarmLoan? @relation(fields: [farmLoanId], references: [id])
+  loanRepayments LoanRepayment[]
 
   @@map("delivery_deductions")
+}
+
+// C2: the farmer's OWN debt — money the farm owes a lender (SACCO, AFC, an
+// agrovet for inputs, a chama). This is the opposite direction from `Credit`, which
+// is money owed TO the farm by its customers. Wangari records the loan and
+// every repayment; it never makes a credit decision — the lender does.
+model FarmLoan {
+  id                Int       @id @default(autoincrement())
+  farmId            Int       @map("farm_id")
+  lender            String // "Githunguri SACCO", "AFC", "Kilimo Biashara agrovet"
+  loanType          String?   @map("loan_type") // sacco | afc | input_credit | personal | other
+  principal         Decimal   @db.Decimal(12, 2) // KES borrowed
+  interestRatePct  Decimal?  @map("interest_rate_pct") @db.Decimal(5, 2) // annual rate, if known
+  disbursedAt       DateTime? @map("disbursed_at") @db.Date // when money/inputs arrived
+  firstInstalmentDue DateTime? @map("first_instalment_due") @db.Date
+  instalmentCount   Int?      @map("instalment_count") // total number of instalments
+  instalmentAmount  Decimal?  @map("instalment_amount") @db.Decimal(12, 2)
+  amountPaid        Decimal   @default(0) @map("amount_paid") @db.Decimal(12, 2) // sum of all repayments
+  status            String    @default("active") // active | settled | defaulted
+  notes             String?
+  createdBy         Int?      @map("created_by")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  farm         Farm              @relation(fields: [farmId], references: [id])
+  creator      User?             @relation(fields: [createdBy], references: [id])
+  repayments   LoanRepayment[]
+  deductions   DeliveryDeduction[]
+
+  @@index([farmId, status])
+  @@map("farm_loans")
+}
+
+// One repayment against a FarmLoan. A repayment can be cash/M-Pesa the farmer hands
+// over, or a co-op deduction collected at source (then `deliveryDeductionId`
+// links it). `amountPaid` on FarmLoan is the running sum of these rows.
+model LoanRepayment {
+  id                  Int       @id @default(autoincrement())
+  farmLoanId          Int       @map("farm_loan_id")
+  farmId              Int       @map("farm_id")
+  amount              Decimal   @db.Decimal(12, 2)
+  paidAt              DateTime  @map("paid_at") @db.Date
+  source              String    @default("cash") // cash | mpesa | bank | deduction
+  deliveryDeductionId Int?      @map("delivery_deduction_id")
+  notes               String?
+  createdBy           Int?      @map("created_by")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  farmLoan          FarmLoan          @relation(fields: [farmLoanId], references: [id], onDelete: Cascade)
+  farm              Farm            @relation(fields: [farmId], references: [id])
+  deliveryDeduction DeliveryDeduction? @relation(fields: [deliveryDeductionId], references: [id])
+  creator           User?           @relation(fields: [createdBy], references: [id])
+
+  @@index([farmLoanId, paidAt])
+  @@map("loan_repayments")
 }
 
 model Subscription {
@@ -156,12 +306,34 @@ model Farm {
   farmType  String?  @map("farm_type")
   ownerId   Int      @map("owner_id")
   createdAt DateTime @default(now()) @map("created_at")
+  // When the farmer stated what they farm and claimed this farm in onboarding.
+  // NOT back-filled for existing farms — see migrations/16_farm_claimed_at.
+  claimedAt DateTime? @map("claimed_at")
+
+  // ─── M1: the accountant layer ───
+  // Farm size, because every per-unit metric (cost per egg, cost per litre,
+  // cost per acre) needs a denominator, and KIAMIS derives subsidy quantities
+  // from declared acreage. One nullable pair; existing farms keep NULL and are
+  // never blocked. `areaUnit` is "acre" | "hectare".
+  areaValue Decimal? @map("area_value") @db.Decimal(10, 2)
+  areaUnit  String?  @map("area_unit")
+
+  // ─── M2: the compliance spine groundwork ───
+  // ANITRAC §18 premises/holding registration number, issued by the county.
+  // NULL = not registered yet; nothing here blocks a farm from working.
+  premisesRegNo String? @map("premises_reg_no")
+  // Plot GPS — serves ANITRAC §18, KIAMIS geo-mapping and EUDR coffee
+  // geo-traceability at once. Captured by the farmer tapping "use my
+  // location", never typed (R1). Captured as a pair or not at all.
+  latitude  Decimal? @map("latitude") @db.Decimal(10, 7)
+  longitude Decimal? @map("longitude") @db.Decimal(10, 7)
 
   owner            User              @relation(fields: [ownerId], references: [id])
   members          FarmMember[]
   flocks           Flock[]
   transactions     Transaction[]
   inventory        Inventory[]
+  announcements    Announcement[]
   customers        Customer[]
   sales            Sale[]
   workers          Worker[]
@@ -169,6 +341,7 @@ model Farm {
   feedRecipes      FeedRecipe[]
   weatherCache     WeatherCache[]
   dailyProductions DailyProduction[]
+  animalProduction AnimalProduction[]
   credits          Credit[]
   attendances      Attendance[]
   auditLogs        AuditLog[]
@@ -179,14 +352,85 @@ model Farm {
   zktecoLogs       ZKTecoLog[]
   breeding         Breeding[]
   crops            Crop[]
+  plots            Plot[]
+  farmLoans        FarmLoan[]
+  loanRepayments   LoanRepayment[]
   cropHarvests     CropHarvest[]
   cropHealth       CropHealth[]
   cropApplications CropApplication[]
   postHarvestBatches PostHarvestBatch[]
   soilTests        SoilTest[]
   invoices         Invoice[]
+  quotes           Quote[]
+  newsSends        NewsArticleSend[]
+  animals          Animal[]
+  flockBatches     FlockBatch[]
+  hives            Hive[]
+  healthRecords    HealthRecord[]
+  insurancePolicies InsurancePolicy[]
+  coopMemberships  CoopMembership[]
+  coldChainEvents  ColdChainEvent[]
+  feedback         Feedback[]
+  animalMovements  AnimalMovement[]
+  flockMovements   FlockMovement[]
+  inputVouchers    InputVoucher[]
+  insuranceClaims  InsuranceClaim[]
+  savingsEntries   SavingsEntry[]
+  budgetItems      BudgetItem[]
 
   @@map("farms")
+}
+
+/// A bee COLONY, which is the unit a beekeeper actually manages.
+///
+/// Bees are never recorded or tagged individually — a colony is tens of
+/// thousands of insects. Real apiary practice (and every beekeeping logbook)
+/// records per hive: colony strength, queen status, stores, varroa counts and
+/// honey harvested. This mirrors how a flock works for poultry: the unit is the
+/// thing you count, not the animal.
+model Hive {
+  id           Int       @id @default(autoincrement())
+  farmId       Int       @map("farm_id")
+  name         String // the hive number painted on the box
+  hiveType     String?   @map("hive_type") // langstroth | topbar | traditional | flow
+  status       String    @default("active") // active | weak | swarm | dead | requeened
+  queenYear    Int?      @map("queen_year")
+  queenStatus  String?   @map("queen_status") // seen | not_seen | new | laying_weak
+  frames       Int?
+  location     String? // apiary / stand position
+  establishedOn DateTime? @map("established_on") @db.Date
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  farm        Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  inspections HiveInspection[]
+
+  @@unique([farmId, name])
+  @@index([farmId, status])
+  @@map("hives")
+}
+
+/// One hive inspection: what the beekeeper looks at on the box.
+model HiveInspection {
+  id          Int      @id @default(autoincrement())
+  hiveId      Int      @map("hive_id")
+  inspectedAt DateTime @map("inspected_at")
+  broodFrames Int?     @map("brood_frames")
+  storesFrames Int?    @map("stores_frames")
+  queenSeen   Boolean? @map("queen_seen")
+  queenCells  Int?     @map("queen_cells")
+  varroaCount Int?     @map("varroa_count")
+  honeyKg     Decimal? @map("honey_kg") @db.Decimal(10, 2)
+  actionTaken String?  @map("action_taken") // e.g. treatment, requeen, super
+  notes       String?
+  createdBy   Int?     @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  hive Hive @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@index([hiveId, inspectedAt])
+  @@map("hive_inspections")
 }
 
 model FarmMember {
@@ -237,6 +481,24 @@ model Flock {
   expectedYield    String?  @map("expected_yield")
   expectedRevenue  Decimal? @map("expected_revenue") @db.Decimal(12, 2)
   expectedWeight   String?  @map("expected_weight")
+  // ANITRAC tag range issued to this flock. Three numbers cover 500 animals —
+  // the farmer never types a number per head. Individual tags are generated on
+  // demand for traceability lists. See `animals` for individually-tracked stock.
+  tagFrom          String?  @map("tag_from")
+  tagTo            String?  @map("tag_to")
+  taggedCount      Int?     @map("tagged_count")
+  taggedOn         DateTime? @map("tagged_on")
+  /// C8: asset-register fields. A herd IS capital — the biggest one most
+  /// smallholders own — and `costPerAnimal`/`totalInvestment` already record
+  /// what it cost. These three let a book value be computed honestly:
+  /// `acquiredOn` starts the clock, `usefulLifeYears` is the farmer's own
+  /// expectation for the class of stock, and `salvageValue` is what it is worth
+  /// at the end. All optional: with none of them set, the register shows cost and
+  /// says book value is not computable rather than depreciating on a default we
+  /// invented.
+  acquiredOn       DateTime? @map("acquired_on") @db.Date
+  usefulLifeYears  Int?      @map("useful_life_years")
+  salvageValue     Decimal?  @map("salvage_value") @db.Decimal(12, 2)
   notes            String?
 
   createdBy Int?     @map("created_by")
@@ -246,10 +508,96 @@ model Flock {
   farm         Farm              @relation(fields: [farmId], references: [id])
   creator      User?             @relation(fields: [createdBy], references: [id])
   production   DailyProduction[]
+  animalProduction AnimalProduction[]
   vaccinations Vaccination[]
   breeding     Breeding[]
+  animals      Animal[]
+  healthRecords       HealthRecord[]
+  insurancePolicies   InsurancePolicy[]
+  transactions Transaction[]
+  movements    FlockMovement[]
+  batches      FlockBatch[]
 
   @@map("flocks")
+}
+
+/// A sub-group inside one flock — "the original 300" vs "the 200 I bought in
+/// October" — for a farmer who wants ONE flock (one total count, one place to
+/// manage it) but still wants to tell its history apart internally.
+///
+/// This is deliberately NOT another Flock. A Flock is the unit that appears in
+/// the farmer's list and carries the species/category guard on merges; a batch
+/// only exists inside one flock and is never listed on its own. `Flock.
+/// currentCount` remains the single source of truth for the flock's total — a
+/// batch's `currentCount` is a partition of that total, not a second ledger.
+///
+/// Created two ways: directly by the farmer ("add a batch"), or automatically
+/// when a flock-to-flock merge is done with `asBatch: true` — see
+/// routes/flocks.ts — so combining three branches' groups into one flock does
+/// not have to mean losing the fact that they arrived separately.
+model FlockBatch {
+  id              Int       @id @default(autoincrement())
+  farmId          Int       @map("farm_id")
+  flockId         Int       @map("flock_id")
+  name            String
+  currentCount    Int       @map("current_count")
+  acquiredOn      DateTime? @map("acquired_on") @db.Date
+  // Set when this batch was created BY a merge, so its origin stays readable
+  // without having to resolve the now-archived flock it came from.
+  sourceFlockName String?   @map("source_flock_name")
+  notes           String?
+  status          String    @default("active") // active | merged
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  farm    Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  flock   Flock    @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  animals Animal[]
+
+  @@index([farmId])
+  @@index([flockId])
+  @@map("flock_batches")
+}
+
+/// The herd ledger — WHY a group's head count changed.
+///
+/// `Flock.currentCount` is one number that gets overwritten in place, so a
+/// farmer could never answer "I had 40, now I have 33 — where did seven go?".
+/// A row is written for every change that is not a plain correction: purchase,
+/// birth, transfer between this farm's OWN groups, merge, sale, death. The
+/// count stays the daily source of truth; this is the audit trail beside it,
+/// and it is what makes a group-to-group transfer defensible to a buyer or a
+/// county officer later.
+///
+/// A transfer writes TWO rows — one on each group, with opposite deltas — so
+/// both sides of the same event agree and neither group's history is a guess.
+model FlockMovement {
+  id       Int    @id @default(autoincrement())
+  farmId   Int    @map("farm_id")
+  flockId  Int    @map("flock_id")
+  // Signed: +N into this group, -N out of it.
+  delta    Int
+  // purchase | birth | transfer_in | transfer_out | merged_in | merged_out
+  // | split_in | split_out | sale | death | adjustment
+  reason   String
+  // The OTHER group in a transfer or merge, when there was one. A plain Int,
+  // deliberately NOT a relation: the counterparty may later be merged away or
+  // deleted, and a ledger row must never be orphaned by that. The name is
+  // snapshotted alongside so the row still reads correctly afterwards.
+  counterpartyFlockId Int?    @map("counterparty_flock_id")
+  counterpartyName    String? @map("counterparty_name")
+  countBefore Int     @map("count_before")
+  countAfter  Int     @map("count_after")
+  movedAt     DateTime @map("moved_at") @db.Date
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  farm  Farm  @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  flock Flock @relation(fields: [flockId], references: [id], onDelete: Cascade)
+
+  @@index([farmId, movedAt])
+  @@index([flockId])
+  @@map("flock_movements")
 }
 
 model DailyProduction {
@@ -267,11 +615,59 @@ model DailyProduction {
   notes         String?
   createdAt     DateTime @default(now()) @map("created_at")
 
-  flock Flock @relation(fields: [flockId], references: [id])
-  farm  Farm  @relation(fields: [farmId], references: [id])
+  flock  Flock   @relation(fields: [flockId], references: [id])
+  farm   Farm    @relation(fields: [farmId], references: [id])
 
   @@unique([flockId, date])
   @@map("daily_production")
+}
+
+/// Per-cow milk yield — one milking-level fact about ONE animal.
+///
+/// Deliberately its own table rather than a nullable `animalId` on
+/// DailyProduction, for two reasons that are constraints, not taste:
+///
+///  1. **A nullable column cannot join that unique key safely.**
+///     DailyProduction is uniquely keyed on `(flock_id, date)` and the daily
+///     ritual upserts against it. Widening that key to include a nullable
+///     `animal_id` would silently stop guarding the flock-level rows, because
+///     PostgreSQL treats NULLs as distinct in a unique index — every flock
+///     upsert would start INSERTing duplicates instead of updating. Keeping
+///     every column here NOT NULL (or defaulted) is what makes the key hold.
+///  2. **A cow's yield and a flock's yield are different grains of fact.**
+///     The flock total is the number the farmer logs daily and the number the
+///     statement and unit economics already read. A per-cow row is detail on
+///     top of it. Separate tables mean a per-cow sum can never be mistaken for
+///     the flock's, and the flock total stays the single daily fact.
+///
+/// `session` makes "per animal, by milking" expressible (morning/evening are
+/// how zero-grazing is actually done) and is NOT NULL with a default so the
+/// unique key below genuinely holds.
+model AnimalProduction {
+  id         Int      @id @default(autoincrement())
+  farmId     Int      @map("farm_id")
+  animalId   Int      @map("animal_id")
+  /// The flock the cow was in THAT DAY. Recorded rather than derived, because
+  /// an animal can be moved between flocks and its history should not move
+  /// with it. Null only for an animal not currently in any flock.
+  flockId    Int?     @map("flock_id")
+  date       DateTime @db.Date
+  /// morning | evening | full_day — one milking or the whole day's total.
+  session    String   @default("full_day")
+  milkLitres Decimal  @default(0) @map("milk_litres") @db.Decimal(10, 2)
+  notes      String?
+  recordedBy Int?     @map("recorded_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  farm   Farm   @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  animal Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  flock  Flock? @relation(fields: [flockId], references: [id], onDelete: SetNull)
+
+  @@unique([animalId, date, session])
+  @@index([farmId, date])
+  @@index([flockId, date])
+  @@map("animal_production")
 }
 
 model Breeding {
@@ -282,13 +678,26 @@ model Breeding {
   sireBreed      String?   @map("sire_breed")
   damName        String?   @map("dam_name")
   damBreed       String?   @map("dam_breed")
-  matingDate     DateTime  @map("mating_date")
+  /// Nullable so a HEAT (A4) can live on this timeline before any service
+  /// happened. A heat with no mating date is a real, useful observation — it is
+  /// how a farmer knows when to expect the next one — and forcing a service date
+  /// onto it would mean either inventing one or losing the record.
+  matingDate     DateTime? @map("mating_date")
+  /// A4: the day the animal was seen in heat, and what was actually seen
+  /// (standing, mucus, bellowing). Structured, not free text, because the whole
+  /// value is arithmetic: 21 days later is the next expected heat.
+  heatObservedAt DateTime? @map("heat_observed_at") @db.Date
+  heatSigns      String?   @map("heat_signs")
+  /// A3: the day milking stopped ahead of the next calving. Days-in-milk and
+  /// the dry period are what a farmer actually manages by, and neither is
+  /// derivable from a calving date alone.
+  dryOffDate     DateTime? @map("dry_off_date") @db.Date
   expectedBirth  DateTime? @map("expected_birth")
   actualBirth    DateTime? @map("actual_birth")
   offspringCount Int?      @map("offspring_count")
   offspringAlive Int?      @map("offspring_alive")
   method         String? // natural, ai, ivf
-  status         String    @default("pending") // pending, confirmed, born, failed
+  status         String    @default("pending") // heat, pending, confirmed, born, failed, dried_off
   notes          String?
   createdAt      DateTime  @default(now()) @map("created_at")
 
@@ -296,6 +705,42 @@ model Breeding {
   farm  Farm  @relation(fields: [farmId], references: [id])
 
   @@map("breeding_records")
+}
+
+/// A distinct place on the farm that crops grow on (farmer-requested gap §2 B1/B2).
+///
+/// A crop farm is not one record with an acreage — it is several distinct plots
+/// with different soil, crops, inputs and pest pressure. Almost every agronomy
+/// gap follows from the missing plot: rotation history, per-plot yield,
+/// pest scouting, and — for coffee — the geolocation an EU buyer can trace a
+/// delivery back to. The plot is the "real place"; crops, harvests and
+/// applications hang off it.
+///
+/// The EUDR framing (never overstate): a Kenyan smallholder's practical deadline
+/// is the day their buyer asks, not a statutory date served on them. We COLLECT
+/// the geolocation and let the farmer hand their buyer a traceable chain — we
+/// never assert a legal obligation. Latitude/longitude follow the farm's same
+/// both-or-neither rule (one coordinate alone is a point in the Indian Ocean),
+/// so partial input is rejected, not silently half-saved.
+model Plot {
+  id         Int      @id @default(autoincrement())
+  farmId     Int      @map("farm_id")
+  name       String // e.g. "Coffee block C"
+  areaValue  Decimal? @map("area_value") @db.Decimal(10, 2)
+  areaUnit   String?  @map("area_unit") // "acre" | "hectare"
+  latitude   Decimal? @map("latitude") @db.Decimal(10, 7)
+  longitude  Decimal? @map("longitude") @db.Decimal(10, 7)
+  soilType   String?  @map("soil_type")
+  notes      String?
+  createdBy  Int?     @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  farm    Farm   @relation(fields: [farmId], references: [id])
+  creator User?  @relation(fields: [createdBy], references: [id])
+  crops   Crop[]
+
+  @@map("plots")
 }
 
 model Crop {
@@ -308,13 +753,20 @@ model Crop {
   plantingDate    DateTime? @map("planting_date")
   expectedHarvest DateTime? @map("expected_harvest")
   status          String    @default("active") // active, harvested, failed
-  location        String? // field/plot designation
+  location        String? // free-text field/plot designation (kept for backwards compat)
+  plotId          Int?      @map("plot_id") // the real place this crop stands on (B1)
   soilType        String?   @map("soil_type")
   irrigation      String? // rainfed, drip, sprinkler, flood
   isPerennial     Boolean   @default(false) @map("is_perennial") // true for orchard crops (avocado, macadamia, mango, coffee...)
   maturityYears   Int?      @map("maturity_years") // years from planting to first commercial harvest (macadamia 3-5, avocado 3-4)
   yearsInProduction Int?    @map("years_in_production") // completed production seasons (perennial crops only)
   harvestSeason   String?   @map("harvest_season") // e.g. "Apr-Sep" (avocado), "Mar-Jun" (mango main crop)
+  /// B6: what the farmer EXPECTS this crop to give, in kg. A number they state,
+  /// not one we infer from a variety table — because a "potential yield" from a
+  /// research station is guidance for a district and a promise to nobody. The
+  /// variance view compares their own figure with their own harvest, and says
+  /// "estimate" wherever it could be mistaken for a forecast.
+  expectedYieldKg Decimal?  @map("expected_yield_kg") @db.Decimal(10, 2)
   notes           String?
   createdBy       Int?      @map("created_by")
   createdAt       DateTime  @default(now()) @map("created_at")
@@ -322,11 +774,13 @@ model Crop {
 
   farm         Farm              @relation(fields: [farmId], references: [id])
   creator      User?             @relation(fields: [createdBy], references: [id])
+  plot         Plot?             @relation(fields: [plotId], references: [id])
   harvests     CropHarvest[]
   health       CropHealth[]
   applications CropApplication[]
   postHarvestBatches PostHarvestBatch[]
   soilTests    SoilTest[]
+  transactions Transaction[]
 
   @@map("crops")
 }
@@ -359,6 +813,18 @@ model CropHealth {
   severity    String    @default("low") // low, medium, high
   treatment   String?
   treatedDate DateTime? @map("treated_date")
+  /// B3: structured scouting. "High" is a feeling; "14 of 50 plants infested"
+  /// is a fact a farmer can act on and compare to last week. The two counts are
+  /// what make an incidence percentage computable without a second table.
+  sampleSize     Int?      @map("sample_size")
+  affectedCount  Int?      @map("affected_count")
+  /// e.g. larva | adult | egg | egg_mass — coffee berry borer and fall armyworm
+  /// are treated differently at different stages, so the stage is part of the
+  /// record rather than prose inside `description`.
+  pestStage   String?   @map("pest_stage")
+  /// When the farmer intends to look again. A scouting record with no follow-up
+  /// is a diary entry; this is what turns it into a loop.
+  followUpOn  DateTime? @map("follow_up_on") @db.Date
   outcome     String? // resolved, ongoing, failed
   notes       String?
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -425,6 +891,7 @@ model PostHarvestBatch {
 
   crop Crop @relation(fields: [cropId], references: [id])
   farm Farm @relation(fields: [farmId], references: [id])
+  coldChain ColdChainEvent[]
 
   @@map("post_harvest_batches")
 }
@@ -454,6 +921,7 @@ model SoilTest {
 model Vaccination {
   id            Int       @id @default(autoincrement())
   flockId       Int       @map("flock_id")
+  animalId      Int?      @map("animal_id") // optional: a specific tagged animal, not the whole flock
   vaccineName   String    @map("vaccine_name")
   scheduledDate DateTime  @map("scheduled_date")
   completedDate DateTime? @map("completed_date")
@@ -461,9 +929,96 @@ model Vaccination {
   notes         String?
   createdAt     DateTime  @default(now()) @map("created_at")
 
-  flock Flock @relation(fields: [flockId], references: [id])
+  flock  Flock   @relation(fields: [flockId], references: [id])
+  animal Animal? @relation(fields: [animalId], references: [id], onDelete: SetNull)
 
+  @@index([animalId])
   @@map("vaccinations")
+}
+
+/// Individual animal identity for ANITRAC traceability.
+///
+/// Kenya rolled out ANITRAC in July 2026: every cattle, sheep and goat carries
+/// a 15-digit number starting with the 141 country prefix (visual tag left ear,
+/// RFID chip right ear). This model stores the tag the farmer ALREADY has and
+/// ties it to the farm's day-to-day record.
+///
+/// Deliberate design: the farmer does NOT manage animals individually. The
+/// flock's `currentCount` stays the daily source of truth; an Animal row is
+/// set up once and thereafter only ever VIEWED. Nothing here is required to
+/// log production — the existing flock flow is untouched.
+/// ANITRAC §20 — where a tagged animal has been. Mostly off-farm or
+/// between-premises movements the farmer records when they happen (or the
+/// county asks later), plus the moves between the farm's OWN groups, which
+/// POST /api/flocks/transfer writes automatically rather than asking the farmer
+/// to describe the same event twice. The traceability chain is built from these
+/// rows on demand, never pre-computed.
+model AnimalMovement {
+  id          Int      @id @default(autoincrement())
+  farmId      Int      @map("farm_id")
+  animalId    Int      @map("animal_id")
+  // Where from / where to. Free text premises names — the county register's
+  // vocabulary, not ours. Both required: a movement with one end is a guess.
+  fromPremises String  @map("from_premises")
+  toPremises   String  @map("to_premises")
+  movedAt     DateTime @map("moved_at") @db.Date
+  // sale | transfer | grazing | vet | quarantine | other — the reasons the
+  // movement form offers — plus `group_move`, which the group-to-group transfer
+  // writes itself. Kept as a String rather than an enum so a reason can be
+  // added without a migration; the closed set lives in lib/animal-movement.ts.
+  reason      String   @default("transfer")
+  // Movement permit reference, when the county issued one. Optional —
+  // recording a movement must never be blocked on paperwork the farmer
+  // may not have been given.
+  permitRef   String?  @map("permit_ref")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  farm   Farm   @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  animal Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@index([farmId, movedAt])
+  @@index([animalId])
+  @@map("animal_movements")
+}
+
+model Animal {
+  id        Int       @id @default(autoincrement())
+  farmId    Int       @map("farm_id")
+  flockId   Int?      @map("flock_id")
+  // Optional sub-group within that flock. Always NULL for farmers who never
+  // use batches — this is strictly additive, nothing existing changes shape.
+  batchId   Int?      @map("batch_id")
+  tagNumber String    @map("tag_number") // ANITRAC: 15 digits, starts with 141
+  species   String?
+  breed     String?
+  sex       String? // female | male | unknown
+  birthDate DateTime? @map("birth_date") @db.Date
+  status    String    @default("active") // active | sold | moved | died | missing
+  notes     String?
+  photoUrl  String?   @map("photo_url")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  // The mother, when the calf is recorded as an animal. Turns a breeding
+  // record's offspringAlive number into actual, individually trackable calves
+  // — colostrum, rearing and calf mortality become per-animal records.
+  damId     Int?      @map("dam_id")
+  farm        Farm          @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  flock       Flock?        @relation(fields: [flockId], references: [id], onDelete: SetNull)
+  batch       FlockBatch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  dam         Animal?       @relation("Calf", fields: [damId], references: [id], onDelete: SetNull)
+  calves      Animal[]      @relation("Calf")
+  vaccinations Vaccination[]
+  healthRecords HealthRecord[]
+  movements   AnimalMovement[]
+  productionRecords AnimalProduction[]
+
+  @@unique([farmId, tagNumber])
+  @@index([farmId, status])
+  @@index([flockId])
+  @@index([batchId])
+  @@map("animals")
 }
 
 model Transaction {
@@ -471,17 +1026,47 @@ model Transaction {
   farmId        Int      @map("farm_id")
   type          String
   category      String?
+  docCode       String?  @map("doc_code")
   amount        Decimal  @db.Decimal(12, 2)
   description   String?
   date          DateTime @db.Date
   paymentMethod String?  @map("payment_method")
   reference     String?
+  // M1: canonical classification of the free-text `category`, derived by
+  // lib/ledger-taxonomy.ts. Nullable — back-filled for existing rows, and
+  // classified on read while still null.
+  costBucket     String? @map("cost_bucket")
+  enterpriseKind String? @map("enterprise_kind")
+  // M1: explicit enterprise attribution, replacing substring-matching on the
+  // flock's name in profitability.ts. Optional; ON DELETE SET NULL.
+  flockId       Int?     @map("flock_id")
+  cropId        Int?     @map("crop_id")
+  /// C3: the delivery this income finally settled, once the farmer (or we, on
+  /// their behalf) matched the M-Pesa receipt to the milk they delivered. Null =
+  /// unmatched, which is the honest default: an unmatched receipt is why a
+  /// farmer believes they were not paid.
+  deliveryId    Int?     @map("delivery_id")
+  matchedAt     DateTime? @map("matched_at")
+  /// How the match was made: "manual" (the farmer confirmed it), "reference"
+  /// (receipt numbers agreed) or "proposed" (we suggested, nobody confirmed yet).
+  /// A confirmed match is never silently overwritten by a later proposal.
+  matchedBy     String?  @map("matched_by")
+  /// Landed unit-cost economics: quantity bought/sold (e.g. 50kg, 2 bags) and unit cost (KES/unit)
+  quantity      Decimal? @db.Decimal(12, 2)
+  unitCost      Decimal? @map("unit_cost") @db.Decimal(12, 2)
+  supplierName  String?  @map("supplier_name")
   createdBy     Int?     @map("created_by")
   createdAt     DateTime @default(now()) @map("created_at")
 
-  farm Farm  @relation(fields: [farmId], references: [id])
-  user User? @relation(fields: [createdBy], references: [id])
+  farm  Farm   @relation(fields: [farmId], references: [id])
+  user  User?  @relation(fields: [createdBy], references: [id])
+  flock Flock? @relation(fields: [flockId], references: [id])
+  crop  Crop?  @relation(fields: [cropId], references: [id])
 
+  @@index([farmId, costBucket])
+  @@index([farmId, enterpriseKind])
+  @@index([farmId, flockId])
+  @@index([farmId, cropId])
   @@map("transactions")
 }
 
@@ -529,10 +1114,12 @@ model Customer {
   totalCredit Decimal  @default(0) @map("total_credit") @db.Decimal(12, 2)
   createdAt   DateTime @default(now()) @map("created_at")
 
-  farm     Farm      @relation(fields: [farmId], references: [id])
+  farm     Farm       @relation(fields: [farmId], references: [id])
   sales    Sale[]
   credits  Credit[]
   invoices Invoice[]
+  quotes   Quote[]
+  deliveries Delivery[]
 
   @@map("customers")
 }
@@ -595,6 +1182,31 @@ model Invoice {
   customer Customer? @relation(fields: [customerId], references: [id])
 
   @@map("invoices")
+}
+
+model Quote {
+  id            Int       @id @default(autoincrement())
+  farmId        Int       @map("farm_id")
+  customerId    Int?      @map("customer_id")
+  quoteNumber   String    @map("quote_number")
+  items         Json
+  totalAmount   Decimal   @map("total_amount") @db.Decimal(12, 2)
+  status        String    @default("draft") // draft | sent | accepted | declined | expired | converted
+  validUntil    DateTime? @map("valid_until")
+  notes         String?
+  sentAt        DateTime? @map("sent_at")
+  respondedAt   DateTime? @map("responded_at")
+  convertedInvoiceId Int? @map("converted_invoice_id")
+  // Public, unguessable token for customer-facing accept/decline links (/q/<token>)
+  responseToken String?   @unique @map("response_token")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  farm      Farm      @relation(fields: [farmId], references: [id])
+  customer  Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([farmId, status])
+  @@map("quotes")
 }
 
 model Worker {
@@ -755,6 +1367,54 @@ model ZKTecoLog {
   @@map("zkteco_logs")
 }
 
+/// What a farmer told us, in his own taps.
+///
+/// This is the first mechanism Wangari has ever had for asking a user a
+/// question. Before it, every roadmap decision came from usage counts, and a
+/// count cannot say *why*.
+///
+/// `farmId` and `userId` are nullable on purpose: the public, no-login link is
+/// filled in mostly by people who are not users yet, and at a booth that is
+/// almost everyone. A required `farmId` would mean we could only ever hear
+/// from the handful of people already using the app.
+///
+/// `best`, `improve` and `species` are Json arrays of keys from
+/// lib/feedback.ts. Keys, not labels — the label is presentation and the label
+/// will change; the key is the data. Arbitrary strings are rejected before
+/// they reach here, or `"everything"` would top the chart and the report would
+/// become worse than no report, because it would look like evidence.
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  farmId    Int?     @map("farm_id")
+  userId    Int?     @map("user_id")
+  source    String // in_app | public_link | booth
+  rating    Int?
+  best      Json     @default("[]")
+  improve   Json     @default("[]")
+  species   Json     @default("[]")
+  comment   String?
+  phone     String?
+  // Which audience answered: farmer | adviser | other. Nullable because
+  // in_app submissions are signed-in farmers and booth rows are entered by
+  // our own staff, so neither is asked; pre-gate rows have no value at all.
+  audience  String?
+  // Which campaign link brought the response: "source|medium|campaign",
+  // or null when the link was opened directly. Makes GAP 1 (reach)
+  // measurable instead of guessed at.
+  utm       String?
+  // A hash, never the address itself. Enough to throttle one responder on a
+  // public form; not enough to become a record of who said what.
+  ipHash    String?  @map("ip_hash")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  farm Farm? @relation(fields: [farmId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([source, createdAt])
+  @@map("feedback")
+}
+
 model Ticket {
   id         Int      @id @default(autoincrement())
   subject    String
@@ -790,18 +1450,22 @@ model TicketMessage {
 model PromoCode {
   id             String    @id @default(cuid())
   code           String    @unique
-  type           String    @default("discount") // discount | partnership | credit
+  type           String    @default("discount") // discount | partnership | credit | sponsorship
   discountType   String?   @map("discount_type") // percent | fixed
   value          Int? // percent (1-100) or fixed KES
+  freeMonths     Int?      @map("free_months") // sponsorship: months of free subscription granted on redemption
   maxRedemptions Int?      @map("max_redemptions")
   timesRedeemed  Int       @default(0) @map("times_redeemed")
   partnerName    String?   @map("partner_name")
+  // Null = usable on any plan. Set = restricted to exactly this plan
+  // (sponsored time is granted on that plan; checkout rejects other plans).
   planId         String?   @map("plan_id")
   expiresAt      DateTime? @map("expires_at")
   active         Boolean   @default(true)
   createdBy      Int?      @map("created_by")
   createdAt      DateTime  @default(now()) @map("created_at")
 
+  plan        Plan? @relation(fields: [planId], references: [id])
   redemptions PromoRedemption[]
 
   @@map("promo_codes")
@@ -826,8 +1490,14 @@ model Announcement {
   message   String
   link      String?
   active    Boolean  @default(true)
+  // Null = global (waadmin broadcasts). Set = notification for one farm only
+  // (e.g. "customer accepted your quote QTE-…").
+  farmId    Int?     @map("farm_id")
   createdAt DateTime @default(now()) @map("created_at")
 
+  farm Farm? @relation(fields: [farmId], references: [id])
+
+  @@index([farmId, active])
   @@map("announcements")
 }
 
@@ -879,6 +1549,52 @@ model EmailLog {
   @@map("email_logs")
 }
 
+model NewsArticle {
+  id         Int      @id @default(autoincrement())
+  linkHash   String   @unique @map("link_hash") // sha1 of the canonical article URL — the dedupe key
+  source     String // "Kilimo News" | "FarmBiz Africa" | "allAfrica Agriculture" | "Google News — World Farming"
+  title      String
+  link       String
+  region     String   @default("kenya") // kenya | world
+  risk       String? // ALERT label when the headline matches a farmer-risk keyword
+  publishedAt DateTime? @map("published_at")
+  firstSentAt DateTime? @map("first_sent_at") // set once the article has appeared in any advisory email
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  sends      NewsArticleSend[]
+
+  @@index([region, firstSentAt])
+  @@map("news_articles")
+}
+
+// Per-farm record that a farmer has already received this story. Advisory
+// emails only include rows where no send exists for that farm — a farmer who
+// has been told a story never gets it again, even months later.
+model NewsArticleSend {
+  id           Int      @id @default(autoincrement())
+  articleId    Int      @map("article_id")
+  farmId       Int      @map("farm_id")
+  sentAt       DateTime @default(now()) @map("sent_at")
+
+  article NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  farm    Farm        @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, farmId])
+  @@index([farmId, sentAt])
+  @@map("news_article_sends")
+}
+
+model SyncedWrite {
+  id           Int       @id @default(autoincrement())
+  clientId     String    @unique @map("client_id") // idempotency key from the offline queue
+  responseBody String    @map("response_body") // stored JSON response, replayed on duplicate
+  statusCode   Int       @default(500) @map("status_code") // 500 = in-flight marker
+  userId       Int?      @map("user_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@map("synced_writes")
+}
+
 model AuditLog {
   id         Int      @id @default(autoincrement())
   userId     Int?     @map("user_id")
@@ -893,4 +1609,506 @@ model AuditLog {
   farm Farm? @relation(fields: [farmId], references: [id])
 
   @@map("audit_log")
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Gap closures, October 2026. One block per row in docs/gap-analysis.md.
+/// ─────────────────────────────────────────────────────────────────────────────
+
+/// PER-ANIMAL HEALTH AND DISEASE LOG (gap-analysis row 5).
+///
+/// Until now a `Vaccination` could point at an Animal but nothing else could,
+/// so a keeper with tagged cattle could record that an animal was vaccinated and
+/// then had nowhere to write "she limped on Tuesday". Health was effectively
+/// flock-level with one exception bolted on.
+///
+/// This model makes the animal the record: a row is one thing that HAPPENED to
+/// one animal (or, when animalId is null, to a whole flock). Flock-level entries
+/// stay supported because that is how most Kenyan keepers actually work — the
+/// point is that the animal-level option exists, not that we force it.
+model HealthRecord {
+  id       Int     @id @default(autoincrement())
+  farmId   Int     @map("farm_id")
+  flockId  Int?    @map("flock_id")
+  /// The tagged animal this concerns. Null = flock-level entry.
+  animalId Int?    @map("animal_id")
+
+  /// observation | treatment | diagnosis | death | check
+  type      String   @default("observation")
+  /// What the keeper calls it, in their words. We never normalise a farmer's
+  /// vocabulary into a controlled list — "foot rot", "footrot" and "foot-rot"
+  /// are one disease to them and a search must find all three.
+  condition String
+  /// What was done: drug, dose, advice, quarantine.
+  action    String?
+  /// Vet who attended, if any. Free text: many rural keepers have no vet on call.
+  vetName   String?  @map("vet_name")
+
+  observedAt DateTime  @default(now()) @map("observed_at") @db.Date
+  resolvedAt DateTime? @map("resolved_at") @db.Date
+  cost       Decimal?  @db.Decimal(12, 2)
+  /// A6: the last day this animal's milk or eggs may not be sold. A treated cow
+  /// sold into the co-op inside the withdrawal window is a food-safety problem
+  /// AND a payment problem (the milk is rejected, or worse, it is not). Stored
+  /// as the date the farmer was given, never computed from a guessed drug
+  /// half-life — the vet's or the label's number is the authority, not ours.
+  withdrawalUntil DateTime? @map("withdrawal_until") @db.Date
+  /// What the withdrawal applies to — "milk 3 days", "eggs 7 days". Free text
+  /// because that is how a drug label and a rural vet both state it.
+  withdrawalNote String? @map("withdrawal_note")
+  notes      String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  farm   Farm    @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  flock  Flock?  @relation(fields: [flockId], references: [id], onDelete: SetNull)
+  animal Animal? @relation(fields: [animalId], references: [id], onDelete: SetNull)
+
+  @@index([farmId, observedAt])
+  @@index([animalId])
+  @@index([flockId])
+  @@index([farmId, condition])
+  @@map("health_records")
+}
+
+/// INDEX-INSURANCE POLICY REGISTER (gap-analysis row 13).
+///
+/// Wangari records the EVIDENCE a farmer needs to claim; it never prices risk,
+/// never underwrites and never estimates a payout. That boundary is the design:
+/// a regulator would read a payout calculator as insurance business, and a
+/// farmer whose claim was recorded wrongly here would have no recourse against
+/// us. So this is a register, not a product.
+///
+/// The ANITRAC link is what makes it worth anything: a policy naming a flock
+/// is verifiable only if that flock's animals carry tags. A policy over zero
+/// tagged animals is a piece of paper, and the UI says so out loud.
+model InsurancePolicy {
+  id      Int    @id @default(autoincrement())
+  farmId  Int    @map("farm_id")
+  flockId Int?   @map("flock_id")
+
+  insurer      String
+  policyNumber String  @map("policy_number")
+  /// index | livestock | crop | comprehensive
+  productType  String  @default("index") @map("product_type")
+  /// Unit count the policy is written against (head, trees, kg, trays).
+  unitsCovered Int?    @map("units_covered")
+  sumInsured   Decimal? @map("sum_insured") @db.Decimal(14, 2)
+  premiumPaid  Decimal? @map("premium_paid") @db.Decimal(12, 2)
+
+  startDate DateTime @map("start_date") @db.Date
+  endDate   DateTime @map("end_date") @db.Date
+  /// active | expired | claimed | lapsed
+  status    String   @default("active")
+
+  /// For index cover: the rainfall/price trigger the contract pays on. Stored
+  /// so the farmer can see WHAT would have to happen. We do not evaluate it.
+  triggerMetric String?  @map("trigger_metric")
+  triggerValue  Decimal? @map("trigger_value") @db.Decimal(12, 2)
+
+  notes    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  farm  Farm   @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  flock Flock? @relation(fields: [flockId], references: [id], onDelete: SetNull)
+  claims InsuranceClaim[]
+
+  @@index([farmId, status])
+  @@index([endDate])
+  @@map("insurance_policies")
+}
+
+/// C5: what the insurer actually paid — which is NOT the farmer's loss.
+///
+/// Index insurance pays on a TRIGGER (rainfall, an area yield), not on what
+/// happened on this farm. Those two numbers are routinely different in both
+/// directions and the gap is where trust dies: a farmer told "you are covered"
+/// who receives a third of the loss they measured stops believing any of it.
+/// So this model keeps `measuredLossUnits` (their own count) and
+/// `expectedAmount`/`receivedAmount` (what was promised and what arrived)
+/// side by side and never computes one from the other.
+model InsuranceClaim {
+  id                Int       @id @default(autoincrement())
+  farmId            Int       @map("farm_id")
+  policyId          Int?      @map("policy_id")
+  claimRef          String?   @map("claim_ref")
+  incidentOn        DateTime  @map("incident_on") @db.Date
+  /// drought | flood | pest | disease | fire | price | other
+  eventType         String    @map("event_type")
+  /// The farmer's own count of what they lost (head, kg, trees). Units are
+  /// whatever the policy is written in — we do not normalise them.
+  measuredLossUnits Int?      @map("measured_loss_units")
+  expectedAmount    Decimal?  @map("expected_amount") @db.Decimal(12, 2)
+  receivedAmount    Decimal?  @map("received_amount") @db.Decimal(12, 2)
+  receivedOn        DateTime? @map("received_on") @db.Date
+  status            String    @default("submitted") // submitted | approved | paid | rejected
+  notes             String?
+  createdBy         Int?      @map("created_by")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  farm   Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  policy InsurancePolicy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
+
+  @@index([farmId, incidentOn])
+  @@map("insurance_claims")
+}
+
+/// B5: the fertiliser e-voucher, RECORDED rather than integrated.
+///
+/// The KIAMIS export already proves eligibility; this records what happened
+/// after it. The value is not the voucher — it is that a subsidy must never be
+/// counted as cash income. The farmer pays `farmerContribution` and the voucher
+/// covers the rest, so keeping both means the real input cost stays visible
+/// instead of a government transfer quietly understating what a crop cost.
+///
+/// `cropId` and `plotId` are plain integers with NO relation on purpose: a
+/// voucher is redeemed at a dealer against an entitlement derived from declared
+/// acreage, and the record has to survive the crop being deleted or the plot
+/// renamed. A lookup at read time is cheap; a ledger row removed by a cascade is
+/// data loss.
+model InputVoucher {
+  id                 Int      @id @default(autoincrement())
+  farmId             Int      @map("farm_id")
+  /// nfsp | kcep_cral | county | other — free text, because programmes change
+  /// name between seasons and a hard-coded list would block next season.
+  program            String   @default("nfsp")
+  dealer             String?
+  /// The face value the programme covered. NOT income.
+  voucherValue       Decimal  @map("voucher_value") @db.Decimal(12, 2)
+  /// What the farmer actually paid in cash. THIS is the input cost.
+  farmerContribution Decimal  @default(0) @map("farmer_contribution") @db.Decimal(12, 2)
+  quantityKg         Decimal? @map("quantity_kg") @db.Decimal(10, 2)
+  inputName          String?  @map("input_name")
+  redeemedOn         DateTime @map("redeemed_on") @db.Date
+  cropId             Int?     @map("crop_id")
+  plotId             Int?     @map("plot_id")
+  notes              String?
+  createdBy          Int?     @map("created_by")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId, redeemedOn])
+  @@index([farmId, cropId])
+  @@map("input_vouchers")
+}
+
+/// C7: the chama / table-banking ledger.
+///
+/// `CoopGroup` covers membership, join codes and expiry — not money. A chama is
+/// a different thing from a co-operative: members contribute on a fixed day,
+/// borrow from the pot, and repay with interest, and the statement a member
+/// wants is "what have I put in and what do I still owe".
+///
+/// One flat table of SIGNED-BY-TYPE movements rather than three tables, because
+/// a chama book records every one of them on the same page in date order and a
+/// member's balance is one running sum. A row here is never a loan product and
+/// never accrues interest on its own — `lib/savings-ledger.ts` derives the
+/// member position from the entries exactly as written.
+model SavingsEntry {
+  id          Int      @id @default(autoincrement())
+  farmId      Int      @map("farm_id")
+  /// Ties to CoopGroup when the group is one in the app; plain int and optional,
+  /// because most chamas are not and must still be recordable.
+  coopGroupId Int?     @map("coop_group_id")
+  groupName   String   @map("group_name")
+  memberName  String   @map("member_name")
+  /// contribution | withdrawal | loan_out | repayment
+  entryType   String   @map("entry_type")
+  amount      Decimal  @db.Decimal(12, 2)
+  occurredOn  DateTime @map("occurred_on") @db.Date
+  counterparty String?
+  notes       String?
+  createdBy   Int?     @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId, occurredOn])
+  @@index([farmId, groupName])
+  @@map("savings_entries")
+}
+
+/// C4: the farmer's own plan, which is what turns the ledger into a forecast.
+///
+/// A budget is not a ledger and this is not a second place money is recorded —
+/// no row here is ever counted as spent or received. It exists so the forward
+/// view has something to look forward TO: school fees in December, a bag of
+/// fertiliser in March. `lib/cash-flow.ts` combines these with the money the
+/// farmer is already owed, their loan instalments, and their own trailing costs,
+/// and labels every projected figure as a projection.
+model BudgetItem {
+  id        Int      @id @default(autoincrement())
+  farmId    Int      @map("farm_id")
+  label     String
+  /// inflow | outflow — one field rather than a signed amount, because a farmer
+  /// entering "-4000" for a cost is a support call waiting to happen.
+  direction String   @default("outflow")
+  amount    Decimal  @db.Decimal(12, 2)
+  dueOn     DateTime @map("due_on") @db.Date
+  category  String?
+  /// once | weekly | monthly | seasonal — how a repeated plan item recurs.
+  recurring String?
+  notes     String?
+  createdBy Int?     @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId, dueOn])
+  @@map("budget_items")
+}
+
+/// MARKET PRICE BENCHMARK (gap-analysis row 14).
+///
+/// Farmers routinely sell below the going rate because nobody told them the
+/// going rate. This is a reference table, NOT a price feed and NOT an exchange:
+/// entries are seeded by us or entered by the farmer from the offer they were
+/// given, and every price states its region and date so it can be judged.
+///
+/// Deliberately region-scoped. A national average would tell a farmer in Nakuru
+/// that a "good" price is one they can never actually get, which is worse than
+/// no benchmark — it teaches them to ignore the number.
+model MarketPrice {
+  id        Int      @id @default(autoincrement())
+  /// Normalised against one vocabulary so milk, eggs and beef each compare.
+  /// See lib/market-price.ts for the unit contract.
+  commodity String
+  unit      String // litre | tray | kg | head | bag
+  /// Null = national default, seeded by us.
+  region       String?
+  priceKes     Decimal  @map("price_kes") @db.Decimal(10, 2)
+  /// e.g. "Nakuru dairy cooperative", "Kisumu market", "Ministry indicative"
+  source       String?
+  effectiveDate DateTime @map("effective_date") @db.Date
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([commodity, region, effectiveDate])
+  @@map("market_prices")
+}
+
+/// COLD CHAIN READING (gap-analysis row 15).
+///
+/// PostHarvestBatch stored `storageTempC` — one number, set once, never checked
+/// again. An avocado export fails on an excursion nobody measured, so a single
+/// "final" temperature is not evidence of anything: the export buyer wants the
+/// CURVE.
+///
+/// Append-only log of readings. Derived at read time: hours above threshold,
+/// time-to-cool from harvest, and whether the chain actually broke.
+model ColdChainEvent {
+  id         Int      @id @default(autoincrement())
+  farmId     Int      @map("farm_id")
+  batchId    Int      @map("batch_id")
+  recordedAt DateTime @default(now()) @map("recorded_at")
+  tempC      Decimal  @map("temp_c") @db.Decimal(5, 2)
+  /// Where in the chain the reading was taken: field | truck | coldroom | store
+  stage      String   @default("coldroom")
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  farm  Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  batch PostHarvestBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId, recordedAt])
+  @@map("cold_chain_events")
+}
+
+/// A COOPERATIVE, SACCO OR GROUP OF FARMERS (gap-analysis rows 11 + 17).
+///
+/// One user = one farm is the model that worked; this is the wrapper that lets a
+/// chairperson see a group WITHOUT any member's private finances leaving their
+/// farm. That constraint is enforced in the data shape, not the UI:
+/// `CoopMembership` points at a Farm, and no member-scoped table is reachable
+/// from a Group at all. There is no code path by which a chair reads a member's
+/// deliveries, sales or credit, because the aggregate reads counts and sums
+/// only, never rows. See lib/coop-aggregate.ts.
+model CoopGroup {
+  id          Int      @id @default(autoincrement())
+  name        String
+  /// The chair is a User, not a Farm: a chair who owns no animals still runs
+  /// the group, which is the normal shape of a Kenyan SACCO secretary.
+  chairUserId Int      @map("chair_user_id")
+  county      String?
+  /// Human-readable join code, e.g. "KIUMBO-4821". See lib/coop-code.ts.
+  joinCode    String   @unique @map("join_code")
+  /// When the join code stops working, set by the chair. NULL means the code
+  /// stays open — which is why this is nullable rather than defaulted: a
+  /// permanent code is a legitimate choice, and a default would silently
+  /// expire every existing group's code the day this shipped.
+  joinCodeExpiresAt DateTime? @map("join_code_expires_at")
+  /// active | dissolved
+  status      String   @default("active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  chair       User             @relation("CoopChair", fields: [chairUserId], references: [id], onDelete: Cascade)
+  memberships CoopMembership[]
+  invites     CoopInvite[]
+
+  @@index([chairUserId])
+  @@map("coop_groups")
+}
+
+/// A farm inside a co-op. Deliberately a membership row, NOT a foreign key that
+/// grants visibility: holding one says "this farm belongs to this group" and
+/// grants access to the group's aggregate numbers. Nothing else.
+model CoopMembership {
+  id       Int      @id @default(autoincrement())
+  groupId  Int      @map("group_id")
+  farmId   Int      @map("farm_id")
+  /// chair | secretary | member
+  role     String   @default("member")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  group CoopGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  farm  Farm      @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, farmId])
+  @@index([groupId])
+  @@map("coop_memberships")
+}
+
+/// A pending invitation to join a co-op, issued against a phone number.
+///
+/// Bulk onboarding (row 17) must work without the chair knowing anyone's email,
+/// and must reach farmers who are not in the app yet. So the invite targets a
+/// PHONE and a code: the farmer enters it at signup. This is what makes co-op
+/// onboarding a solved problem rather than a dashboard over zeros.
+model CoopInvite {
+  id          Int      @id @default(autoincrement())
+  groupId     Int      @map("group_id")
+  /// The farmer being invited. Normalised (see lib/coop-code.ts).
+  phone       String
+  /// 6-character human-readable code, unique per invite.
+  code        String   @unique
+  invitedById Int      @map("invited_by_id")
+  /// pending | accepted | revoked | expired
+  status      String   @default("pending")
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  acceptedAt  DateTime? @map("accepted_at")
+
+  group     CoopGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  invitedBy User      @relation("CoopInviter", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([groupId, status])
+  @@index([phone])
+  @@map("coop_invites")
+}
+
+/// A model the super-admin has registered for Wangari's assistant.
+///
+/// Exactly one row may hold role "primary" and one "fallback" at a time; that
+/// invariant is enforced by partial unique indexes in the migration rather than
+/// by application code, because two live primaries is the failure mode that
+/// silently halves throughput and is invisible until a farmer waits twice as
+/// long as everyone else.
+///
+/// `probeState` is why a model cannot simply be typed in and switched on: a
+/// model that cannot chain two tool calls looks fine until it leaves the screen
+/// quiet halfway through recording a sale. The super-admin UI refuses to
+/// activate anything that has not passed, and `probeState` records what the
+/// probe actually said so a bad activation is traceable afterwards.
+model AiModel {
+  id        Int      @id @default(autoincrement())
+  provider  String
+  model     String
+  label     String?
+  role      String   @default("candidate") // "primary" | "fallback" | "candidate"
+
+  /// Encrypted at rest with AES-256-GCM; the plaintext never touches the DB.
+  /// Nullable because a provider already configured in .env needs no row key,
+  /// and forcing one would put a secret in the database for no gain.
+  apiKeyEnc String?  @map("api_key_enc")
+  baseUrl   String?  @map("base_url")
+
+  /// USD per 1M tokens, as published by the provider. Null on providers that
+  /// publish no per-model pricing (UnoRouter), which is why the roster filter
+  /// reads the ":free" id suffix instead — see lib/free-model-roster.ts.
+  costInPerM  Float? @map("cost_in_per_m")
+  costOutPerM Float? @map("cost_out_per_m")
+  isFree      Boolean @default(true) @map("is_free")
+
+  contextLength Int? @map("context_length")
+
+  probeState String   @default("untested") @map("probe_state") // "untested" | "passing" | "failing" | "error"
+  probeReason String? @map("probe_reason")
+  probedAt    DateTime? @map("probed_at")
+  probeMs     Int?     @map("probe_ms")
+
+  /// Rolling health from real farmer traffic, so the UI can show a model that
+  /// passes its probe but is slow or flapping in production.
+  lastLatencyMs Int?      @map("last_latency_ms")
+  successCount  Int       @default(0) @map("success_count")
+  failureCount  Int       @default(0) @map("failure_count")
+  lastUsedAt    DateTime? @map("last_used_at")
+
+  enabled   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([provider, model])
+  @@index([role])
+  @@map("ai_models")
+}
+
+/// Operator-set AI knobs that are not per-model: search cap, rate-limit
+/// window, step ceiling. One row; anything NULL means "use the code default",
+/// which is what keeps a partially-filled table from changing behaviour.
+model AiSettings {
+  id                Int      @id @default(1)
+  searchesPerTurn   Int?     @map("searches_per_turn")
+  rateLimitWindowMs Int?     @map("rate_limit_window_ms")
+  maxSteps          Int?     @map("max_steps")
+  /// When true, a paid model may be activated. The default of FALSE is the
+  /// whole point: this is a farm SaaS with a $0 balance, and the cheapest
+  /// accident here is a real invoice.
+  allowPaidModels   Boolean  @default(false) @map("allow_paid_models")
+  updatedBy         Int?     @map("updated_by")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("ai_settings")
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// IP access control (System Health).
+///
+/// The server is on the internet and nothing could see what was knocking.
+/// A range, not just a single address, because a scan comes from a /24 and
+/// rotates inside it — storing only the exact address an attacker happened to
+/// use would be security theatre.
+///
+/// `allow` beats `block` when both match. See lib/ip-rules.ts for why that
+/// direction was chosen: the failure mode of getting it wrong is a farmer
+/// locked out of the app they pay for.
+///
+/// The hit counter is on the row rather than in a log table because the only
+/// question asked of it is "is this rule earning its keep", which one counter
+/// answers without a query per request.
+model IpRule {
+  id        Int    @id @default(autoincrement())
+
+  /// Exact address ("203.0.113.7"), CIDR ("203.0.113.0/24") or wildcard
+  /// ("203.0.113.*", "203.0.*.*"). Validated in lib/ip-rules.ts, which is the
+  /// only place that decides what a pattern means.
+  pattern   String
+  action    String @default("block") // "block" | "allow"
+
+  /// Why this rule exists, in the operator's words. The note is what makes the
+  /// list reviewable six months later, when nobody remembers adding it.
+  note      String?
+
+  /// Which super-admin added it, so the audit trail names a person and not an
+  /// anonymous action.
+  addedBy   String? @map("added_by")
+
+  hitCount    Int       @default(0) @map("hit_count")
+  lastHitAt   DateTime? @map("last_hit_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([action])
+  @@map("ip_rules")
 }

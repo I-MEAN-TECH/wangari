@@ -39,6 +39,37 @@ interface Suggestion {
 // Egg tray conversion (Kenya standard: 30 eggs per tray)
 const EGGS_PER_TRAY = 30;
 
+// Standard estimated cost per production unit in Kenya for break-even feedback (C6)
+const DEFAULT_BREAK_EVEN: Record<string, number> = {
+  milk: 40,        // KES 40 / litre
+  eggs: 320,       // KES 320 / tray (~KES 10.7 / egg)
+  maize: 35,       // KES 35 / kg
+  beef: 380,       // KES 380 / kg
+  goat_meat: 450,  // KES 450 / kg
+  pork: 320,       // KES 320 / kg
+  fish: 350,       // KES 350 / kg
+  honey: 600,      // KES 600 / kg
+  beans: 80,       // KES 80 / kg
+  tomatoes: 50,    // KES 50 / kg
+  kale: 25,        // KES 25 / kg
+  onions: 60,      // KES 60 / kg
+  potatoes: 40,    // KES 40 / kg
+};
+
+function computeExpectedPayDate(terms: string, baseDateStr: string): string {
+  const base = new Date(baseDateStr || Date.now());
+  if (isNaN(base.getTime())) return "";
+  if (terms === "immediate") return base.toISOString().slice(0, 10);
+  if (terms === "net_7") return new Date(base.getTime() + 7 * 86400000).toISOString().slice(0, 10);
+  if (terms === "net_15") return new Date(base.getTime() + 15 * 86400000).toISOString().slice(0, 10);
+  if (terms === "net_30") return new Date(base.getTime() + 30 * 86400000).toISOString().slice(0, 10);
+  if (terms === "monthly") {
+    const endOfMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    return endOfMonth.toISOString().slice(0, 10);
+  }
+  return "";
+}
+
 const statusBadge: Record<string, { label: string; cls: string }> = {
   pending: { label: "Awaiting payment", cls: "bg-tone-warn-bg text-tone-warn-text border-tone-warn-border" },
   paid: { label: "Paid", cls: "bg-tone-good-bg text-tone-good-text border-tone-good-border" },
@@ -79,6 +110,13 @@ const isOverdue = (payBy: string | Date) => new Date(payBy).getTime() < Date.now
 
 /** One-line summary of what the slip said, or null when nothing was tested. */
 function qualitySummary(d: any): string | null {
+  if (d.commodity === "eggs") {
+    const parts: string[] = [];
+    if (d.gradedCount != null) parts.push(`Grade A: ${d.gradedCount}`);
+    if (d.crackedCount != null) parts.push(`Cracked: ${d.crackedCount}`);
+    if (d.dirtyCount != null) parts.push(`Dirty: ${d.dirtyCount}`);
+    return parts.length ? parts.join(" · ") : null;
+  }
   const bits: string[] = [];
   if (d.fatPct != null) bits.push(`Fat ${Number(d.fatPct)}%`);
   if (d.snfPct != null) bits.push(`SNF ${Number(d.snfPct)}%`);
@@ -94,6 +132,7 @@ export default function DeliveriesPage() {
   const [loading, setLoading] = React.useState(true);
   const [showForm, setShowForm] = React.useState(false);
   const [suggestions, setSuggestions] = React.useState<Suggestion[]>([]);
+  const [customers, setCustomers] = React.useState<any[]>([]);
   const { showToast, ToastComponent } = useToast();
 
   const [form, setForm] = React.useState({
@@ -101,22 +140,23 @@ export default function DeliveriesPage() {
     commodity: "milk",
     quantity: "",
     buyer: "",
+    customerId: "",
     receiptRef: "",
     unitPrice: "",
-    payBy: "",
+    paymentTerms: "monthly",
+    payBy: computeExpectedPayDate("monthly", new Date().toISOString().slice(0, 10)),
     fatPct: "",
     snfPct: "",
     density: "",
     addedWaterPct: "",
     tpc: "",
     gradedBy: "",
+    crackedCount: "",
+    dirtyCount: "",
+    gradedCount: "",
     deductionLabel: "",
     deductionAmount: "",
     deductionCreditor: "",
-    // C1/C2: which of the farmer's OWN loans this deduction pays down. The
-    // route has accepted `farmLoanId` since farm loans shipped and no form ever
-    // sent it, so "the co-op collected my SACCO loan at source" could not be
-    // linked to the loan it repaid.
     deductionFarmLoanId: "",
   });
 
@@ -131,17 +171,15 @@ export default function DeliveriesPage() {
       api.get(`/api/deliveries/statement?month=${month}`),
       api.get("/api/deliveries/suggestions").catch(() => ({ suggestions: [] })),
       api.get("/api/farm-loans").catch(() => []),
+      api.get("/api/customers").catch(() => []),
     ])
-      .then(([d, s, sug, ln]: any) => {
+      .then(([d, s, sug, ln, cust]: any) => {
         const list = Array.isArray(d) ? d : [];
         setDeliveries(list);
         setStatement(s);
         setSuggestions(sug?.suggestions ?? []);
         setLoans(Array.isArray(ln) ? ln.filter((l: any) => l.status !== "repaid") : []);
-        // A farmer arriving from the first-run card has come here to log
-        // something, not to browse a history they don't have yet. So open the
-        // form ready for them — one tap instead of two, and no hunting for a
-        // button on a page with nothing else on it.
+        setCustomers(Array.isArray(cust) ? cust : []);
         if (openDeliveryFormByDefault(list.length)) setShowForm(true);
         setLoading(false);
       })
@@ -192,20 +230,34 @@ export default function DeliveriesPage() {
           gradedBy: form.gradedBy || undefined,
         }
       : {};
+    const eggQuality = form.commodity === "eggs"
+      ? {
+          crackedCount: num(form.crackedCount),
+          dirtyCount: num(form.dirtyCount),
+          gradedCount: num(form.gradedCount),
+        }
+      : {};
     try {
       await api.post("/api/deliveries", {
         date: form.date, commodity: form.commodity, quantity: Number(form.quantity),
-        buyer: form.buyer, receiptRef: form.receiptRef || undefined,
+        buyer: form.buyer,
+        customerId: form.customerId ? Number(form.customerId) : undefined,
+        receiptRef: form.receiptRef || undefined,
         unitPrice: form.unitPrice ? Number(form.unitPrice) : undefined,
+        paymentTerms: form.paymentTerms,
+        expectedPaymentDate: form.payBy || undefined,
         payBy: form.payBy || undefined,
         ...quality,
+        ...eggQuality,
         deductions,
       });
       showToast("Delivery recorded — your money trail is building", "success");
       setShowForm(false);
       setForm({
-        ...form, quantity: "", buyer: "", receiptRef: "", unitPrice: "", payBy: "",
+        ...form, quantity: "", buyer: "", customerId: "", receiptRef: "", unitPrice: "",
+        paymentTerms: "monthly", payBy: computeExpectedPayDate("monthly", new Date().toISOString().slice(0, 10)),
         fatPct: "", snfPct: "", density: "", addedWaterPct: "", tpc: "", gradedBy: "",
+        crackedCount: "", dirtyCount: "", gradedCount: "",
         deductionLabel: "", deductionAmount: "", deductionCreditor: "", deductionFarmLoanId: "",
       });
       load();
@@ -218,8 +270,9 @@ export default function DeliveriesPage() {
     const ded = (d?.deductions ?? []).reduce((s: number, x: any) => s + Number(x.amount), 0);
     try {
       await api.patch(`/api/deliveries/${id}`, { status: "paid", paidAmount: gross - ded });
-      showToast("Marked as paid", "success"); load();
-    } catch { showToast("Failed", "error"); }
+      showToast("Marked as paid — added to income ledger", "success");
+      load();
+    } catch { showToast("Failed to update delivery", "error"); }
   };
 
   const remove = async (id: number) => {
@@ -313,15 +366,79 @@ export default function DeliveriesPage() {
                     <p className="mt-1 text-[11px] text-tone-good-text">≈ {eggTrayHint} tray{Number(eggTrayHint) === 1 ? "" : "s"} ({EGGS_PER_TRAY} eggs per tray)</p>
                   )}
                 </div>
-                <div><Label>Delivered to (buyer)</Label><Input placeholder="e.g. Brookside, factory name, broker" value={form.buyer} onChange={(e) => setForm({ ...form, buyer: e.target.value })} /></div>
-                <div><Label>Receipt / slip no. (optional)</Label><Input placeholder="from the delivery book" value={form.receiptRef} onChange={(e) => setForm({ ...form, receiptRef: e.target.value })} /></div>
-                <div><Label>Price per {current.unit} (optional)</Label><Input type="number" step="0.5" placeholder="KES" value={form.unitPrice} onChange={(e) => setForm({ ...form, unitPrice: e.target.value })} /></div>
                 <div>
-                  <Label>Payment expected by (optional)</Label>
-                  <Input type="date" value={form.payBy} onChange={(e) => setForm({ ...form, payBy: e.target.value })} />
-                  {/* The date starts the arrears clock. Blank means no promise
-                      was made, so nothing is ever painted "late". */}
-                  <p className="mt-1 text-[11px] text-muted-foreground">When the buyer said they would pay — measured against this, "unpaid for three months" becomes a fact rather than a feeling</p>
+                  <Label>Delivered to (buyer)</Label>
+                  {customers.length > 0 ? (
+                    <div className="space-y-1.5">
+                      <select
+                        className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm"
+                        value={form.customerId}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const found = customers.find((c) => String(c.id) === val);
+                          setForm({ ...form, customerId: val, buyer: found ? found.name : "" });
+                        }}
+                      >
+                        <option value="">-- Select registered buyer or type name --</option>
+                        {customers.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ""}</option>
+                        ))}
+                      </select>
+                      {!form.customerId && (
+                        <Input placeholder="Or type new buyer name (e.g. Brookside)" value={form.buyer} onChange={(e) => setForm({ ...form, buyer: e.target.value })} />
+                      )}
+                    </div>
+                  ) : (
+                    <Input placeholder="e.g. Brookside, factory name, broker" value={form.buyer} onChange={(e) => setForm({ ...form, buyer: e.target.value })} />
+                  )}
+                </div>
+                <div><Label>Receipt / slip no. (optional)</Label><Input placeholder="from the delivery book" value={form.receiptRef} onChange={(e) => setForm({ ...form, receiptRef: e.target.value })} /></div>
+                <div>
+                  <Label>Price per {current.unit} (optional)</Label>
+                  <Input type="number" step="0.5" placeholder="KES" value={form.unitPrice} onChange={(e) => setForm({ ...form, unitPrice: e.target.value })} />
+                  {/* C6 break-even feedback badge */}
+                  {form.unitPrice && Number(form.unitPrice) > 0 && DEFAULT_BREAK_EVEN[form.commodity] != null && (() => {
+                    const price = Number(form.unitPrice);
+                    const cost = DEFAULT_BREAK_EVEN[form.commodity];
+                    const diff = price - cost;
+                    const isProfitable = diff >= 0;
+                    return (
+                      <div className="mt-1.5 flex items-center gap-1.5 text-xs">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${isProfitable ? "bg-tone-good-bg text-tone-good-text border border-tone-good-border" : "bg-tone-warn-bg text-tone-warn-text border border-tone-warn-border"}`}>
+                          {isProfitable ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                          {isProfitable ? `Profitable (+KES ${diff.toFixed(1)}/${current.unit})` : `Below estimated cost (~KES ${cost}/${current.unit})`}
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div>
+                  <Label>Payment terms</Label>
+                  <select
+                    className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                    value={form.paymentTerms}
+                    onChange={(e) => {
+                      const terms = e.target.value;
+                      const nextPayBy = terms === "custom" ? form.payBy : computeExpectedPayDate(terms, form.date);
+                      setForm({ ...form, paymentTerms: terms, payBy: nextPayBy });
+                    }}
+                  >
+                    <option value="immediate">Immediate / Spot cash (today)</option>
+                    <option value="net_7">Net 7 (in 7 days)</option>
+                    <option value="net_15">Net 15 (in 15 days)</option>
+                    <option value="net_30">Net 30 (in 30 days)</option>
+                    <option value="monthly">Monthly payout (end of month)</option>
+                    <option value="custom">Custom date</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Payment expected by</Label>
+                  <Input
+                    type="date"
+                    value={form.payBy}
+                    onChange={(e) => setForm({ ...form, payBy: e.target.value, paymentTerms: "custom" })}
+                  />
+                  <p className="mt-1 text-[11px] text-muted-foreground">Starts the arrears clock when payout date passes</p>
                 </div>
               </div>
 
@@ -344,6 +461,23 @@ export default function DeliveriesPage() {
                     <div><Label>Added water %</Label><Input type="number" step="0.01" placeholder="e.g. 0" value={form.addedWaterPct} onChange={(e) => setForm({ ...form, addedWaterPct: e.target.value })} /></div>
                     <div><Label>TPC (cfu/ml)</Label><Input type="number" placeholder="e.g. 200000" value={form.tpc} onChange={(e) => setForm({ ...form, tpc: e.target.value })} /></div>
                     <div><Label>Tested by (optional)</Label><Input placeholder="e.g. co-op lab" value={form.gradedBy} onChange={(e) => setForm({ ...form, gradedBy: e.target.value })} /></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Egg quality & grading (ERPNext quality inspection pattern) */}
+              {form.commodity === "eggs" && (
+                <div className="rounded-xl border border-dashed p-3 space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">Egg quality & grading (optional)</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Record Grade A, cracked and dirty eggs to maintain quality grading records.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div><Label>Grade A (Good eggs)</Label><Input type="number" placeholder="e.g. 58" value={form.gradedCount} onChange={(e) => setForm({ ...form, gradedCount: e.target.value })} /></div>
+                    <div><Label>Cracked / Broken</Label><Input type="number" placeholder="e.g. 2" value={form.crackedCount} onChange={(e) => setForm({ ...form, crackedCount: e.target.value })} /></div>
+                    <div><Label>Dirty / Stained</Label><Input type="number" placeholder="e.g. 0" value={form.dirtyCount} onChange={(e) => setForm({ ...form, dirtyCount: e.target.value })} /></div>
                   </div>
                 </div>
               )}
