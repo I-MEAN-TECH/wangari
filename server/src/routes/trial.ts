@@ -125,11 +125,6 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
 
     const moduleAccess: Record<string, boolean> = {};
     for (const [module, hub] of Object.entries(MODULE_HUB_MAP)) {
-      if (tier === "none") {
-        // Fully locked — should not happen in practice (we always set free_core)
-        moduleAccess[module] = false;
-        continue;
-      }
       if (tier === "trial") {
         // Trial: everything open, including workers.
         moduleAccess[module] = true;
@@ -179,7 +174,7 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
       subscription,
       hasAccess,
       tier,
-      locked: tier === "none",
+      locked: false,
       accessReason,
       selectedHubs,
       modules: moduleAccess,
