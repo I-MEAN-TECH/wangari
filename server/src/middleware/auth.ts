@@ -1,4 +1,4 @@
-import { trialEndDate } from "../lib/config.js";
+
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../db.js";
@@ -59,30 +59,17 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
           select: { ownerId: true },
         });
         if (farm) {
-          const owner = await prisma.user.findUnique({
-            where: { id: farm.ownerId },
-            select: { trialEndsAt: true, createdAt: true },
+          const now = new Date();
+          const ownerSub = await prisma.subscription.findFirst({
+            where: { userId: farm.ownerId, status: "active", expiresAt: { gt: now } },
           });
-          if (owner) {
-            const now = new Date();
-            let trialActive = false;
-            if (owner.trialEndsAt) {
-              trialActive = now < owner.trialEndsAt;
-            } else if (owner.createdAt) {
-              const fourteenDays = trialEndDate(owner.createdAt);
-              trialActive = now < fourteenDays;
-            }
-            if (!trialActive) {
-              const ownerSub = await prisma.subscription.findFirst({
-                where: { userId: farm.ownerId, status: "active", expiresAt: { gt: now } },
-              });
-              if (!ownerSub) {
-                return res.status(403).json({
-                  error: "Your farm's free trial has expired. Ask the farm owner to subscribe to continue.",
-                  trialExpired: true,
-                });
-              }
-            }
+          const isGrowth = ownerSub && /growth|enterprise/.test((ownerSub.plan || "").toLowerCase());
+          if (!isGrowth) {
+            return res.status(403).json({
+              error: "Worker logins and multi-worker access are a Growth plan feature. Ask the farm owner to upgrade.",
+              moduleLocked: true,
+              upgradeRequired: true,
+            });
           }
         }
       }
@@ -103,7 +90,6 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
       return next();
     }
 
-    const now = new Date();
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId! },
       select: { trialEndsAt: true, createdAt: true, tokenVersion: true },
@@ -119,34 +105,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
       return res.status(401).json({ error: "Session expired. Please log in again." });
     }
 
-    let trialActive = false;
-    if (user.trialEndsAt) {
-      trialActive = now < user.trialEndsAt;
-    } else if (user.createdAt) {
-      const fourteenDays = trialEndDate(user.createdAt);
-      trialActive = now < fourteenDays;
-    }
-
-    if (trialActive) {
-      return next();
-    }
-
-    const activeSub = await prisma.subscription.findFirst({
-      where: {
-        userId: decoded.userId!,
-        status: "active",
-        expiresAt: { gt: now },
-      },
-    });
-
-    if (activeSub) {
-      return next();
-    }
-
-    return res.status(403).json({
-      error: "Your subscription has expired. Please subscribe or upgrade to continue using Wangari.",
-      trialExpired: true,
-    });
+    return next();
   } catch (error: any) {
     if (error?.name === "JsonWebTokenError" || error?.name === "TokenExpiredError") {
       return res.status(401).json({ error: "Invalid or expired token" });

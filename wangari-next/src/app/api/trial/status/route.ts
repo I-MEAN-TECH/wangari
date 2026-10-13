@@ -8,19 +8,34 @@ const MODULE_HUB_MAP: Record<string, string> = {
   production: "livestock",
   vaccinations: "livestock",
   flocks: "livestock",
+  animals: "livestock",
+  breeding: "livestock",
+  "health-records": "livestock",
+  "cold-chain": "livestock",
   crops: "crops",
-  finances: "_always", // money tracking is included in every plan
+  plots: "crops",
+  profitability: "crops",
+  finances: "_always",
+  transactions: "_always",
+  deliveries: "_always",
+  inventory: "_always",
+  dashboard: "_always",
+  weather: "_always",
+  settings: "_always",
+  learn: "_always",
+  insurance: "finances",
   sales: "sales",
   customers: "sales",
   invoices: "sales",
-  workers: "team", // gated to Growth/Enterprise plans (see below)
+  documents: "sales",
+  "market-prices": "sales",
+  "farm-record": "sales",
+  workers: "team",
   attendance: "team",
-  inventory: "_always", // always included
-  dashboard: "_always",
+  coop: "team",
+  loans: "team",
+  reports: "team",
   "feed-calculator": "_always",
-  weather: "_always",
-  reports: "_always",
-  settings: "_always",
 };
 
 /**
@@ -87,18 +102,19 @@ export async function GET(req: Request) {
     }
 
     // Determine access level
-    let hasAccess = false;
-    let accessReason: string = "none";
+    let hasAccess = true;
+    let tier: "subscription" | "free_core" = "free_core";
+    let accessReason = "free_core";
 
     if (activeSub) {
       hasAccess = true;
+      tier = "subscription";
       accessReason = "subscription";
-    } else if (trialStatus === "active") {
+    } else {
+      tier = "free_core";
       hasAccess = true;
-      accessReason = "trial";
+      accessReason = "free_core";
     }
-    // NOTE: a "pending" subscription means payment is not confirmed yet —
-    // it must not grant access by itself (matches the hardened Express route).
 
     // Parse selected hubs (corrupted value must not 500 every request)
     let selectedHubs: string[] = [];
@@ -110,34 +126,24 @@ export async function GET(req: Request) {
     }
 
     // Build module access map
-    // Plan-tier gating:
-    //  - Workers management is a Growth/Enterprise feature.
-    //  - Starter = 1 hub of choice (its modules + always-included ones).
-    //  - Growth/Enterprise = all hubs.
-    // Trial users keep full access so they can evaluate everything.
     const planId = (activeSub?.plan || "").toLowerCase();
     const isGrowthOrEnterprise = /growth|enterprise/.test(planId);
     const isStarter = /starter/.test(planId) && hasAccess;
 
     const moduleAccess: Record<string, boolean> = {};
     for (const [module, hub] of Object.entries(MODULE_HUB_MAP)) {
-      // Hard lock: no active subscription AND no trial time left = EVERY module
-      // is locked (padlock in the sidebar). Mirrors the Express route.
-      if (!hasAccess) {
-        moduleAccess[module] = false;
+      if (tier === "free_core") {
+        // Free Core: _always modules open, all other modules locked
+        moduleAccess[module] = hub === "_always";
         continue;
       }
-      if (module === "workers") {
-        moduleAccess[module] = trialStatus === "active" || (activeSub != null && isGrowthOrEnterprise);
-      } else if (hub === "_always" || (activeSub != null && isGrowthOrEnterprise)) {
+      // Paid subscription path:
+      if (module === "workers" || module === "attendance" || module === "coop" || module === "loans" || module === "reports") {
+        moduleAccess[module] = isGrowthOrEnterprise;
+      } else if (hub === "_always" || isGrowthOrEnterprise) {
         moduleAccess[module] = true;
       } else if (isStarter) {
-        moduleAccess[module] = selectedHubs.includes(hub);
-      } else if (hasAccess && selectedHubs.includes(hub)) {
-        moduleAccess[module] = true;
-      } else if (hasAccess && accessReason === "subscription") {
-        // Subscription gives access to all modules based on plan
-        moduleAccess[module] = true;
+        moduleAccess[module] = true; // Starter gets all mixed farming hubs
       } else {
         moduleAccess[module] = false;
       }
@@ -162,6 +168,8 @@ export async function GET(req: Request) {
         : null;
 
     return NextResponse.json({
+      tier,
+      status: activeSub ? "active" : "free_core",
       trial: {
         status: trialStatus,
         daysLeft: trialDaysLeft,
@@ -169,7 +177,7 @@ export async function GET(req: Request) {
       },
       subscription,
       hasAccess,
-      locked: !hasAccess,
+      locked: false,
       accessReason,
       selectedHubs,
       modules: moduleAccess,

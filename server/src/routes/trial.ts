@@ -1,4 +1,3 @@
-import { TRIAL_DAYS, trialEndDate } from "../lib/config.js";
 import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -63,21 +62,7 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
     let trialDaysLeft = 0;
     let trialEndsAt: string | null = null;
 
-    // Resolve the canonical trial end date
-    let resolvedTrialEndsAt: Date | null = user.trialEndsAt;
-
-    // If trialEndsAt was never persisted, calculate from createdAt and LOCK it in the DB
-    if (!resolvedTrialEndsAt && user.createdAt) {
-      resolvedTrialEndsAt = trialEndDate(user.createdAt);
-      // Persist so subsequent calls return a stable, unchanging end date
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          trialStartsAt: user.createdAt,
-          trialEndsAt: resolvedTrialEndsAt,
-        },
-      });
-    }
+    let resolvedTrialEndsAt: Date | null = user.trialEndsAt ?? null;
 
     if (resolvedTrialEndsAt) {
       if (now < resolvedTrialEndsAt) {
@@ -90,23 +75,16 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
     }
 
     let hasAccess = false;
-    let tier: "trial" | "subscription" | "free_core" | "none" = "none";
-    let accessReason: string = "none";
+    let tier: "subscription" | "free_core" = "free_core";
+    let accessReason: string = "free_core";
 
     if (activeSub) {
       hasAccess = true;
       tier = "subscription";
       accessReason = "subscription";
-    } else if (trialStatus === "active") {
-      hasAccess = true;
-      tier = "trial";
-      accessReason = "trial";
     } else {
-      // Soft downgrade: trial expired, no sub — free_core grants access to
-      // _always modules (finances, inventory, dashboard). The UI must NOT
-      // redirect away from those pages; only gated module routes get 403.
       tier = "free_core";
-      hasAccess = true; // soft access
+      hasAccess = true;
       accessReason = "free_core";
     }
 
@@ -114,35 +92,24 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
       ? JSON.parse(user.selectedHubs)
       : [];
 
-    // Plan-tier gating:
-    //  - Workers management is a Growth/Enterprise feature.
-    //  - Starter = 1 hub of choice (its modules + the always-included ones).
-    //  - Growth/Enterprise = all hubs.
-    // Trial users keep full access so they can evaluate everything.
     const planId = (activeSub?.plan || "").toLowerCase();
     const isGrowthOrEnterprise = /growth|enterprise/.test(planId);
     const isStarter = /starter/.test(planId) && hasAccess;
 
     const moduleAccess: Record<string, boolean> = {};
     for (const [module, hub] of Object.entries(MODULE_HUB_MAP)) {
-      if (tier === "trial") {
-        // Trial: everything open, including workers.
-        moduleAccess[module] = true;
-        continue;
-      }
       if (tier === "free_core") {
-        // Soft downgrade: _always modules open, gated modules locked.
+        // Free Core: _always modules open, all other modules locked
         moduleAccess[module] = hub === "_always";
         continue;
       }
       // Paid subscription path:
-      if (module === "workers") {
+      if (module === "workers" || module === "attendance" || module === "coop" || module === "loans" || module === "reports") {
         moduleAccess[module] = isGrowthOrEnterprise;
       } else if (hub === "_always" || isGrowthOrEnterprise) {
         moduleAccess[module] = true;
       } else if (isStarter) {
-        moduleAccess[module] =
-          selectedHubs.length === 0 ? hub !== "team" : selectedHubs.includes(hub);
+        moduleAccess[module] = true; // Starter gets all mixed farming hubs
       } else {
         moduleAccess[module] = false;
       }

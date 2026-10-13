@@ -145,8 +145,17 @@ export async function createFlockForFarm(
       where: { userId, status: "active", expiresAt: { gt: now } },
     });
 
-    if (!trialActive && !activeSub) {
-      return { ok: false, error: "Your free trial has ended. Please subscribe to Starter or Growth to register new flocks." };
+    if (!activeSub) {
+      // Core plan: 1 flock allowed. Beyond 1 requires Starter or Growth.
+      const existingFlocksCount = await prisma.flock.count({
+        where: { farmId, status: "active" },
+      });
+      if (existingFlocksCount >= 1) {
+        return {
+          ok: false,
+          error: "Core plan limit reached: up to 1 flock allowed. Upgrade to Starter for mixed farming up to 500 birds or 5 cattle.",
+        };
+      }
     }
 
     const isStarter = activeSub && /starter/.test((activeSub.plan || "").toLowerCase());

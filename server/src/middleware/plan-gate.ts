@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../db.js";
 import { JWT_SECRET } from "./auth.js";
-import { trialEndDate } from "../lib/config.js";
 
 /**
  * Plan-tier gate for farm modules.
@@ -11,10 +10,9 @@ import { trialEndDate } from "../lib/config.js";
  * that's only cosmetic — a Starter user could call Growth APIs directly. This
  * middleware enforces the same rules on the server, per request:
  *
- *   - Trial (active)          → everything unlocked (evaluation)
  *   - Growth / Enterprise     → everything unlocked
- *   - Starter                 → chosen hubs' modules + always-included ones
- *   - No sub + trial expired  → 403
+ *   - Starter                 → livestock, crops, sales, finances + always-included
+ *   - Free Core (no sub)      → _always modules only (dashboard, finances, inventory, deliveries)
  *
  * It decodes the JWT itself (routers apply authMiddleware internally, so
  * req.user isn't populated yet when a global gate would run). Results are
@@ -38,14 +36,20 @@ export const MODULE_HUB_MAP: Record<string, string> = {
   "health-records": "livestock",
   "cold-chain": "livestock",
   crops: "crops",
+  plots: "crops",
   profitability: "crops",
   finances: "_always",
-  transactions: "finances",
+  transactions: "_always",
+  deliveries: "_always",
+  inventory: "_always",
+  dashboard: "_always",
+  weather: "_always",
+  settings: "_always",
+  learn: "_always",
   insurance: "finances",
   sales: "sales",
   customers: "sales",
   invoices: "sales",
-  deliveries: "sales",
   documents: "sales",
   "market-prices": "sales",
   "farm-record": "sales",
@@ -53,8 +57,8 @@ export const MODULE_HUB_MAP: Record<string, string> = {
   workers: "team",
   attendance: "team",
   coop: "team",
-  inventory: "_always",
-  dashboard: "_always",
+  loans: "team",
+  reports: "team",
 };
 
 // URL prefix → module key. Longer prefixes first so overlaps resolve correctly.
@@ -100,7 +104,7 @@ const ROUTE_MODULE: [string, string][] = [
 interface PlanContext {
   ok: boolean;
   allowed: boolean;
-  reason: "trial" | "subscription" | "no-access" | "free_core" | "unauthorized";
+  reason: "subscription" | "free_core" | "unauthorized";
   planId?: string;
   module?: string;
 }
@@ -141,13 +145,11 @@ async function resolveContext(identity: Identity): Promise<{ ctx: PlanContext; h
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { trialEndsAt: true, createdAt: true, selectedHubs: true },
+    select: { selectedHubs: true },
   });
   if (!user) return { ctx: { ok: false, allowed: false, reason: "unauthorized" }, hubs: [] };
 
   const now = new Date();
-  const trialEndsAt = user.trialEndsAt || (user.createdAt ? trialEndDate(user.createdAt) : null);
-  const trialActive = trialEndsAt ? now < trialEndsAt : false;
 
   const activeSub = await prisma.subscription.findFirst({
     where: { userId, status: "active", expiresAt: { gt: now } },
@@ -163,12 +165,9 @@ async function resolveContext(identity: Identity): Promise<{ ctx: PlanContext; h
   }
 
   let ctx: PlanContext;
-  if (trialActive) {
-    ctx = { ok: true, allowed: true, reason: "trial" };
-  } else if (!activeSub) {
-    // Soft downgrade: no sub + trial expired = free_core (finances, inventory,
-    // dashboard stay open; all other modules are locked). This is the "reverse
-    // trial" promised in the pricing FAQ.
+  if (!activeSub) {
+    // Perpetual Free Core tier: No active subscription.
+    // Core features (_always) stay open; all other modules are locked.
     ctx = { ok: true, allowed: false, reason: "free_core" };
   } else {
     ctx = { ok: true, allowed: false, reason: "subscription", planId: (activeSub.plan || "").toLowerCase() };
@@ -185,10 +184,9 @@ async function resolveContext(identity: Identity): Promise<{ ctx: PlanContext; h
 // Exported for the plan-gate regression test: this pure function is the single
 // rule, and both the 403s and the AI's refusals are derived from it.
 export function moduleAllowed(ctx: PlanContext, hubs: string[], module: string): boolean {
-  if (ctx.reason === "trial") return true;
-  // Free-core: trial expired, no subscription. _always modules stay open (finances,
-  // inventory, dashboard). Everything else is locked — prompts upgrade.
-  if (ctx.reason === "free_core") {
+  // Free-core: no active subscription. _always modules stay open (finances,
+  // inventory, dashboard, deliveries, etc.). Everything else is locked — prompts upgrade.
+  if (ctx.reason === "free_core" || !ctx.planId) {
     const hub = MODULE_HUB_MAP[module] || "_always";
     return hub === "_always";
   }
@@ -198,15 +196,13 @@ export function moduleAllowed(ctx: PlanContext, hubs: string[], module: string):
   const isStarter = /starter/.test(ctx.planId);
   const hub = MODULE_HUB_MAP[module] || "_always";
   if (hub === "_always") return true;
-  // Starter: chosen hubs only. Workers/team is a Growth+ feature even if
-  // somehow selected as a hub.
-  //
-  // An EMPTY hub list means the farmer never finished choosing, not that they
-  // chose nothing. Locking every module in that state produced an app where a
-  // new Starter account could not open a single farm screen while the AI
-  // happily wrote records into them — work nobody could then see.
-  if (hubs.length === 0) return isStarter && hub !== "team";
-  return isStarter && hub !== "team" && hubs.includes(hub);
+
+  // Starter: mixed farming (all livestock, crops, sales, finances, inventory).
+  // Team / workers, attendance, coop, loans, reports are GROWTH ONLY.
+  if (hub === "team" || module === "workers" || module === "attendance" || module === "coop" || module === "loans" || module === "reports") {
+    return false;
+  }
+  return isStarter;
 }
 
 /**
@@ -254,11 +250,9 @@ export function planGate(req: Request, res: Response, next: NextFunction) {
       if (moduleAllowed(ctx, hubs, module)) return next();
       return res.status(403).json({
         error:
-          ctx.reason === "no-access"
-            ? "Your trial has expired. Please subscribe to continue using Wangari."
-            : ctx.reason === "free_core"
-              ? `The ${module} module requires a subscription. Your finances and inventory stay free — subscribe to unlock the rest.`
-              : `The ${module} module is not included in your current plan${ctx.planId ? ` (${ctx.planId.replace(/_/g, " ")})` : ""}. Upgrade to unlock it.`,
+          ctx.reason === "free_core"
+            ? `The ${module} module requires a subscription. Your finances and inventory stay free — subscribe to unlock the rest.`
+            : `The ${module} module is not included in your current plan${ctx.planId ? ` (${ctx.planId.replace(/_/g, " ")})` : ""}. Upgrade to unlock it.`,
         moduleLocked: true,
         module,
         upgradeRequired: true,
