@@ -18,7 +18,7 @@ const LINK_COLUMNS = [
     heading: "Your farm",
     links: [
       { label: "Pricing", href: "/pricing" },
-      { label: "The Journal", href: "/learn" },
+      { label: "Learn Center", href: "/learn" },
       { label: "Contact us", href: "/contact" },
     ],
   },

@@ -106,7 +106,7 @@ const FALLBACK: PricingContent = {
       icon: "sparkles",
       popular: false,
       features: [
-        "All 6 hubs unlocked",
+        "All farm hubs unlocked",
         "Inventory tracking (always included)",
         "Individual hosting & installation",
         "Full AI + priority support",
