@@ -356,7 +356,7 @@ export default function HeroScrub() {
             href="/register"
             className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-[15px] font-semibold text-[var(--ink)] transition hover:-translate-y-0.5 hover:bg-[var(--base)]"
           >
-            Start free — 14 days
+            Start free — no card
           </a>
           <a
             href="/login"

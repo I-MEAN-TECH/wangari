@@ -28,7 +28,7 @@ const STATS = [
   { value: "Free", label: "Core plan — always free, no card" },
   { value: "KES 950", label: "/ month — Starter plan" },
   { value: "KES 2,900", label: "/ month — Growth plan" },
-  { value: "14 days", label: "free trial on paid plans, no card" },
+  { value: "0", label: "bundles needed — works fully offline" },
 ];
 
 const MILESTONES = [
@@ -203,8 +203,8 @@ export default function AboutPage() {
             <span className="serif-word">See what it tells you.</span>
           </>
         }
-        copy="Fourteen days free, no card required — and you can ask us anything before you start."
-        ctaLabel="Start free — 14 days"
+        copy="Core plan is free forever, no card required — and you can ask us anything before you start."
+        ctaLabel="Start free — no card"
         ctaHref="/register"
         secondaryLabel="Talk to us"
         secondaryHref="/contact"

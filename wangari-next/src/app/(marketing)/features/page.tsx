@@ -121,11 +121,11 @@ export default function FeaturesPage() {
           <span className="serif-word">Add the rest later.</span>
         </h2>
         <p className="stories-intro">
-          Fourteen days free, no card, and no data bundles required.
+          Core plan is free forever, no card, and no data bundles required.
         </p>
         <div style={{ display: "flex", justifyContent: "center", marginTop: 28 }}>
           <ArrowFillButton href="/register" className="button primary">
-            Start free — 14 days
+            Start free — no card
           </ArrowFillButton>
         </div>
       </section>

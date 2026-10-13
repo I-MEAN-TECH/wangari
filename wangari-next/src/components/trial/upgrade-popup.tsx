@@ -65,7 +65,7 @@ export function UpgradePopup({ open, onClose, moduleName }: UpgradePopupProps) {
             <Lock className="h-7 w-7 text-white" />
           </div>
           <h2 className="text-xl font-extrabold text-white">
-            {isExpired ? "Your 14-Day Free Trial Has Expired" : moduleName ? `"${moduleName}" Requires a Plan` : "Upgrade Your Plan"}
+            {isExpired ? "Your Free Trial Has Expired" : moduleName ? `"${moduleName}" Requires a Plan` : "Upgrade Your Plan"}
           </h2>
           <p className="text-white/80 text-xs sm:text-sm mt-2 max-w-sm mx-auto">
             {isExpired

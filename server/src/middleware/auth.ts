@@ -144,7 +144,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     }
 
     return res.status(403).json({
-      error: "Your 14-day free trial has expired. Please subscribe to continue using Wangari.",
+      error: "Your subscription has expired. Please subscribe or upgrade to continue using Wangari.",
       trialExpired: true,
     });
   } catch (error: any) {

@@ -424,7 +424,7 @@ export function FeaturePage({
               viewport={{ once: true }}
               className="mt-4 text-sm sm:text-base text-wangari-muted max-w-xl mx-auto text-center"
             >
-              Start logging today with 14 days free. Zero card required.
+              Start logging today with the Core plan for free. Zero card required.
             </motion.p>
 
             <motion.div
@@ -434,7 +434,7 @@ export function FeaturePage({
               className="mt-8 flex justify-center"
             >
               <ArrowFillButton href="/register" className="button primary" circle={36}>
-                Start 14-day free trial
+                Start free — no card
               </ArrowFillButton>
             </motion.div>
           </div>

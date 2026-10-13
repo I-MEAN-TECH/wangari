@@ -25,7 +25,7 @@ function wrap(body: string): string {
 export async function sendWelcomeEmail(name: string, email: string) {
   const html = wrap(`
     <h2 style="margin:0 0 8px;font-size:20px;color:#0F172A;">Welcome to Wangari, ${name}! 🎉</h2>
-    <p style="margin:0 0 24px;font-size:15px;color:#64748b;">Your account is ready. You have a <strong>14-day free trial</strong> to explore all features.</p>
+    <p style="margin:0 0 24px;font-size:15px;color:#64748b;">Your account is ready. You are on the <strong>Core plan (free forever)</strong> to track your farm.</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr><td align="center"><a href="${FRONTEND}/dashboard" style="display:inline-block;background:#166534;color:#fff;font-size:15px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:8px;">Go to Dashboard</a></td></tr></table>
     <p style="margin:0;font-size:13px;color:#64748b;">Need help? Reply to this email and we'll guide you through.</p>
   `);

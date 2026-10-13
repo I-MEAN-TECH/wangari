@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Wangari — Smart Farm Management System",
     description:
-      "Wangari App: Know your real farm profit. Track cattle, poultry, goats, fish, crops, feed & sales offline. 14-day free trial available.",
+      "Wangari App: Know your real farm profit. Track cattle, poultry, goats, fish, crops, feed & sales offline. Start free with Core plan.",
   },
   icons: {
     icon: [
@@ -154,14 +154,14 @@ export default function RootLayout({
                   price: "950",
                   priceCurrency: "KES",
                   name: "Starter",
-                  description: "Mixed farming (all crops & livestock), up to 500 birds or 5 cattle, feed alerts, delivery payout clock, M-Pesa. 14-day free trial.",
+                  description: "Mixed farming (all crops & livestock), up to 500 birds or 5 cattle, feed alerts, delivery payout clock, M-Pesa.",
                 },
                 {
                   "@type": "Offer",
                   price: "2900",
                   priceCurrency: "KES",
                   name: "Growth",
-                  description: "Unlimited livestock & acreage, full Action Engine AI, co-op statement audits, multi-worker logins, loan deduction audits. 14-day free trial.",
+                  description: "Unlimited livestock & acreage, full Action Engine AI, co-op statement audits, multi-worker logins, loan deduction audits.",
                 },
               ],
               aggregateRating: {

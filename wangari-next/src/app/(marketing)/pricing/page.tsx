@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import { Leaf, Shield, Sparkles } from "lucide-react";
@@ -43,7 +43,7 @@ const FALLBACK: PricingContent = {
   heroKicker: "Fair, Transparent Pricing",
   heroTitle: "Stop losing money to feed waste and co-op errors.",
   heroSubtitle:
-    "Track every litre, egg, and bag on your phone. Wangari catches payment shortfalls and feed run-outs before they eat your profit. Start free for 14 days — no card required.",
+    "Track every litre, egg, and bag on your phone. Wangari catches payment shortfalls and feed run-outs before they eat your profit. Start with Core for free — no card required.",
   annualBadge: "Save 33% · 4 Months Free",
   plans: [
     {
@@ -86,7 +86,7 @@ const FALLBACK: PricingContent = {
         "WhatsApp bot for quick daily logs",
         "Daily profit summary & mobile access",
       ],
-      cta: "Start 14-day free trial",
+      cta: "Start — no card",
       ctaHref: "/register",
     },
     {
@@ -109,7 +109,7 @@ const FALLBACK: PricingContent = {
         "Vaccination & low-stock reminders",
         "WhatsApp bot for data entry",
       ],
-      cta: "Start 14-day free trial",
+      cta: "Start — no card",
       ctaHref: "/register",
     },
   ],
@@ -119,12 +119,12 @@ const FALLBACK: PricingContent = {
       a: "Yes — Wangari Core is free forever. You get 1 flock + 1 plot, a daily diary, delivery logging, and WhatsApp input. No card, no expiry.",
     },
     {
-      q: "Is there a free trial on paid plans?",
-      a: "Yes — every paid plan starts with a 14-day free trial with all features unlocked. No credit card required. Cancel anytime.",
+      q: "Is there a paid plan trial?",
+      a: "No trial period — Core is free forever. Start on Core, and upgrade to Starter or Growth when you need more animals or features.",
     },
     {
-      q: "What happens if I don't subscribe after 14 days?",
-      a: "Your account gracefully downgrades to Wangari Core (free). Your records, finances, and inventory remain open forever in read-only mode so you never lose your history.",
+      q: "What happens after I subscribe?",
+      a: "Your account upgrades immediately. If you cancel, your data stays in Core (free, read-only) forever — you never lose your history.",
     },
     {
       q: "What payment methods do you accept?",
@@ -144,9 +144,9 @@ const FALLBACK: PricingContent = {
 const PLAN_ICONS = { leaf: Leaf, shield: Shield, sparkles: Sparkles } as const;
 
 const INCLUDED = [
-  { value: "14 days", copy: "free trial on every paid plan, no card needed" },
+  { value: "Free", copy: "Core plan — forever, no card, no expiry" },
   { value: "0 bundles", copy: "records save on the phone and sync later" },
-  { value: "Free Core", copy: "your data is never locked, read-only forever" },
+  { value: "Your data", copy: "stays in Core read-only if you ever leave" },
 ];
 
 export default function PricingPage() {
@@ -269,7 +269,7 @@ export default function PricingPage() {
 
                 <div className="pricing-cta">
                   <ArrowFillButton href={href} className="button primary">
-                    {plan.price === 0 ? "Start free \u2014 no card" : "Start 14-day free trial"}
+                    {plan.price === 0 ? "Start free \u2014 no card" : "Subscribe now"}
                   </ArrowFillButton>
                 </div>
               </article>
@@ -310,8 +310,8 @@ export default function PricingPage() {
             <span className="serif-word">A clearer farm</span> by next month.
           </>
         }
-        copy="Fourteen days free, no card, and no data bundles required. If it doesn't earn its keep, walk away."
-        ctaLabel="Start free — 14 days"
+        copy="No card required. No data bundles needed. Start on Core for free — upgrade only if it earns its keep."
+        ctaLabel="Start free — no card"
         ctaHref="/register"
         secondaryLabel="Talk to us"
         secondaryHref="/contact"

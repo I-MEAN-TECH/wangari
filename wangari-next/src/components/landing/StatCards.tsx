@@ -53,15 +53,13 @@ const STATS: Stat[] = [
     text: "text-wangari-lime-600",
   },
   {
-    value: "14 Days",
-    label: "Free Trial",
-    description: "Every feature unlocked — no card required",
+    value: "Free",
+    label: "Core Plan",
+    description: "Start for free forever — no card, no expiry, no catch",
     icon: Shield,
     chip: "from-wangari-green-600 to-wangari-green-800",
     glow: "group-hover:shadow-[0_8px_40px_-8px_rgba(5,150,105,0.45)]",
     text: "text-wangari-green-700",
-    countTo: 14,
-    suffix: " Days",
   },
 ];
 

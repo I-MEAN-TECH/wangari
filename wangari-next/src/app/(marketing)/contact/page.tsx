@@ -214,8 +214,8 @@ export default function ContactPage() {
       <section className="section stack-section">
         <div className="grid-3">
           <div className="stat">
-            <strong>14 days</strong>
-            <span>free trial on every plan, no card needed</span>
+            <strong>Free Core</strong>
+            <span>free forever plan, no card needed</span>
           </div>
           <div className="stat">
             <strong>1 business day</strong>

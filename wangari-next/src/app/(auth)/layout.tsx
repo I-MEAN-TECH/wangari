@@ -54,7 +54,7 @@ export default function AuthLayout({
             {[
               { value: "100%", label: "Offline Sync" },
               { value: "< 3 Taps", label: "Daily Output Log" },
-              { value: "0 Fees", label: "Free 14-Day Trial" },
+              { value: "0 Fees", label: "Core Forever Free" },
             ].map((stat) => (
               <div key={stat.label}>
                 <p className="text-lg font-black text-wangari-green-400">{stat.value}</p>

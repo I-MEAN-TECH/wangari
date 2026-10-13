@@ -252,7 +252,7 @@ function DashboardContent() {
           </div>
           <h1 className="text-xl font-bold text-wangari-heading">Welcome to Wangari!</h1>
           <p className="mt-2 text-sm text-wangari-muted">
-            One last step — name your farm and your 14-day free trial starts immediately.
+            One last step — name your farm to get started on your free Core plan.
           </p>
           <form onSubmit={createFarm} className="mt-6 space-y-4 text-left">
             <div>

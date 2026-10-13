@@ -99,8 +99,8 @@ export default function PublicLearnPage() {
             <span className="serif-word">Add your farm</span> when you&apos;re ready.
           </>
         }
-        copy="Fourteen days free, no card, and nothing to install from a store."
-        ctaLabel="Start free — 14 days"
+        copy="Core plan is free forever, no card, and nothing to install from a store."
+        ctaLabel="Start free — no card"
         ctaHref="/register"
         secondaryLabel="See pricing"
         secondaryHref="/pricing"

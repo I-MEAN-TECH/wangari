@@ -37,7 +37,7 @@ const PROOF = { title: "Built with farmers.", count: "2,400+", copy: "farmers ke
 const ABOUT_STATS = [
   { label: "Offline", value: "0", copy: "bundles needed to log a day" },
   { label: "Daily logging", value: "3 taps", copy: "to record a day's output" },
-  { label: "Getting started", value: "14 days", copy: "free, no card required" },
+  { label: "Getting started", value: "Free", copy: "Core plan, no card, no expiry" },
 ];
 
 const RIBBON_WORDS = ["POULTRY", "DAIRY", "GOATS", "CROPS", "FEED", "SALES", "PROFIT", "TEAM"];
@@ -125,7 +125,7 @@ const FAQS = [
   },
   {
     q: "What does the paid plan cost?",
-    a: "Starter is KES 950 a month (or KES 2,400 for a 90-day season pass). Growth is KES 2,900 a month for unlimited animals and full AI. Every paid plan starts with 14 days free — no card required.",
+    a: "Starter is KES 950 a month (or KES 2,400 for a 90-day season pass). Growth is KES 2,900 a month for unlimited animals and full AI. No trial — Core plan is free forever, upgrade any time.",
   },
   {
     q: "Can I keep records for more than one flock?",
@@ -136,7 +136,7 @@ const FAQS = [
 const ORBIT_STATS = [
   { Icon: UsersRound, value: "2,400+", label: "farmers keeping records" },
   { Icon: HeartHandshake, value: "100%", label: "works with no bundles" },
-  { Icon: BookOpen, value: "14 days", label: "free trial, no card" },
+  { Icon: BookOpen, value: "Free", label: "Core plan, no card ever" },
 ];
 
 /**
@@ -376,7 +376,7 @@ function Community() {
             with real figures, not feelings.
           </p>
           <ArrowFillButton href="/register" className="button primary">
-            Start free — 14 days
+            Start free — no card
           </ArrowFillButton>
         </div>
       </div>
@@ -583,7 +583,7 @@ function FinalCta() {
             Start with one record, one flock, one honest number. See what you learn in a month.
           </p>
           <ArrowFillButton href="/register" className="button primary">
-            Start free — 14 days
+            Start free — no card
           </ArrowFillButton>
         </div>
       </div>
