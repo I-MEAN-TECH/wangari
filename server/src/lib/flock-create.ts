@@ -130,6 +130,47 @@ export async function createFlockForFarm(
     return { ok: false, error: "I need to know how many animals are in this flock." };
   }
 
+  // Plan limits: Starter plan caps poultry at 500 and livestock at 5 head.
+  // Expired trials with no active subscription cannot create new flocks.
+  if (userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { trialEndsAt: true, createdAt: true },
+    });
+    const now = new Date();
+    const trialEnds = user?.trialEndsAt || (user?.createdAt ? new Date(user.createdAt.getTime() + 14 * 86400000) : null);
+    const trialActive = trialEnds ? now < trialEnds : false;
+
+    const activeSub = await prisma.subscription.findFirst({
+      where: { userId, status: "active", expiresAt: { gt: now } },
+    });
+
+    if (!trialActive && !activeSub) {
+      return { ok: false, error: "Your free trial has ended. Please subscribe to Starter or Growth to register new flocks." };
+    }
+
+    const isStarter = activeSub && /starter/.test((activeSub.plan || "").toLowerCase());
+    if (isStarter) {
+      const category = input.category || (input.type ? SPECIES_CATEGORY[input.type] : undefined) || "livestock";
+      const isPoultry = category === "poultry";
+      const existingFlocks = await prisma.flock.findMany({
+        where: { farmId, status: "active" },
+        select: { currentCount: true, category: true },
+      });
+      const currentHead = existingFlocks
+        .filter((f) => (isPoultry ? f.category === "poultry" : f.category !== "poultry"))
+        .reduce((sum, f) => sum + (f.currentCount || 0), 0);
+
+      const maxLimit = isPoultry ? 500 : 5;
+      if (currentHead + count > maxLimit) {
+        return {
+          ok: false,
+          error: `Starter plan limit reached: up to ${maxLimit} ${isPoultry ? "poultry" : "livestock"} allowed (currently ${currentHead}). Upgrade to Growth for unlimited animals.`,
+        };
+      }
+    }
+  }
+
   const cost = input.costPerAnimal === null || input.costPerAnimal === undefined
     ? null
     : Number(input.costPerAnimal);

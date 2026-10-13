@@ -43,10 +43,14 @@ export async function findPlan(planId: string): Promise<PlanInfo | null> {
   }
   // Known legacy ids get sensible defaults so old data still resolves.
   const LEGACY: Record<string, { name: string; amount: number; days: number }> = {
-    starter_monthly: { name: "Starter Monthly", amount: 150000, days: 30 },
-    starter_annual: { name: "Starter Annual", amount: 1200000, days: 365 },
-    growth_monthly: { name: "Growth Monthly", amount: 450000, days: 30 },
-    growth_annual: { name: "Growth Annual", amount: 3600000, days: 365 },
+    starter_monthly: { name: "Starter Monthly", amount: 95000, days: 30 },
+    starter_annual: { name: "Starter Annual", amount: 760000, days: 365 },
+    starter_season: { name: "Starter Season Pass", amount: 240000, days: 90 },
+    growth_monthly: { name: "Growth Monthly", amount: 290000, days: 30 },
+    growth_annual: { name: "Growth Annual", amount: 2320000, days: 365 },
+    growth_season: { name: "Growth Season Pass", amount: 750000, days: 90 },
+    enterprise_monthly: { name: "Enterprise Monthly", amount: 1200000, days: 30 },
+    enterprise_annual: { name: "Enterprise Annual", amount: 9600000, days: 365 },
   };
   const f = LEGACY[id];
   if (f) return { id, ...f, active: true, tier: tierOf(id) };

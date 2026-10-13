@@ -50,6 +50,23 @@ router.get("/:id", async (req: Request, res: Response) => {
 router.post("/", async (req: Request, res: Response) => {
   try {
     const ownerId = req.user!.userId!;
+
+    // Enterprise tier restriction: 1 farm included in Starter/Growth/Core.
+    // Managing multiple farms requires the Enterprise plan.
+    const existingCount = await prisma.farm.count({ where: { ownerId } });
+    if (existingCount >= 1) {
+      const activeSub = await prisma.subscription.findFirst({
+        where: { userId: ownerId, status: "active", expiresAt: { gt: new Date() } },
+      });
+      const isEnterprise = activeSub && /enterprise/.test((activeSub.plan || "").toLowerCase());
+      if (!isEnterprise) {
+        return res.status(403).json({
+          error: "Multi-farm management is available on the Enterprise plan. Please upgrade to create additional farms.",
+          upgradeRequired: true,
+        });
+      }
+    }
+
     const farm = await prisma.farm.create({
       data: {
         name: req.body.name,

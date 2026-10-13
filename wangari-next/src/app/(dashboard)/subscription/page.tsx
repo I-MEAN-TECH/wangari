@@ -26,7 +26,11 @@ interface ApiPlan {
 
 function formatPrice(plan: ApiPlan): string {
   const kes = plan.amountKes.toLocaleString("en-KE");
-  return plan.days >= 365 ? `KES ${kes}/yr` : `KES ${kes}/mo`;
+  if (plan.days >= 365) return `KES ${kes}/yr`;
+  if (plan.days === 90) return `KES ${kes}/season (90 days)`;
+  if (plan.days === 60) return `KES ${kes}/season (60 days)`;
+  if (plan.days === 120) return `KES ${kes}/season (120 days)`;
+  return `KES ${kes}/mo`;
 }
 
 // ── Inner component — uses useSearchParams, must be inside <Suspense> ──────────
