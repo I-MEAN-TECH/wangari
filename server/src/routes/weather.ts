@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { interpretWeatherForFarm, type FarmSpecies } from "../lib/weather-advisory.js";
 
 const router = Router();
 router.use(authMiddleware, requireOwner);
@@ -201,7 +202,25 @@ router.get("/", async (req: Request, res: Response) => {
       forecast,
     };
 
-    return res.json(result);
+    // Load the farm's species so the advisories are about what is actually
+    // on the farm, not generic weather. Done after the forecast is built
+    // so a slow species query does not delay the temperature data.
+    const species: FarmSpecies[] = [];
+    try {
+      const [flocks, crops] = await Promise.all([
+        prisma.flock.findMany({ where: { farmId, status: "active" }, select: { type: true } }),
+        prisma.crop.findMany({ where: { farmId, status: { not: "harvested" } }, select: { cropType: true } }),
+      ]);
+      for (const f of flocks) if (f.type) species.push({ kind: "flock", type: f.type });
+      for (const c of crops) if (c.cropType) species.push({ kind: "crop", type: c.cropType });
+    } catch (e) {
+      console.error("Species load for advisories failed:", e);
+    }
+
+    return res.json({
+      ...result,
+      advisories: interpretWeatherForFarm(forecast, species),
+    });
   } catch (error) {
     console.error("Weather route error:", error);
     return res.status(500).json({ error: "Failed to fetch weather data" });
