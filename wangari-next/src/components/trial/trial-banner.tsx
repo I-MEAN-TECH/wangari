@@ -213,8 +213,46 @@ export function TrialBanner({ trialStatus, daysLeft, endsAt, subscription }: Tri
     );
   }
 
+  // ── Free Core — quiet, no paywall, no expiry ──────────────
+  // No active subscription and no trial window means the user is on the
+  // perpetual Free Core tier. The dashboard shows a calm pill so they
+  // always know what plan they're on, with an upgrade link for the
+  // modules that Core doesn't include. Not a countdown, not a paywall.
+  if (trialStatus === "no_trial" && !subIsActive) {
+    return (
+      <div className="rounded-2xl border border-wangari-border bg-wangari-green-50/60 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-white flex items-center justify-center shrink-0 border border-wangari-border">
+            <Sparkles className="h-5 w-5 text-wangari-green-700" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-wangari-green-700 text-white">
+                Free Core
+              </span>
+              <span className="text-xs text-wangari-muted">No card · No expiry · Always free</span>
+            </div>
+            <p className="text-sm text-wangari-heading mt-1">
+              Your finances, inventory, deliveries, dashboard and weather stay free forever. Upgrade to unlock flocks, crops, sales, and the team tools.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/subscription"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-wangari-green-700 text-white text-xs sm:text-sm font-semibold hover:bg-wangari-green-800 transition-colors shrink-0 cursor-pointer"
+        >
+          See plans
+        </Link>
+      </div>
+    );
+  }
+
   // ── Trial Expired — Paywall banner ───────────────────────
-  if (trialStatus === "expired" || timeLeft.isExpired) {
+  // Kept as a safety net: if a legacy user still has `trialEndsAt` in the
+  // past AND no subscription, this surfaces the upgrade CTA. After the
+  // boot migration this branch is only reachable for users who signed up
+  // in the last 14 days and never subscribed — a small and shrinking set.
+  if (trialStatus === "expired" || (timeLeft.isExpired && !subIsActive)) {
     return (
       <div className="rounded-2xl bg-gradient-to-r from-badge-red-text to-tone-bad-text text-white p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">

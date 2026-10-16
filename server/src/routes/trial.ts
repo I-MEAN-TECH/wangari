@@ -62,8 +62,12 @@ router.get("/status", authMiddleware, async (req: Request, res: Response) => {
     let trialDaysLeft = 0;
     let trialEndsAt: string | null = null;
 
-    let resolvedTrialEndsAt: Date | null = user.trialEndsAt ?? null;
-
+    // The legacy 14-day "trial" is no longer granted to new signups; a
+    // user who still has `trialEndsAt` set is someone who signed up before
+    // the Free Core cutover. We keep reading the field so the banner can
+    // show their remaining days (small, shrinking set), but plan-tier
+    // decisions (hasAccess, moduleAccess) only look at activeSub below.
+    const resolvedTrialEndsAt: Date | null = user.trialEndsAt ?? null;
     if (resolvedTrialEndsAt) {
       if (now < resolvedTrialEndsAt) {
         trialStatus = "active";

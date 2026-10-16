@@ -184,6 +184,10 @@ async function resolveContext(identity: Identity): Promise<{ ctx: PlanContext; h
 // Exported for the plan-gate regression test: this pure function is the single
 // rule, and both the 403s and the AI's refusals are derived from it.
 export function moduleAllowed(ctx: PlanContext, hubs: string[], module: string): boolean {
+  // Unauthorized identity: nothing is open, regardless of plan shape.
+  // An "ok: false" ctx means resolveContext couldn't load the user (deleted
+  // account, dormant worker) — the request must fail closed.
+  if (!ctx.ok) return false;
   // Free-core: no active subscription. _always modules stay open (finances,
   // inventory, dashboard, deliveries, etc.). Everything else is locked — prompts upgrade.
   if (ctx.reason === "free_core" || !ctx.planId) {

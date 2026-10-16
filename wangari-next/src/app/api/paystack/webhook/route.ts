@@ -1,139 +1,85 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { createHmac } from "crypto";
-import { sendEmail } from "@/lib/email";
-import { subscriptionConfirmedEmail } from "@/lib/email-templates";
-
-const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY || "";
-
-// Plan durations in days
-const PLAN_DURATIONS: Record<string, number> = {
-  starter_monthly: 30,
-  starter_annual: 365,
-  growth_monthly: 30,
-  growth_annual: 365,
-};
 
 /**
  * POST /api/paystack/webhook
  *
- * Paystack sends events here when payments succeed.
- * We verify the signature, save the subscription, and send confirmation email.
+ * Paystack sends payment events here. We forward the raw body and signature
+ * to the Express backend's /api/paystack/webhook, which:
+ *   - verifies the HMAC SHA512 signature against the live Paystack secret,
+ *   - activates the subscription on the Plan row's `days`,
+ *   - sends the receipt email,
+ *   - records the promo redemption.
  *
- * Set this URL in Paystack Dashboard → Settings → Webhook URL:
- * https://wangari.imeantech.com/api/paystack/webhook
+ * Why we don't do the work here: Vercel can't reach Postgres, and the
+ * canonical plan/promo/subscription logic is on the backend. Forwarding the
+ * raw body preserves the signature hash byte-for-byte — the backend
+ * recomputes HMAC over the same bytes and verifies.
+ *
+ * Set the URL in Paystack Dashboard → Settings → Webhook URL to:
+ *   https://wangari.imeantech.com/api/paystack/webhook
+ *
+ * The previously-hardcoded PLAN_DURATIONS map (4 plans, 30/365 days) is gone:
+ * every plan's `days` now comes from the plans table on the backend, so
+ * `growth_season`, `growth_60day`, `growth_120day`, and all `enterprise_*`
+ * variants get the duration they were sold with, not 30 days by default.
  */
+const BACKEND_URL = process.env.BACKEND_URL || "https://api.wangari.imeantech.com";
+
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text();
-    const signature = req.headers.get("x-paystack-signature");
+    const signature = req.headers.get("x-paystack-signature") || "";
 
-    // Verify webhook signature — REQUIRED, never skip (a missing header must not bypass)
-    if (!PAYSTACK_SECRET || !signature) {
-      return NextResponse.json({ error: "Missing signature" }, { status: 401 });
-    }
-    const hash = createHmac("sha512", PAYSTACK_SECRET)
-      .update(body)
-      .digest("hex");
-    if (hash !== signature) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
+    // Forward the exact body and signature. Buffer transport on the backend
+    // (server/src/routes/paystack.ts) recomputes HMAC over these bytes, so
+    // the signature is still valid end-to-end.
+    const res = await fetch(`${BACKEND_URL}/api/paystack/webhook`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-paystack-signature": signature,
+      },
+      body,
+      cache: "no-store",
+    });
 
-    const event = JSON.parse(body);
-    const { event: eventType, data } = event;
-
-    // Only handle successful charges
-    if (eventType !== "charge.success") {
-      return NextResponse.json({ received: true });
-    }
-
-    const { metadata, amount, reference, customer } = data;
-
-    // ── Subscription payment ────────────────────────────────
-    if (metadata?.purpose === "subscription" && metadata?.plan) {
-      const planKey = metadata.plan;
-      const planName = metadata.plan_name || planKey;
-      const amountKes = amount / 100;
-      const durationDays = PLAN_DURATIONS[planKey] || 30;
-
-      // Reject plans that don't exist in the plans table (or are disabled) —
-      // activating a subscription on a ghost plan silently breaks gating.
-      const planRow = await prisma.plan.findUnique({ where: { id: planKey } });
-      if (!planRow || !planRow.active) {
-        console.error(`Webhook: refusing to activate subscription on invalid/disabled plan "${planKey}" (${reference})`);
-        return NextResponse.json({ received: true });
-      }
-
-      // Find user by email
-      const email = customer?.email;
-      if (!email) {
-        console.error("Webhook: No customer email for subscription");
-        return NextResponse.json({ received: true });
-      }
-
-      const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
-      if (!user) {
-        console.error("Webhook: User not found for email:", email);
-        return NextResponse.json({ received: true });
-      }
-
-      const now = new Date();
-
-      // If user is still in trial, subscription starts after trial ends
-      let startsAt = now;
-      if (user.trialEndsAt && now < user.trialEndsAt) {
-        startsAt = user.trialEndsAt;
-      }
-      const expiresAt = new Date(startsAt.getTime() + durationDays * 24 * 60 * 60 * 1000);
-
-      // Save subscription — idempotent: skip if this reference was already processed
-      const existing = await prisma.subscription.findFirst({ where: { reference } });
-      if (!existing) {
-        await prisma.subscription.create({
-          data: {
-            userId: user.id,
-            plan: planKey,
-            planName,
-            amount: amountKes,
-            status: startsAt > now ? "pending" : "active",
-            reference,
-            startsAt,
-            expiresAt,
-          },
-        });
-      }
-
-      console.log(`✅ Webhook: Subscription saved — ${planName} for user ${user.id}, starts ${startsAt.toISOString()}, expires ${expiresAt.toISOString()}`);
-
-      // Send confirmation email
-      const expiresFormatted = expiresAt.toLocaleDateString("en-KE", {
-        timeZone: "Africa/Nairobi",
-        dateStyle: "long",
-      });
-
-      await sendEmail({
-        to: user.email,
-        subject: `${planName} activated — Wangari`,
-        html: subscriptionConfirmedEmail(
-          user.name,
-          planName,
-          expiresFormatted,
-          `${process.env.NEXTAUTH_URL || "https://wangari.imeantech.com"}/dashboard`
-        ),
-      });
+    // If the backend is unreachable, return 502 so Paystack retries — better
+    // than a 200 ack that silently drops a successful payment.
+    if (!res.ok && res.status >= 500) {
+      return NextResponse.json({ error: "Backend webhook failed" }, { status: 502 });
     }
 
-    return NextResponse.json({ received: true });
+    const data = await res.json().catch(() => ({ received: true }));
+    return NextResponse.json(data, { status: res.status });
   } catch (error) {
-    console.error("Webhook error:", error);
-    // Return 200 to prevent Paystack from retrying on parse errors
-    return NextResponse.json({ received: true });
+    console.error("/api/paystack/webhook forward error:", error);
+    // 500 so Paystack retries — a payment that we drop is a paying customer
+    // who paid and saw "subscription activated" but never got one.
+    return NextResponse.json({ error: "Webhook forward failed" }, { status: 500 });
   }
 }
 
 /**
- * GET /api/paystack/webhook — health check
+ * GET /api/paystack/webhook — health check (Paystack pings this to verify
+ * the URL is live before sending events). Hit the backend too, so this
+ * route actually proves the whole payment path is healthy.
  */
 export async function GET() {
-  return NextResponse.json({ status: "ok", message: "Paystack webhook endpoint active" });
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/paystack/webhook`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    return NextResponse.json(
+      { status: "ok", message: "Paystack webhook endpoint active", backend: res.ok ? "ok" : "degraded" },
+      { status: 200 }
+    );
+  } catch {
+    return NextResponse.json(
+      { status: "ok", message: "Paystack webhook endpoint active", backend: "unreachable" },
+      { status: 200 }
+    );
+  }
 }

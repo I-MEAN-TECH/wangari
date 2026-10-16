@@ -33,6 +33,26 @@ export async function GET(req: NextRequest) {
   const renewUrl = `${process.env.NEXTAUTH_URL || "https://wangari.imeantech.com"}/pricing`;
 
   try {
+    // 0. Promote subscriptions bought during the trial. A user who pays while
+    // still on the Core free tier has their subscription written with
+    // `status: "pending"` and `startsAt = old_trial_end`. Without this flip,
+    // the day the trial ends the user sees "active subscription" in the
+    // dashboard but is still gated on Free Core, because trial.ts only picks
+    // subscriptions with `status: "active"`. This is the fix.
+    const pendingToActivate = await prisma.subscription.findMany({
+      where: { status: "pending", startsAt: { lte: now } },
+      select: { id: true, userId: true, plan: true, planName: true, expiresAt: true },
+    });
+    let promotedCount = 0;
+    for (const sub of pendingToActivate) {
+      await prisma.subscription.update({
+        where: { id: sub.id },
+        data: { status: "active" },
+      });
+      promotedCount++;
+      console.log(`[cron] promoted pending→active: sub=${sub.id} user=${sub.userId} plan=${sub.plan}`);
+    }
+
     // 0. Warn users 3 days before trial expires
     const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
     const trialExpiringSoon = await prisma.user.findMany({
@@ -148,6 +168,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      promoted_pending_to_active: promotedCount,
       trial_warnings: trialWarningCount,
       expired_warned: warnedCount,
       reminders_sent: reminderCount,

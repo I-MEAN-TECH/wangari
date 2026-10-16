@@ -103,6 +103,12 @@ router.post("/", authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/paystack/webhook — health check (Paystack pings this URL is live
+// before sending events; the Vercel proxy also pings to surface backend health).
+router.get("/webhook", async (_req: Request, res: Response) => {
+  res.json({ status: "ok", message: "Paystack webhook endpoint active" });
+});
+
 // POST /api/paystack/webhook — server-to-server payment confirmation (no auth; signature-verified)
 router.post("/webhook", async (req: Request, res: Response) => {
   try {

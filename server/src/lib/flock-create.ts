@@ -131,16 +131,9 @@ export async function createFlockForFarm(
   }
 
   // Plan limits: Starter plan caps poultry at 500 and livestock at 5 head.
-  // Expired trials with no active subscription cannot create new flocks.
+  // No active subscription = Core, which is limited to 1 flock.
   if (userId) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { trialEndsAt: true, createdAt: true },
-    });
     const now = new Date();
-    const trialEnds = user?.trialEndsAt || (user?.createdAt ? new Date(user.createdAt.getTime() + 14 * 86400000) : null);
-    const trialActive = trialEnds ? now < trialEnds : false;
-
     const activeSub = await prisma.subscription.findFirst({
       where: { userId, status: "active", expiresAt: { gt: now } },
     });

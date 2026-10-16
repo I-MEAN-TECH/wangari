@@ -1,114 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
+import { proxyToBackend } from "@/lib/api-proxy";
 
-const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!;
-const PAYSTACK_API = "https://api.paystack.co";
-// Plan config (name/amount) lives in the backend DB — no price literals here.
+/**
+ * /api/paystack — initialize or verify a Paystack transaction.
+ *
+ * The Express backend at /api/paystack is the source of truth: it validates
+ * the plan exists and is active, resolves the paying user from the JWT (not
+ * from a client-supplied email, which is the common M-Pesa bug), applies
+ * promo rules against the canonical table, and signs the Paystack request
+ * with the live secret. This Vercel route forwards the request so the
+ * frontend's existing /api/paystack calls keep working from the public site.
+ *
+ * The webhook at /api/paystack/webhook does the DB write directly because
+ * Paystack sends the callback WITHOUT a JWT — see webhook/route.ts.
+ */
+
 const BACKEND_URL = process.env.BACKEND_URL || "https://api.wangari.imeantech.com";
 
-interface PlanConfig {
-  id: string;
-  name: string;
-  amount: number; // pesewas
-}
+export const dynamic = "force-dynamic";
 
-async function fetchPlan(planId: string): Promise<PlanConfig | null> {
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/plans`, { next: { revalidate: 60 } });
-    if (!res.ok) return null;
-    const plans: PlanConfig[] = await res.json();
-    return plans.find((p) => p.id === planId) || null;
-  } catch {
-    return null;
-  }
-}
-
-// POST /api/paystack - Initialize a payment
+// POST /api/paystack — initialize a payment
 export async function POST(req: NextRequest) {
   try {
-    const { email, plan, callback_url } = await req.json();
+    // The api-client always sends Authorization: Bearer <JWT>. Forward it.
+    // Backend uses it to identify the user (not a client-supplied email),
+    // and to write metadata.userId so the webhook can resolve by userId first.
+    const auth = req.headers.get("authorization") || "";
 
-    if (!email || !plan) {
-      return NextResponse.json({ error: "Email and plan are required" }, { status: 400 });
+    const body = await req.json().catch(() => ({}));
+    const { plan, promoCode, callback_url } = body || {};
+
+    if (!plan) {
+      return NextResponse.json({ error: "Plan is required" }, { status: 400 });
     }
 
-    const planConfig = await fetchPlan(plan);
-    if (!planConfig) {
-      return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
-    }
-
-    // Initialize Paystack transaction (one-time payment with metadata)
-    const response = await fetch(`${PAYSTACK_API}/transaction/initialize`, {
+    const res = await proxyToBackend("/api/paystack", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        amount: planConfig.amount,
-        currency: "KES",
-        channels: ["card", "mobile_money"],
-        callback_url: callback_url || `${process.env.NEXTAUTH_URL || "https://wangari.imeantech.com"}/dashboard?payment=success`,
-        metadata: {
-          purpose: "subscription",
-          plan,
-          plan_name: planConfig.name,
-        },
-      }),
+      headers: { Authorization: auth },
+      body: JSON.stringify({ plan, promoCode, callback_url }),
     });
 
-    const data = await response.json();
-
-    if (!data.status) {
-      return NextResponse.json({ error: data.message || "Payment initialization failed" }, { status: 400 });
-    }
-
-    return NextResponse.json({
-      status: true,
-      authorization_url: data.data.authorization_url,
-      access_code: data.data.access_code,
-      reference: data.data.reference,
-    });
+    const data = await res.json().catch(() => ({}));
+    return NextResponse.json(data, { status: res.status });
   } catch (error) {
-    console.error("Paystack error:", error);
+    console.error("/api/paystack proxy error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// GET /api/paystack?reference=xxx - Verify a payment
+// GET /api/paystack?reference=xxx — verify a payment
+// Useful for the success page fallback if Paystack's inline message is missed.
 export async function GET(req: NextRequest) {
   try {
     const reference = req.nextUrl.searchParams.get("reference");
-
     if (!reference) {
       return NextResponse.json({ error: "Reference is required" }, { status: 400 });
     }
 
-    const response = await fetch(`${PAYSTACK_API}/transaction/verify/${reference}`, {
-      headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET}`,
-      },
+    // Verification is a public read; forward with no JWT. Backend has the
+    // canonical logic and Paystack secret.
+    const res = await fetch(`${BACKEND_URL}/api/paystack?reference=${encodeURIComponent(reference)}`, {
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
     });
-
-    const data = await response.json();
-
-    if (!data.status) {
-      return NextResponse.json({ error: "Verification failed" }, { status: 400 });
-    }
-
-    return NextResponse.json({
-      status: true,
-      data: {
-        reference: data.data.reference,
-        amount: data.data.amount,
-        currency: data.data.currency,
-        status: data.data.status,
-        customer: data.data.customer,
-        metadata: data.data.metadata,
-      },
-    });
+    const data = await res.json().catch(() => ({}));
+    return NextResponse.json(data, { status: res.status });
   } catch (error) {
-    console.error("Paystack verify error:", error);
+    console.error("/api/paystack verify proxy error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

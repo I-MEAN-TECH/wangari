@@ -17,8 +17,11 @@ const read = (rel: string) => readFileSync(join(serverRoot, rel), "utf8");
 
 const starter = { ok: true, allowed: false, reason: "subscription" as const, planId: "starter_monthly" };
 const growth = { ok: true, allowed: false, reason: "subscription" as const, planId: "growth_monthly" };
-const trial = { ok: true, allowed: true, reason: "trial" as const };
-const none = { ok: true, allowed: false, reason: "no-access" as const };
+// Free Core is the new perpetual tier: no subscription, no trial window.
+// The previous `reason: "trial"` test fixture is gone — the legacy 14-day
+// trial is no longer granted to new signups.
+const freeCore = { ok: true, allowed: false, reason: "free_core" as const };
+const unauthorized = { ok: false, allowed: false, reason: "unauthorized" as const };
 
 describe("plan gate: an unfinished hub choice is not a lockout", () => {
   // The bug this file exists for: a Starter account whose `selectedHubs` was
@@ -43,18 +46,64 @@ describe("plan gate: an unfinished hub choice is not a lockout", () => {
   });
 
   it("honours a real hub choice when one was made", () => {
+    // selectedHubs is now an informational hint surfaced in the response
+    // payload (so the dashboard can show a per-hub setup card). It is NOT
+    // an access-control signal: a Starter farmer with `["sales"]` in
+    // selectedHubs can still open flocks, because the plan already covers
+    // mixed farming. The padlock is the plan tier, not the hub.
     expect(moduleAllowed(starter, ["livestock"], "flocks")).toBe(true);
-    expect(moduleAllowed(starter, ["livestock"], "invoices")).toBe(false);
+    expect(moduleAllowed(starter, ["livestock"], "invoices")).toBe(true);
     expect(moduleAllowed(starter, ["sales"], "invoices")).toBe(true);
-    expect(moduleAllowed(starter, ["sales"], "flocks")).toBe(false);
+    expect(moduleAllowed(starter, ["sales"], "flocks")).toBe(true);
   });
 
   it("leaves the other tiers exactly as they were", () => {
     expect(moduleAllowed(growth, [], "flocks")).toBe(true);
     expect(moduleAllowed(growth, ["livestock"], "workers")).toBe(true);
-    expect(moduleAllowed(trial, [], "workers")).toBe(true);
-    expect(moduleAllowed(none, [], "dashboard")).toBe(false);
-    expect(moduleAllowed(none, [], "flocks")).toBe(false);
+    // Free Core: only _always modules stay open, everything else locked.
+    // This is the new perpetual floor — verified against the 8 seeded plans.
+    expect(moduleAllowed(freeCore, [], "dashboard")).toBe(true);
+    expect(moduleAllowed(freeCore, [], "finances")).toBe(true);
+    expect(moduleAllowed(freeCore, [], "inventory")).toBe(true);
+    expect(moduleAllowed(freeCore, [], "deliveries")).toBe(true);
+    expect(moduleAllowed(freeCore, [], "transactions")).toBe(true);
+    expect(moduleAllowed(freeCore, [], "flocks")).toBe(false);
+    expect(moduleAllowed(freeCore, [], "production")).toBe(false);
+    expect(moduleAllowed(freeCore, [], "sales")).toBe(false);
+    expect(moduleAllowed(freeCore, [], "workers")).toBe(false);
+    expect(moduleAllowed(freeCore, [], "reports")).toBe(false);
+    // Unauthorized identity: nothing is open.
+    expect(moduleAllowed(unauthorized, [], "dashboard")).toBe(false);
+    expect(moduleAllowed(unauthorized, [], "flocks")).toBe(false);
+  });
+
+  it("recognises every Starter and Growth variant from the plans table", () => {
+    // The gate's regexes were the source of two past bugs (a Vercel webhook
+    // hard-coding 4 plan ids and a tier drift in the Vercel status mirror).
+    // Re-assert the full plan catalogue here so a future plan rename is
+    // caught by the test, not by a 403 in production.
+    const starterIds = [
+      "starter_monthly",
+      "starter_annual",
+      "starter_season",
+    ];
+    const growthIds = [
+      "growth_monthly",
+      "growth_annual",
+      "growth_season",
+      "growth_60day",
+      "growth_120day",
+    ];
+    for (const id of starterIds) {
+      const ctx = { ok: true, allowed: false, reason: "subscription" as const, planId: id };
+      expect(moduleAllowed(ctx, ["livestock"], "flocks"), `${id} should open flocks`).toBe(true);
+      expect(moduleAllowed(ctx, ["livestock"], "workers"), `${id} should keep team locked`).toBe(false);
+    }
+    for (const id of growthIds) {
+      const ctx = { ok: true, allowed: false, reason: "subscription" as const, planId: id };
+      expect(moduleAllowed(ctx, ["livestock"], "flocks"), `${id} should open flocks`).toBe(true);
+      expect(moduleAllowed(ctx, ["livestock"], "workers"), `${id} should open team`).toBe(true);
+    }
   });
 });
 
@@ -62,20 +111,24 @@ describe("the sidebar padlocks must agree with the 403s", () => {
   // trial.ts computes its own moduleAccess map for the sidebar. Two copies of
   // the plan rules drift apart and the farmer finds out: padlocks shown for
   // screens that open fine, or screens 403ing with no padlock to explain it.
-  it("uses the same empty-hubs rule", () => {
-    const src = read("routes/trial.ts");
-    expect(src).toMatch(/selectedHubs\.length === 0 \? hub !== "team" : selectedHubs\.includes\(hub\)/);
-  });
-
-  it("borrows its hub table from the gate instead of copying it", () => {
-    // trial.ts used to hand-roll a second table that had already fallen behind:
-    // breeding, transactions, deliveries, documents and profitability existed
-    // in the gate but not here, so those screens showed no padlock and then
-    // answered 403 with nothing on screen to explain it.
-    expect(read("routes/trial.ts")).toContain(
+  it("uses the same single-source hub table as the 403s", () => {
+    // Contract: trial.ts imports MODULE_HUB_MAP from plan-gate (one map,
+    // never hand-rolled). selectedHubs is no longer a padlock signal — the
+    // padlock is purely plan tier (Starter vs Growth vs Free Core).
+    const trialSrc = read("routes/trial.ts");
+    expect(trialSrc).toContain(
       'import { MODULE_HUB_MAP as GATED_HUB_MAP } from "../middleware/plan-gate.js"',
     );
-    expect(read("routes/trial.ts")).toMatch(/\.\.\.GATED_HUB_MAP/);
+    expect(trialSrc).toMatch(/\.\.\.GATED_HUB_MAP/);
+  });
+
+  it("uses the same hub→team/Starter/Growth rule for the padlocks", () => {
+    // The padlock table inside trial.ts must use the Starter / Growth-or-Enterprise
+    // distinction the 403s use, not invent a third copy. Specifically: workers,
+    // attendance, coop, loans, reports stay locked for Starter.
+    const trialSrc = read("routes/trial.ts");
+    expect(trialSrc).toMatch(/workers.*attendance.*coop.*loans.*reports/s);
+    expect(trialSrc).toMatch(/isGrowthOrEnterprise/);
   });
 });
 

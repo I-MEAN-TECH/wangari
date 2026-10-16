@@ -112,8 +112,10 @@ router.post("/register-phone", async (req: Request, res: Response) => {
       (typeof req.body?.farmName === "string" && req.body.farmName.trim()) || `${name}'s Farm`;
 
     const now = new Date();
-    const trialEndsAt = new Date(now.getTime() + 14 * 86400000);
 
+    // Perpetual Free Core — no 14-day window for new signups. The Core tier
+    // stays open forever; paid time is granted by an actual subscription,
+    // a sponsor redemption, or a promo.
     const user = await prisma.user.create({
       data: {
         name,
@@ -122,8 +124,8 @@ router.post("/register-phone", async (req: Request, res: Response) => {
         phonePin: await hashPin(pin),
         authMethod: "phone_pin",
         emailVerified: emailRaw ? now : null,
-        trialStartsAt: now,
-        trialEndsAt,
+        trialStartsAt: null,
+        trialEndsAt: null,
       },
     });
 

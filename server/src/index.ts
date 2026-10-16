@@ -81,7 +81,7 @@ import adminIpRoutes from "./routes/admin-ip.js";
 import contactRoutes from "./routes/contact.js";
 import siteContentRoutes from "./routes/site-content.js";
 import activationRoutes from "./routes/activation.js";
-import { seedPlans } from "./lib/seed-plans.js";
+import { seedPlans, migrateFreeCoreOnBoot } from "./lib/seed-plans.js";
 
 // ─── Process-Level Crash Safety ────────────────────────────
 // One bad async call must not kill the PM2 process silently.
@@ -394,6 +394,10 @@ for (const sig of ["SIGTERM", "SIGINT"] as const) {
 app.listen(Number(PORT), HOST, () => {
   // Seed pricing plans once at boot (create-if-missing; DB rows win afterwards)
   seedPlans();
+  // One-time per-boot data fixup: drop the legacy 14-day trial window from
+  // any user who is not currently paying, so they read as "Free Core" not
+  // "Free Trial ending in N days". Idempotent — no-op after the first run.
+  migrateFreeCoreOnBoot();
   console.log(`🌱 Wangari API server running on ${HOST}:${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`   Frontend URL: ${process.env.FRONTEND_URL || "https://wangari.imeantech.com"}`);

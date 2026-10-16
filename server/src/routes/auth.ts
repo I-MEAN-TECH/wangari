@@ -1,4 +1,3 @@
-import { TRIAL_DAYS, trialEndDate } from "../lib/config.js";
 import { Router, Request, Response } from "express";
 import { recordStage } from "./activation.js";
 import { Prisma } from "@prisma/client";
@@ -151,16 +150,18 @@ router.post("/register", async (req: Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const now = new Date();
-    const trialEndsAt = trialEndDate(now);
 
+    // The product moved to a perpetual "Free Core" tier — no 14-day window.
+    // New signups land on Core immediately; paid plan time is granted only
+    // by an actual subscription, a sponsor redemption, or a promo.
     const user = await prisma.user.create({
       data: {
         name,
         email: normalizedEmail,
         password: hashedPassword,
         phone: phone || null,
-        trialStartsAt: now,
-        trialEndsAt,
+        trialStartsAt: null,
+        trialEndsAt: null,
       },
     });
 
