@@ -179,7 +179,7 @@ router.get("/", async (req: Request, res: Response) => {
       // stock is the single highest-cost inventory failure.
       prisma.inventory.findMany({
         where: { farmId, expiryDate: { gte: today, lte: nextWeek } },
-        select: { id: true, itemName: true, quantity: true, unitCost: true, expiryDate: true },
+        select: { id: true, itemName: true, batchNo: true, quantity: true, unitCost: true, expiryDate: true },
       }).catch(() => []),
     ]);
 

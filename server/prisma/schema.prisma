@@ -1081,6 +1081,9 @@ model Inventory {
   reorderLevel Int       @default(0) @map("reorder_level")
   supplier     String?
   expiryDate   DateTime? @map("expiry_date")
+  // Batch number for vet drugs, vaccines and any item with a per-batch
+  // expiry. Free Core uses this to surface expiring-soon inventory.
+  batchNo      String?  @map("batch_no")
   notes        String?
   createdAt    DateTime  @default(now()) @map("created_at")
 

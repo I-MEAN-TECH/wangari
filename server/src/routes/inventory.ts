@@ -19,6 +19,63 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/inventory/expiring?days=30 — items whose expiryDate falls in the
+// next N days (default 30, capped at 365). Most-urgent first. Returns the
+// KES value at risk per item so the dashboard tile can show "KES X is about
+// to expire" without a follow-up query.
+router.get("/expiring", async (req: Request, res: Response) => {
+  try {
+    const on = new Date();
+    const requested = Number(req.query.days);
+    const days = Math.min(Math.max(Number.isFinite(requested) && requested > 0 ? requested : 30, 1), 365);
+    const horizon = new Date(on.getTime() + days * 86400000);
+
+    const items = await prisma.inventory.findMany({
+      where: {
+        farmId: req.user!.farmId!,
+        expiryDate: { gte: on, lte: horizon },
+      },
+      orderBy: { expiryDate: "asc" },
+    });
+
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    const enriched = items.map((i) => {
+      const quantity = Number(i.quantity);
+      const unitCost = Number(i.unitCost);
+      return {
+        id: i.id,
+        itemName: i.itemName,
+        category: i.category,
+        batchNo: i.batchNo ?? null,
+        quantity,
+        unit: i.unit,
+        unitCost,
+        expiryDate: i.expiryDate,
+        daysToExpiry: i.expiryDate
+          ? Math.max(0, Math.ceil((new Date(i.expiryDate).getTime() - on.getTime()) / 86400000))
+          : null,
+        // Money at risk if this batch spoils. quantity * unitCost, rounded
+        // to 2 dp so the JSON has no float noise.
+        valueAtRisk: r2(quantity * unitCost),
+      };
+    });
+
+    const totalValueAtRisk = r2(enriched.reduce((s, i) => s + i.valueAtRisk, 0));
+    return res.json({
+      days,
+      on: on.toISOString(),
+      horizon: horizon.toISOString(),
+      count: enriched.length,
+      totalValueAtRisk,
+      items: enriched,
+      basis: "Items with an expiry date in the next N days. Days left is rounded up to the next whole day. Value at risk uses the recorded unit cost and current quantity.",
+    });
+  } catch (error) {
+    console.error("Inventory expiring error:", error);
+    return res.status(500).json({ error: "Failed to load expiring inventory" });
+  }
+});
+
 // POST /api/inventory
 router.post("/", async (req: Request, res: Response) => {
   try {
@@ -33,6 +90,7 @@ router.post("/", async (req: Request, res: Response) => {
         reorderLevel: Number(req.body.reorderLevel || 0),
         supplier: req.body.supplier || null,
         expiryDate: req.body.expiryDate ? new Date(req.body.expiryDate) : null,
+        batchNo: typeof req.body.batchNo === "string" && req.body.batchNo.trim() ? req.body.batchNo.trim() : null,
         notes: req.body.notes || null,
       },
     });
@@ -66,6 +124,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
     if (req.body.reorderLevel !== undefined) data.reorderLevel = Number(req.body.reorderLevel);
     if (req.body.supplier !== undefined) data.supplier = req.body.supplier || null;
     if (req.body.expiryDate !== undefined) data.expiryDate = req.body.expiryDate ? new Date(req.body.expiryDate) : null;
+    if (req.body.batchNo !== undefined) data.batchNo = typeof req.body.batchNo === "string" && req.body.batchNo.trim() ? req.body.batchNo.trim() : null;
     if (req.body.notes !== undefined) data.notes = req.body.notes || null;
 
     const updated = await prisma.inventory.update({ where: { id: item.id }, data });
