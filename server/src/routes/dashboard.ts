@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { firstRecordAt } from "../lib/first-record.js";
 import { buildRevenueSeries } from "../lib/revenue-series.js";
+import { computeMoneyTiles } from "../lib/money-tiles.js";
 import { requireOwner } from "../middleware/requireOwner.js";
 import { authMiddleware } from "../middleware/auth.js";
 
@@ -52,6 +53,13 @@ router.get("/", async (req: Request, res: Response) => {
       upcomingVax,
       earliestRecord,
       halfYearTx,
+      // Money-shaped tile inputs: overdue receivables, weekly delivery
+      // revenue, expiring inventory. All reads the ledger / delivery log
+      // / inventory already track. Free Core shows these in place of the
+      // paid-shaped mortality / FCR / vaccination tiles.
+      overdueOpen,
+      weekDeliveries,
+      expiringInv,
     ] = await Promise.all([
       // Today's production per flock
       prisma.dailyProduction.findMany({
@@ -142,10 +150,88 @@ router.get("/", async (req: Request, res: Response) => {
         where: { farmId, date: { gte: sixMonthsStart } },
         select: { date: true, type: true, amount: true },
       }),
+
+      // Overdue receivables: deliveries with a payBy date that has already
+      // passed and a positive outstanding net amount.
+      prisma.delivery.findMany({
+        where: {
+          farmId,
+          status: { not: "paid" },
+          payBy: { lt: today },
+        },
+        select: {
+          id: true,
+          payBy: true,
+          expectedPay: true,
+          paidAmount: true,
+          deductions: { select: { amount: true } },
+        },
+      }),
+
+      // Last 7 days deliveries, for the "delivery revenue this week" tile.
+      prisma.delivery.findMany({
+        where: { farmId, date: { gte: weekAgo } },
+        select: { id: true, expectedPay: true, paidAmount: true },
+      }),
+
+      // Inventory items with an expiry date in the next 30 days — feeds the
+      // "expiring soon" warning. Free Core alerts on this because spoiled
+      // stock is the single highest-cost inventory failure.
+      prisma.inventory.findMany({
+        where: { farmId, expiryDate: { gte: today, lte: nextWeek } },
+        select: { id: true, itemName: true, quantity: true, unitCost: true, expiryDate: true },
+      }).catch(() => []),
     ]);
 
     const firstRecord: string | null = earliestRecord ?? null;
     const revenueSeries = buildRevenueSeries(halfYearTx);
+
+    // ─── Money-shaped tile inputs (Free Core) ──────────────────────────
+    // Net outstanding on each overdue delivery = expected − deductions −
+    // already paid. Negative values (overpaid) are clamped at zero — the
+    // dashboard never shows a farmer they are owed a negative amount.
+    const num = (v: unknown) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const overdueRows = overdueOpen.map((d) => ({
+      net: Math.max(0, num(d.expectedPay) - d.deductions.reduce((s, x) => s + num(x.amount), 0) - num(d.paidAmount)),
+      payBy: d.payBy,
+    }));
+    const overdueReceivables = overdueRows.reduce((s, r) => s + r.net, 0);
+    const overdueOldest = overdueRows
+      .map((r) => (r.payBy ? new Date(r.payBy) : null))
+      .filter((d): d is Date => d != null)
+      .sort((a, b) => a.getTime() - b.getTime())[0] ?? null;
+
+    const weeklyDeliveryRevenue = weekDeliveries.reduce(
+      (s, d) => s + Math.max(0, num(d.expectedPay) - num(d.paidAmount)),
+      0,
+    );
+    const weeklyDeliveryCount = weekDeliveries.length;
+
+    const feedStockUnits = feedInventory.reduce((s, item) => s + num(item.quantity), 0);
+    const feedReorderUnits = feedInventory.reduce((s, item) => s + num(item.reorderLevel), 0);
+
+    const expiringInDays30Value = expiringInv.reduce(
+      (s, item) => s + num(item.quantity) * num(item.unitCost),
+      0,
+    );
+    const expiringInDays30Count = expiringInv.length;
+
+    const moneyTiles = computeMoneyTiles({
+      monthIncome: Number(monthIncome._sum.amount || 0),
+      monthExpense: Number(monthExpense._sum.amount || 0),
+      overdueReceivables,
+      overdueDeliveriesCount: overdueRows.length,
+      oldestOverdueDate: overdueOldest,
+      weeklyDeliveryRevenue,
+      weeklyDeliveryCount,
+      feedStockUnits,
+      feedReorderUnits,
+      expiringInDays30Value,
+      expiringInDays30Count,
+    });
 
     // ─── Calculate Total Birds ──────────────────────────────
     const totalBirds = flocks.reduce((s, f) => s + f.currentCount, 0);
@@ -316,6 +402,11 @@ router.get("/", async (req: Request, res: Response) => {
 
       // Weather
       weather,
+
+      // Money-shaped tiles + warnings, fed from the ledger, deliveries and
+      // inventory. Free Core reads these; the paid-shaped mortality / FCR /
+      // vaccination tiles above keep working for Starter and Growth.
+      moneyTiles,
     });
   } catch (error) {
     console.error("Dashboard error:", error);
