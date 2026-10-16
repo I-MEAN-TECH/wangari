@@ -5,85 +5,63 @@ import { join } from "node:path";
 /**
  * Wiring facts for the AI write-tool gate.
  *
- * The change under test: a free-core user trying to save anything through
- * the AI must be told *it's a plan rule, not a bug*. A refusal that just
- * says "not in your plan" reads like a broken feature. The new code:
- *   1. Looks up the user's plan tier via `userPlanTier` (from plan-gate).
- *   2. For free_core, returns a specific refusal that names the plan and
- *      points at /subscription.
- *   3. For starter/growth on a module their plan doesn't cover, keeps the
- *      existing "ask for something in Money, Stock or the weather" copy.
+ * The contract under test: a single refusal message is returned for every
+ * blocked write, regardless of the user's tier. The copy names the modules
+ * the user CAN use for free (Money, Stock, weather) so it reads as a
+ * redirect, not an error. Per-tier variants were tried and reverted — they
+ * read as a sales pitch to free-core users, who expected a feature to work,
+ * not a pitch. The single message is the right product answer.
  *
  * These tests read source on purpose. The actual refusal message is shaped
  * by the model and the model isn't running in unit tests; what we can
- * prove is the contract: the gate uses userPlanTier, the free_core branch
- * mentions "Free Core", and the existing non-free branch is preserved.
+ * prove is the contract: the gate uses moduleAllowedForUser, the refusal
+ * has the "Money, Stock or the weather" copy, and there is no per-tier
+ * branch that could drift.
  */
 const read = (rel: string) =>
   readFileSync(join(process.cwd(), "src", ...rel.split("/")), "utf8").replace(/\r\n/g, "\n");
 
-describe("the AI write gate names the plan in its refusal", () => {
+describe("the AI write gate uses a single refusal for every tier", () => {
   const ai = read("routes/ai.ts");
-  const gate = read("middleware/plan-gate.ts");
 
-  it("calls userPlanTier to resolve the user's tier", () => {
-    // The previous code only called isModuleAllowed, which returns a boolean.
-    // To name the plan in the refusal, we need the tier, hence userPlanTier.
-    expect(ai).toMatch(/planTierForUser\(userId\)/);
-    expect(ai).toMatch(/userPlanTier/);
+  it("calls moduleAllowedForUser to gate every write", () => {
+    // The boolean gate is the only authority. A second copy of the rules
+    // would drift, and the drift presents as "the AI can do it but I
+    // cannot see it" — the exact bug this replaced.
+    expect(ai).toMatch(/moduleAllowedForUser\(userId, module\)/);
   });
 
-  it("userPlanTier is exported from plan-gate", () => {
-    // The new function is what the AI gate imports. If it's not exported,
-    // the gate can't import it and the test would fail at runtime.
-    expect(gate).toMatch(/export async function userPlanTier\(/);
+  it("does not branch on plan tier inside the write gate", () => {
+    // Re-introducing a per-tier branch in this file would be the bug this
+    // test exists to prevent. The single refusal is the contract.
+    const writeBlock = ai.slice(ai.indexOf("WRITE_TOOLS.has(toolName)"), ai.indexOf("switch (toolName)"));
+    expect(writeBlock).not.toMatch(/tier\s*===\s*"free_core"/);
+    expect(writeBlock).not.toMatch(/userPlanTier/);
+    expect(writeBlock).not.toMatch(/planTierForUser/);
   });
 
-  it("userPlanTier returns the four documented values", () => {
-    // "free_core" | "starter" | "growth" | "unauthorized" — the AI gate
-    // branches on these and so does the sidebar. Drift here = bug.
-    const tierFn = gate.slice(gate.indexOf("export async function userPlanTier"));
-    expect(tierFn).toMatch(/return "free_core"/);
-    expect(tierFn).toMatch(/return "starter"/);
-    expect(tierFn).toMatch(/return "growth"/);
-    expect(tierFn).toMatch(/return "unauthorized"/);
+  it("returns the 'Money, Stock or the weather' copy for every blocked write", () => {
+    // The redirect copy names what the user CAN do for free, not what
+    // they're being denied. That is the right shape for a refusal.
+    const writeBlock = ai.slice(ai.indexOf("WRITE_TOOLS.has(toolName)"), ai.indexOf("switch (toolName)"));
+    expect(writeBlock).toMatch(/Money, Stock or the weather/);
+    expect(writeBlock).toMatch(/That part of the farm is not in your plan yet/);
   });
 
-  it("the free_core branch is distinct from the starter/growth copy", () => {
-    // A previous version's bug: a single refusal message that did not
-    // mention "Free Core", so users thought the AI was broken. The new
-    // code branches on tier === "free_core" and emits a tier-specific
-    // message that names the plan and points at /subscription.
-    const freeCoreBlock = ai.slice(ai.indexOf('tier === "free_core"'));
-    expect(freeCoreBlock).toMatch(/Free Core/);
-    expect(freeCoreBlock).toMatch(/\/subscription/);
-  });
-
-  it("keeps the existing 'Money, Stock or the weather' copy for paid tiers", () => {
-    // Starter and Growth users on a module their plan doesn't cover
-    // (e.g. Starter asking for workers) still need the existing fallback
-    // message. Don't break what works.
-    expect(ai).toMatch(/Money, Stock or the weather/);
-  });
-
-  it("runs the tier check AFTER moduleAllowedForUser, not before", () => {
-    // The plan check only fires for tools the user is actually blocked on.
-    // Reordering would re-call planTierForUser for every read tool —
-    // needless DB load and slower turns. The original `if (WRITE_TOOLS.has
-    // (toolName) && userId != null)` block must still wrap the new branch.
-    const block = ai.slice(ai.indexOf("WRITE_TOOLS.has(toolName)"), ai.indexOf("switch (toolName)"));
-    expect(block).toMatch(/moduleAllowedForUser\(userId, module\)/);
-    expect(block).toMatch(/planTierForUser\(userId\)/);
-  });
-
-  it("never silently allows a free_core user to run a write tool", () => {
-    // The contract: every write tool routes through WRITE_TOOLS.has, every
-    // such call with a module is gated by moduleAllowedForUser, and any
-    // block returns a refusal (the function ends in `return { error: ... }`).
-    // If this test ever needs to relax, do it for a specific reason and
-    // update the comment — silently letting a free user write through the
-    // AI is the regression to prevent.
+  it("returns a refusal in the { error: ... } shape, not a throw", () => {
+    // The contract: the agentic loop reads step.ok = false from the
+    // { error } object and stops. A throw here would break the loop and
+    // surface a stack trace to the farmer's chat.
     const writeBlock = ai.slice(ai.indexOf("WRITE_TOOLS.has(toolName)"), ai.indexOf("switch (toolName)"));
     expect(writeBlock).toMatch(/return\s*\{\s*error:/);
+  });
+
+  it("start_intake still resolves the module from the entity, not the tool", () => {
+    // start_intake covers eleven entities. Gating it on the tool name
+    // would refuse a crop on the flocks plan. The entity-driven module
+    // lookup is the contract — don't break it while refactoring the refusal.
+    const writeBlock = ai.slice(ai.indexOf("WRITE_TOOLS.has(toolName)"), ai.indexOf("switch (toolName)"));
+    expect(writeBlock).toMatch(/intakeModule\(args\.entity\)/);
+    expect(writeBlock).toMatch(/TOOL_MODULE\[toolName\]/);
   });
 });

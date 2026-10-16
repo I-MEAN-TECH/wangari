@@ -226,36 +226,6 @@ export async function isModuleAllowed(userId: number, module: string): Promise<b
   return moduleAllowed(ctx, hubs, module);
 }
 
-/**
- * Human-readable plan tier for the current user. Used by the AI gate to
- * produce precise refusals ("Free Core cannot save…") instead of a generic
- * "not in your plan" line that doesn't tell the farmer this is a plan
- * rule, not a bug. Workers inherit the farm owner's tier.
- *
- * Returns one of:
- *   "free_core"  — perpetual free tier, no active subscription
- *   "starter"    — any `starter_*` plan currently active
- *   "growth"     — any `growth_*` or `enterprise_*` plan currently active
- *   "unauthorized" — user not found / worker not active
- */
-export async function userPlanTier(
-  userId: number,
-): Promise<"free_core" | "starter" | "growth" | "unauthorized"> {
-  const { ctx } = await resolveContext({
-    userId,
-    role: "farm_owner",
-    email: "",
-  } as Identity);
-  if (!ctx.ok) return "unauthorized";
-  if (ctx.reason === "free_core" || !ctx.planId) return "free_core";
-  if (/growth|enterprise/.test(ctx.planId)) return "growth";
-  if (/starter/.test(ctx.planId)) return "starter";
-  // Active subscription on a plan id that doesn't match either regex — be
-  // conservative, treat as the lower tier rather than locking writes for a
-  // paying user with a renamed plan.
-  return "starter";
-}
-
 export function planGate(req: Request, res: Response, next: NextFunction) {
   const url = req.originalUrl || req.url || "";
   // Public endpoints that happen to share a gated prefix (customer quote
