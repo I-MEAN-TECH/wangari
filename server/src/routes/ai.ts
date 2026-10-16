@@ -416,6 +416,24 @@ async function moduleAllowedForUser(userId: number, module: string): Promise<boo
   }
 }
 
+/**
+ * Resolve the user's current plan tier so the write gate can produce a
+ * precise refusal ("Free Core cannot save…", "Your Starter plan does not
+ * include the team tools…"). The boolean isModuleAllowed is correct for
+ * the screen gate, but a refusal that doesn't name the plan reads like
+ * a bug, not a rule. Workers inherit the farm owner's tier.
+ */
+async function planTierForUser(
+  userId: number,
+): Promise<"free_core" | "starter" | "growth" | "unauthorized"> {
+  try {
+    const { userPlanTier } = await import("../middleware/plan-gate.js");
+    return await userPlanTier(userId);
+  } catch {
+    return "unauthorized";
+  }
+}
+
 /** Which module each farm tool writes into.
  *
  *  This is the join that was missing. The agent had no plan gate at all, so it
@@ -566,6 +584,19 @@ async function executeTool(
     if (module) {
       const allowed = await moduleAllowedForUser(userId, module);
       if (!allowed) {
+        // Per-tier refusal: name the plan, so the farmer knows this is a
+        // rule, not a bug. Free Core cannot save anything through the AI
+        // (every write tool targets a Starter or Growth module). Starter
+        // and Growth keep the existing "ask for something in Money, Stock
+        // or weather" copy because that already names the free modules.
+        const tier = await planTierForUser(userId);
+        if (tier === "free_core") {
+          return {
+            error:
+              "I have not saved it. Free Core is the perpetual free tier, and saving farm records through the AI needs a Starter or Growth subscription. " +
+              "Your finances, inventory, deliveries, dashboard and weather stay free — pick a plan at /subscription to unlock flocks, crops, sales and the rest.",
+          };
+        }
         return {
           error:
             "That part of the farm is not in your plan yet, so I have not saved it. " +
