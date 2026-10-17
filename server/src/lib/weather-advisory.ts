@@ -63,15 +63,39 @@ function dedup(adv: Advisory[]): Advisory[] {
   return [...byKey.values()];
 }
 
+export interface WeatherInterpretation {
+  advisories: Advisory[];
+  /**
+   * The first day in the forecast that will hit the heat-stress threshold
+   * for the species the farm is keeping. Null when no species on the farm
+   * is heat-sensitive, or no forecast day crosses the threshold.
+   */
+  nextHeatStress: { date: string; day: string; tempMax: number } | null;
+  /**
+   * The first day in the forecast that is dry (< 5mm rain) AND calm
+   * (< 25 km/h wind). Null when every day is too wet or too windy.
+   * Farmers use this to time pesticide / foliar feeds.
+   */
+  nextSprayWindow: { date: string; day: string; windSpeed: number | null } | null;
+}
+
 export function interpretWeatherForFarm(
   forecast: WeatherDay[],
   species: FarmSpecies[],
   options: { maxAdvisories?: number } = {},
-): Advisory[] {
+): WeatherInterpretation {
   const out: Advisory[] = [];
   const hasLayers = species.some((s) => s.kind === "flock" && /layer/i.test(s.type));
   const hasBroilers = species.some((s) => s.kind === "flock" && /broiler/i.test(s.type));
   const hasMaize = species.some((s) => s.kind === "crop" && /maize|corn/i.test(s.type));
+
+  // Heat thresholds: layers are more sensitive than broilers, so the
+  // farm's "next hot day" is whichever threshold is hit first.
+  const heatThreshold = hasBroilers
+    ? Math.min(hasLayers ? LAYER_HEAT_C : BROILER_HEAT_C, BROILER_HEAT_C)
+    : hasLayers
+    ? LAYER_HEAT_C
+    : null;
 
   // ── Per-day rules ──────────────────────────────────────────────────
   for (const day of forecast) {
@@ -125,14 +149,34 @@ export function interpretWeatherForFarm(
     }
   }
 
+  // ── Next-event predictions ───────────────────────────────────────
+  // The first forecast day that crosses the farm's heat threshold.
+  const nextHeatStress = heatThreshold != null
+    ? (() => {
+        const hot = forecast.find((d) => d.tempMax >= heatThreshold);
+        return hot ? { date: hot.date, day: hot.day, tempMax: hot.tempMax } : null;
+      })()
+    : null;
+
+  // The first dry AND calm day in the forecast. Null when no such day.
+  const nextSprayWindow = (() => {
+    const ideal = forecast.find(
+      (d) => d.rain < SPRAY_WASH_MM && (d.windSpeed ?? 0) < SPRAY_DRIFT_KMH,
+    );
+    return ideal ? { date: ideal.date, day: ideal.day, windSpeed: ideal.windSpeed ?? null } : null;
+  })();
+
   // ── Final ordering: warn before info, then dedup, then cap ────────
   const deduped = dedup(out).sort((a, b) => {
     const r = severityRank(a.severity) - severityRank(b.severity);
     if (r !== 0) return r;
-    // Within the same severity, the day-specific advisories come first.
     if (a.date && !b.date) return -1;
     if (!a.date && b.date) return 1;
     return 0;
   });
-  return deduped.slice(0, options.maxAdvisories ?? 5);
+  return {
+    advisories: deduped.slice(0, options.maxAdvisories ?? 5),
+    nextHeatStress,
+    nextSprayWindow,
+  };
 }

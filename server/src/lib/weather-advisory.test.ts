@@ -47,40 +47,40 @@ const maizeOnly: FarmSpecies[] = [{ kind: "crop", type: "maize" }];
 
 describe("interpretWeatherForFarm", () => {
   it("returns an empty advisory list for a benign week and a free-core user with no species", () => {
-    const advisories = interpretWeatherForFarm([baseDay({})], []);
-    expect(Array.isArray(advisories)).toBe(true);
-    // No species means no animal/crop-specific advice; only generic rules fire.
+    const r = interpretWeatherForFarm([baseDay({})], []);
+    expect(Array.isArray(r.advisories)).toBe(true);
+    expect(r.advisories).toHaveLength(0);
   });
 
   it("warns when layer flock sees a heat-stress day (max >= 30°C)", () => {
     const day = baseDay({ tempMax: 32, tempMin: 22 });
-    const a = interpretWeatherForFarm([day], layersOnly);
-    expect(a.some((x) => /heat|hot|drop.*egg|lay/i.test(x.text))).toBe(true);
-    expect(a.find((x) => /heat|hot|drop.*egg|lay/i.test(x.text))?.severity).toBe("warn");
+    const r = interpretWeatherForFarm([day], layersOnly);
+    expect(r.advisories.some((x) => /heat|hot|drop.*egg|lay/i.test(x.text))).toBe(true);
+    expect(r.advisories.find((x) => /heat|hot|drop.*egg|lay/i.test(x.text))?.severity).toBe("warn");
   });
 
   it("does not warn layers on a mild day (max 26°C)", () => {
     const day = baseDay({ tempMax: 26 });
-    const a = interpretWeatherForFarm([day], layersOnly);
-    expect(a.some((x) => /heat|hot|drop.*egg/i.test(x.text))).toBe(false);
+    const r = interpretWeatherForFarm([day], layersOnly);
+    expect(r.advisories.some((x) => /heat|hot|drop.*egg/i.test(x.text))).toBe(false);
   });
 
   it("warns broilers on extreme heat (max >= 33°C) because broilers are more sensitive", () => {
     const day = baseDay({ tempMax: 33 });
-    const a = interpretWeatherForFarm([day], broilersOnly);
-    expect(a.some((x) => /broiler|heat|hot|mortal/i.test(x.text))).toBe(true);
+    const r = interpretWeatherForFarm([day], broilersOnly);
+    expect(r.advisories.some((x) => /broiler|heat|hot|mortal/i.test(x.text))).toBe(true);
   });
 
   it("does not warn broilers on a 30°C day (their threshold is 33°C)", () => {
     const day = baseDay({ tempMax: 30 });
-    const a = interpretWeatherForFarm([day], broilersOnly);
-    expect(a.some((x) => /broiler/i.test(x.text))).toBe(false);
+    const r = interpretWeatherForFarm([day], broilersOnly);
+    expect(r.advisories.some((x) => /broiler/i.test(x.text))).toBe(false);
   });
 
   it("flags a dry spell for maize when total rain over 7 days is 0", () => {
     const days = Array.from({ length: 7 }, (_, i) => baseDay({ date: `2026-10-${16 + i}`, day: i === 0 ? "Today" : "Day " + (i + 1), rain: 0 }));
-    const a = interpretWeatherForFarm(days, maizeOnly);
-    expect(a.some((x) => /dry|irrigat|moisture|stress/i.test(x.text))).toBe(true);
+    const r = interpretWeatherForFarm(days, maizeOnly);
+    expect(r.advisories.some((x) => /dry|irrigat|moisture|stress/i.test(x.text))).toBe(true);
   });
 
   it("does NOT flag a dry spell when total rain is at least 5mm across the week", () => {
@@ -89,33 +89,30 @@ describe("interpretWeatherForFarm", () => {
       baseDay({ rain: 1, date: "2026-10-17" }),
       baseDay({ rain: 2, date: "2026-10-18" }),
     ];
-    const a = interpretWeatherForFarm(days, maizeOnly);
-    expect(a.some((x) => /dry|irrigat/i.test(x.text))).toBe(false);
+    const r = interpretWeatherForFarm(days, maizeOnly);
+    expect(r.advisories.some((x) => /dry|irrigat/i.test(x.text))).toBe(false);
   });
 
   it("says skip the spray when it will rain today", () => {
     const day = baseDay({ rain: 6, condition: "Rain" });
-    const a = interpretWeatherForFarm([day], layersOnly);
-    expect(a.some((x) => /spray|pesticide|wash off/i.test(x.text))).toBe(true);
+    const r = interpretWeatherForFarm([day], layersOnly);
+    expect(r.advisories.some((x) => /spray|pesticide|wash off/i.test(x.text))).toBe(true);
   });
 
   it("says skip the spray when wind is high (>= 25 km/h) — a generic rule", () => {
-    // Wind is not in the WeatherDay shape, so it must be in the input via
-    // windSpeed. The free-core farmer has no anemometer; the rule is
-    // applied when the daily forecast includes windSpeed >= 25.
     const day = { ...baseDay({}), windSpeed: 28 };
-    const a = interpretWeatherForFarm([day], layersOnly);
-    expect(a.some((x) => /wind|spray.*drift|drift/i.test(x.text))).toBe(true);
+    const r = interpretWeatherForFarm([day], layersOnly);
+    expect(r.advisories.some((x) => /wind|spray.*drift|drift/i.test(x.text))).toBe(true);
   });
 
   it("returns advisories sorted by severity (warn first, info last)", () => {
     const days = [
-      baseDay({ tempMax: 32 }), // heat warn (warn)
-      baseDay({ rain: 0, date: "2026-10-17" }), // generic info
+      baseDay({ tempMax: 32 }),
+      baseDay({ rain: 0, date: "2026-10-17" }),
     ];
-    const a = interpretWeatherForFarm(days, layersOnly);
-    const warnIdx = a.findIndex((x) => x.severity === "warn");
-    const infoIdx = a.findIndex((x) => x.severity === "info");
+    const r = interpretWeatherForFarm(days, layersOnly);
+    const warnIdx = r.advisories.findIndex((x) => x.severity === "warn");
+    const infoIdx = r.advisories.findIndex((x) => x.severity === "info");
     if (warnIdx >= 0 && infoIdx >= 0) {
       expect(warnIdx).toBeLessThan(infoIdx);
     }
@@ -127,19 +124,66 @@ describe("interpretWeatherForFarm", () => {
       baseDay({ tempMax: 33, date: "2026-10-17" }),
       baseDay({ tempMax: 34, date: "2026-10-18" }),
     ];
-    const a = interpretWeatherForFarm(days, layersOnly);
-    const heat = a.filter((x) => /heat|drop.*egg/i.test(x.text));
+    const r = interpretWeatherForFarm(days, layersOnly);
+    const heat = r.advisories.filter((x) => /heat|drop.*egg/i.test(x.text));
     expect(heat.length).toBeLessThanOrEqual(1);
   });
 
   it("returns at most N advisories to keep the UI tight", () => {
-    // Worst-case: layers + 7 dry days + 3 hot days + 2 windy days. The
-    // function should not flood the dashboard.
     const days = Array.from({ length: 7 }, (_, i) =>
       baseDay({ tempMax: 35, rain: 0, date: `2026-10-${16 + i}`, windSpeed: 30 }),
     );
-    const a = interpretWeatherForFarm(days, layersOnly);
-    expect(a.length).toBeLessThanOrEqual(5);
+    const r = interpretWeatherForFarm(days, layersOnly);
+    expect(r.advisories.length).toBeLessThanOrEqual(5);
+  });
+});
+
+describe("nextHeatStress and nextSprayWindow", () => {
+  it("returns null nextHeatStress when no hot day in the forecast", () => {
+    const days = [baseDay({ tempMax: 25 }), baseDay({ tempMax: 27 })];
+    const r = interpretWeatherForFarm(days, layersOnly);
+    expect(r.nextHeatStress).toBeNull();
+  });
+
+  it("returns the first hot day for nextHeatStress when there is one", () => {
+    const days = [
+      baseDay({ tempMax: 25, date: "2026-10-16" }),
+      baseDay({ tempMax: 32, date: "2026-10-17" }), // first hot
+      baseDay({ tempMax: 33, date: "2026-10-18" }),
+    ];
+    const r = interpretWeatherForFarm(days, layersOnly);
+    expect(r.nextHeatStress).not.toBeNull();
+    expect(r.nextHeatStress?.date).toBe("2026-10-17");
+    expect(r.nextHeatStress?.tempMax).toBe(32);
+  });
+
+  it("returns null nextSprayWindow when every day is too wet or too windy", () => {
+    const days = [
+      baseDay({ rain: 8, windSpeed: 30 }),
+      baseDay({ rain: 10, date: "2026-10-17" }),
+    ];
+    const r = interpretWeatherForFarm(days, layersOnly);
+    expect(r.nextSprayWindow).toBeNull();
+  });
+
+  it("returns the first dry, calm day for nextSprayWindow", () => {
+    const days = [
+      baseDay({ rain: 5, windSpeed: 30, date: "2026-10-16" }),
+      baseDay({ rain: 0, windSpeed: 8, date: "2026-10-17" }), // ideal
+      baseDay({ rain: 0, windSpeed: 5, date: "2026-10-18" }),
+    ];
+    const r = interpretWeatherForFarm(days, layersOnly);
+    expect(r.nextSprayWindow).not.toBeNull();
+    expect(r.nextSprayWindow?.date).toBe("2026-10-17");
+    expect(r.nextSprayWindow?.windSpeed).toBe(8);
+  });
+
+  it("does not look for a heat day when the farm has no heat-sensitive species", () => {
+    // Just a crop, no flock. The function has no heat threshold to compare
+    // against, so nextHeatStress is null even on a 34°C day.
+    const days = [baseDay({ tempMax: 34 })];
+    const r = interpretWeatherForFarm(days, [{ kind: "crop", type: "maize" }]);
+    expect(r.nextHeatStress).toBeNull();
   });
 });
 
@@ -151,9 +195,14 @@ describe("weather route wires the interpreter", () => {
   });
 
   it("returns the advisories in the response payload", () => {
-    // The route already returns the forecast. The new piece is the
-    // advisories array, derived from the forecast + the farm's species.
-    expect(route).toMatch(/advisories:\s*interpretWeatherForFarm/);
+    // The route spreads the function result into res.json — the function
+    // returns {advisories, nextHeatStress, nextSprayWindow}. Both shapes
+    // are in the response. The exact wire pattern was changed from
+    // `advisories: interpretWeatherForFarm(...)` to `...interpretWeatherForFarm(...)`
+    // when the function grew a second return value; the contract is
+    // "the response has all the keys the function returns".
+    expect(route).toMatch(/interpretWeatherForFarm/);
+    expect(route).toMatch(/\.\.\.interpretWeatherForFarm/);
   });
 
   it("loads the farm's active species to feed the interpreter", () => {

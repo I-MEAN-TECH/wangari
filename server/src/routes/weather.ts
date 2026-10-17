@@ -219,7 +219,7 @@ router.get("/", async (req: Request, res: Response) => {
 
     return res.json({
       ...result,
-      advisories: interpretWeatherForFarm(forecast, species),
+      ...interpretWeatherForFarm(forecast, species),
     });
   } catch (error) {
     console.error("Weather route error:", error);
