@@ -216,7 +216,7 @@ async function activeConfig(): Promise<AIProviderConfig & { model: string; baseU
  * asking costs nothing and comes back as exactly one of the values the form
  * expects.
  */
-const mcpTools = [
+export const mcpTools = [
   { type: "function", function: { name: "list_flocks", description: "List all flocks with bird count, breed, status, and mortality", parameters: { type: "object", properties: {}, required: [] } } },
   { type: "function", function: { name: "delete_flock", description: "Remove a flock from the farm", parameters: { type: "object", properties: { id: { type: "number", description: "Flock ID" } }, required: ["id"] } } },
   { type: "function", function: { name: "list_production", description: "Get recent egg production data", parameters: { type: "object", properties: { days: { type: "number", description: "Days to retrieve (default 7)" } }, required: [] } } },
@@ -306,7 +306,7 @@ const mcpTools = [
   },
 ];
 
-const SYSTEM_PROMPT = `You are Wangari AI, an intelligent farm management assistant for mixed farms (livestock and crops) in Kenya.
+export const SYSTEM_PROMPT = `You are Wangari AI, an intelligent farm management assistant for mixed farms (livestock and crops) in Kenya.
 
 You have FULL ACCESS to the farmer's farm management system. You can read, create, update, and delete any data.
 
@@ -533,7 +533,7 @@ export interface TurnBudget {
   cap?: number;
 }
 
-async function executeTool(
+export async function executeTool(
   toolName: string,
   args: Record<string, any>,
   farmId: number,
@@ -1085,7 +1085,7 @@ router.post("/stream", async (req: Request, res: Response) => {
 // The model gets the full JSON, but the farmer-facing UI shows a short
 // human line per step ("Recorded sale KES 4,500"). Keep it Swahili-friendly
 // and short — the farmer cannot read long strings.
-function summariseToolResult(tool: string, result: any): string {
+export function summariseToolResult(tool: string, result: any): string {
   // Plural nouns for "N of them", and the singular for the one-row case.
   // A trailing-s strip cannot reach "money record", and "Read money records —
   // 1 records" is the kind of detail a farmer notices and stops trusting.
@@ -1186,7 +1186,7 @@ export interface AiCaller {
   ip: string | null;
 }
 
-async function callAI(
+export async function callAI(
   messages: any[],
   tools: any[],
   onWait?: (waitMs: number, opensAt: number | null) => void,
