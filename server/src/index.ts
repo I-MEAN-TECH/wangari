@@ -60,6 +60,7 @@ import uploadRoutes from "./routes/upload.js";
 import paystackRoutes from "./routes/paystack.js";
 import trialRoutes from "./routes/trial.js";
 import cronRoutes from "./routes/cron.js";
+import autoReconcileRoutes from "./routes/reconciliation-auto.js";
 import plansRoutes from "./routes/plans.js";
 import deliveriesRoutes from "./routes/deliveries.js";import documentsRoutes from "./routes/documents.js";
 import quotesRoutes from "./routes/quotes.js";
@@ -334,6 +335,7 @@ app.use("/api/cron", cronRoutes);
 app.use("/api/cron", cronAdvisoryRoutes);
 app.use("/api/cron", cronLifecycleRoutes);
 app.use("/api/cron", cronWeeklyRoutes);
+app.use("/api/cron/auto-reconcile", autoReconcileRoutes);
 
 // ─── Super-Admin API ──────────────────────────────────────
 // Stricter limiter: admin login is a high-value brute-force target.

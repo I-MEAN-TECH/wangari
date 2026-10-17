@@ -299,3 +299,80 @@ export function reconciliationSummary(
     settled: deliveries.length - open.length,
   };
 }
+
+// ─── Auto-confirm: the safe subset of matches the system can apply without
+//     a human click ─────────────────────────────────────────────────────
+
+export interface AutoMatch {
+  transactionId: number;
+  deliveryId: number;
+  /** Why this was auto-confirmed, for the audit log. */
+  reasons: string[];
+}
+
+/**
+ * Find the income transactions and open deliveries that are the SAME
+ * payment: same reference number AND same amount-to-the-cent. These are
+ * the only matches the system is allowed to apply without the farmer's
+ * click.
+ *
+ * Why "reference AND amount", not just one:
+ *   - Amount alone is not unique. Three farmers delivering 12 litres
+ *     produce three identical KES 600 receipts. An amount-only matcher
+ *     would auto-confirm one of them against the wrong delivery.
+ *   - Reference alone is not enough. The reference is the buyer's own
+ *     slip number, which the buyer enters once when the receipt is
+ *     made. A typo on the farmer's side, a partial payment, or a
+ *     deduction taken off the gross all leave the reference intact and
+ *     the amount different. A reference-only matcher would auto-confirm
+ *     the wrong amount.
+ *   - Both together is the unique signature of "this M-Pesa IS the
+ *     settlement of this delivery". The combination is what the farmer
+ *     themselves would click to confirm.
+ *
+ * The function is pure and idempotent. The cron wraps it in a database
+ * write that stamps matchedBy = "auto" and matchedAt = now().
+ */
+export function findAutoConfirmMatches(
+  transactions: IncomeTransaction[],
+  deliveries: OpenDelivery[],
+): AutoMatch[] {
+  const out: AutoMatch[] = [];
+  for (const t of transactions) {
+    // A confirmed match is the farmer's decision. Re-applying one
+    // silently is a class of bug we never want.
+    if (t.matchedBy != null) continue;
+    if (t.deliveryId != null) continue;
+    if (t.amount <= 0) continue;
+    if (typeof t.reference !== "string" || t.reference.trim() === "") continue;
+
+    for (const d of deliveries) {
+      if (d.expectedPay == null) continue;
+      if (typeof d.receiptRef !== "string" || d.receiptRef.trim() === "") continue;
+      // The delivery must still owe something. A zero outstanding
+      // means the buyer has already paid in full (or the previous
+      // payment settled it), and double-crediting is the failure mode
+      // we never want. A *partially* paid delivery is fine — the
+      // outstanding balance is the amount we compare against.
+      const owed = outstandingOn(d);
+      if (owed == null) continue;
+      if (owed <= 0) continue;
+      // Chronology: the receipt must arrive on or after the delivery.
+      // Anything earlier is the wrong payment (a previous month's slip
+      // photographed by accident, a misdated phone entry, etc.).
+      if (t.date.getTime() < d.date.getTime()) continue;
+      // The two unique signals.
+      if (t.reference.trim() !== d.receiptRef.trim()) continue;
+      if (Math.abs(t.amount - owed) > 0.01) continue;
+
+      out.push({
+        transactionId: t.id,
+        deliveryId: d.id,
+        reasons: ["reference", "amount"],
+      });
+      // One delivery per transaction; the first perfect match wins.
+      break;
+    }
+  }
+  return out;
+}
