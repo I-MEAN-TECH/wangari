@@ -33,6 +33,7 @@ import weatherRoutes from "./routes/weather.js";
 import aiRoutes from "./routes/ai.js";
 import aiIntakeRoutes from "./routes/ai-intake.js";
 import aiWhatsappRoutes from "./routes/ai-whatsapp.js";
+import aiTranscribeRoutes from "./routes/ai-transcribe.js";
 import breedingRoutes from "./routes/breeding.js";
 import cropsRoutes from "./routes/crops.js";
 import cropPlannerRoutes from "./routes/crop-planner.js";
@@ -279,6 +280,7 @@ app.use("/api/weather", weatherRoutes);
 app.use("/api/ai/intake", aiIntakeRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/ai/whatsapp", aiWhatsappRoutes);
+app.use("/api/ai/transcribe", aiTranscribeRoutes);
 app.use("/api/breeding", breedingRoutes);
 app.use("/api/crops", idempotencyGuard, cropPlannerRoutes);
 app.use("/api/profitability", profitabilityRoutes); // /planner routes before the main crops router

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Mic, Undo2, History } from "lucide-react";
+import { ArrowLeft, Send, Undo2, History } from "lucide-react";
 import { ChatPanel, type Turn } from "@/components/ai/chat-panel";
 import ConversationList from "@/components/ai/conversation-list";
 import {
@@ -16,6 +16,7 @@ import type { AgentActivity, AgentStep } from "@/components/ai/agent-presence";
 import { streamAI, type WireMessage, type StreamEvent } from "@/lib/ai-stream";
 import IntakeCard from "@/components/ai/intake-card";
 import ChoiceCard from "@/components/ai/choice-card";
+import { VoiceRecorder } from "@/components/ai/voice-recorder";
 import type { IntakeCard as IntakeCardData } from "@/lib/ai-intake";
 import type { FarmerChoice } from "@/lib/ai-choice";
 import { setPresence, clearPresence, type Presence } from "@/lib/wangari-presence";
@@ -407,19 +408,14 @@ export default function AIAssistantPage() {
         placeholder="Tell Wangari what to do…"
         className="max-h-32 min-h-[44px] flex-1 resize-none bg-transparent py-2.5 text-base text-wangari-heading placeholder:text-wangari-subtle focus:outline-none"
       />
-      {/* Voice is the intended primary path (§0 R1) but the recorder is not
-          built. It stays visible so the promise stays visible, and it is
-          honestly disabled rather than a control that silently does nothing.
-          No copy tells anyone to tap it. */}
-      <button
-        type="button"
-        aria-label="Speak to Wangari"
-        disabled
-        title="Voice input is not built yet"
-        className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-wangari-subtle"
-      >
-        <Mic className="h-5 w-5" aria-hidden />
-      </button>
+      {/* Voice is the intended primary path (§0 R1). The recorder now works
+          end-to-end: it captures audio, posts to /api/ai/transcribe, and
+          pipes the text back into the composer. The backend is currently
+          a no-op stub (lib/stt.ts) — pressing the button, recording, and
+          stopping surfaces "Voice transcription is not configured yet" as
+          a tooltip, not a silent failure. Plug an STT provider in and the
+          same button does the real thing with no UI change. */}
+      <VoiceRecorder onTranscript={(t) => setValue((prev) => (prev ? prev + " " : "") + t)} />
       {/* Solid and unmistakable when armed. The old version was a pale green
           that read as broken rather than disabled — on a screen whose only
           job is one button, "looks broken" is the wrong thing to say. */}
