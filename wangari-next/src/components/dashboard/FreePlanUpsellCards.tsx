@@ -27,7 +27,7 @@ const UPSELL_FEATURES = [
     badgeColor: "bg-amber-100 text-amber-800",
     title: "Manage Your Cows & Chickens",
     story:
-      "Mama Samia's cow was pregnant — but she didn't know because she had forgotten the day the cow was inseminated. Now she uses Wangari and gets alerts before the calf arrives.",
+      "Mama Samia's cow was pregnant â€” but she did not know because she had forgotten the day the cow was inseminated. Now she uses Wangari and gets alerts before the calf arrives.",
     cta: "Track My Animals",
   },
   {
@@ -83,7 +83,7 @@ const UPSELL_FEATURES = [
     badgeColor: "bg-blue-100 text-blue-800",
     title: "Feed & Stock Inventory",
     story:
-      "Grace never runs out of chicken feed anymore. Wangari warns her 5 days before stock runs out so she can order in time — saving emergency trips to town.",
+      "Grace never runs out of chicken feed anymore. Wangari warns her 5 days before stock runs out so she can order in time â€” saving emergency trips to town.",
     cta: "Track My Inventory",
   },
   {
@@ -107,7 +107,11 @@ const fadeUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    transition: {
+      duration: 0.4,
+      delay: i * 0.08,
+      ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    },
   }),
 };
 
@@ -118,7 +122,7 @@ export function FreePlanUpsellCards() {
         <div>
           <h2 className="text-sm font-bold text-wangari-text">Unlock More for Your Farm</h2>
           <p className="text-xs text-wangari-muted mt-0.5">
-            Used by thousands of Kenyan farmers — tap to learn more
+            Used by thousands of Kenyan farmers â€” tap to learn more
           </p>
         </div>
         <span className="flex items-center gap-1 rounded-full bg-wangari-green-50 px-2.5 py-1 text-xs font-bold text-wangari-green-700">
@@ -137,15 +141,26 @@ export function FreePlanUpsellCards() {
                 className={cn(
                   "group flex flex-col h-full rounded-2xl border bg-gradient-to-br p-5 gap-3",
                   "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,0,0,0.08)] active:scale-[0.99]",
-                  f.color, f.border
+                  f.color,
+                  f.border
                 )}
               >
                 <div className="flex items-start justify-between">
-                  <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl shrink-0", f.iconBg)}>
+                  <div
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-xl shrink-0",
+                      f.iconBg
+                    )}
+                  >
                     <Icon className={cn("h-5 w-5", f.iconColor)} />
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide", f.badgeColor)}>
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                        f.badgeColor
+                      )}
+                    >
                       {f.badge}
                     </span>
                     <Lock className="h-3.5 w-3.5 text-wangari-muted/60" />
@@ -153,7 +168,9 @@ export function FreePlanUpsellCards() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-bold text-wangari-heading leading-snug">{f.title}</p>
-                  <p className="mt-2 text-xs leading-relaxed text-wangari-muted line-clamp-3">{f.story}</p>
+                  <p className="mt-2 text-xs leading-relaxed text-wangari-muted line-clamp-3">
+                    {f.story}
+                  </p>
                 </div>
                 <span className="mt-auto inline-flex items-center gap-1 text-xs font-bold text-wangari-green-700 group-hover:gap-2 transition-all">
                   {f.cta}
@@ -164,26 +181,6 @@ export function FreePlanUpsellCards() {
           );
         })}
       </div>
-
-      <Link href="/subscription">
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-wangari-green-800 to-wangari-green-900 p-5 cursor-pointer hover:from-wangari-green-900 transition-all group mt-2"
-        >
-          <div>
-            <p className="text-sm font-bold text-white">Start with Starter Plan — from KES 499/month</p>
-            <p className="text-xs text-wangari-green-200 mt-0.5">Animals · Crops · Inventory · Health Alerts · No setup fee</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Sparkles className="h-4 w-4 text-wangari-green-300" />
-            <span className="text-sm font-extrabold text-white flex items-center gap-1">
-              Upgrade <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </span>
-          </div>
-        </motion.div>
-      </Link>
     </div>
   );
 }
