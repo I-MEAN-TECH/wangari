@@ -20,6 +20,7 @@ import {
   Leaf,
   CreditCard,
   Sprout,
+  Gift,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { FirstRunCard } from "@/components/dashboard/FirstRunCard";
@@ -46,6 +47,7 @@ import { AlertsCard } from "@/components/dashboard/Alerts";
 import { DailyTasks } from "@/components/dashboard/DailyTasks";
 import { FreePlanUpsellCards } from "@/components/dashboard/FreePlanUpsellCards";
 import { WeeklyUpgradeModal } from "@/components/dashboard/WeeklyUpgradeModal";
+import { InviteNeighbourModal } from "@/components/dashboard/InviteNeighbourModal";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -111,6 +113,7 @@ function DashboardContent() {
   const [creatingFarm, setCreatingFarm] = React.useState(false);
   const [farmError, setFarmError] = React.useState("");
   const [paymentModal, setPaymentModal] = React.useState<{ type: "success" | "failed"; reference?: string | null } | null>(null);
+  const [showInviteModal, setShowInviteModal] = React.useState(false);
   const searchParams = useSearchParams();
   const subscribePlan = searchParams.get("subscribe");
 
@@ -463,6 +466,13 @@ function DashboardContent() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <Button
+            size="sm"
+            onClick={() => setShowInviteModal(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold gap-1.5 shadow cursor-pointer"
+          >
+            <Gift className="h-4 w-4" /> Alika Jirani
+          </Button>
           {(!trialData?.subscription || trialData?.subscription?.daysLeft <= 7) && (
             <Link href="/subscription">
               <Button size="sm" className="bg-wangari-green-800 hover:bg-wangari-green-900 text-white font-extrabold gap-1.5 shadow cursor-pointer">
@@ -1067,6 +1077,10 @@ function DashboardContent() {
           </motion.div>
         </div>
       </div>
+      <InviteNeighbourModal
+        open={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+      />
     </div>
   );
 }

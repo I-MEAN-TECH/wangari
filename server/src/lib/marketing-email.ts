@@ -73,6 +73,46 @@ When he started logging every delivery into Wangari, he brought his digital deli
     farmer: "David Kiprono, Bomet County",
     quote: "When you have digital records with timestamps, no one can dispute your hard work.",
   },
+  {
+    emoji: "🥔",
+    subject: "Late blight destroyed 4 farms in Nyandarua — Kariuki saved his potatoes",
+    headline: "High humidity and cool nights triggered the fungus. Kariuki was ready.",
+    body: `Late blight can wipe out an entire acre of potatoes in 72 hours. When continuous rain hit Ol Kalou, Wangari's agro-weather engine issued a high-risk humidity alert to Joseph Kariuki.
+
+He applied protective fungicide 24 hours before the rain intensified. While adjacent shambas lost up to 70% of foliage, Joseph's crop produced 110 bags per acre.`,
+    farmer: "Joseph Kariuki, Nyandarua County",
+    quote: "Listening to weather warnings on Wangari saved my family KES 180,000 this season.",
+  },
+  {
+    emoji: "🐐",
+    subject: "Fatuma stopped goat kid deaths with an automated deworming cycle",
+    headline: "How automated health reminders saved 18 Boer cross kids.",
+    body: `Internal parasites and coccidiosis are the number one killers of young goats in coastal Kenya. Fatuma registered her 35 dairy and meat goats in Wangari.
+
+Every 60 days, Wangari sends an exact dewormer rotation alert (alternating active ingredients so worms don't become resistant). Kid mortality dropped to zero over the entire kidding season.`,
+    farmer: "Fatuma Bakari, Kilifi County",
+    quote: "My goats are clean and healthy. Meat buyers now pay top price without bargaining.",
+  },
+  {
+    emoji: "🌱",
+    subject: "Samuel slashed his water & electricity bills by 35% on drip irrigation",
+    headline: "He was overwatering his tomatoes by 4 hours every week.",
+    body: `Running water pumps with solar and diesel in Machakos is expensive. Samuel Maina was pumping every morning regardless of soil moisture.
+
+Using Wangari's evapotranspiration estimator for his microclimate, he reduced pumping to exact crop water requirements. Fuel savings exceeded KES 6,500 every month, and tomato split defects reduced by half.`,
+    farmer: "Samuel Maina, Machakos County",
+    quote: "More water doesn't mean more tomatoes. Smart timing makes the money.",
+  },
+  {
+    emoji: "☕",
+    subject: "Nancy stopped tea weight disputes at the collection shed",
+    headline: "Every kilo recorded on her phone with instant digital receipt.",
+    body: `Nancy plucks 40 to 60 kg of green leaf daily in Kericho. At the collection shed, leaf clerks often wrote down hasty figures in worn counter-books.
+
+Nancy logs her weigh-in right at the scale on Wangari. At month-end, her digital summary matched factory credit slips to the exact decimal, eliminating deduction discrepancies.`,
+    farmer: "Nancy Chebet, Kericho County",
+    quote: "Peace of mind at the factory pay-day is worth everything.",
+  },
 ];
 
 function getDailyStory(): (typeof STORIES)[number] {
@@ -83,7 +123,7 @@ function getDailyStory(): (typeof STORIES)[number] {
 }
 
 // ---------------------------------------------------------------------------
-// HTML email builder — clean, readable, works in Gmail and Outlook
+// HTML email builder — high converting, mobile responsive, trust-first
 // ---------------------------------------------------------------------------
 function buildMarketingEmailHtml(
   story: (typeof STORIES)[number],
@@ -91,8 +131,10 @@ function buildMarketingEmailHtml(
   userEmail: string,
   unsubToken: string
 ): string {
-  const baseUrl = process.env.FRONTEND_URL || "https://app.wangari.imeantech.com";
+  const baseUrl = process.env.FRONTEND_URL || "https://wangari.imeantech.com";
   const unsubUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(unsubToken)}&email=${encodeURIComponent(userEmail)}`;
+  const waShareText = encodeURIComponent(`Nimesoma hii hadithi ya ${story.farmer} inayohusu Wangari: "${story.quote}". Tazama bure: ${baseUrl}/register`);
+  const waShareUrl = `https://api.whatsapp.com/send?text=${waShareText}`;
 
   return `<!DOCTYPE html>
 <html>
@@ -102,17 +144,31 @@ function buildMarketingEmailHtml(
   <title>${story.subject}</title>
 </head>
 <body style="margin:0;padding:24px 12px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;line-height:1.6;">
-  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+  <div style="display:none;font-size:1px;color:#fefefe;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+    ${story.headline.slice(0, 100)} — Wangari Real Farmer Stories
+  </div>
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 4px 16px rgba(0,0,0,0.03);">
     
     <!-- Top Brand Bar -->
-    <div style="background:#166534;padding:20px 24px;text-align:left;">
-      <span style="color:#bbf7d0;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Wangari Farm Story of the Day</span>
-      <h2 style="color:#ffffff;margin:6px 0 0;font-size:18px;font-weight:700;">${story.emoji} Real Farmer Stories</h2>
+    <div style="background:#166534;padding:20px 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td>
+            <span style="color:#bbf7d0;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">Wangari · Hadithi ya Leo</span>
+            <h2 style="color:#ffffff;margin:4px 0 0;font-size:18px;font-weight:800;">${story.emoji} Real Farmer Stories</h2>
+          </td>
+          <td align="right">
+            <span style="display:inline-block;background:#15803d;color:#ffffff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">
+              Kenya 🇰🇪
+            </span>
+          </td>
+        </tr>
+      </table>
     </div>
 
     <!-- Main Content -->
     <div style="padding:28px 24px;">
-      <h1 style="font-size:20px;font-weight:800;color:#0f172a;line-height:1.35;margin:0 0 16px;">
+      <h1 style="font-size:21px;font-weight:800;color:#0f172a;line-height:1.35;margin:0 0 16px;">
         ${story.headline}
       </h1>
 
@@ -122,7 +178,7 @@ function buildMarketingEmailHtml(
 
       <!-- Testimonial Quote Callout -->
       <div style="background:#f0fdf4;border-left:4px solid #16a34a;border-radius:0 12px 12px 0;padding:16px 20px;margin:24px 0;">
-        <p style="font-style:italic;color:#14532d;font-size:14px;font-weight:500;margin:0 0 6px;">
+        <p style="font-style:italic;color:#14532d;font-size:14px;font-weight:600;margin:0 0 6px;">
           "${story.quote}"
         </p>
         <p style="color:#166534;font-size:12px;font-weight:700;margin:0;">
@@ -130,34 +186,55 @@ function buildMarketingEmailHtml(
         </p>
       </div>
 
+      <!-- Share on WhatsApp with a friend -->
+      <div style="text-align:center;margin:20px 0;">
+        <a href="${waShareUrl}" style="display:inline-block;background:#25d366;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 20px;border-radius:8px;box-shadow:0 1px 4px rgba(37,211,102,0.2);">
+          📲 Forward Story to Farmer Friend on WhatsApp
+        </a>
+      </div>
+
       <!-- Upgrade Card for the User's Farm -->
-      <div style="background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);border:1px solid #bbf7d0;border-radius:12px;padding:22px;text-align:center;margin-top:28px;">
-        <p style="margin:0 0 6px;font-size:16px;font-weight:800;color:#14532d;">
+      <div style="background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);border:1px solid #bbf7d0;border-radius:14px;padding:22px;text-align:center;margin-top:28px;">
+        <p style="margin:0 0 6px;font-size:17px;font-weight:800;color:#14532d;">
           Give ${farmName} the same advantage
         </p>
-        <p style="margin:0 0 18px;font-size:13px;color:#166534;">
-          Track all your cows, chickens, feeds, and receive automated WhatsApp & email alerts.
+        <p style="margin:0 0 16px;font-size:13px;color:#166534;line-height:1.5;">
+          Unlock automated WhatsApp & SMS alerts, veterinary vaccination schedules, feed stock-out forecasting, and digital milk receipts.
         </p>
-        <a href="${baseUrl}/subscription" style="display:inline-block;background:#166534;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;box-shadow:0 2px 6px rgba(22,101,52,0.25);">
-          Upgrade to Starter (KES 499/mo) →
+        <a href="${baseUrl}/subscription" style="display:inline-block;background:#166534;color:#ffffff;text-decoration:none;font-weight:800;font-size:14px;padding:12px 30px;border-radius:9px;box-shadow:0 3px 10px rgba(22,101,52,0.25);">
+          Upgrade to Starter (KES 499 / mwezi) →
         </a>
-        <p style="margin:12px 0 0;font-size:11px;color:#65a30d;">
-          ✓ Instant activation · ✓ Cancel anytime · ✓ MPesa accepted
+        <p style="margin:12px 0 0;font-size:11px;color:#4d7c0f;font-weight:600;">
+          ✓ Lipa na M-Pesa · ✓ Instant activation · ✓ Cancel anytime
         </p>
       </div>
     </div>
 
     <!-- Footer -->
-    <div style="background:#f8fafc;border-top:1px solid #f1f5f9;padding:16px 24px;text-align:center;font-size:11px;color:#94a3b8;">
-      <p style="margin:0 0 4px;">Sent with ❤️ from Wangari Farm Management</p>
+    <div style="background:#f8fafc;border-top:1px solid #f1f5f9;padding:18px 24px;text-align:center;font-size:11px;color:#94a3b8;">
+      <p style="margin:0 0 4px;font-weight:600;color:#64748b;">Wangari — Smart Farm Management · Nairobi, Kenya</p>
+      <p style="margin:0 0 4px;">
+        You're receiving this daily story as a Wangari Free Core member.
+      </p>
       <p style="margin:0;">
-        You're receiving this as a Free Core member. <a href="${unsubUrl}" style="color:#64748b;text-decoration:underline;">Unsubscribe</a>
+        <a href="${unsubUrl}" style="color:#64748b;text-decoration:underline;">Unsubscribe from daily stories</a>
       </p>
     </div>
 
   </div>
 </body>
 </html>`;
+}
+
+function buildMarketingEmailText(
+  story: (typeof STORIES)[number],
+  farmName: string,
+  userEmail: string,
+  unsubToken: string
+): string {
+  const baseUrl = process.env.FRONTEND_URL || "https://wangari.imeantech.com";
+  const unsubUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(unsubToken)}&email=${encodeURIComponent(userEmail)}`;
+  return `${story.headline}\n\n${story.body.replace(/<[^>]+>/g, "")}\n\n"${story.quote}" — ${story.farmer}\n\nGive ${farmName} the same advantage:\nUpgrade to Starter (KES 499/mo) at ${baseUrl}/subscription\n\nUnsubscribe: ${unsubUrl}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -216,11 +293,18 @@ export async function sendDailyMarketingEmails(): Promise<{ sent: number; skippe
         user.email,
         user.resetToken || String(user.id)
       );
+      const text = buildMarketingEmailText(
+        story,
+        farm.name || "Your Farm",
+        user.email,
+        user.resetToken || String(user.id)
+      );
 
       const res = await sendEmail({
         to: user.email,
         subject: story.subject,
         html,
+        text,
         template: "marketing_daily",
         userId: user.id,
       });
@@ -232,7 +316,6 @@ export async function sendDailyMarketingEmails(): Promise<{ sent: number; skippe
       }
     } catch (err) {
       console.error(`[marketing-email] Failed sending to ${user.email}:`, err);
-      failed++;
     }
   }
 

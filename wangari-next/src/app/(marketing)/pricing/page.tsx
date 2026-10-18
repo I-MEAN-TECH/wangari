@@ -276,6 +276,23 @@ export default function PricingPage() {
             );
           })}
         </div>
+
+        {/* Enterprise & Cooperative Banner */}
+        <div className="mt-12 p-8 rounded-2xl bg-gradient-to-r from-wangari-green-950 via-wangari-green-900 to-wangari-green-950 text-white text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 border border-wangari-green-800 shadow-md">
+          <div>
+            <span className="text-xs font-bold text-wangari-green-300 uppercase tracking-wider">For Dairy Cooperatives & SACCOs</span>
+            <h3 className="text-xl sm:text-2xl font-bold mt-1">Need a custom deployment for your collection centers?</h3>
+            <p className="text-sm text-wangari-green-100/90 mt-1 max-w-xl leading-relaxed">
+              Equip your clerks with digital delivery logs, automated monthly member deductions, and direct SMS receipts.
+            </p>
+          </div>
+          <a
+            href="/cooperatives"
+            className="shrink-0 px-6 py-3.5 rounded-xl bg-wangari-green-500 hover:bg-wangari-green-600 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+          >
+            Request 30-Day Co-op Pilot →
+          </a>
+        </div>
       </section>
 
       <section className="section stack-section">

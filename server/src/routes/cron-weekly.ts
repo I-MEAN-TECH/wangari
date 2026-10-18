@@ -87,11 +87,30 @@ function weeklyReportHtml(
     ${sectionCard("🧺 Harvest readiness", "#d97706", harvestRows)}
     ${sectionCard("✅ Decisions for this week", "#166534", actionRows)}
 
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;text-align:center;margin:22px 0 16px;">
+      <p style="margin:0 0 4px;font-size:14px;font-weight:800;color:#14532d;">
+        ⭐ Unlock Automated WhatsApp & SMS Reminders
+      </p>
+      <p style="margin:0 0 12px;font-size:12px;color:#15803d;line-height:1.4;">
+        Upgrade ${farmName} to Starter (KES 499 / mwezi) for automated veterinary alerts, feed stock-out warnings, and tamper-proof milk statements.
+      </p>
+      <a href="${dashboardUrl.replace('/dashboard', '/subscription')}" style="display:inline-block;background:#166534;color:#ffffff;text-decoration:none;font-weight:700;font-size:12px;padding:8px 22px;border-radius:8px;">
+        Upgrade with M-Pesa →
+      </a>
+    </div>
+
     <div style="margin-top:18px;text-align:center;">
       <a href="${dashboardUrl}" style="display:inline-block;background-color:#166534;color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;padding:12px 28px;border-radius:10px;">Open your dashboard</a>
     </div>
 
-    <p style="margin:20px 0 0;font-size:11px;color:#94a3b8;text-align:center;">
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;text-align:center;">
+      <p style="margin:0 0 4px;font-size:12px;color:#166534;font-weight:700;">🤝 Alika Jirani — Invite a Farmer Friend</p>
+      <p style="margin:0;font-size:11px;color:#64748b;">
+        Give a neighbouring farmer 14 days free Starter. When they upgrade, your farm earns 1 free month!
+      </p>
+    </div>
+
+    <p style="margin:16px 0 0;font-size:11px;color:#94a3b8;text-align:center;">
       You receive this weekly summary because you have a Wangari farm account.
     </p>
   </div>`;

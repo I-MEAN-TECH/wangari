@@ -33,14 +33,21 @@ export default function RegisterPage() {
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
+  const [refCode, setRefCode] = React.useState<string>("");
+
   // The login page sends a farmer who tapped Google here with their verified
   // address (?googleEmail=...). Pre-fill it so they do not retype an address
   // Google has already proven - they only need to add a password and name.
   React.useEffect(() => {
-    const googleEmail = new URLSearchParams(window.location.search).get("googleEmail");
+    const params = new URLSearchParams(window.location.search);
+    const googleEmail = params.get("googleEmail");
     if (googleEmail) {
       setForm((f) => (f.email ? f : { ...f, email: googleEmail }));
       setError("Google sign-in works. Add your name and password below to finish creating your farm.");
+    }
+    const ref = params.get("ref");
+    if (ref) {
+      setRefCode(ref.trim().toUpperCase());
     }
   }, []);
 
@@ -112,7 +119,7 @@ export default function RegisterPage() {
     setAvatarState("loading");
 
     try {
-      await register(form.name, form.email, form.password);
+      await register(form.name, form.email, form.password, undefined, refCode || undefined);
       setAvatarState("success");
       router.push(`/verify-email?email=${encodeURIComponent(form.email)}`);
     } catch (err) {
@@ -146,6 +153,20 @@ export default function RegisterPage() {
           Start managing your farm in minutes — it&apos;s free
         </p>
       </motion.div>
+
+      {/* Referral Banner */}
+      {refCode && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl bg-wangari-green-50 border border-wangari-green-200 px-4 py-3 text-sm text-wangari-green-900 font-medium flex items-center gap-2"
+        >
+          <span>🤝</span>
+          <span>
+            Invited by a farmer friend (<strong>{refCode}</strong>). Welcome to Wangari!
+          </span>
+        </motion.div>
+      )}
 
       {/* Error */}
       {error && (

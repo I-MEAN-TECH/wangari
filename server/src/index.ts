@@ -85,6 +85,7 @@ import adminIpRoutes from "./routes/admin-ip.js";
 import contactRoutes from "./routes/contact.js";
 import siteContentRoutes from "./routes/site-content.js";
 import activationRoutes from "./routes/activation.js";
+import referralsRoutes from "./routes/referrals.js";
 import { seedPlans, migrateFreeCoreOnBoot } from "./lib/seed-plans.js";
 
 // ─── Process-Level Crash Safety ────────────────────────────
@@ -335,6 +336,7 @@ app.use("/api/deliveries", idempotencyGuard, deliveriesRoutes);
 // signal for exactly the people who stopped paying is how a funnel starts
 // reporting an improvement that is really a measurement gap.
 app.use("/api/activation", activationRoutes);
+app.use("/api/referrals", referralsRoutes);
 app.use("/api/documents", documentsRoutes);
 app.use("/api/cron", cronRoutes);
 app.use("/api/cron", cronAdvisoryRoutes);

@@ -103,14 +103,13 @@ async function issueVerificationCode(user: { id: number; email: string }): Promi
     data: { userId: user.id, code, purpose: "email_verification", expiresAt },
   });
 
-  const { sendEmail } = await import("../lib/email.js");
-  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f6f8f6;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"><div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;border:1px solid #e5e7eb;padding:28px;"><h2 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Your verification code</h2><p style="margin:0 0 24px;font-size:15px;color:#64748b;">Use the code below to verify your email and continue. It expires in <strong>15 minutes</strong>.</p><div style="background:#f0fdf4;border-radius:8px;padding:20px;text-align:center;margin-bottom:24px;"><span style="font-size:32px;font-weight:700;letter-spacing:6px;color:#166534;font-family:monospace;">${code}</span></div><p style="margin:0;font-size:13px;color:#64748b;">If you didn't request this, you can safely ignore this email.</p><hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" /><p style="margin:0;font-size:12px;color:#94a3b8;">This email landed in Spam? Open it and tap <strong>“Not spam”</strong> — Gmail will then deliver our future emails to your inbox.</p></div></body></html>`;
-  const text = `Your Wangari verification code is ${code}. It expires in 15 minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\nTip: if this email landed in Spam, tap \"Not spam\" so Gmail delivers our future emails to your inbox.`;
+  const { sendEmail, emailTemplates } = await import("../lib/email.js");
+  const tpl = emailTemplates.verificationCode(code);
   const result = await sendEmail({
     to: user.email,
-    subject: "Verify your email — Wangari",
-    html,
-    text,
+    subject: tpl.subject,
+    html: tpl.html,
+    text: tpl.text,
     template: "email_verification",
     userId: user.id,
   });
@@ -125,7 +124,7 @@ async function issueVerificationCode(user: { id: number; email: string }): Promi
 // POST /api/auth/register
 router.post("/register", async (req: Request, res: Response) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, ref } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: "Name, email, and password are required" });
@@ -183,6 +182,28 @@ router.post("/register", async (req: Request, res: Response) => {
         role: "farm_owner",
       },
     });
+
+    // Check referral code if provided
+    if (ref && typeof ref === "string") {
+      try {
+        const cleanRef = ref.trim().toUpperCase();
+        const referrerFarm = await prisma.farm.findUnique({
+          where: { code: cleanRef },
+          select: { id: true, name: true, ownerId: true },
+        });
+        if (referrerFarm && referrerFarm.ownerId !== user.id) {
+          await prisma.announcement.create({
+            data: {
+              farmId: referrerFarm.id,
+              active: true,
+              message: `🤝 Jirani yako ${name} amejiunga na Wangari akitumia kiungo chako (${cleanRef})! You'll earn 1 free month when they upgrade.`,
+            },
+          });
+        }
+      } catch (refErr) {
+        console.warn("[auth/register] referral check failed:", refErr);
+      }
+    }
 
     // Funnel step 1. Emitted HERE and only here — the client is not allowed to
     // claim this stage, or the funnel would measure our own optimism instead of
@@ -349,15 +370,14 @@ router.post("/forgot-password", async (req: Request, res: Response) => {
 
     // Send the reset link via SMTP (the shared email helper logs to email_logs).
     const resetUrl = `${process.env.FRONTEND_URL || "https://wangari.imeantech.com"}/reset-password?token=${resetToken}`;
-    const { sendEmail } = await import("../lib/email.js");
-    const resetHtml = `<!doctype html><html><body style="margin:0;padding:24px;background:#f6f8f6;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"><div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;border:1px solid #e5e7eb;padding:28px;"><h2 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Reset your password</h2><p style="margin:0 0 24px;font-size:15px;color:#64748b;">We received a request to reset your Wangari password. This link is valid for <strong>1 hour</strong> and can only be used once.</p><div style="text-align:center;margin-bottom:24px;"><a href="${resetUrl}" style="display:inline-block;background:#166534;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 28px;border-radius:10px;">Reset my password</a></div><p style="margin:0 0 6px;font-size:13px;color:#64748b;">Or paste this link into your browser:<br/><span style="word-break:break-all;color:#166534;">${resetUrl}</span></p><hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" /><p style="margin:0;font-size:12px;color:#94a3b8;">Didn't request a reset? You can safely ignore this email — your password stays unchanged.</p></div></body></html>`;
-    const resetText = `Reset your Wangari password using this link (valid 1 hour):\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`;
+    const { sendEmail, emailTemplates } = await import("../lib/email.js");
+    const tpl = emailTemplates.passwordReset(resetUrl);
     try {
       await sendEmail({
         to: user.email,
-        subject: "Reset your password — Wangari",
-        html: resetHtml,
-        text: resetText,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
         template: "password_reset",
         userId: user.id,
       });
@@ -797,6 +817,34 @@ router.post("/verify-email", async (req: Request, res: Response) => {
       prisma.verificationCode.update({ where: { id: verification.id }, data: { usedAt: new Date() } }),
       prisma.user.update({ where: { id: user.id }, data: { emailVerified: new Date() } }),
     ]);
+
+    // Send Welcome & Onboarding Email in the background
+    (async () => {
+      try {
+        const { sendEmail, emailTemplates } = await import("../lib/email.js");
+        const farm = await prisma.farm.findFirst({
+          where: { ownerId: user.id },
+          select: { name: true, code: true },
+        });
+        const appUrl = process.env.FRONTEND_URL || "https://wangari.imeantech.com";
+        const tpl = emailTemplates.welcome(
+          user.name || "Farmer",
+          farm?.name || "Your Farm",
+          farm?.code || "WANGARI",
+          appUrl
+        );
+        await sendEmail({
+          to: user.email,
+          subject: tpl.subject,
+          html: tpl.html,
+          text: tpl.text,
+          template: "welcome_onboarding",
+          userId: user.id,
+        });
+      } catch (welcomeErr) {
+        console.error("[auth] Welcome email error:", welcomeErr);
+      }
+    })();
 
     // Verification completes the login — issue the session immediately so the
     // farmer doesn't have to re-enter credentials. Same shape as /login.

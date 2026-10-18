@@ -37,6 +37,7 @@ import {
   MapPin,
   Landmark,
   PiggyBank,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,6 +47,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { WangariMark } from "@/components/ai/wangari-mark";
 import api from "@/lib/api-client";
 import { UpgradePopup } from "@/components/trial/upgrade-popup";
+import { InviteNeighbourModal } from "@/components/dashboard/InviteNeighbourModal";
 
 interface NavItem {
   label: string;
@@ -145,6 +147,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const [lockedModule, setLockedModule] = React.useState<string>("");
   const [trialInfo, setTrialInfo] = React.useState<any>(null);
   const [fullyLocked, setFullyLocked] = React.useState(false);
+  const [showInviteModal, setShowInviteModal] = React.useState(false);
 
   const applyStatus = React.useCallback((d: any) => {
     setModuleAccess(d.modules || {});
@@ -435,7 +438,14 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
       </nav>
 
       {/* Quick links footer */}
-      <div className="border-t border-wangari-border px-3 py-2 space-y-0.5">
+      <div className="border-t border-wangari-border px-3 py-2 space-y-1">
+        <button
+          onClick={() => setShowInviteModal(true)}
+          className="flex items-center gap-3 w-full rounded-xl px-3 py-2 text-xs font-semibold text-wangari-green-900 bg-wangari-green-50 border border-wangari-green-200/80 hover:bg-wangari-green-100 transition-all cursor-pointer text-left"
+        >
+          <Gift className="h-4 w-4 text-wangari-green-800 shrink-0" />
+          <span className="flex-1">Alika Jirani (Earn 1 Mo)</span>
+        </button>
         <Link href="/" className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-wangari-muted hover:bg-wangari-green-50 hover:text-wangari-green-800 transition-all">
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Back to Website
@@ -482,6 +492,10 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         onClose={() => setLockedModule("")}
         moduleName={lockedModule}
         currentPlan={trialInfo?.subscription?.plan}
+      />
+      <InviteNeighbourModal
+        open={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
       />
     </aside>
   );
