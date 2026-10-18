@@ -76,3 +76,9 @@ server/tmp/
 # codebase.
 uploads/
 server/uploads/
+
+# Local brag/output dumps — dev artefacts, never deploy material
+/brag-output-*/
+
+# Local generated docs — not part of the codebase
+/docs/wangari-module-guide.md
