@@ -339,81 +339,77 @@ function DashboardContent() {
 
   const isFreePlan = !trialData?.subscription || /free|core/i.test(trialData?.subscription?.plan_name ?? "");
 
-  // Activity alerts tailored to what the farmer is doing
-  const activityAlerts = React.useMemo(() => {
-    const list: Array<{
-      id?: string;
-      title: string;
-      subtitle: string;
-      type?: "warning" | "info" | "danger" | "success";
-      href?: string;
-      actionText?: string;
-    }> = [];
+  // Activity alerts tailored to what the farmer is doing (plain computation, no hook after early return)
+  const activityAlerts: Array<{
+    id?: string;
+    title: string;
+    subtitle: string;
+    type?: "warning" | "info" | "danger" | "success";
+    href?: string;
+    actionText?: string;
+  }> = [];
 
-    if (isFreePlan) {
-      // 1. Daily delivery activity check
-      const hasTodayDelivery = (data?.milkToday || 0) > 0 || (data?.eggsToday || 0) > 0;
-      if (!hasTodayDelivery && (statement?.deliveryCount ?? 0) === 0) {
-        list.push({
-          id: "daily-delivery",
-          title: "No delivery logged today",
-          subtitle: "Record today's milk, eggs, or produce to keep your cooperative statement accurate",
-          type: "warning",
-          href: "/deliveries",
-          actionText: "Log Supply",
-        });
-      }
-
-      // 2. Uncollected co-op payment alert
-      const outstanding = Number(statement?.outstanding || data?.moneyTiles?.overdueReceivables || 0);
-      if (outstanding > 0) {
-        list.push({
-          id: "pending-payment",
-          title: "Uncollected payment pending",
-          subtitle: `KES ${outstanding.toLocaleString()} owed from cooperative or buyers`,
-          type: "info",
-          href: "/statements",
-          actionText: "View Statement",
-        });
-      }
-
-      // 3. Cow and chicken alert teaser
-      list.push({
-        id: "animal-tracking-upsell",
-        title: "Cow & Chicken alerts available",
-        subtitle: "Mama Samia got pregnancy alerts 10 days early — unlock for your cows & chickens",
-        type: "info",
-        href: "/subscription",
-        actionText: "Unlock",
+  if (isFreePlan) {
+    // 1. Daily delivery activity check
+    const hasTodayDelivery = (data?.milkToday || 0) > 0 || (data?.eggsToday || 0) > 0;
+    if (!hasTodayDelivery && (statement?.deliveryCount ?? 0) === 0) {
+      activityAlerts.push({
+        id: "daily-delivery",
+        title: "No delivery logged today",
+        subtitle: "Record today's milk, eggs, or produce to keep your cooperative statement accurate",
+        type: "warning",
+        href: "/deliveries",
+        actionText: "Log Supply",
       });
-
-      // 4. Operating expense tracking alert
-      if ((data?.monthlyExpenses || 0) === 0) {
-        list.push({
-          id: "track-expenses",
-          title: "Log farm expenses",
-          subtitle: "Record feeds, seeds, and labor to see your real net farm profit",
-          type: "info",
-          href: "/finances",
-          actionText: "Add Cost",
-        });
-      }
-    } else {
-      // Paid plan activity alerts
-      if (data?.feedStock && data?.feedStock < 10) {
-        list.push({
-          id: "low-feed",
-          title: "Feed running low",
-          subtitle: "Review your inventory stock to avoid running out",
-          type: "warning",
-          href: "/inventory",
-          actionText: "View Stock",
-        });
-      }
     }
 
-    return list;
-  }, [isFreePlan, data, statement]);
+    // 2. Uncollected co-op payment alert
+    const outstanding = Number(statement?.outstanding || data?.moneyTiles?.overdueReceivables || 0);
+    if (outstanding > 0) {
+      activityAlerts.push({
+        id: "pending-payment",
+        title: "Uncollected payment pending",
+        subtitle: `KES ${outstanding.toLocaleString()} owed from cooperative or buyers`,
+        type: "info",
+        href: "/statement",
+        actionText: "View Statement",
+      });
+    }
+
+    // 3. Cow and chicken alert teaser
+    activityAlerts.push({
+      id: "animal-tracking-upsell",
+      title: "Cow & Chicken alerts available",
+      subtitle: "Mama Samia got pregnancy alerts 10 days early — unlock for your cows & chickens",
+      type: "info",
+      href: "/subscription",
+      actionText: "Unlock",
+    });
+
+    // 4. Operating expense tracking alert
+    if ((data?.monthlyExpenses || 0) === 0) {
+      activityAlerts.push({
+        id: "track-expenses",
+        title: "Log farm expenses",
+        subtitle: "Record feeds, seeds, and labor to see your real net farm profit",
+        type: "info",
+        href: "/finances",
+        actionText: "Add Cost",
+      });
+    }
+  } else {
+    // Paid plan activity alerts
+    if (data?.feedStock && data?.feedStock < 10) {
+      activityAlerts.push({
+        id: "low-feed",
+        title: "Feed running low",
+        subtitle: "Review your inventory stock to avoid running out",
+        type: "warning",
+        href: "/inventory",
+        actionText: "View Stock",
+      });
+    }
+  }
 
   return (
     <div className="space-y-6">
