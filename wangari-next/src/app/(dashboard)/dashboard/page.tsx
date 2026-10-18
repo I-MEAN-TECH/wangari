@@ -44,6 +44,8 @@ import { ProductionChart, RevenueChart, FlockChart, HDPTrendChart } from "@/comp
 import { WeatherWidget } from "@/components/dashboard/WeatherWidget";
 import { AlertsCard } from "@/components/dashboard/Alerts";
 import { DailyTasks } from "@/components/dashboard/DailyTasks";
+import { FreePlanUpsellCards } from "@/components/dashboard/FreePlanUpsellCards";
+import { WeeklyUpgradeModal } from "@/components/dashboard/WeeklyUpgradeModal";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -335,8 +337,89 @@ function DashboardContent() {
     value: f.totalBirds || 0,
   })) || [];
 
+  const isFreePlan = !trialData?.subscription || /free|core/i.test(trialData?.subscription?.plan_name ?? "");
+
+  // Activity alerts tailored to what the farmer is doing
+  const activityAlerts = React.useMemo(() => {
+    const list: Array<{
+      id?: string;
+      title: string;
+      subtitle: string;
+      type?: "warning" | "info" | "danger" | "success";
+      href?: string;
+      actionText?: string;
+    }> = [];
+
+    if (isFreePlan) {
+      // 1. Daily delivery activity check
+      const hasTodayDelivery = (data?.milkToday || 0) > 0 || (data?.eggsToday || 0) > 0;
+      if (!hasTodayDelivery && (statement?.deliveryCount ?? 0) === 0) {
+        list.push({
+          id: "daily-delivery",
+          title: "No delivery logged today",
+          subtitle: "Record today's milk, eggs, or produce to keep your cooperative statement accurate",
+          type: "warning",
+          href: "/deliveries",
+          actionText: "Log Supply",
+        });
+      }
+
+      // 2. Uncollected co-op payment alert
+      const outstanding = Number(statement?.outstanding || data?.moneyTiles?.overdueReceivables || 0);
+      if (outstanding > 0) {
+        list.push({
+          id: "pending-payment",
+          title: "Uncollected payment pending",
+          subtitle: `KES ${outstanding.toLocaleString()} owed from cooperative or buyers`,
+          type: "info",
+          href: "/statements",
+          actionText: "View Statement",
+        });
+      }
+
+      // 3. Cow and chicken alert teaser
+      list.push({
+        id: "animal-tracking-upsell",
+        title: "Cow & Chicken alerts available",
+        subtitle: "Mama Samia got pregnancy alerts 10 days early — unlock for your cows & chickens",
+        type: "info",
+        href: "/subscription",
+        actionText: "Unlock",
+      });
+
+      // 4. Operating expense tracking alert
+      if ((data?.monthlyExpenses || 0) === 0) {
+        list.push({
+          id: "track-expenses",
+          title: "Log farm expenses",
+          subtitle: "Record feeds, seeds, and labor to see your real net farm profit",
+          type: "info",
+          href: "/finances",
+          actionText: "Add Cost",
+        });
+      }
+    } else {
+      // Paid plan activity alerts
+      if (data?.feedStock && data?.feedStock < 10) {
+        list.push({
+          id: "low-feed",
+          title: "Feed running low",
+          subtitle: "Review your inventory stock to avoid running out",
+          type: "warning",
+          href: "/inventory",
+          actionText: "View Stock",
+        });
+      }
+    }
+
+    return list;
+  }, [isFreePlan, data, statement]);
+
   return (
     <div className="space-y-6">
+      {/* Weekly upgrade popup story for free plan users */}
+      <WeeklyUpgradeModal isFreePlan={isFreePlan} />
+
       {/* Header & Quick Action Toolbar */}
       <motion.div
         initial="hidden"
@@ -392,13 +475,13 @@ function DashboardContent() {
               </Button>
             </Link>
           )}
-          <Link href={fullyLocked ? "/subscription" : "/production"}>
+          <Link href={fullyLocked ? "/subscription" : isFreePlan ? "/deliveries" : "/production"}>
             <Button
               size="sm"
               title={fullyLocked ? "Subscribe to unlock" : undefined}
               className={`bg-wangari-green-500 hover:bg-wangari-green-700 text-white font-bold gap-1.5 shadow cursor-pointer ${fullyLocked ? "opacity-60" : ""}`}
             >
-              <Plus className="h-4 w-4" /> Record Today's Output
+              <Plus className="h-4 w-4" /> {isFreePlan ? "Record a Delivery" : "Record Today's Output"}
             </Button>
           </Link>
           <Link href={fullyLocked ? "/subscription" : "/finances"}>
@@ -485,6 +568,7 @@ function DashboardContent() {
       <FirstRunCard
         firstRecordAt={loading ? undefined : data?.firstRecordAt ?? null}
         locked={fullyLocked}
+        isFreePlan={!trialData?.subscription || /free|core/i.test(trialData?.subscription?.plan_name ?? "")}
       />
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -511,7 +595,90 @@ function DashboardContent() {
         />
       )}
 
-{/* ═══════════════════════════════════════════════════════
+      {/* ═══════════════════════════════════════════════════════
+          QUICK FARM HUB: Fast 1-tap navigation for all farm activities
+          ═══════════════════════════════════════════════════════ */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-sm font-bold text-wangari-text">Farm Hub & Activities</h2>
+          <span className="text-xs text-wangari-muted">Quick 1-tap access</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <Link
+            href="/deliveries"
+            className="group flex flex-col items-center text-center p-3.5 rounded-2xl border border-wangari-border bg-white shadow-xs hover:border-wangari-green-400 hover:shadow-md transition-all active:scale-95"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+              <Milk className="h-5 w-5" />
+            </div>
+            <p className="mt-2 text-xs font-bold text-wangari-heading">Deliveries</p>
+            <p className="text-[10px] text-wangari-muted">Milk & Co-op</p>
+          </Link>
+
+          <Link
+            href="/sales"
+            className="group flex flex-col items-center text-center p-3.5 rounded-2xl border border-wangari-border bg-white shadow-xs hover:border-wangari-green-400 hover:shadow-md transition-all active:scale-95"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-700 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+              <ShoppingCart className="h-5 w-5" />
+            </div>
+            <p className="mt-2 text-xs font-bold text-wangari-heading">Sales</p>
+            <p className="text-[10px] text-wangari-muted">Produce & Eggs</p>
+          </Link>
+
+          <Link
+            href="/finances"
+            className="group flex flex-col items-center text-center p-3.5 rounded-2xl border border-wangari-border bg-white shadow-xs hover:border-wangari-green-400 hover:shadow-md transition-all active:scale-95"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-700 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              <DollarSign className="h-5 w-5" />
+            </div>
+            <p className="mt-2 text-xs font-bold text-wangari-heading">Finances</p>
+            <p className="text-[10px] text-wangari-muted">Costs & Ledger</p>
+          </Link>
+
+          <Link
+            href="/statement"
+            className="group flex flex-col items-center text-center p-3.5 rounded-2xl border border-wangari-border bg-white shadow-xs hover:border-wangari-green-400 hover:shadow-md transition-all active:scale-95"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+              <CreditCard className="h-5 w-5" />
+            </div>
+            <p className="mt-2 text-xs font-bold text-wangari-heading">Statement</p>
+            <p className="text-[10px] text-wangari-muted">Payouts & Dues</p>
+          </Link>
+
+          <Link
+            href={isFreePlan ? "/subscription" : "/flocks"}
+            className="group flex flex-col items-center text-center p-3.5 rounded-2xl border border-wangari-border bg-white shadow-xs hover:border-wangari-green-400 hover:shadow-md transition-all active:scale-95"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-700 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+              <Bird className="h-5 w-5" />
+            </div>
+            <div className="mt-2 flex items-center gap-1">
+              <p className="text-xs font-bold text-wangari-heading">Animals</p>
+              {isFreePlan && <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-1 rounded">PRO</span>}
+            </div>
+            <p className="text-[10px] text-wangari-muted">Cows & Birds</p>
+          </Link>
+
+          <Link
+            href={isFreePlan ? "/subscription" : "/crops"}
+            className="group flex flex-col items-center text-center p-3.5 rounded-2xl border border-wangari-border bg-white shadow-xs hover:border-wangari-green-400 hover:shadow-md transition-all active:scale-95"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-50 text-green-700 group-hover:bg-green-600 group-hover:text-white transition-colors">
+              <Leaf className="h-5 w-5" />
+            </div>
+            <div className="mt-2 flex items-center gap-1">
+              <p className="text-xs font-bold text-wangari-heading">Crops</p>
+              {isFreePlan && <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-1 rounded">PRO</span>}
+            </div>
+            <p className="text-[10px] text-wangari-muted">Plots & Yield</p>
+          </Link>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════
           SECTION 1: Primary Key Indicators (Core Highlights)
 
           Hidden until the farm has recorded something. For a farm with no
@@ -530,61 +697,108 @@ function DashboardContent() {
           variants={stagger}
           className="grid grid-cols-2 lg:grid-cols-4 gap-4"
         >
-          <motion.div variants={fadeUp}>
-            <KpiCard
-              title="Today's Output"
-              value={data?.eggsToday ? `${data.eggsToday} eggs` : data?.milkToday ? `${data.milkToday}L` : `${data?.eggsToday || 0}`}
-              icon={data?.milkToday ? <Milk className="h-5 w-5" /> : <Egg className="h-5 w-5" />}
-              change={`${data?.henDayProduction || data?.productionRate || 0}% yield today`}
-              changeType="positive"
-            />
-          </motion.div>
-          <motion.div variants={fadeUp}>
-            <KpiCard
-              title="My Animals"
-              value={(data?.totalBirds || data?.totalAnimals || 0).toLocaleString()}
-              icon={<Bird className="h-5 w-5" />}
-              change={`${data?.totalFlocks || 0} active groups`}
-              changeType="positive"
-            />
-          </motion.div>
-          <motion.div variants={fadeUp}>
-            <KpiCard
-              title="Feed in Store"
-              value={data?.feedStock ? `${data.feedStock}` : "Enough"}
-              icon={<Wheat className="h-5 w-5" />}
-              change={
-                stockAlerts.some((a: any) => a.itemName?.toLowerCase().includes("feed"))
-                  ? "Low stock — buy more"
-                  : "Good supply"
-              }
-              changeType={
-                stockAlerts.some((a: any) => a.itemName?.toLowerCase().includes("feed"))
-                  ? "negative"
-                  : "positive"
-              }
-            />
-          </motion.div>
-          <motion.div variants={fadeUp}>
-            <KpiCard
-              title="Money Earned"
-              value={`KES ${(data?.monthlyRevenue || 0).toLocaleString()}`}
-              icon={<TrendingUp className="h-5 w-5" />}
-              change="This month total"
-              changeType="positive"
-            />
-          </motion.div>
+          {isFreePlan ? (
+            <>
+              <motion.div variants={fadeUp}>
+                <KpiCard
+                  title="Deliveries This Month"
+                  value={(data?.deliveryCount ?? statement?.deliveryCount ?? 0).toLocaleString()}
+                  icon={<Milk className="h-5 w-5" />}
+                  change="Produce delivered"
+                  changeType="positive"
+                />
+              </motion.div>
+              <motion.div variants={fadeUp}>
+                <KpiCard
+                  title="Money Earned"
+                  value={`KES ${(data?.monthlyRevenue || 0).toLocaleString()}`}
+                  icon={<TrendingUp className="h-5 w-5" />}
+                  change="Income this month"
+                  changeType="positive"
+                />
+              </motion.div>
+              <motion.div variants={fadeUp}>
+                <KpiCard
+                  title="Expenses"
+                  value={`KES ${(data?.monthlyExpenses || 0).toLocaleString()}`}
+                  icon={<DollarSign className="h-5 w-5" />}
+                  change="Costs this month"
+                  changeType="neutral"
+                />
+              </motion.div>
+              <motion.div variants={fadeUp}>
+                <KpiCard
+                  title="Still Owed"
+                  value={`KES ${(statement?.outstanding || 0).toLocaleString()}`}
+                  icon={<ShoppingCart className="h-5 w-5" />}
+                  change="Unpaid deliveries"
+                  changeType={statement?.outstanding > 0 ? "positive" : "neutral"}
+                />
+              </motion.div>
+            </>
+          ) : (
+            <>
+              <motion.div variants={fadeUp}>
+                <KpiCard
+                  title="Today's Output"
+                  value={data?.eggsToday ? `${data.eggsToday} eggs` : data?.milkToday ? `${data.milkToday}L` : `${data?.eggsToday || 0}`}
+                  icon={data?.milkToday ? <Milk className="h-5 w-5" /> : <Egg className="h-5 w-5" />}
+                  change={`${data?.henDayProduction || data?.productionRate || 0}% yield today`}
+                  changeType="positive"
+                />
+              </motion.div>
+              <motion.div variants={fadeUp}>
+                <KpiCard
+                  title="My Animals"
+                  value={(data?.totalBirds || data?.totalAnimals || 0).toLocaleString()}
+                  icon={<Bird className="h-5 w-5" />}
+                  change={`${data?.totalFlocks || 0} active groups`}
+                  changeType="positive"
+                />
+              </motion.div>
+              <motion.div variants={fadeUp}>
+                <KpiCard
+                  title="Feed in Store"
+                  value={data?.feedStock ? `${data.feedStock}` : "Enough"}
+                  icon={<Wheat className="h-5 w-5" />}
+                  change={
+                    stockAlerts.some((a: any) => a.itemName?.toLowerCase().includes("feed"))
+                      ? "Low stock — buy more"
+                      : "Good supply"
+                  }
+                  changeType={
+                    stockAlerts.some((a: any) => a.itemName?.toLowerCase().includes("feed"))
+                      ? "negative"
+                      : "positive"
+                  }
+                />
+              </motion.div>
+              <motion.div variants={fadeUp}>
+                <KpiCard
+                  title="Money Earned"
+                  value={`KES ${(data?.monthlyRevenue || 0).toLocaleString()}`}
+                  icon={<TrendingUp className="h-5 w-5" />}
+                  change="This month total"
+                  changeType="positive"
+                />
+              </motion.div>
+            </>
+          )}
         </motion.div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════
-          SECTION 2: Farm Health & Efficiency Metrics
+          SECTION 2: Farm Health & Efficiency Metrics (Paid)
+          OR Feature Showcase & Story Cards (Free)
           ═══════════════════════════════════════════════════════ */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="text-sm font-bold text-wangari-text">Farm Health Check</h2>
-          <p className="text-xs text-wangari-muted">How is your farm performing?</p>
-        </div>
+      {isFreePlan ? (
+        <FreePlanUpsellCards />
+      ) : (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-sm font-bold text-wangari-text">Farm Health Check</h2>
+            <p className="text-xs text-wangari-muted">How is your farm performing?</p>
+          </div>
         <motion.div
           initial="hidden"
           animate="visible"
@@ -670,6 +884,7 @@ function DashboardContent() {
           </motion.div>
         </motion.div>
       </div>
+    )}
 
       {/* ═══════════════════════════════════════════════════════
           SECTION 3: Main Operations & Analytics Split (2-Col Layout)
@@ -686,8 +901,8 @@ function DashboardContent() {
             </Card>
           </motion.div>
 
-          {/* Production Yield Graph */}
-          {productionChartData.length > 0 && (
+          {/* Production Yield Graph — only for paid livestock plans */}
+          {!isFreePlan && productionChartData.length > 0 && (
             <motion.div variants={fadeUp}>
               <ProductionChart data={productionChartData} />
             </motion.div>
@@ -780,13 +995,14 @@ function DashboardContent() {
 
           {/* Alerts & Warnings */}
           <AlertsCard
+            activityAlerts={activityAlerts}
             mortalityAlerts={mortalityAlerts}
             stockAlerts={stockAlerts}
             vaccinationAlerts={vaccinationAlerts}
           />
 
-          {/* Flock / Animal Breakdown */}
-          {flockChartData.length > 0 && (
+          {/* Flock / Animal Breakdown — only for paid livestock plans */}
+          {!isFreePlan && flockChartData.length > 0 && (
             <motion.div variants={fadeUp}>
               <FlockChart data={flockChartData} />
             </motion.div>

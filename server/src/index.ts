@@ -13,6 +13,7 @@ import authPhoneRoutes from "./routes/auth-phone.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import actionEngineRoutes from "./routes/action-engine.js";
 import cronWeeklyRoutes from "./routes/cron-weekly.js";
+import cronMarketingRoutes from "./routes/cron-marketing.js";
 import flocksRoutes from "./routes/flocks.js";
 import animalsRoutes from "./routes/animals.js";
 import hivesRoutes from "./routes/hives.js";
@@ -339,6 +340,7 @@ app.use("/api/cron", cronRoutes);
 app.use("/api/cron", cronAdvisoryRoutes);
 app.use("/api/cron", cronLifecycleRoutes);
 app.use("/api/cron", cronWeeklyRoutes);
+app.use("/api/cron", cronMarketingRoutes);
 app.use("/api/cron/auto-reconcile", autoReconcileRoutes);
 
 // ─── Super-Admin API ──────────────────────────────────────

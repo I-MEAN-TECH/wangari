@@ -1,13 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { Package, Syringe, TrendingDown, CheckCircle } from "lucide-react";
+import { Package, Syringe, TrendingDown, CheckCircle, Bell, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CARD_ROW_ICON } from "@/components/ui/patterns";
 
-// ─── Mortality Alert ──────────────────────────────────────
-interface MortalityAlertProps {
+// ─── Mortality Alert ──────────────────────────────────────────────────────────
+export interface MortalityAlertProps {
   flockName: string;
   mortalityRate: number;
   totalMortality: number;
@@ -34,8 +35,8 @@ export function MortalityAlert({ flockName, mortalityRate, totalMortality }: Mor
   );
 }
 
-// ─── Low Stock Alert ──────────────────────────────────────
-interface LowStockAlertProps {
+// ─── Low Stock Alert ──────────────────────────────────────────────────────────
+export interface LowStockAlertProps {
   itemName: string;
   currentStock: number;
   unit: string;
@@ -67,8 +68,8 @@ export function LowStockAlert({ itemName, currentStock, unit, reorderLevel }: Lo
   );
 }
 
-// ─── Upcoming Vaccination ─────────────────────────────────
-interface VaccinationAlertProps {
+// ─── Upcoming Vaccination ─────────────────────────────────────────────────────
+export interface VaccinationAlertProps {
   flockName: string;
   vaccineName: string;
   dueDate: string;
@@ -98,15 +99,76 @@ export function VaccinationAlert({ flockName, vaccineName, dueDate }: Vaccinatio
   );
 }
 
-// ─── Alerts Card ──────────────────────────────────────────
-interface AlertsCardProps {
-  mortalityAlerts: MortalityAlertProps[];
-  stockAlerts: LowStockAlertProps[];
-  vaccinationAlerts: VaccinationAlertProps[];
+// ─── Farm Activity Alert (For Free & Paid Plans) ───────────────────────────────
+export interface ActivityAlertProps {
+  id?: string;
+  title: string;
+  subtitle: string;
+  type?: "warning" | "info" | "danger" | "success";
+  href?: string;
+  actionText?: string;
 }
 
-export function AlertsCard({ mortalityAlerts, stockAlerts, vaccinationAlerts }: AlertsCardProps) {
-  const totalAlerts = mortalityAlerts.length + stockAlerts.length + vaccinationAlerts.length;
+export function ActivityAlertItem({ title, subtitle, type = "info", href, actionText }: ActivityAlertProps) {
+  const iconColors =
+    type === "warning"
+      ? "bg-amber-100 text-amber-800"
+      : type === "danger"
+      ? "bg-rose-100 text-rose-800"
+      : type === "success"
+      ? "bg-emerald-100 text-emerald-800"
+      : "bg-blue-100 text-blue-800";
+
+  const badgeVariant =
+    type === "danger" ? "danger" : type === "warning" ? "warning" : "info";
+
+  const inner = (
+    <div className={`${CARD_ROW_ICON} group transition-colors hover:bg-slate-50/80 rounded-xl`}>
+      <div className={`rounded-lg p-2 ${iconColors}`}>
+        <Bell className="h-4 w-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-wangari-heading truncate">{title}</p>
+        <p className="text-xs text-wangari-muted line-clamp-1">{subtitle}</p>
+      </div>
+      {actionText ? (
+        <span className="inline-flex items-center gap-1 text-xs font-bold text-wangari-green-700 shrink-0">
+          {actionText}
+          <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      ) : (
+        <Badge variant={badgeVariant}>Action</Badge>
+      )}
+    </div>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className="block focus:outline-none">
+        {inner}
+      </Link>
+    );
+  }
+
+  return inner;
+}
+
+// ─── Alerts Card ──────────────────────────────────────────────────────────────
+interface AlertsCardProps {
+  mortalityAlerts?: MortalityAlertProps[];
+  stockAlerts?: LowStockAlertProps[];
+  vaccinationAlerts?: VaccinationAlertProps[];
+  activityAlerts?: ActivityAlertProps[];
+}
+
+export function AlertsCard({
+  mortalityAlerts = [],
+  stockAlerts = [],
+  vaccinationAlerts = [],
+  activityAlerts = [],
+}: AlertsCardProps) {
+  const totalAlerts =
+    mortalityAlerts.length + stockAlerts.length + vaccinationAlerts.length + activityAlerts.length;
 
   return (
     <motion.div
@@ -119,11 +181,11 @@ export function AlertsCard({ mortalityAlerts, stockAlerts, vaccinationAlerts }: 
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-bold text-wangari-heading">
-                Alerts
+                Farm Alerts & Tasks
               </CardTitle>
               <p className="text-xs text-wangari-muted">
                 {totalAlerts === 0
-                  ? "All systems healthy"
+                  ? "All activities on track"
                   : `${totalAlerts} item${totalAlerts !== 1 ? "s" : ""} need attention`}
               </p>
             </div>
@@ -136,6 +198,9 @@ export function AlertsCard({ mortalityAlerts, stockAlerts, vaccinationAlerts }: 
         </CardHeader>
         <CardContent>
           <div className="space-y-2.5">
+            {activityAlerts.map((alert, i) => (
+              <ActivityAlertItem key={`a-${alert.id || i}`} {...alert} />
+            ))}
             {mortalityAlerts.map((alert, i) => (
               <MortalityAlert key={`m-${i}`} {...alert} />
             ))}
@@ -151,7 +216,7 @@ export function AlertsCard({ mortalityAlerts, stockAlerts, vaccinationAlerts }: 
                   <CheckCircle className="h-5 w-5 text-wangari-green-600" />
                 </div>
                 <p className="text-sm font-medium text-wangari-heading">All clear</p>
-                <p className="text-xs text-wangari-muted">No alerts right now</p>
+                <p className="text-xs text-wangari-muted">No pending alerts right now</p>
               </div>
             )}
           </div>

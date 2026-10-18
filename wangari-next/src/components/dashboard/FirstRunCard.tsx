@@ -2,52 +2,42 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Package, ArrowRight, CheckCircle2, Hand } from "lucide-react";
+import { Package, ArrowRight, CheckCircle2, Hand, DollarSign, Milk } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { showFirstRunCard } from "@/lib/first-run";
-import { FIRST_RECORD_CHOICES } from "@/lib/first-record-choices";
-
-/**
- * FirstRunCard — the farmer's first screen, and the reason they come back.
- *
- * ── Why this exists ────────────────────────────────────────────────────────
- * The production audit (2 Oct 2026) found 8 farms, 7 distinct production days
- * total, and 5 farms that had recorded nothing at all. Sign-up was NOT the
- * problem — 9 people got past it. What they met instead was three English
- * chores ("add your animals", "record output", "record money") followed by a
- * dashboard of zeros and empty ratios. Nothing on that screen paid the farmer
- * anything, so nothing was worth doing twice.
- *
- * So the first thing a new farmer sees is the MONEY MOMENT, and they choose
- * which one is theirs:
- *   Milk icon, "I sell milk or eggs" → the delivery log (already built)
- *   Wheat icon, "I grow crops"       → today's harvest / output
- *
- * Both end in a number the same evening. That number is the first reward, and
- * the reward is the whole point: the habit forms because it pays, not because
- * we asked nicely.
- *
- * ── Design rules ───────────────────────────────────────────────────────────
- *  - TWO giant targets, not a form. The farmer picks a picture, not a path.
- *  - Words before numbers. (Copy is English today; Swahili returns via the
- *    i18n layer, so these strings move rather than get rewritten twice.)
- *  - This card RETIRES the moment the farmer records anything (the parent gates
- *    it on `firstRecordAt`), so it never nags a farmer who is already doing the
- *    useful thing. The old banner used totalFlocks for that check, which meant
- *    a dairy farmer logging milk nightly saw "Start here" forever.
- */
+import { FIRST_RECORD_CHOICES, type FirstRecordChoice } from "@/lib/first-record-choices";
 
 interface FirstRunCardProps {
   /** Has the farmer recorded anything yet? Null while loading. */
   firstRecordAt: string | null | undefined;
   /** Set false when the farm has hit the plan gate. */
   locked?: boolean;
+  /** Whether the farm is on the free core plan. */
+  isFreePlan?: boolean;
 }
 
-const CHOICES = FIRST_RECORD_CHOICES;
+const FREE_CHOICES: readonly FirstRecordChoice[] = [
+  {
+    id: "deliveries",
+    icon: Milk,
+    title: "I sell produce, milk or eggs",
+    subtitle: "Milk, eggs, vegetables or produce",
+    href: "/deliveries",
+    cta: "Record a delivery",
+  },
+  {
+    id: "finances",
+    icon: DollarSign,
+    title: "I want to track money",
+    subtitle: "Income, sales or farm expenses",
+    href: "/finances",
+    cta: "Record transaction",
+  },
+] as const;
 
-export function FirstRunCard({ firstRecordAt, locked }: FirstRunCardProps) {
+export function FirstRunCard({ firstRecordAt, locked, isFreePlan }: FirstRunCardProps) {
+  const choices = isFreePlan ? FREE_CHOICES : FIRST_RECORD_CHOICES;
   // The gating rule lives in lib/first-run.ts so it is pinned by tests rather
   // than re-implemented here. Note `loading` is not passed by the caller yet:
   // the dashboard passes `undefined` while loading, which the rule treats as
@@ -80,7 +70,7 @@ export function FirstRunCard({ firstRecordAt, locked }: FirstRunCardProps) {
               cards elsewhere in the app — an earlier version made these 168px
               tiles with a filled pill inside, which read as a separate app. */}
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {CHOICES.map((c) => {
+            {choices.map((c) => {
               const Icon = c.icon;
               return (
                 <Link
