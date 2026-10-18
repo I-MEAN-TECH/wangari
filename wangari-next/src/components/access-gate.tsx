@@ -13,7 +13,22 @@ import { useRouter, usePathname } from "next/navigation";
  * renders.
  */
 // Pages always accessible, even on free_core (no subscription).
-const ALWAYS_ALLOWED = ["/dashboard", "/subscription", "/finances", "/inventory", "/transactions", "/deliveries", "/weather", "/settings", "/learn"];
+const ALWAYS_ALLOWED = [
+  "/dashboard",
+  "/subscription",
+  "/finances",
+  "/inventory",
+  "/transactions",
+  "/deliveries",
+  "/weather",
+  "/settings",
+  "/learn",
+  "/library",
+  "/feed-calculator",
+  "/ai",
+  "/whatsapp",
+  "/onboarding",
+];
 // Pages that require an active trial or subscription.
 const SUBSCRIPTION_REQUIRED = true;
 

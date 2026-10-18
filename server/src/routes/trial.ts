@@ -12,7 +12,6 @@ const MODULE_HUB_MAP: Record<string, string> = {
   ...GATED_HUB_MAP,
   "feed-calculator": "_always",
   weather: "_always",
-  reports: "_always",
   settings: "_always",
 };
 

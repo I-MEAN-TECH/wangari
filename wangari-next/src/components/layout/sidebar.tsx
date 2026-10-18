@@ -52,6 +52,7 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
   badge?: string;
+  moduleKey?: string;
 }
 
 interface NavGroup {
@@ -60,14 +61,22 @@ interface NavGroup {
 }
 
 const MODULE_MAP: Record<string, string> = {
+  "My Animals": "module_livestock",
   "Livestock": "module_livestock",
+  "My Crops": "module_crops",
   "Crops": "module_crops",
+  "Daily Output": "module_production",
   "Production": "module_production",
   "Sales": "module_sales",
+  "Store / Inventory": "module_inventory",
   "Inventory": "module_inventory",
+  "Income & Expenses": "module_finances",
   "Finances": "module_finances",
+  "My Workers": "module_workers",
   "Workers": "module_workers",
+  "Health & Vaccines": "module_vaccinations",
   "Vaccinations": "module_vaccinations",
+  "Feed Helper": "module_feed_calculator",
   "Feed Calculator": "module_feed_calculator",
   "Weather": "module_weather",
   "Reports": "module_reports",
@@ -77,72 +86,51 @@ const navGroups: NavGroup[] = [
   {
     title: "",
     items: [
-      { label: "Home", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
+      { label: "Home", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" />, moduleKey: "dashboard" },
     ],
   },
   {
     title: "My Farm",
     items: [
-      { label: "My Animals", href: "/flocks", icon: <PawPrint className="h-5 w-5" /> },
-      { label: "My Crops", href: "/crops", icon: <Leaf className="h-5 w-5" /> },
-      // Plots (gaps B1–B4) sit directly under Crops: a plot is where a crop is
-      // grown, and the crop form's plot picker is one tap away from here.
-      { label: "My Plots", href: "/plots", icon: <MapPin className="h-5 w-5" /> },
-      // Cold chain readings (row 15) sit beside Crops because a batch is
-      // created there.
-      { label: "Cold Chain", href: "/cold-chain", icon: <Thermometer className="h-5 w-5" /> },
-      { label: "Daily Output", href: "/production", icon: <ClipboardList className="h-5 w-5" /> },
-      { label: "Health & Vaccines", href: "/vaccinations", icon: <Syringe className="h-5 w-5" /> },
-      // Per-animal health log (gap-analysis row 5). Separate from Vaccines
-      // because they answer different questions: WHEN is the next jab due vs
-      // WHAT HAPPENED to this animal.
-      { label: "Animal Health", href: "/health", icon: <Stethoscope className="h-5 w-5" /> },
+      { label: "My Animals", href: "/flocks", icon: <PawPrint className="h-5 w-5" />, moduleKey: "flocks" },
+      { label: "My Crops", href: "/crops", icon: <Leaf className="h-5 w-5" />, moduleKey: "crops" },
+      { label: "My Plots", href: "/plots", icon: <MapPin className="h-5 w-5" />, moduleKey: "plots" },
+      { label: "Cold Chain", href: "/cold-chain", icon: <Thermometer className="h-5 w-5" />, moduleKey: "cold-chain" },
+      { label: "Daily Output", href: "/production", icon: <ClipboardList className="h-5 w-5" />, moduleKey: "production" },
+      { label: "Health & Vaccines", href: "/vaccinations", icon: <Syringe className="h-5 w-5" />, moduleKey: "vaccinations" },
+      { label: "Animal Health", href: "/health", icon: <Stethoscope className="h-5 w-5" />, moduleKey: "health" },
     ],
   },
   {
     title: "Money & Workers",
     items: [
-      { label: "Documents", href: "/documents", icon: <Search className="h-5 w-5" /> },
-      { label: "Quotes", href: "/quotes", icon: <FileText className="h-5 w-5" /> },
-      { label: "Deliveries", href: "/deliveries", icon: <Truck className="h-5 w-5" /> },
-      // Market price benchmark (row 14) and cold chain readings (row 15).
-      // Prices sits next to Deliveries because that is where a farmer types the
-      // price a buyer offered — the checker has to be one tap from that form.
-      { label: "Market Prices", href: "/market-prices", icon: <Scale className="h-5 w-5" /> },
-      { label: "Insurance", href: "/insurance", icon: <ShieldCheck className="h-5 w-5" /> },
-      { label: "Income & Expenses", href: "/finances", icon: <DollarSign className="h-5 w-5" /> },
-      // The farmer's OWN debt (gap C2) — the opposite direction from Income,
-      // which is money owed TO the farm. Under its own name because "loans I
-      // owe" and "loans they owe me" must never share a screen.
-      { label: "My Loans", href: "/loans", icon: <Landmark className="h-5 w-5" /> },
-      // Reconciliation, forward view, chama and the asset register (gaps
-      // C3/C4/C7/C8) — four tools on one page, because each is small and they
-      // all read the records the farmer already keeps.
-      { label: "Money Tools", href: "/money", icon: <PiggyBank className="h-5 w-5" /> },
-      { label: "Sales", href: "/sales", icon: <ShoppingCart className="h-5 w-5" /> },
-      { label: "Store / Inventory", href: "/inventory", icon: <Package className="h-5 w-5" /> },
-      { label: "My Workers", href: "/workers", icon: <Users className="h-5 w-5" /> },
-      { label: "Worker Attendance", href: "/attendance", icon: <Users className="h-5 w-5" /> },
+      { label: "Deliveries", href: "/deliveries", icon: <Truck className="h-5 w-5" />, moduleKey: "deliveries" },
+      { label: "Income & Expenses", href: "/finances", icon: <DollarSign className="h-5 w-5" />, moduleKey: "finances" },
+      { label: "Store / Inventory", href: "/inventory", icon: <Package className="h-5 w-5" />, moduleKey: "inventory" },
+      { label: "Documents", href: "/documents", icon: <Search className="h-5 w-5" />, moduleKey: "documents" },
+      { label: "Quotes", href: "/quotes", icon: <FileText className="h-5 w-5" />, moduleKey: "quotes" },
+      { label: "Market Prices", href: "/market-prices", icon: <Scale className="h-5 w-5" />, moduleKey: "market-prices" },
+      { label: "Insurance", href: "/insurance", icon: <ShieldCheck className="h-5 w-5" />, moduleKey: "insurance" },
+      { label: "My Loans", href: "/loans", icon: <Landmark className="h-5 w-5" />, moduleKey: "loans" },
+      { label: "Money Tools", href: "/money", icon: <PiggyBank className="h-5 w-5" />, moduleKey: "money" },
+      { label: "Sales", href: "/sales", icon: <ShoppingCart className="h-5 w-5" />, moduleKey: "sales" },
+      { label: "My Workers", href: "/workers", icon: <Users className="h-5 w-5" />, moduleKey: "workers" },
+      { label: "Worker Attendance", href: "/attendance", icon: <Users className="h-5 w-5" />, moduleKey: "attendance" },
     ],
   },
   {
     title: "Tools",
     items: [
-      { label: "Feed Helper", href: "/feed-calculator", icon: <Calculator className="h-5 w-5" /> },
-      { label: "Season Planner", href: "/planner", icon: <CalendarRange className="h-5 w-5" /> },
-      // Co-op / group mode (rows 11 + 17).
-      { label: "My Group", href: "/coop", icon: <Users className="h-5 w-5" /> },
-      { label: "My Farm Record", href: "/farm-record", icon: <FileText className="h-5 w-5" /> },
-      { label: "Profitability", href: "/profitability", icon: <Trophy className="h-5 w-5" /> },
-      { label: "Weather", href: "/weather", icon: <CloudSun className="h-5 w-5" /> },
-      { label: "Learn", href: "/library", icon: <GraduationCap className="h-5 w-5" /> },
-      { label: "Reports", href: "/reports", icon: <BarChart3 className="h-5 w-5" /> },
-      // Wangari is her own face, not an "AI" glyph. The mark carries the same
-      // animated character as the panel and shows what she is doing, so a
-      // farmer can see she is mid-task without opening anything. The "Soon"
-      // badge is gone because she is no longer soon — it shipped.
-      { label: "Wangari", href: "/ai", icon: <WangariMark size={24} /> },
-      { label: "WhatsApp & USSD", href: "/whatsapp", icon: <MessageCircle className="h-5 w-5" />, badge: "Soon" },
+      { label: "Feed Helper", href: "/feed-calculator", icon: <Calculator className="h-5 w-5" />, moduleKey: "feed-calculator" },
+      { label: "Weather", href: "/weather", icon: <CloudSun className="h-5 w-5" />, moduleKey: "weather" },
+      { label: "Learn", href: "/library", icon: <GraduationCap className="h-5 w-5" />, moduleKey: "learn" },
+      { label: "Wangari", href: "/ai", icon: <WangariMark size={24} />, moduleKey: "ai" },
+      { label: "Season Planner", href: "/planner", icon: <CalendarRange className="h-5 w-5" />, moduleKey: "planner" },
+      { label: "My Group", href: "/coop", icon: <Users className="h-5 w-5" />, moduleKey: "coop" },
+      { label: "My Farm Record", href: "/farm-record", icon: <FileText className="h-5 w-5" />, moduleKey: "farm-record" },
+      { label: "Profitability", href: "/profitability", icon: <Trophy className="h-5 w-5" />, moduleKey: "profitability" },
+      { label: "Reports", href: "/reports", icon: <BarChart3 className="h-5 w-5" />, moduleKey: "reports" },
+      { label: "WhatsApp & USSD", href: "/whatsapp", icon: <MessageCircle className="h-5 w-5" />, badge: "Soon", moduleKey: "whatsapp" },
     ],
   },
 ];
@@ -192,10 +180,47 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   }, [fullyLocked]);
 
   const isModuleEnabled = (key: string) => moduleSettings[key] !== "false";
-  const isModuleLocked = (label: string) => {
-    const key = label.toLowerCase().replace(/\s+/g, "-");
-    return moduleAccess[key] === false;
-  };
+
+  const isModuleLocked = React.useCallback(
+    (item: NavItem) => {
+      if (fullyLocked) return true;
+      const key = item.moduleKey || item.href.replace(/^\//, "").split("/")[0];
+      const alwaysOpen = new Set([
+        "dashboard",
+        "finances",
+        "inventory",
+        "deliveries",
+        "weather",
+        "feed-calculator",
+        "learn",
+        "library",
+        "ai",
+        "whatsapp",
+        "settings",
+      ]);
+
+      const isFree =
+        trialInfo?.tier === "free_core" ||
+        (!trialInfo?.subscription && trialInfo?.trial?.status !== "active");
+
+      if (isFree) {
+        return !alwaysOpen.has(key);
+      }
+
+      if (key in moduleAccess) {
+        return moduleAccess[key] === false;
+      }
+
+      const labelKey = item.label.toLowerCase().replace(/\s+/g, "-");
+      if (labelKey in moduleAccess) {
+        return moduleAccess[labelKey] === false;
+      }
+
+      return false;
+    },
+    [fullyLocked, moduleAccess, trialInfo]
+  );
+
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({
     "": true,
     "My Farm": true,
@@ -204,8 +229,65 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   });
 
   const toggleGroup = (title: string) => {
-    setOpenGroups((prev) => ({ ...prev, [title]: !prev[title] }));
+    setOpenGroups((prev) => ({ ...prev, [title]: prev[title] === false }));
   };
+
+  const isFreePlan =
+    trialInfo?.tier === "free_core" ||
+    (!trialInfo?.subscription && trialInfo?.trial?.status !== "active");
+
+  const displayGroups = React.useMemo(() => {
+    if (!isFreePlan) {
+      return navGroups.map((group) => ({
+        ...group,
+        items: [...group.items].sort((a, b) => {
+          const lockedA = isModuleLocked(a) ? 1 : 0;
+          const lockedB = isModuleLocked(b) ? 1 : 0;
+          return lockedA - lockedB;
+        }),
+      }));
+    }
+
+    // Free Plan: Push all accessible free modules to the top for maximum visibility
+    const freeItems: NavItem[] = [];
+    const lockedGroupsMap: Record<string, NavItem[]> = {
+      "My Farm": [],
+      "Money & Workers": [],
+      "Tools": [],
+    };
+
+    navGroups.forEach((g) => {
+      g.items.forEach((item) => {
+        if (!isModuleLocked(item)) {
+          freeItems.push(item);
+        } else {
+          const groupTitle = g.title || "My Farm";
+          if (!lockedGroupsMap[groupTitle]) {
+            lockedGroupsMap[groupTitle] = [];
+          }
+          lockedGroupsMap[groupTitle].push(item);
+        }
+      });
+    });
+
+    const groups: NavGroup[] = [
+      {
+        title: "",
+        items: freeItems,
+      },
+    ];
+
+    Object.entries(lockedGroupsMap).forEach(([title, items]) => {
+      if (items.length > 0) {
+        groups.push({
+          title,
+          items,
+        });
+      }
+    });
+
+    return groups;
+  }, [isFreePlan, isModuleLocked]);
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-[260px] bg-white border-r border-wangari-border flex flex-col">
@@ -242,23 +324,23 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {navGroups.map((group) => (
-          <div key={group.title}>
+        {displayGroups.map((group) => (
+          <div key={group.title || "unlocked"}>
             {group.title && (
               <button
                 onClick={() => toggleGroup(group.title)}
-                className="flex items-center justify-between w-full px-3 py-2 text-[12px] font-bold text-wangari-text hover:text-wangari-green-800 transition-colors"
+                className="flex items-center justify-between w-full px-3 py-2 text-[12px] font-bold text-wangari-text hover:text-wangari-green-800 transition-colors cursor-pointer"
               >
-                {group.title}
+                <span>{group.title}</span>
                 <ChevronDown
                   className={cn(
                     "h-3.5 w-3.5 transition-transform duration-200",
-                    openGroups[group.title] ? "rotate-180" : ""
+                    openGroups[group.title] !== false ? "rotate-180" : ""
                   )}
                 />
               </button>
             )}
-            {openGroups[group.title] && (
+            {(openGroups[group.title] ?? true) && (
               <div className="space-y-0.5">
                 {group.items.filter(item => {
                   const moduleKey = MODULE_MAP[item.label];
@@ -268,7 +350,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                     item.href === "/dashboard"
                       ? pathname === "/dashboard"
                       : pathname.startsWith(item.href);
-                  const locked = fullyLocked || isModuleLocked(item.label);
+                  const locked = isModuleLocked(item);
                   return (
                     <Link
                       key={item.href}
@@ -277,7 +359,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                       className={cn(
                         "flex items-center gap-3 rounded-xl px-3 min-h-[48px] text-sm font-medium transition-all duration-150",
                         locked
-                          ? "text-wangari-subtle opacity-60 cursor-pointer"
+                          ? "text-wangari-muted opacity-70 hover:opacity-100 hover:bg-wangari-gray-50 cursor-pointer"
                           : isActive
                             ? "bg-wangari-green-800 text-white shadow-md"
                             : "text-wangari-text hover:bg-wangari-green-50 hover:text-wangari-green-800"
@@ -291,12 +373,17 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                         </span>
                       )}
                       {locked && (
-                        <Lock
+                        <span
                           className={cn(
-                            "h-3.5 w-3.5 shrink-0",
-                            fullyLocked ? "text-wangari-red-400 animate-pulse" : "text-wangari-subtle"
+                            "flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border shrink-0",
+                            fullyLocked
+                              ? "bg-wangari-red-50 text-wangari-red-700 border-wangari-red-200"
+                              : "bg-wangari-gray-100 text-wangari-muted border-wangari-border/70"
                           )}
-                        />
+                        >
+                          <Lock className="h-3 w-3 shrink-0" />
+                          <span>Locked</span>
+                        </span>
                       )}
                     </Link>
                   );
