@@ -211,6 +211,15 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         return moduleAccess[key] === false;
       }
 
+      const plan = (trialInfo?.subscription?.plan || "").toLowerCase();
+      const isGrowthOrEnterprise = /growth|enterprise/.test(plan);
+      const isStarter = /starter/.test(plan);
+
+      if (isStarter && !isGrowthOrEnterprise) {
+        const teamLocked = new Set(["workers", "attendance", "coop", "loans", "reports"]);
+        if (teamLocked.has(key)) return true;
+      }
+
       const labelKey = item.label.toLowerCase().replace(/\s+/g, "-");
       if (labelKey in moduleAccess) {
         return moduleAccess[labelKey] === false;
@@ -226,26 +235,57 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     "My Farm": true,
     "Money & Workers": true,
     Tools: true,
+    "Growth Features": true,
   });
 
   const toggleGroup = (title: string) => {
     setOpenGroups((prev) => ({ ...prev, [title]: prev[title] === false }));
   };
 
+  const planId = (trialInfo?.subscription?.plan || "").toLowerCase();
+  const isGrowthOrEnterprise = /growth|enterprise/.test(planId);
+  const isStarter = /starter/.test(planId) && !isGrowthOrEnterprise;
   const isFreePlan =
     trialInfo?.tier === "free_core" ||
     (!trialInfo?.subscription && trialInfo?.trial?.status !== "active");
 
   const displayGroups = React.useMemo(() => {
-    if (!isFreePlan) {
-      return navGroups.map((group) => ({
-        ...group,
-        items: [...group.items].sort((a, b) => {
-          const lockedA = isModuleLocked(a) ? 1 : 0;
-          const lockedB = isModuleLocked(b) ? 1 : 0;
-          return lockedA - lockedB;
-        }),
-      }));
+    if (isGrowthOrEnterprise) {
+      // Growth/Enterprise: All modules unlocked, standard view
+      return navGroups;
+    }
+
+    if (isStarter) {
+      // Starter Plan: Push accessible modules to top in their natural groups,
+      // and group all Growth-only locked modules at the bottom under "Growth Features".
+      const unlockedGroups: NavGroup[] = [];
+      const growthLockedItems: NavItem[] = [];
+
+      navGroups.forEach((group) => {
+        const accessibleItems: NavItem[] = [];
+        group.items.forEach((item) => {
+          if (isModuleLocked(item)) {
+            growthLockedItems.push(item);
+          } else {
+            accessibleItems.push(item);
+          }
+        });
+        if (accessibleItems.length > 0) {
+          unlockedGroups.push({
+            title: group.title,
+            items: accessibleItems,
+          });
+        }
+      });
+
+      if (growthLockedItems.length > 0) {
+        unlockedGroups.push({
+          title: "Growth Features",
+          items: growthLockedItems,
+        });
+      }
+
+      return unlockedGroups;
     }
 
     // Free Plan: Push all accessible free modules to the top for maximum visibility
@@ -287,7 +327,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     });
 
     return groups;
-  }, [isFreePlan, isModuleLocked]);
+  }, [isGrowthOrEnterprise, isStarter, isFreePlan, isModuleLocked]);
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-[260px] bg-white border-r border-wangari-border flex flex-col">
@@ -441,6 +481,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         open={!!lockedModule}
         onClose={() => setLockedModule("")}
         moduleName={lockedModule}
+        currentPlan={trialInfo?.subscription?.plan}
       />
     </aside>
   );

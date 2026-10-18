@@ -10,6 +10,7 @@ interface UpgradePopupProps {
   open: boolean;
   onClose: () => void;
   moduleName?: string;
+  currentPlan?: string;
 }
 
 interface ApiPlan {
@@ -20,7 +21,7 @@ interface ApiPlan {
   days: number;
 }
 
-export function UpgradePopup({ open, onClose, moduleName }: UpgradePopupProps) {
+export function UpgradePopup({ open, onClose, moduleName, currentPlan }: UpgradePopupProps) {
   const [mounted, setMounted] = React.useState(false);
   const [plans, setPlans] = React.useState<ApiPlan[]>([]);
 
@@ -39,6 +40,23 @@ export function UpgradePopup({ open, onClose, moduleName }: UpgradePopupProps) {
   if (!open) return null;
 
   const isExpired = moduleName === "Free Trial Expired";
+  const isGrowthRequired =
+    moduleName &&
+    /workers|attendance|loans|coop|reports|group/i.test(moduleName);
+
+  const title = isExpired
+    ? "Your Free Trial Has Expired"
+    : isGrowthRequired
+    ? `"${moduleName}" Requires Growth Plan`
+    : moduleName
+    ? `"${moduleName}" Requires a Plan`
+    : "Upgrade Your Plan";
+
+  const subtitle = isExpired
+    ? "Subscribe to a plan to continue managing your farm, animals, crops, and finances."
+    : isGrowthRequired
+    ? "Unlock worker management, attendance tracking, loans, cooperative groups, and advanced reports with the Growth plan."
+    : "Choose a plan to unlock this feature and manage your farm fully.";
 
   const content = (
     <div
@@ -64,14 +82,8 @@ export function UpgradePopup({ open, onClose, moduleName }: UpgradePopupProps) {
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 mx-auto mb-4">
             <Lock className="h-7 w-7 text-white" />
           </div>
-          <h2 className="text-xl font-extrabold text-white">
-            {isExpired ? "Your Free Trial Has Expired" : moduleName ? `"${moduleName}" Requires a Plan` : "Upgrade Your Plan"}
-          </h2>
-          <p className="text-white/80 text-xs sm:text-sm mt-2 max-w-sm mx-auto">
-            {isExpired
-              ? "Subscribe to a plan to continue managing your farm, animals, crops, and finances."
-              : "Choose a plan to unlock this module and enjoy full access to all features."}
-          </p>
+          <h2 className="text-xl font-extrabold text-white">{title}</h2>
+          <p className="text-white/80 text-xs sm:text-sm mt-2 max-w-sm mx-auto">{subtitle}</p>
         </div>
 
         {/* Plans */}

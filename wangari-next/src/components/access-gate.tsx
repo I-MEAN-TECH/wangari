@@ -29,8 +29,7 @@ const ALWAYS_ALLOWED = [
   "/whatsapp",
   "/onboarding",
 ];
-// Pages that require an active trial or subscription.
-const SUBSCRIPTION_REQUIRED = true;
+
 
 function isAlwaysAllowed(pathname: string) {
   return ALWAYS_ALLOWED.some((p) => pathname === p || pathname.startsWith(p + "/"));
@@ -40,8 +39,9 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [checked, setChecked] = React.useState(false);
-  const lockedRef = React.useRef(false);
-  const tierRef = React.useRef<"trial" | "subscription" | "free_core" | "none">("trial");
+  const planRef = React.useRef<string>("");
+  const tierRef = React.useRef<string>("free_core");
+  const lockedRef = React.useRef<boolean>(false);
 
   const check = React.useCallback(async () => {
     try {
@@ -49,11 +49,13 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
       const d = await api.get("/api/trial/status");
       tierRef.current = d?.tier ?? (d?.locked ? "none" : "free_core");
       lockedRef.current = d?.tier === "none";
+      planRef.current = (d?.subscription?.plan || "").toLowerCase();
     } catch {
       // Network/API failure must never lock a paying user out of the UI —
       // the server still enforces real access on every API call.
       lockedRef.current = false;
       tierRef.current = "free_core";
+      planRef.current = "";
     }
     setChecked(true);
   }, []);
@@ -80,6 +82,7 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!checked) return;
     const tier = tierRef.current;
+    const plan = planRef.current;
     // Hard lock (tier === "none") should never happen now that free_core is the
     // floor, but keep it as a safety net.
     if (tier === "none" && !isAlwaysAllowed(pathname)) {
@@ -89,6 +92,13 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
     // Free-core: only redirect if user is trying to open a gated page.
     // _always pages (dashboard, finances, inventory, transactions) are open.
     if (tier === "free_core" && !isAlwaysAllowed(pathname)) {
+      router.replace("/subscription");
+      return;
+    }
+    // Starter: block team/growth-only routes
+    const isStarter = /starter/.test(plan) && !/growth|enterprise/.test(plan);
+    const GROWTH_ONLY = ["/workers", "/attendance", "/coop", "/loans", "/reports"];
+    if (isStarter && GROWTH_ONLY.some(p => pathname === p || pathname.startsWith(p + "/"))) {
       router.replace("/subscription");
     }
   }, [checked, pathname, router]);
