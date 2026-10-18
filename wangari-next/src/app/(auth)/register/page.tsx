@@ -66,31 +66,18 @@ export default function RegisterPage() {
               router.push("/dashboard");
             } catch (err) {
               setAvatarState("idle");
-              // The server deliberately never auto-creates a farm from a Google
-              // tap. On the LOGIN page that is correct - the farmer is sent to
-              // register. But here the farmer is ALREADY registering, so
-              // surfacing "no Wangari account uses this Google account yet" was
-              // a dead end that looked like a failure. Google has proven the
-              // email; all that is left is naming the farm. Carry the identity
-              // into the form and let them finish.
-              if (err instanceof AccountNotProvisionedError) {
-                setForm((f) => ({ ...f, email: err.email ?? f.email }));
-                setError(
-                  "Google sign-in works. Add your name and password below to finish creating your farm."
-                );
-              } else {
-                setError(err instanceof Error ? err.message : "Google sign-up failed");
-              }
+              setError(err instanceof Error ? err.message : "Google sign-up failed");
             } finally {
               setLoading(false);
             }
           },
         });
         if (googleButtonRef.current) {
+          googleButtonRef.current.innerHTML = "";
           window.google.accounts.id.renderButton(googleButtonRef.current, {
             theme: "outline",
             size: "large",
-            width: "100%",
+            width: 380,
             text: "signup_with",
           });
         }
@@ -281,9 +268,27 @@ export default function RegisterPage() {
                   s.onload = () => {
                     if (window.google?.accounts?.id) {
                       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-                          if (!clientId) return;
-                      window.google.accounts.id.initialize({ client_id: clientId, callback: async (r: any) => { try { await googleLogin(r.credential); router.push("/dashboard"); } catch (e: any) { if (e instanceof AccountNotProvisionedError) { setForm((f) => ({ ...f, email: e.email ?? f.email })); setError("Google sign-in works. Add your name and password below to finish creating your farm."); } else { setError(e?.message || "Google sign-up failed"); } } } });
-                      if (googleButtonRef.current) window.google.accounts.id.renderButton(googleButtonRef.current, { theme: "outline", size: "large", width: "100%", text: "signup_with" });
+                      if (!clientId) return;
+                      window.google.accounts.id.initialize({
+                        client_id: clientId,
+                        callback: async (r: any) => {
+                          try {
+                            await googleLogin(r.credential);
+                            router.push("/dashboard");
+                          } catch (e: any) {
+                            setError(e?.message || "Google sign-up failed");
+                          }
+                        },
+                      });
+                      if (googleButtonRef.current) {
+                        googleButtonRef.current.innerHTML = "";
+                        window.google.accounts.id.renderButton(googleButtonRef.current, {
+                          theme: "outline",
+                          size: "large",
+                          width: 380,
+                          text: "signup_with",
+                        });
+                      }
                       setGoogleLoaded(true);
                     }
                   };

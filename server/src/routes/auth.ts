@@ -453,26 +453,44 @@ router.post("/google", async (req: Request, res: Response) => {
       const updateData: any = {};
       if (!user.googleId) updateData.googleId = googleUser.sub;
       if (googleUser.picture && user.avatar !== googleUser.picture) updateData.avatar = googleUser.picture;
+      if (!user.emailVerified) updateData.emailVerified = new Date();
       if (Object.keys(updateData).length > 0) {
         user = await prisma.user.update({ where: { id: user.id }, data: updateData });
       }
     } else {
-      // No matching account — DO NOT auto-create.
-      //
-      // This used to silently mint a user plus a placeholder "Jane Doe Farm"
-      // and sign them straight in, which (a) let anyone who tapped Google on a
-      // shared handset walk into a fresh farm, and (b) skipped onboarding
-      // entirely, so the account had no real farm behind it.
-      //
-      // Now a genuinely new Google identity is sent to full registration, where
-      // the farmer states their farm and claims it. Identity is proven by
-      // Google; ownership of a farm is proven by saying what you farm.
-      return res.status(409).json({
-        error: "No Wangari account uses this Google account yet.",
-        code: "ACCOUNT_NOT_PROVISIONED",
-        email: normalizedGoogleEmail,
-        googleSub: googleUser.sub,
+      // New user — create account via Google OAuth
+      const now = new Date();
+
+      user = await prisma.user.create({
+        data: {
+          name: googleUser.name || normalizedGoogleEmail.split("@")[0],
+          email: normalizedGoogleEmail,
+          googleId: googleUser.sub,
+          avatar: googleUser.picture || null,
+          authMethod: "google",
+          emailVerified: now,
+          termsAcceptedAt: now,
+        },
       });
+
+      // Create a farm for the new user
+      const farm = await prisma.farm.create({
+        data: {
+          name: `${googleUser.name || "My"}'s Farm`,
+          ownerId: user.id,
+          code: await createUniqueFarmCode(),
+        },
+      });
+
+      await prisma.farmMember.create({
+        data: {
+          userId: user.id,
+          farmId: farm.id,
+          role: "farm_owner",
+        },
+      });
+
+      await recordStage(user.id, "signup").catch(() => {});
     }
 
     // Get farm membership

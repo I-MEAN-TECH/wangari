@@ -488,7 +488,10 @@ function LoginForm() {
                           const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
                           if (!clientId) return;
                           window.google.accounts.id.initialize({ client_id: clientId, callback: async (r: any) => { try { await googleLogin(r.credential); router.push(callbackUrl); } catch (e: any) { setError(e?.message || "Google sign-in failed"); } } });
-                          if (googleButtonRef.current) window.google.accounts.id.renderButton(googleButtonRef.current, { theme: "outline", size: "large", width: "100%" });
+                          if (googleButtonRef.current) {
+                            googleButtonRef.current.innerHTML = "";
+                            window.google.accounts.id.renderButton(googleButtonRef.current, { theme: "outline", size: "large", width: 380 });
+                          }
                           setGoogleLoaded(true);
                         }
                       };
