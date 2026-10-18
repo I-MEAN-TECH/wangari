@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Bricolage_Grotesque, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { CookieBanner } from "@/components/shared/cookie-banner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -177,7 +178,10 @@ export default function RootLayout({
             }),
           }}
         />
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <CookieBanner />
+        </Providers>
       </body>
     </html>
   );

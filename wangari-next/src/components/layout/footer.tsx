@@ -66,9 +66,10 @@ export function Footer() {
           <div>
             <h3 className="text-xs font-bold text-wangari-heading uppercase tracking-widest mb-4">Legal</h3>
             <ul className="space-y-3">
-              <li><Link002 href="/about" className="text-sm text-wangari-muted hover:text-wangari-green-800">Privacy Policy</Link002></li>
-              <li><Link002 href="/about" className="text-sm text-wangari-muted hover:text-wangari-green-800">Terms of Service</Link002></li>
-              <li><Link002 href="/about" className="text-sm text-wangari-muted hover:text-wangari-green-800">Cookie Policy</Link002></li>
+              <li><Link002 href="/privacy" className="text-sm text-wangari-muted hover:text-wangari-green-800">Privacy Policy</Link002></li>
+              <li><Link002 href="/terms" className="text-sm text-wangari-muted hover:text-wangari-green-800">Terms of Service</Link002></li>
+              <li><Link002 href="/cookies" className="text-sm text-wangari-muted hover:text-wangari-green-800">Cookie Policy</Link002></li>
+              <li><Link002 href="/security" className="text-sm text-wangari-muted hover:text-wangari-green-800">Security & Trust</Link002></li>
             </ul>
             <div className="mt-6 flex gap-3">
               <a href="https://twitter.com/wangari_app" target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg bg-wangari-green-50 text-wangari-green-800 hover:bg-wangari-green-800 hover:text-white transition-all duration-200">

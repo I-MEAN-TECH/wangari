@@ -110,9 +110,17 @@ export default function RegisterPage() {
     document.head.appendChild(script);
   }, [router, setAvatarState]);
 
+  const [agreedToTerms, setAgreedToTerms] = React.useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms of Service and Privacy Policy to create your account.");
+      return;
+    }
+
     setLoading(true);
     setAvatarState("loading");
 
@@ -193,6 +201,28 @@ export default function RegisterPage() {
             </div>
           </motion.div>
         ))}
+
+        <motion.div variants={fadeUp} className="flex items-start gap-3 pt-1">
+          <input
+            type="checkbox"
+            id="terms-consent"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            required
+            className="mt-1 h-4 w-4 rounded border-wangari-border text-wangari-green-800 focus:ring-wangari-green-800/20 cursor-pointer"
+          />
+          <label htmlFor="terms-consent" className="text-xs text-wangari-muted leading-relaxed cursor-pointer select-none">
+            I agree to Wangari&apos;s{" "}
+            <Link href="/terms" target="_blank" className="font-semibold text-wangari-green-800 hover:underline">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" target="_blank" className="font-semibold text-wangari-green-800 hover:underline">
+              Privacy Policy
+            </Link>
+            , including data processing under the Kenya Data Protection Act 2019.
+          </label>
+        </motion.div>
 
         <motion.div variants={fadeUp} className="pt-2">
           <Button

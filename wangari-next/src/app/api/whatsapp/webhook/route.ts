@@ -4,6 +4,7 @@
  * POST: process incoming messages
  */
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { verifyWebhook, parseMessage, executeCommand, sendWhatsAppMessage } from "@/lib/whatsapp";
 import { isAiQuestion } from "@/lib/whatsapp-ai";
 import { prisma } from "@/lib/db";
@@ -15,6 +16,23 @@ import { prisma } from "@/lib/db";
 // CRON_SECRET on the other crons).
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://api.wangari.imeantech.com";
 const WHATSAPP_SERVICE_TOKEN = process.env.WHATSAPP_SERVICE_TOKEN || "";
+const WHATSAPP_APP_SECRET = process.env.WHATSAPP_APP_SECRET || "";
+
+/**
+ * Verify Meta's HMAC SHA-256 webhook signature.
+ * Prevents forged incoming webhook deliveries from unauthenticated callers.
+ */
+function verifyMetaSignature(rawBody: string, signatureHeader: string | null): boolean {
+  if (!WHATSAPP_APP_SECRET) return true; // Safe fallback when unconfigured in local dev
+  if (!signatureHeader || !signatureHeader.startsWith("sha256=")) return false;
+  const hash = signatureHeader.slice(7);
+  const expected = crypto.createHmac("sha256", WHATSAPP_APP_SECRET).update(rawBody).digest("hex");
+  try {
+    return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(expected, "hex"));
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Forward a free-form question to the backend's /api/ai/whatsapp.
@@ -79,7 +97,15 @@ export async function GET(req: NextRequest) {
 // ─── POST: Incoming message ────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const rawBody = await req.text();
+    const signature = req.headers.get("x-hub-signature-256");
+
+    if (!verifyMetaSignature(rawBody, signature)) {
+      console.warn("[WhatsApp Webhook] Invalid x-hub-signature-256 rejected");
+      return new NextResponse("Invalid signature", { status: 401 });
+    }
+
+    const body = JSON.parse(rawBody || "{}");
 
     // Meta sends entries → changes → messages
     const entries = body.entry || [];
@@ -92,6 +118,7 @@ export async function POST(req: NextRequest) {
 
           const from = msg.from; // phone number
           const text = msg.text?.body || "";
+          const upper = text.trim().toUpperCase();
 
           // Find user by phone number (match last 9 digits)
           const phoneDigits = from.replace(/\D/g, "").slice(-9);
@@ -99,8 +126,38 @@ export async function POST(req: NextRequest) {
             where: { phone: { contains: phoneDigits } },
           });
 
+          // Opt-out handling under Meta policy & Kenya Data Protection Act
+          if (["STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT", "KOMA"].includes(upper)) {
+            if (user) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { whatsappOptedOut: true },
+              });
+            }
+            await sendWhatsAppMessage(from, "You have been unsubscribed from Wangari WhatsApp messages. Reply START at any time to re-enable.");
+            continue;
+          }
+
+          // Opt-in handling
+          if (["START", "UNSTOP", "RESUME", "ANZA"].includes(upper)) {
+            if (user) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { whatsappOptedOut: false, whatsappOptedInAt: new Date() },
+              });
+            }
+            await sendWhatsAppMessage(from, "Welcome back to Wangari on WhatsApp! Send 'help' to see what you can do.");
+            continue;
+          }
+
           if (!user) {
             await sendWhatsAppMessage(from, "❌ Number not registered. Sign up at wangari.imeantech.com");
+            continue;
+          }
+
+          // Block outbound command replies if user opted out previously
+          if (user.whatsappOptedOut) {
+            await sendWhatsAppMessage(from, "You are currently opted out of Wangari messages. Reply START to re-enable.");
             continue;
           }
 

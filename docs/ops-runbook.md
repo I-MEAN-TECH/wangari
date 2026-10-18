@@ -217,3 +217,14 @@ ssh vps "certbot renew --dry-run"
 5. Last resort rollback: `cd /home/saasapp/app && git log --oneline -5`,
    then `git checkout <last-good-sha> && bash deploy/update.sh` (the script
    rebuilds and reloads cleanly).
+6. **Data breach / security incident:** Follow the mandatory 72-hour protocol in
+   [docs/incident-response.md](incident-response.md).
+
+## Security — Known Dependency Findings
+
+| Package | Severity | Status | Notes |
+|---|---|---|---|
+| `deepmerge-ts` (via Prisma) | HIGH | ⚠️ Tracked | Stack-exhaustion on recursive object graphs. Upstream Prisma issue. `npm audit fix --force` would upgrade to Prisma 7 (breaking). Monitor Prisma release notes; upgrade when Prisma 7 migration is planned. CVE: GHSA-ggr8-5vv4-36mx |
+
+Run `npm audit --audit-level=high` quarterly in both `server/` and `wangari-next/`.  
+Legal: DPA template for coop/B2B partners → [docs/dpa-template.md](dpa-template.md)

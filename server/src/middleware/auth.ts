@@ -92,11 +92,11 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId! },
-      select: { trialEndsAt: true, createdAt: true, tokenVersion: true },
+      select: { trialEndsAt: true, createdAt: true, tokenVersion: true, deletedAt: true },
     });
 
-    if (!user) {
-      return res.status(401).json({ error: "User not found" });
+    if (!user || user.deletedAt) {
+      return res.status(401).json({ error: "Account closed or not found" });
     }
 
     // Token revocation: user tokens carry tv (tokenVersion). A mismatch means

@@ -41,6 +41,14 @@ model User {
   totpEnabledAt    DateTime? @map("totp_enabled_at")
   lastMfaNudgedAt  DateTime? @map("last_mfa_nudged_at")
   recoveryCodes    String?   @map("recovery_codes") // JSON array of bcrypt-hashed codes
+  /// Kenya Data Protection Act 2019 (KDPA) compliance timestamp when terms & privacy policy were agreed
+  termsAcceptedAt  DateTime? @map("terms_accepted_at")
+  /// KDPA s. 40 Right to Erasure: soft-delete timestamp. 90-day grace before permanent scrubbing.
+  deletedAt        DateTime? @map("deleted_at")
+  /// WhatsApp communication consent status
+  whatsappOptedOut Boolean   @default(false) @map("whatsapp_opted_out")
+  whatsappOptedInAt DateTime? @map("whatsapp_opted_in_at")
+
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
@@ -63,6 +71,7 @@ model User {
   ownedCoops       CoopGroup[] @relation("CoopChair")
   coopInvitesSent  CoopInvite[] @relation("CoopInviter")
 
+  @@index([deletedAt])
   @@map("users")
 }
 

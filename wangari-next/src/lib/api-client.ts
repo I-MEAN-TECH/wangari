@@ -179,8 +179,8 @@ export const api = {
   patch: <T = any>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", json: body }),
 
-  delete: <T = any>(path: string) =>
-    request<T>(path, { method: "DELETE" }),
+  delete: <T = any>(path: string, body?: unknown) =>
+    request<T>(path, { method: "DELETE", ...(body !== undefined ? { json: body } : {}) }),
 
   upload: async <T = any>(path: string, formData: FormData): Promise<T> => {
     const token = getToken();

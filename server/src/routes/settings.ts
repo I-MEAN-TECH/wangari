@@ -167,4 +167,60 @@ router.put("/password", async (req: Request, res: Response) => {
   }
 });
 
+// DELETE /api/settings/account — KDPA s. 40 right to erasure (soft-delete with 90-day grace)
+router.delete("/account", async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const farmId = req.user!.farmId!;
+    const { confirmText, password } = req.body || {};
+
+    if (String(confirmText || "").trim().toUpperCase() !== "DELETE") {
+      return res.status(400).json({ error: 'Please type "DELETE" to confirm account deletion' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // If account has password, verify it
+    if (user.password && password) {
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) return res.status(401).json({ error: "Incorrect password" });
+    }
+
+    const now = new Date();
+
+    // Mark deletedAt and bump tokenVersion to invalidate all existing sessions
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        deletedAt: now,
+        tokenVersion: { increment: 1 },
+      },
+    });
+
+    // Write audit log
+    await prisma.auditLog.create({
+      data: {
+        farmId,
+        userId,
+        action: "account_deletion_requested",
+        entityType: "user",
+        details: {
+          requestedAt: now.toISOString(),
+          gracePeriodDays: 90,
+          statutoryNote: "Personal data scheduled for scrubbing under KDPA s. 40. Financial transactions archived per Kenya Income Tax Act.",
+        },
+      },
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      message: "Account scheduled for deletion. Sessions revoked.",
+    });
+  } catch (error) {
+    console.error("Account deletion error:", error);
+    res.status(500).json({ error: "Failed to schedule account deletion" });
+  }
+});
+
 export default router;

@@ -94,8 +94,14 @@ export default function SettingsPage() {
   const [recoveryCodes, setRecoveryCodes] = React.useState<string[] | null>(null);
   const [disablePw, setDisablePw] = React.useState("");
   const [disableCode, setDisableCode] = React.useState("");
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { showToast, ToastComponent } = useToast();
+
+  // Account deletion modal state (KDPA Right to Erasure)
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = React.useState("");
+  const [deletePassword, setDeletePassword] = React.useState("");
+  const [deleteBusy, setDeleteBusy] = React.useState(false);
 
   // Profile state
   const [farmName, setFarmName] = React.useState("");
@@ -241,9 +247,45 @@ export default function SettingsPage() {
     } catch { showToast("Failed — check current password"); }
   };
 
-  const handleExportAll = () => {
-    window.open("/api/export", "_blank");
-    showToast("Opening farm data export...");
+  const handleExportAll = async () => {
+    try {
+      showToast("Preparing your farm data export...");
+      const data = await api.get("/api/export");
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `wangari-farm-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Farm data downloaded!");
+    } catch {
+      showToast("Export failed. Please try again.");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText.trim().toUpperCase() !== "DELETE") {
+      showToast('Please type "DELETE" to confirm');
+      return;
+    }
+    setDeleteBusy(true);
+    try {
+      await api.delete("/api/settings/account", {
+        confirmText: deleteConfirmText.trim().toUpperCase(),
+        password: deletePassword,
+      });
+      showToast("Account scheduled for deletion. Signing out...");
+      setTimeout(() => {
+        signOut();
+        window.location.href = "/login";
+      }, 1200);
+    } catch (err: any) {
+      setDeleteBusy(false);
+      showToast(err?.message || "Failed to delete account. Check password.");
+    }
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wangari-green-800" /></div>;
@@ -688,15 +730,100 @@ export default function SettingsPage() {
                   <Button onClick={() => window.location.href = "/import"} variant="outline" className="mt-3 border-wangari-green-800 text-wangari-green-800 hover:bg-wangari-green-50 cursor-pointer"><Download className="h-4 w-4 mr-2" />Import Data</Button>
                 </div>
                 <div className="rounded-xl border border-tone-bad-border bg-tone-bad-bg p-4">
-                  <p className="text-sm font-bold text-badge-red-text">Danger Zone</p>
-                  <p className="text-xs text-wangari-red-500 mt-1">Permanently delete your account and all farm data. This cannot be undone.</p>
-                  <Button variant="outline" className="mt-3 border-wangari-red-300 text-wangari-red-600 hover:bg-badge-red-bg cursor-pointer"><Trash2 className="h-4 w-4 mr-2" />Delete Account</Button>
+                  <p className="text-sm font-bold text-badge-red-text">Danger Zone &middot; Account Erasure</p>
+                  <p className="text-xs text-wangari-red-500 mt-1">Request permanent deletion of your personal account under Kenya Data Protection Act Section 40.</p>
+                  <Button
+                    onClick={() => setShowDeleteModal(true)}
+                    variant="outline"
+                    className="mt-3 min-h-[44px] border-wangari-red-300 text-wangari-red-600 hover:bg-badge-red-bg cursor-pointer"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Account
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           )}
         </motion.div>
       </div>
+
+      {/* Delete Confirmation Modal (KDPA Right to Erasure) */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-wangari-border space-y-4">
+            <div className="flex items-center gap-3 text-wangari-red-600">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-badge-red-bg shrink-0">
+                <Trash2 className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-wangari-heading">Delete Your Account</h3>
+                <p className="text-xs text-wangari-muted">Right to Erasure &middot; KDPA Section 40</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-wangari-cream p-3.5 text-xs text-wangari-muted space-y-2 border border-wangari-border">
+              <p className="font-bold text-wangari-heading">What will happen:</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Your account will be deactivated and all active sessions will end immediately.</li>
+                <li>Your personal details (name, email, phone) will be permanently erased after a <strong>90-day grace period</strong>.</li>
+                <li>Financial transaction records are archived for 7 years to comply with Kenya Revenue Authority (KRA) tax laws.</li>
+                <li>Within the 90 days, you can contact <em>info@imeantech.com</em> to restore your account.</li>
+              </ul>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs font-semibold text-wangari-text">
+                  Enter your account password:
+                </Label>
+                <Input
+                  type="password"
+                  placeholder="Your current password (optional if using Google)"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  className="mt-1 h-11 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold text-wangari-text">
+                  Type <strong>DELETE</strong> below to confirm:
+                </Label>
+                <Input
+                  type="text"
+                  placeholder="DELETE"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="mt-1 h-11 rounded-xl font-mono uppercase tracking-wider"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText("");
+                  setDeletePassword("");
+                }}
+                disabled={deleteBusy}
+                className="h-11 px-4 rounded-xl cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDeleteAccount}
+                disabled={deleteBusy || deleteConfirmText.trim().toUpperCase() !== "DELETE"}
+                className="h-11 px-5 rounded-xl bg-wangari-red-600 hover:bg-wangari-red-700 text-white font-bold cursor-pointer"
+              >
+                {deleteBusy ? "Deleting..." : "Permanently Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {ToastComponent}
     </div>
   );

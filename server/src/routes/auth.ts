@@ -162,6 +162,7 @@ router.post("/register", async (req: Request, res: Response) => {
         phone: phone || null,
         trialStartsAt: null,
         trialEndsAt: null,
+        termsAcceptedAt: now,
       },
     });
 
@@ -228,6 +229,12 @@ router.post("/login", async (req: Request, res: Response) => {
     });
     if (!user) {
       return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    if (user.deletedAt) {
+      return res.status(403).json({
+        error: "This account has been closed. To restore your account within your 90-day grace period, contact info@imeantech.com.",
+      });
     }
 
     // Google-only users don't have a password
@@ -436,6 +443,12 @@ router.post("/google", async (req: Request, res: Response) => {
     });
 
     if (user) {
+      if (user.deletedAt) {
+        return res.status(403).json({
+          error: "This account has been closed. To restore your account within your 90-day grace period, contact info@imeantech.com.",
+        });
+      }
+
       // Existing user — update Google data if not linked yet
       const updateData: any = {};
       if (!user.googleId) updateData.googleId = googleUser.sub;

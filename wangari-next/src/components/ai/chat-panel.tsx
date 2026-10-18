@@ -517,16 +517,16 @@ export function ChatPanel({
 
           {composer}
 
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <p className="text-[11px] text-wangari-subtle">
+          <div className="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+            <p className="text-[11px] text-wangari-subtle leading-tight">
               {offline
                 ? "You are offline. Wangari will answer when you are back."
-                : "She answers in English and Kiswahili."}
+                : "Guidance & estimates only. Consult a certified veterinarian or agronomist for critical treatment."}
             </p>
             {running && (
               <button
                 onClick={onStop}
-                className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-wangari-heading px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-wangari-green-900"
+                className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-wangari-heading px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-wangari-green-900 self-end sm:self-auto"
               >
                 <Square className="h-3.5 w-3.5 fill-current" aria-hidden />
                 Stop

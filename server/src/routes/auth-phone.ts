@@ -126,6 +126,7 @@ router.post("/register-phone", async (req: Request, res: Response) => {
         emailVerified: emailRaw ? now : null,
         trialStartsAt: null,
         trialEndsAt: null,
+        termsAcceptedAt: now,
       },
     });
 
@@ -228,6 +229,12 @@ router.post("/login-phone", async (req: Request, res: Response) => {
       return res.status(401).json({
         error: wrongPinMessage(failures),
         attemptsLeft: attemptsLeft(failures),
+      });
+    }
+
+    if (user.deletedAt) {
+      return res.status(403).json({
+        error: "This account has been closed. To restore your account within your 90-day grace period, contact info@imeantech.com.",
       });
     }
 

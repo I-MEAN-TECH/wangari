@@ -31,6 +31,15 @@ const LINK_COLUMNS = [
       { label: "Inventory", href: "/features/inventory" },
     ],
   },
+  {
+    heading: "Legal & Trust",
+    links: [
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Cookie Policy", href: "/cookies" },
+      { label: "Security & Trust", href: "/security" },
+    ],
+  },
 ];
 
 /** The source's four social marks, in its own order (see scripts/port-icons.mjs). */
